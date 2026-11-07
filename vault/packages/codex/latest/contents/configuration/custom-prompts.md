@@ -1,18 +1,23 @@
 # Custom Prompts
 
-Custom prompts let you turn Markdown files into reusable prompts that you can invoke as slash commands in both the Codex CLI and the Codex IDE extension.
+> For the complete documentation index, see [llms.txt](https://learn.chatgpt.com/llms.txt). Markdown versions of documentation pages are available by appending `.md` to the page URL.
 
-Custom prompts require explicit invocation and live in your local Codex home directory (for example, `~/.codex`), so they're not shared through your repository. If you want to share a prompt (or want Codex to implicitly invoke it), [use skills](https://developers.openai.com/codex/skills).
+Custom prompts are deprecated. Use [skills](https://learn.chatgpt.com/docs/build-skills) for reusable
+  instructions that Codex can invoke explicitly or implicitly.
+
+Custom prompts (deprecated) let you turn Markdown files into reusable prompts that you can invoke as slash commands in both the Codex CLI and the Codex IDE extension.
+
+Custom prompts require explicit invocation and live in your local Codex home directory (for example, `~/.codex`), so they're not shared through your repository. If you want to share a prompt (or want Codex to implicitly invoke it), [use skills](https://learn.chatgpt.com/docs/build-skills).
 
 1. Create the prompts directory:
 
-   ```bash
+```bash
    mkdir -p ~/.codex/prompts
-   ```
+```
 
 2. Create `~/.codex/prompts/draftpr.md` with reusable guidance:
 
-   ```markdown
+```markdown
    ---
    description: Prep a branch, commit, and open a draft PR
    argument-hint: [FILES=<paths>] [PR_TITLE="<title>"]
@@ -22,7 +27,7 @@ Custom prompts require explicit invocation and live in your local Codex home dir
    If files are specified, stage them first: $FILES.
    Commit the staged changes with a clear message.
    Open a draft PR on the same branch. Use $PR_TITLE when supplied; otherwise write a concise summary yourself.
-   ```
+```
 
 3. Restart Codex so it loads the new prompt (restart your CLI session, and reload the IDE extension if you are using it).
 
@@ -46,9 +51,9 @@ After editing prompt files, restart Codex or open a new chat so the updates load
 2. Enter `prompts:` or the prompt name, for example `/prompts:draftpr`.
 3. Supply required arguments:
 
-   ```text
+```text
    /prompts:draftpr FILES="src/pages/index.astro src/lib/api.ts" PR_TITLE="Add hero animation"
-   ```
+```
 
 4. Press Enter to send the expanded instructions (skip either argument when you don't need it).
 

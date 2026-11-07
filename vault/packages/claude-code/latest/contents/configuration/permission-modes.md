@@ -1,0 +1,1051 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Choose a permission mode
+
+> Control whether Claude asks before acting. Switch permission modes with Shift+Tab in the CLI, the mode indicator in VS Code, or the mode selector in Desktop.
+
+A permission mode sets which actions Claude can take in a session without asking you first. In Manual mode, Claude Code stops and asks you before most actions that edit files, run shell commands, or reach the network. In [auto mode](#eliminate-prompts-with-auto-mode), a second model, the classifier, reviews actions instead of you; [how the classifier evaluates actions](#how-the-classifier-evaluates-actions) lists which actions it reviews and which skip it.
+
+With Claude Code v2.1.283 or later, auto mode is the built-in starting permission mode for interactive terminal and VS Code sessions. On earlier versions, it's the built-in starting permission mode only on Pro, Max, Ultra, and Team plans. [Which mode a session starts in](#which-mode-a-session-starts-in) covers the surfaces and settings that change the starting permission mode. You can also change a running session's permission mode at any time.
+
+## Available modes
+
+Each mode makes a different tradeoff between convenience and oversight. The table below shows what Claude can do without a permission prompt in each mode. Manual mode appears under its config value, `default`.
+
+| Mode | What runs without asking | Best for |
+| :- | :- | :- |
+| `default` | Reads only | Reviewing every action yourself, sensitive work |
+| [`acceptEdits`](#auto-approve-file-edits-with-acceptedits-mode) | Reads, file edits, and common filesystem commands (`mkdir`, `touch`, `mv`, `cp`, etc.) | Iterating on code you're reviewing |
+| [`plan`](#analyze-before-you-edit-with-plan-mode) | Reads, plus classifier-approved commands when [auto mode](#eliminate-prompts-with-auto-mode) is available | Exploring a codebase before changing it |
+| [`auto`](#eliminate-prompts-with-auto-mode) | Everything, with background safety checks | Long tasks, reducing prompt fatigue |
+| [`dontAsk`](#allow-only-pre-approved-tools-with-dontask-mode) | File reads inside your working directories and pre-approved tools; anything that would prompt is denied, though a [mod](https://code.claude.com/docs/en/plugins/mods/overview.md) you installed can still approve some of those calls | Locked-down CI and scripts |
+| [`bypassPermissions`](#skip-all-checks-with-bypasspermissions-mode) | Everything | Isolated containers and VMs only |
+
+The mode that reviews every action is named **Manual** in the CLI, in `claude --help`, in the VS Code and JetBrains extensions, and in the desktop app. Its config value is `default`, which is what hooks and SDK integrations use. The CLI accepts `manual` as an alias wherever you type the value, for example `claude --permission-mode manual` or `"defaultMode": "manual"`.
+
+Writes to [protected paths](#protected-paths) are never auto-approved except in `bypassPermissions` mode and in plan-mode sessions where bypass permissions are available, meaning interactive terminal sessions started in a way that [puts `bypassPermissions` in the mode cycle](#switch-permission-modes).
+
+Modes set the baseline. Layer [permission rules](https://code.claude.com/docs/en/permissions.md#manage-permissions) on top to pre-approve or block specific tools. Deny rules block in every mode, including `bypassPermissions`. Deny and ask rules don't apply to [`EndConversation`](https://code.claude.com/docs/en/tools-reference#endconversation-tool-behavior) as long as Claude still has at least one other tool it can call. Allow rules have no effect in `bypassPermissions`.
+
+### Actions no mode auto-approves
+
+Claude Code doesn't auto-approve the following in any mode, including `bypassPermissions`, though you can [turn off the prompt for dangerous `rm` commands](#turn-off-the-critical-path-removal-prompt-in-bypasspermissions-mode) in `bypassPermissions` mode. Each bullet links to the section that says what happens instead in each mode:
+
+* Tools matched by an explicit [ask rule](https://code.claude.com/docs/en/permissions.md#manage-permissions)
+* Connector tools your organization [set to `ask`](https://code.claude.com/docs/en/mcp#organization-controls-on-connector-tools), in sessions where that setting reaches Claude Code
+* Tools that require user interaction: the built-in `AskUserQuestion` tool and MCP tools marked [`requiresUserInteraction`](https://code.claude.com/docs/en/mcp#require-approval-for-a-specific-tool)
+* Recognized `rm` and `rmdir` [critical-path removals](#critical-paths), which no allow rule or `PreToolUse` hook `"allow"` approves, and Bash commands flagged [`Dangerous rm operation not ruled out`](#dangerous-rm-operation-not-ruled-out)
+* The [cross-session messaging safeguards](#skip-all-checks-with-bypasspermissions-mode)
+* Reads outside the working directories while [`permissions.blockReadsOutsideWorkingDirectories`](https://code.claude.com/docs/en/settings-reference#permissions-blockreadsoutsideworkingdirectories) is on: recognized file-reading Bash commands prompt even in auto mode and `bypassPermissions` mode, and so does any [unsandboxed retry](https://code.claude.com/docs/en/sandboxing.md#the-unsandboxed-retry-escape-hatch) that needs approval to run outside the sandbox. Requires Claude Code v2.1.257 or later.
+
+  A command the shell parser can't trace, such as one that changes directory more than once or runs a subshell, prompts the same way even when it names no outside path. This prompt doesn't apply when the command runs in the [sandbox](https://code.claude.com/docs/en/sandboxing.md) and the sandbox enforces the block.
+* Writes outside the working directories while [`permissions.blockWritesOutsideWorkingDirectories`](https://code.claude.com/docs/en/settings-reference#permissions-blockwritesoutsideworkingdirectories) is on: Claude Code refuses `Write`, `Edit`, and `NotebookEdit` calls there, apart from [some of its own files](https://code.claude.com/docs/en/settings-reference.md#what-the-write-block-refuses-and-what-stays-writable). The key doesn't limit shell commands, MCP tools, or the programs hooks run, so use [sandboxing](https://code.claude.com/docs/en/sandboxing.md) to limit where shell commands write. Requires Claude Code v2.1.314 or later.
+
+## Common setups
+
+Permission modes decide whether Claude asks before an action, and the [Bash sandbox](https://code.claude.com/docs/en/sandboxing.md) and outer [isolation boundaries](https://code.claude.com/docs/en/sandbox-environments.md) decide what an action can reach once it runs. Each row below pairs a goal with the flags or settings that get you there and the isolation it needs, as a starting point. [Available modes](#available-modes) lists what runs without a prompt in each mode.
+
+| You want to | Start with | Isolation needed | Notes |
+| :- | :- | :- | :- |
+| Review every action yourself | Manual mode: `claude --permission-mode default` | None | Sensitive work, unfamiliar code |
+| Iterate locally with fewer prompts, without a classifier | Manual mode plus the Bash sandbox in [auto-allow mode](https://code.claude.com/docs/en/sandboxing.md#sandbox-modes): `claude --permission-mode default`, then run `/sandbox` and select auto-allow | The built-in Bash sandbox, on macOS, Linux, and WSL2 | Deny rules still apply, and ask rules that name a command, such as `Bash(git push *)`, still prompt. [Auto-allow mode](https://code.claude.com/docs/en/sandboxing.md#auto-allow-mode) covers other commands that can prompt. To turn the sandbox on from a settings file instead, set [`sandbox.enabled`](https://code.claude.com/docs/en/settings-reference#sandbox-enabled) to `true` |
+| Explore before changing anything | `claude --permission-mode plan` | None | Claude Code blocks edits until you [approve a plan](#review-and-approve-a-plan) |
+| Work hands-off in auto mode | `claude --permission-mode auto`, the [built-in starting permission mode](#which-mode-a-session-starts-in) with v2.1.283 or later | None; a sandbox or container adds defense in depth | Requires a [supported model](#eliminate-prompts-with-auto-mode), and your organization can [turn auto mode off](#eliminate-prompts-with-auto-mode) |
+| Run in CI with an exact allowlist | `claude -p "run the test suite" --permission-mode dontAsk --allowedTools "Bash(npm test)" "Read"` | None beyond what your CI runner provides | [Cloud sessions](https://code.claude.com/docs/en/claude-code-on-the-web.md) ignore `dontAsk` from settings files |
+| Run fully unattended inside a container | `claude -p "<prompt>" --dangerously-skip-permissions` | Required: a container, VM, or the [sandbox runtime](https://code.claude.com/docs/en/sandbox-environments.md#sandbox-runtime); on Linux and macOS, run it as a [non-root user](#skip-all-checks-with-bypasspermissions-mode) | Cloud sessions ignore this mode from settings files. In this `-p` run, the [few calls that would still prompt](#skip-all-checks-with-bypasspermissions-mode) are denied instead |
+
+The Bash sandbox and auto mode work independently and combine, with the exceptions listed under [Sandbox modes](https://code.claude.com/docs/en/sandboxing.md#sandbox-modes). For the full interaction, see [How sandboxing relates to permissions and permission modes](https://code.claude.com/docs/en/sandboxing.md#how-sandboxing-relates-to-permissions-and-permission-modes) and [How isolation relates to permission modes](https://code.claude.com/docs/en/sandbox-environments.md#how-isolation-relates-to-permission-modes).
+
+## Which mode a session starts in
+
+When you start a new session in a terminal, Claude Code takes the permission mode from the first of these that applies:
+
+1. The `--permission-mode` flag, or `--dangerously-skip-permissions`
+
+2. `permissions.defaultMode` in a [settings file](https://code.claude.com/docs/en/settings.md#where-settings-live)
+
+   If you set `"auto"` in `.claude/settings.json` or `.claude/settings.local.json`, the value doesn't take effect, and Claude Code then uses the built-in default rather than a `defaultMode` from `~/.claude/settings.json`. If you set `"bypassPermissions"` in those two files, it doesn't take effect either, and the session starts in Manual mode. The other values apply from any settings file.
+
+3. The built-in default
+
+Conversations the VS Code extension starts follow the extension's own list in [Switch permission modes](#switch-permission-modes). For the permission mode Claude Code starts a resumed session in, see [permission mode on resume](https://code.claude.com/docs/en/sessions.md#permission-mode-on-resume).
+
+The built-in `auto` default requires Claude Code v2.1.228 or later on macOS, Linux, and WSL, and v2.1.233 or later on native Windows. On earlier versions, the built-in default is Manual.
+
+The built-in default depends on how you run Claude Code. The first row that matches your session applies. The table covers sessions you start in a terminal or through the VS Code extension; for the desktop app and claude.ai, see the Desktop and Web tabs in [Switch permission modes](#switch-permission-modes).
+
+| How you run Claude Code | Built-in starting permission mode |
+| :- | :- |
+| Any settings file sets `disableAutoMode` to `"disable"` | `default` |
+| `claude -p` or the [Agent SDK](https://code.claude.com/docs/en/agent-sdk/permissions.md#permission-modes) | `default` |
+| Your organization has the [HIPAA configuration](#hipaa-configuration) applied and the session is [eligible for it](https://code.claude.com/docs/en/hipaa-setup.md#check-how-developers-sign-in-and-connect) | `default` with Claude Code v2.1.285 or later; auto mode stays available to switch to |
+| In a terminal or through the [VS Code extension](https://code.claude.com/docs/en/vs-code.md) | `auto` with Claude Code v2.1.283 or later; on earlier versions, `auto` on Pro, Max, Ultra, or Team plans in sessions that [fetch feature flags](https://code.claude.com/docs/en/env-vars.md#features-that-need-feature-flag-fetching), and `default` otherwise |
+
+When the flag, a settings file, or the built-in default selects `auto` but auto mode isn't available to the session, Claude Code starts the session in Manual instead. Auto mode is unavailable when the session doesn't meet the [availability requirements](#eliminate-prompts-with-auto-mode), such as a settings file turning it off or a model that doesn't support it, or when Anthropic has temporarily turned it off server-side.
+
+The first time the built-in default starts one of your sessions in auto mode, Claude Code shows a notice that links to this page:
+
+* In a terminal, once, at the top of the session
+* In the VS Code extension, as a card on the new-conversation screen that stays until you dismiss it
+
+If your `~/.claude/settings.json` sets a `defaultMode` other than `auto` and no other settings file sets one, your sessions keep starting in that mode.
+
+On Pro, Max, Ultra, and Team plans, and in sessions that [don't fetch feature flags](https://code.claude.com/docs/en/env-vars.md#features-that-need-feature-flag-fetching), Claude Code asks once whether to change the setting to auto mode. The question appears in the terminal or in the VS Code extension, and if you decline, your setting stays as it is.
+
+### Tool calls denied in `claude -p` and Agent SDK runs
+
+In Claude Code v2.1.302 or later, `claude -p` and [Agent SDK](https://code.claude.com/docs/en/agent-sdk/permissions.md#permission-modes) runs with [no permission mode set](#which-mode-a-session-starts-in) start in Manual mode. This mode appears as `default` in SDK options and settings. Calls needing approval are denied unless you approve them with an allow rule, hook, `canUseTool` callback, or `--permission-prompt-tool`.
+
+To get these calls approved, add allow rules or start in auto mode:
+
+* **[Add allow rules](https://code.claude.com/docs/en/permissions.md#manage-permissions)**: Claude runs the calls you list. Pass [`--allowedTools "Bash(npm test)"`](https://code.claude.com/docs/en/headless#auto-approve-tools) to `claude -p`, or set your SDK's [allowed-tools option](https://code.claude.com/docs/en/agent-sdk/permissions.md#allow-and-deny-rules).
+* **Start in [auto mode](#eliminate-prompts-with-auto-mode)**: a classifier model reviews calls, so you list nothing beforehand. Pass `--permission-mode auto` to `claude -p`, or set your SDK's [permission mode option](https://code.claude.com/docs/en/agent-sdk/permissions.md#set-permission-mode).
+
+These examples show the auto mode form for the CLI and each SDK:
+
+> [tab] CLI
+>
+> ```bash theme={null}
+> claude -p "Run the test suite and fix any failures" --permission-mode auto
+> ```
+
+> [tab] TypeScript
+>
+> ```typescript theme={null}
+> const options = {
+>   permissionMode: "auto"
+> };
+> ```
+
+> [tab] Python
+>
+> ```python theme={null}
+> from claude_agent_sdk import ClaudeAgentOptions
+>
+> options = ClaudeAgentOptions(permission_mode="auto")
+> ```
+
+Before v2.1.302, these runs could start in auto mode if they didn't [fetch feature flags](https://code.claude.com/docs/en/env-vars.md#features-that-need-feature-flag-fetching), for example on a [third-party provider](https://code.claude.com/docs/en/third-party-integrations.md) or with `DISABLE_TELEMETRY`.
+
+### Start in a different permission mode
+
+You can set the starting permission mode for one session, or as a default for every session on a machine, in a project, or in an organization. When more than one settings file sets `permissions.defaultMode`, [settings precedence](https://code.claude.com/docs/en/settings.md#settings-precedence) decides, so a project or managed value outranks `~/.claude/settings.json`. To change the permission mode of a session that's already running, see [Switch permission modes](#switch-permission-modes).
+
+| To set the starting permission mode for | Do this |
+| :- | :- |
+| One session you're about to start | Pass the permission mode as a flag, for example `claude --permission-mode default` |
+| Every terminal session you start on this machine | Set `permissions.defaultMode` in `~/.claude/settings.json`. For what the VS Code extension reads, see [Switch permission modes](#switch-permission-modes) |
+| Every terminal session you start in one project | Set `permissions.defaultMode` in the project's `.claude/settings.json`. Sessions you start in a terminal honor every value except `auto` and `bypassPermissions`; sessions the VS Code extension starts don't read project settings for the starting permission mode |
+| Every terminal session in your organization | Set `permissions.defaultMode` in [managed settings](https://code.claude.com/docs/en/managed-settings.md). Terminal sessions start in that mode and people can still switch to auto mode; for what the VS Code extension reads, see [Switch permission modes](#switch-permission-modes). To remove auto mode so nobody can select it, set `permissions.disableAutoMode` to `"disable"` instead |
+
+This example makes every terminal session on your machine start in Manual mode, whose config value is `default`. Save it in `~/.claude/settings.json`:
+
+```json theme={null}
+{
+  "permissions": {
+    "defaultMode": "default"
+  }
+}
+```
+
+The next session you start shows `⏸ manual mode on` in the status bar.
+
+### Permission modes with the HIPAA configuration
+
+In an organization with the [HIPAA configuration](https://code.claude.com/docs/en/hipaa-setup.md) applied, the [built-in `auto` default](#which-mode-a-session-starts-in) doesn't apply. A terminal or VS Code session starts in Manual mode when nothing else chooses its starting permission mode. A terminal session also shows `Auto mode isn't the default for your organization · Shift+Tab to switch`, and the VS Code extension shows no notice. [Check how developers sign in and connect](https://code.claude.com/docs/en/hipaa-setup.md#check-how-developers-sign-in-and-connect) lists the sessions this applies to.
+
+Auto mode and `bypassPermissions` stay available:
+
+* **Switch to auto mode**: press `Shift+Tab`, or use [your interface's control](#switch-permission-modes)
+* **Start in auto mode**: pass `--permission-mode auto`, or set `permissions.defaultMode` to `auto` in your user settings, or in managed settings for your whole organization. See [Start in a different permission mode](#start-in-a-different-mode)
+* **Remove auto mode**: set [`permissions.disableAutoMode`](https://code.claude.com/docs/en/settings-reference#disableautomode) to `"disable"` in managed settings
+* **Block `bypassPermissions`**: set [`permissions.disableBypassPermissionsMode`](https://code.claude.com/docs/en/settings-reference#permissions-disablebypasspermissionsmode) to `"disable"` in managed settings
+
+## Switch permission modes
+
+Each interface has its own control for switching permission modes during a session and its own way of choosing the permission mode new sessions start in. Select your interface to see its controls.
+
+> [tab] CLI
+>
+> **During a session**: press `Shift+Tab` to cycle permission modes. From `auto`, the first press switches to `default`, and the cycle then runs `default` → `acceptEdits` → `plan`. Optional modes slot in after `plan`. The status bar shows the active mode as a gray `⏸ manual mode on` for `default`, or as `⏵⏵ accept edits on`, `⏸ plan mode on`, `⏵⏵ auto mode on`, `⏵⏵ don't ask on`, or `⏵⏵ bypass permissions on`.
+>
+> Watch the status bar in this clip of a session that started in auto mode. Each time you press `Shift+Tab`, it changes from `auto mode on` to `manual mode on`, `accept edits on`, `plan mode on`, and back to `auto mode on`.
+>
+> <video autoPlay muted loop playsInline src="https://mintcdn.com/claude-code/tA-x-5L2YsYSVdee/images/permission-modes-cycle-light.mp4?fit=max&auto=format&n=tA-x-5L2YsYSVdee&q=85&s=3927dd62d59b01efd81b3578f2a6f971" aria-label="The status bar under the Claude Code prompt changes with each press of Shift+Tab: auto mode on, manual mode on, accept edits on, plan mode on, then auto mode on again." />
+>
+> Not every mode is in the default cycle:
+>
+> * `auto`: appears when [auto mode is available](#eliminate-prompts-with-auto-mode); cycling to it switches permission modes without a confirmation prompt
+> * `bypassPermissions`: appears after you start with `--permission-mode bypassPermissions`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, or `permissions.defaultMode: "bypassPermissions"` in [user, `--settings`, or managed settings](https://code.claude.com/docs/en/settings-reference#permissions-defaultmode). The `--allow-` variant adds the permission mode to the cycle without activating it
+> * `dontAsk`: never appears in the cycle; set it with `--permission-mode dontAsk`
+>
+> Enabled optional modes slot in after `plan`, with `bypassPermissions` first and `auto` last. If you have both enabled, you will cycle through `bypassPermissions` on the way to `auto`.
+>
+> **From a Bash permission prompt**: in the Manual and `acceptEdits` permission modes, when [auto mode](#eliminate-prompts-with-auto-mode) is available, Claude Code adds **Yes, and switch to auto mode** to a Bash command's permission prompt. Select it to approve the command and switch the session to auto mode. [PowerShell tool](https://code.claude.com/docs/en/tools-reference.md#powershell-tool) prompts don't offer the option. Requires Claude Code v2.1.247 or later.
+>
+> Claude Code doesn't add the option to prompts forced by one of your [`ask` rules](https://code.claude.com/docs/en/permissions#manage-permissions) or by a [hook](https://code.claude.com/docs/en/hooks.md#pretooluse-decision-control), because auto mode still shows you those prompts, so switching wouldn't remove them.
+>
+> **At startup**: pass the permission mode as a flag.
+>
+> ```bash theme={null}
+> claude --permission-mode plan
+> ```
+>
+> **As a default**: set `permissions.defaultMode` at the scope you want, as described in [Start in a different permission mode](#start-in-a-different-mode).
+>
+> The same `--permission-mode` flag works with `-p` for [non-interactive runs](https://code.claude.com/docs/en/headless.md).
+
+> [tab] VS Code
+>
+> **During a session**: click the mode indicator at the bottom of the prompt box. It uses these labels for the modes on this page:
+>
+> | UI label | Mode |
+> | :- | :- |
+> | Manual | `default` |
+> | Edit automatically | `acceptEdits` |
+> | Plan | `plan` |
+> | Auto | `auto` |
+> | Bypass permissions | `bypassPermissions` |
+>
+> **As a default**: to pin the permission mode conversations start in, set `claudeCode.initialPermissionMode` in your VS Code user settings to `default`, `manual`, `acceptEdits`, `plan`, or `bypassPermissions`. The setting doesn't accept `auto`; to start in Auto, leave it unset and pick **Auto** from the mode indicator once, as item 2 below describes. The extension starts each new conversation in the first of these that applies:
+>
+> 1. `claudeCode.initialPermissionMode`
+> 2. The mode you last picked from the mode indicator, if it was Manual, Edit automatically, or Auto. Picking Plan or Bypass permissions applies to that conversation only
+> 3. `permissions.defaultMode` from [managed settings](https://code.claude.com/docs/en/managed-settings.md) or `~/.claude/settings.json`
+> 4. The [built-in default](#which-mode-a-session-starts-in) for your plan, provider, and organization settings
+>
+> The extension never reads a project's `.claude/settings.json` or `.claude/settings.local.json` for the starting permission mode. When `claudeCode.claudeProcessWrapper` is set, items 3 and 4 don't apply: those conversations start in Manual unless item 1 or item 2 sets a permission mode.
+>
+> Before v2.1.283, item 3 applied only on Pro, Max, Ultra, and Team plans in sessions that [fetch feature flags](https://code.claude.com/docs/en/env-vars.md#features-that-need-feature-flag-fetching).
+>
+> Auto appears in the mode indicator when [auto mode is available](#eliminate-prompts-with-auto-mode).
+>
+> Bypass permissions requires the **Allow dangerously skip permissions** toggle in the extension settings. Without it, the permission mode doesn't appear in the indicator, and a `bypassPermissions` value from item 1 or item 3 starts the conversation in Manual instead. Auto from any item likewise starts the conversation in Manual when auto mode isn't available.
+>
+> See the [VS Code guide](https://code.claude.com/docs/en/vs-code.md) for extension-specific details.
+
+> [tab] JetBrains
+>
+> The JetBrains plugin runs Claude Code in the IDE terminal, so switching permission modes works the same as in the CLI: press `Shift+Tab` to cycle, or pass `--permission-mode` when launching.
+
+> [tab] Desktop
+>
+> **During a session**: in the Code tab, use the mode selector in the row under the prompt box. Not every mode appears in the selector:
+>
+> * **Auto**: appears when [auto mode is available](#eliminate-prompts-with-auto-mode)
+> * **Bypass permissions**: requires the **Allow bypass permissions mode** toggle in Desktop settings on Pro, Max, and Ultra plans; on Team and Enterprise plans, organization policy controls it instead
+>
+> Cowork doesn't use these modes. It has its own permission modes, enabled separately, and shows no mode selector at all until a mode beyond its default is enabled for your account. See the [Cowork docs](https://claude.com/docs/cowork/overview).
+>
+> For desktop-specific details, see [Choose a permission mode](https://code.claude.com/docs/en/desktop.md#choose-a-permission-mode) in the Desktop guide.
+>
+> **As a default**: set `defaultMode` in [settings](https://code.claude.com/docs/en/settings.md#where-settings-live). The desktop app reads the same settings files as the CLI and applies the permission mode to new local sessions.
+>
+> A mode you pick in the mode selector in a local session is remembered per folder and outranks a `defaultMode` in the project's `.claude/` settings. A new local session can still start in a `defaultMode` from `~/.claude/settings.json` or managed settings, so check the selector before your first message. If you pick Plan, it applies to this session only.
+>
+> For where `defaultMode` goes in a settings file, see the example under [Start in a different permission mode](#start-in-a-different-mode).
+
+> [tab] Web and mobile
+>
+> On [claude.ai/code](https://claude.ai/code), use the mode dropdown in the row under the prompt box. In the mobile app, tap the **+** button in the prompt box, then **Permission**. Cloud sessions and Remote Control sessions offer different permission modes:
+>
+> * **[Cloud sessions](https://code.claude.com/docs/en/claude-code-on-the-web.md)**: Accept edits, Plan, and Auto. Accept edits corresponds to `default` mode: cloud sessions pre-approve file edits regardless of mode, so the dropdown shows Accept edits instead of Manual. Cloud sessions still honor `defaultMode: "acceptEdits"` from settings. Auto mode appears unless your organization turns it off, and on claude.ai/code it's grayed out if the selected model doesn't [support it](#eliminate-prompts-with-auto-mode). Bypass permissions isn't available.
+> * **[Remote Control](https://code.claude.com/docs/en/remote-control.md) sessions** on your local machine: Manual, Accept edits, Plan, and Auto for a session you started yourself, and you can't select Bypass permissions from the app. To use Auto, the session has to meet the auto mode [availability requirements](#eliminate-prompts-with-auto-mode). For a project thread running on your computer, see [Run a thread on your own computer](https://code.claude.com/docs/en/claude-projects.md#run-a-thread-on-your-own-computer).
+>   * Except for Bypass permissions, the dropdown shows the permission mode the local session is in, including one set from the terminal. It updates when the permission mode changes in the app or in the terminal.
+>   * Sessions hosted by the [desktop app](https://code.claude.com/docs/en/desktop.md) or the [VS Code extension](https://code.claude.com/docs/en/vs-code.md) report permission mode changes to claude.ai as they happen, the same as sessions hosted in a terminal.
+>
+> For Remote Control, the local machine running the session must be signed in with your claude.ai account; API keys aren't supported. You can also set the starting permission mode when launching that local session:
+>
+> ```bash theme={null}
+> claude remote-control --permission-mode acceptEdits
+> ```
+
+## Auto-approve file edits with acceptEdits mode
+
+`acceptEdits` mode lets Claude create and edit files in your working directory without prompting. The status bar shows `⏵⏵ accept edits on` while this mode is active.
+
+In addition to file edits, `acceptEdits` mode auto-approves common filesystem Bash commands: `mkdir`, `touch`, `rm`, `rmdir`, `mv`, `cp`, and `sed`. Except for `touch`, these commands are also auto-approved when prefixed with safe environment variables such as `LANG=C` or `NO_COLOR=1`, or process wrappers such as `timeout`, `nice`, or `nohup`. Like file edits, auto-approval applies only to paths inside your working directory or `additionalDirectories`.
+
+These still prompt:
+
+* Paths outside that scope
+* Writes to [protected paths](#protected-paths)
+* Recognized `rm` and `rmdir` [critical-path removals](#critical-paths)
+* `touch` with anything beyond plain file paths, for example an option, a glob, or a prefix such as `timeout 5` or `LANG=C`
+* All other Bash commands except the [built-in read-only set](https://code.claude.com/docs/en/permissions.md#read-only-commands)
+
+Each path also goes through the [symlink check](https://code.claude.com/docs/en/permissions.md#symlinks), so a write that resolves outside that scope isn't auto-approved either.
+
+When the [PowerShell tool](https://code.claude.com/docs/en/tools-reference.md#powershell-tool) is enabled, `acceptEdits` mode also auto-approves `Set-Content`, `Add-Content`, `Clear-Content`, and `Remove-Item` on in-scope paths, along with their common aliases. The same scope and protected-path rules apply, and `Remove-Item` gets [its own check](#remove-item-in-powershell). A positional argument that contains a quote character, such as the apostrophe in `Set-Content .\notes.txt "It's done"`, still prompts even on in-scope paths, because Claude Code can't statically validate an argument whose quoted and unquoted readings differ. Pass the content through a named parameter such as `-Value` to avoid the prompt.
+
+Use `acceptEdits` when you want to review changes in your editor or via `git diff` after the fact rather than approving each edit inline.
+
+Press `Shift+Tab` once from Manual mode to enter it, or start with it directly:
+
+```bash theme={null}
+claude --permission-mode acceptEdits
+```
+
+## Analyze before you edit with plan mode
+
+Plan mode tells Claude to research and propose changes without making them. Claude reads files, runs shell commands to explore, and writes a plan, but does not edit your source. Except in interactive terminal sessions with [bypass permissions available](#skip-all-checks-with-bypasspermissions-mode), edits stay blocked until you approve the plan.
+
+What happens to a shell command during planning depends on the session, and the first of these cases that matches applies:
+
+* **Interactive terminal sessions with bypass permissions available**: neither the classifier nor a prompt applies to planning commands. [Skip all checks with bypassPermissions mode](#skip-all-checks-with-bypasspermissions-mode) covers the few things that still prompt there.
+* **[Auto mode](https://code.claude.com/docs/en/auto-mode-config.md) available and the `useAutoModeDuringPlan` setting on**, which it is by default: the classifier reviews shell commands other than [critical-path removals](#critical-paths) instead of prompting you. Approved commands run, and rejected ones are blocked.
+* **Auto mode not available, or `useAutoModeDuringPlan` off**: commands outside the [built-in read-only set](https://code.claude.com/docs/en/permissions.md#read-only-commands) prompt for approval, including when the sandbox's [auto-allow mode](https://code.claude.com/docs/en/sandboxing.md#sandbox-modes) is enabled.
+
+Enter plan mode by pressing `Shift+Tab` or prefixing a single prompt with `/plan`. You can also start in plan mode from the CLI:
+
+```bash theme={null}
+claude --permission-mode plan
+```
+
+Press `Shift+Tab` again to leave plan mode without approving a plan.
+
+### Review and approve a plan
+
+When the plan is ready, Claude presents it and asks how to proceed. From that prompt you can choose:
+
+* **Yes, and use auto mode**: approve and start in [auto mode](#eliminate-prompts-with-auto-mode). If auto mode isn't [available to your session](#eliminate-prompts-with-auto-mode), for example because your organization turned it off, this option reads **Yes, auto-accept edits**. If you started the session with bypass permissions enabled, the option reads **Yes, and switch to BYPASS PERMISSIONS (no further prompts) for this session** instead.
+* **Yes, manually approve edits**: approve and review each edit individually.
+* **No, keep planning**: stay in plan mode and tell Claude what to change.
+
+Approving a plan exits plan mode and switches the session to the permission mode each approve option describes, so Claude starts editing. To plan again, cycle back to plan mode with `Shift+Tab`, or prefix your next prompt with `/plan`.
+
+Press `Ctrl+G` to open the proposed plan in your default text editor and edit it directly before Claude proceeds. When [`showClearContextOnPlanAccept`](https://code.claude.com/docs/en/settings-reference#showclearcontextonplanaccept) is enabled, the list gains a first option that approves the plan and clears the planning context.
+
+Accepting a plan also gives the session a [generated title](https://code.claude.com/docs/en/sessions.md#name-your-sessions) based on the plan, unless you've already named the session.
+
+### Set plan mode as the default
+
+To make plan mode the default for a project's terminal sessions, set `defaultMode` to `plan` in `.claude/settings.json`, placed as the example under [Start in a different permission mode](#start-in-a-different-mode) shows. Conversations the [VS Code extension](https://code.claude.com/docs/en/vs-code.md) starts don't read project settings for the starting permission mode. There, set `claudeCode.initialPermissionMode` to `plan` in your VS Code user settings instead.
+
+## Eliminate permission prompts with auto mode
+
+Auto mode lets Claude execute without routine permission prompts. A separate classifier model reviews actions before they run, blocking anything that escalates beyond your request, targets unrecognized infrastructure, or appears driven by hostile content Claude read. Explicit [ask rules](https://code.claude.com/docs/en/permissions.md#manage-permissions) still force a prompt.
+
+With Claude Code v2.1.283 or later, auto mode is the [built-in starting permission mode](#which-mode-a-session-starts-in) for interactive terminal and VS Code sessions on every plan and provider. On earlier versions, it's the built-in starting permission mode only on Pro, Max, Ultra, and Team plans.
+
+The classifier also reviews each message Claude sends to another agent with [`SendMessage`](https://code.claude.com/docs/en/tools-reference), whether plain text or a structured [agent team](https://code.claude.com/docs/en/agent-teams.md) message, before Claude Code delivers it, both in auto mode and in [plan mode while the classifier reviews commands](#analyze-before-you-edit-with-plan-mode); the send review requires Claude Code v2.1.222 or later.
+
+By default, the classifier doesn't review recognized `rm` and `rmdir` critical-path removals, such as `rm -rf /` or `rm -rf ~`. [Critical paths](#critical-paths) covers what happens to them in each permission mode.
+
+Auto mode also nudges Claude to keep working without stopping for clarifying questions, though Claude still asks when your prompt or a skill explicitly relies on it. For stronger autonomous behavior in a mode that still prompts you, set the [Proactive output style](https://code.claude.com/docs/en/output-styles.md) instead.
+
+> [!WARNING]
+>
+> Auto mode reduces permission prompts but does not guarantee safety. Use it for tasks where you trust the general direction, not as a replacement for review on sensitive operations.
+
+Auto mode is available only when your account meets all of these requirements:
+
+* **Plan**: All plans.
+* **Organization**: on Team and Enterprise, auto mode is available by default. Administrators can turn it off for the organization by setting `permissions.disableAutoMode` to `"disable"` in [managed settings](https://code.claude.com/docs/en/managed-settings.md).
+* **Model**: on the Anthropic API and [Claude Platform on AWS](https://code.claude.com/docs/en/claude-platform-on-aws.md), Claude Opus 4.6 or later, Sonnet 4.6 or later, Haiku 5.5, or a [Fable model](https://code.claude.com/docs/en/model-config.md#work-with-fable). On Amazon Bedrock, Google Cloud's Agent Platform, Microsoft Foundry, and signed-in [Claude apps gateway](https://code.claude.com/docs/en/claude-apps-gateway) sessions, only Claude Sonnet 5 or later, Opus 4.7 or later, Haiku 5.5, and the Fable models. Older models, including Sonnet 4.5, Opus 4.5, Haiku 4.5, and claude-3 models, are not supported on any provider.
+* **Provider**: available by default on the Anthropic API, Claude Platform on AWS, Amazon Bedrock, Google Cloud's Agent Platform, Microsoft Foundry, and signed-in Claude apps gateway sessions.
+
+If Claude Code reports auto mode as unavailable, first check these requirements and whether any settings file sets [`disableAutoMode`](https://code.claude.com/docs/en/settings-reference#disableautomode). Anthropic may also have turned auto mode off server-side, or the server may have rejected auto mode for your account. A session that received either answer keeps auto mode off until the session ends, so start a new session later.
+
+A separate message that names a model and says auto mode "cannot determine the safety" of an action means a classifier request failed. That failure is usually transient, but on Amazon Bedrock it can repeat until your account can invoke the named model. See the [error reference](https://code.claude.com/docs/en/errors.md#auto-mode-cannot-determine-the-safety-of-an-action) for the causes and what to do.
+
+If you set `defaultMode: "auto"` in [settings](https://code.claude.com/docs/en/settings-reference.md#all-settings) and a terminal session starts in Manual mode with no error, the setting is likely in `.claude/settings.json` or `.claude/settings.local.json`. `auto` doesn't take effect from those files. Move it to `~/.claude/settings.json`. For a conversation the VS Code extension started, check the extension's own list in [Switch permission modes](#switch-permission-modes) instead.
+
+### Auto mode on Bedrock, Agent Platform, or Foundry
+
+On [Amazon Bedrock](https://code.claude.com/docs/en/amazon-bedrock.md), [Google Cloud's Agent Platform](https://code.claude.com/docs/en/google-vertex-ai.md), [Microsoft Foundry](https://code.claude.com/docs/en/microsoft-foundry.md), and signed-in [Claude apps gateway](https://code.claude.com/docs/en/claude-apps-gateway) sessions, auto mode is available by default. If you don't set a permission mode there, interactive sessions start in auto mode, and `claude -p` or Agent SDK runs start in Manual mode, whose config value is `default`:
+
+* **Interactive terminal and VS Code sessions**: to start them in a permission mode other than auto, set `permissions.defaultMode` as [Start in a different permission mode](#start-in-a-different-mode) describes, or pick one from the VS Code extension's [mode indicator](#switch-permission-modes). [Which mode a session starts in](#which-mode-a-session-starts-in) lists the Claude Code versions that start them in auto mode.
+* **`claude -p` and Agent SDK runs**: to start one in auto mode, pass `--permission-mode auto` to `claude -p`, or pass `permissionMode: "auto"` in TypeScript or `permission_mode="auto"` in Python. If you pass no permission mode, see [Tool calls denied in `claude -p` and Agent SDK runs](#which-mode-a-non-interactive-run-starts-in), which also covers earlier Claude Code versions.
+
+Only Claude Sonnet 5 or later, Opus 4.7 or later, Haiku 5.5, and the Fable models are supported on these providers. On any other model, the session starts in Manual instead. Auto mode with Haiku 5.5 on these providers requires Claude Code v2.1.293 or later.
+
+To prevent developers from using auto mode, set `disableAutoMode` to `"disable"` in [managed settings](https://code.claude.com/docs/en/managed-settings.md). This removes `auto` from the `Shift+Tab` cycle, and a session started with `--permission-mode auto` starts in Manual instead. A session already running in auto mode leaves it when the setting reaches that session from an [admin-deployed source](https://code.claude.com/docs/en/managed-settings.md#which-managed-source-claude-code-uses), and shows `auto mode disabled by settings`. Before v2.1.251, a running session kept auto mode until it ended.
+
+### Server-side classifier review
+
+In auto mode, Claude Code can ask the server to check the actions that [the decision order](#how-the-classifier-evaluates-actions) sends for review, as part of the session's model requests, in place of sending its own classifier requests. These sessions ask:
+
+* **A direct connection to the Anthropic API**: in interactive terminal sessions and in `-p`, Agent SDK, [VS Code extension](https://code.claude.com/docs/en/vs-code.md), and [desktop app](https://code.claude.com/docs/en/desktop.md) sessions, whatever your plan or account type, as Anthropic rolls it out. Check your session type against these minimum Claude Code versions:
+  * In interactive terminal sessions, asking the server requires Claude Code v2.1.271 or later on Pro, Max, Ultra, and Team plans. On Enterprise plans and Claude API accounts, those sessions require v2.1.278 or later.
+  * In `-p` and VS Code extension sessions, asking the server requires Claude Code v2.1.278 or later
+  * In Agent SDK and desktop app sessions, asking the server requires Claude Code v2.1.281 or later
+  * From v2.1.282, a session that [doesn't fetch feature flags](https://code.claude.com/docs/en/env-vars.md#features-that-need-feature-flag-fetching), for example because you turned telemetry off, asks the server by default in any kind of session
+* **A cloud provider, or an LLM gateway or proxy**: on [Claude Platform on AWS](https://code.claude.com/docs/en/claude-platform-on-aws.md), Amazon Bedrock, Google Cloud's Agent Platform, and Microsoft Foundry, and whenever you point `ANTHROPIC_BASE_URL` at an [LLM gateway or proxy](https://code.claude.com/docs/en/llm-gateway), whatever your plan. Asking by default requires Claude Code v2.1.278 or later.
+* **A signed-in [Claude apps gateway](https://code.claude.com/docs/en/claude-apps-gateway) session**: requires Claude Code v2.1.280 or later
+* **A [cloud session](https://code.claude.com/docs/en/claude-code-on-the-web.md) in an Anthropic-hosted environment**: whatever your plan, when you start it from the web, the mobile app, or the desktop app with **Cloud** selected. Sessions started by a [cloud scheduled task](https://code.claude.com/docs/en/routines.md) ask the server as Anthropic rolls it out.
+
+Where the server reviews the actions, its verdicts decide them. Two other outcomes are possible:
+
+* **The server doesn't review the session**: a response completes with no review results, or the server answers that it doesn't review this session. The most common causes are an LLM gateway or proxy that drops the request for review or the results, and a platform, region, or credential that doesn't have server-side checks yet. Claude Code falls back to its own classifier requests. Once that fallback holds for the rest of the session, it shows a [notice about classifier request charges](https://code.claude.com/docs/en/auto-mode-classifier-billing.md) on accounts where those requests are billed.
+* **The server gives no verdict for an action**: Claude Code denies the action rather than run it unreviewed. On any connection, this happens when the response ends before the review results arrive or the results arrive in a form Claude Code can't read. An LLM gateway or proxy that cuts responses short or rewrites the results can cause either. On a direct connection to the Anthropic API, it also happens when the server's check fails for the action, for example by timing out. [The server returned no safety verdict](https://code.claude.com/docs/en/errors.md#the-server-returned-no-safety-verdict) covers the denial message, what happens when denials repeat, and what to do.
+
+  If a [hook](https://code.claude.com/docs/en/hooks.md#pretooluse-updatedinput-in-auto-mode) or [mod](https://code.claude.com/docs/en/plugins/mods/overview.md) changes an action's input after the server's review, Claude Code can deny the action with no verdict. In interactive terminal and VS Code sessions on a direct connection to the Anthropic API, the denial's text includes `a hook changed this call's input after auto mode reviewed it`. [Its error entry](https://code.claude.com/docs/en/errors.md#hook-changed-input-after-review) covers what to do.
+
+To skip asking the server and always use Claude Code's own classifier requests, set [`CLAUDE_CODE_AUTO_MODE_SERVER=0`](https://code.claude.com/docs/en/env-vars). On a direct connection to the Anthropic API, the variable requires Claude Code v2.1.281 or later. Setting it to `1` there turns server review on in a session that doesn't have it yet, unless you've also set `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1`. If you set `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1` and leave `CLAUDE_CODE_AUTO_MODE_SERVER` unset, Claude Code also stops asking the server, except as [Disable pre-release capabilities](https://code.claude.com/docs/en/llm-gateway-protocol.md#disable-pre-release-capabilities) describes.
+
+### Default classifier model
+
+By default, classifier requests go to Claude Sonnet 5. If `/status` shows `Auto mode server` as `Enabled`, they're sent only for calls outside [the server's review](#server-side-classifier-review).
+
+Find the first row in this table that matches your session. You get that row's model in place of Sonnet 5.
+
+| Your session | Classifier model |
+| - | - |
+| Has an Anthropic-configured classifier model | The configured model. [Check the debug log](#classifier-model-check) to see which |
+| Runs on Claude Sonnet 4.6 | Sonnet 4.6 |
+| Has [`ANTHROPIC_DEFAULT_SONNET_MODEL`](https://code.claude.com/docs/en/model-config#environment-variables) set | Its value, or Sonnet 5 if its value is Claude Sonnet 5.5 or Claude Opus 5.5 |
+
+If Sonnet 5 or the model in `ANTHROPIC_DEFAULT_SONNET_MODEL` is unavailable from your provider or excluded by your organization's [model policy](https://code.claude.com/docs/en/model-config.md#restrict-model-selection), Claude Code uses a fallback model. That's your session's model, or an Opus model in a [Fable session](https://code.claude.com/docs/en/model-config.md#work-with-fable).
+
+### Choose the classifier model
+
+With Claude Code v2.1.302 or later, set [`CLAUDE_CODE_AUTO_MODE_MODEL`](https://code.claude.com/docs/en/env-vars) to a full model ID to run the classifier on a model other than the [default](#default-classifier-model). Your cloud provider's own full model IDs work too. This `~/.claude/settings.json` example sets Claude Sonnet 4.6:
+
+```json theme={null}
+{
+  "env": {
+    "CLAUDE_CODE_AUTO_MODE_MODEL": "claude-sonnet-4-6"
+  }
+}
+```
+
+#### When your model doesn't review
+
+| Situation | What happens | What to do |
+| - | - | - |
+| The [debug log](#classifier-model-check) reports an Anthropic-configured classifier model | That model reviews | None needed |
+| You set Claude Opus 5, Sonnet 5.5, Opus 5.5 or one your organization's [model policy](https://code.claude.com/docs/en/model-config.md#restrict-model-selection) excludes | The [default classifier model](#default-classifier-model) reviews | Set another model |
+| Your provider can't serve the model | Classifier checks fail, so Claude Code [denies each action it checks](https://code.claude.com/docs/en/errors.md#auto-mode-cannot-determine-the-safety-of-an-action) | Set a model it serves, or remove the variable |
+| In a session, `/status` shows [`Auto mode server`](#server-side-classifier-review) as `Enabled` | The server reviews without your model | None needed |
+
+If several situations apply, go by the first listed.
+
+#### Check which model the classifier used
+
+From your shell, start an auto mode session with [`--debug-file`](https://code.claude.com/docs/en/cli-reference#cli-flags):
+
+```bash theme={null}
+claude --permission-mode auto --debug-file classifier-debug.log
+```
+
+To give the classifier a command to review, have Claude run `curl https://example.com`, then search the log for `classifier_request_started`:
+
+* **Your model after `model=`**: the variable took effect
+* **A different model after `model=`**: search the log for `ignoring CLAUDE_CODE_AUTO_MODE_MODEL`, which gives the reason and any step to take
+* **No such line**: read `Auto mode server` in `/status` at the Claude Code prompt:
+  * **`Enabled`**: the [server](#server-side-classifier-review) is set to review this session's calls.
+  * **`Disabled`**: this check hasn't tested your model yet. Make sure the [permission mode](#switch-permission-modes) is auto and no [permission rule](https://code.claude.com/docs/en/permissions.md#manage-permissions) matches `curl`, then run the check again with the [sandbox](https://code.claude.com/docs/en/sandboxing.md) off.
+
+### What the classifier blocks by default
+
+The classifier trusts your working directory and the remotes that were configured for it when the session started. A remote added or repointed during the session with `git remote add` or `git remote set-url` isn't trusted, and everything else is treated as external until you [configure trusted infrastructure](https://code.claude.com/docs/en/auto-mode-config.md).
+
+**Blocked by default**:
+
+* Downloading and executing code, like `curl | bash`
+* Sending sensitive data to external endpoints
+* Production deploys and migrations
+* Mass deletion on cloud storage
+* Granting IAM or repo permissions
+* Modifying shared infrastructure
+* Irreversibly destroying files that existed before the session
+* Force push
+* Committing or pushing a change that would send secrets or sensitive data outside the repository when it runs, or widen what a deploy exposes. This covers a CI workflow or deploy configuration that passes a secret to a destination that doesn't already receive it, a script or setup step that reads a secret store and sends the data out, and a config change that widens what a deploy publishes, such as a registry, visibility, artifact, or sourcemap setting. The check applies on any branch, applies even when the repository is public, and fires when the change is committed or pushed, whether or not that commit or push triggers the pipeline; clearing it requires naming the execution effect, not only the commit or push
+* `git reset --hard`, `git checkout -- .`, `git restore .`, `git clean -fd`, `git stash drop`, or `git stash clear`, which the classifier presumes would discard uncommitted changes
+* `git commit --amend` when the commit at HEAD was not created in this session
+* From v2.1.198, `git commit --amend` when the commit at HEAD has already been pushed. A message-only reword is not blocked: `--amend -m` with nothing newly staged, on a commit that Claude created during this session
+* `terraform destroy`, `pulumi destroy`, `cdk destroy`, or `terragrunt destroy`, and applying a plan that destroys resources
+* Writing to a secret manager, or changing DNS records or TLS certificates
+* Merging a pull request no human has approved, approving Claude's own pull request, or disabling CI checks
+* Posting a comment that is itself a command to automation, such as `atlantis apply` or a bot's `/deploy` or `/merge`
+* Toggling, ramping, or deleting a production feature flag
+* Applying infrastructure changes to a protected IaC scope, or draining and removing cluster nodes
+* Writes to a shared compute cluster that reach beyond the resource you named, such as a label selector or `--all` that catches other users' jobs
+* Creating Kubernetes resources that run on every node or intercept cluster traffic, such as DaemonSets and admission webhooks
+* Interactive shells or port-forwards into a sensitive remote target
+* Opening a tunnel or reverse shell that makes a local service reachable from the public internet
+* Printing a live credential or token into the transcript or a file
+* Accessing a location listed as a sensitive data location in your [environment](https://code.claude.com/docs/en/auto-mode-config.md#define-trusted-infrastructure), copying data out of one, or sending data from one to an audience the entry excludes
+* Routing a package install around your internal package registry to a public registry. This applies when an internal registry or mirror is listed in your environment or when you've told Claude in the conversation that one exists
+* Running a command with a flag that disarms a safety guard, like `--insecure`
+* Launching an autonomous agent loop that runs without human approval or a sandbox, such as one started with `--dangerously-skip-permissions` or `--no-sandbox`. This includes running a third-party agent or eval harness with isolation and per-action approval disabled, such as a runner started with `--yes-always`
+* [Claude in Chrome](https://code.claude.com/docs/en/chrome.md) browser actions that could send page content, cookies, or credentials off-origin
+* Deleting files in `/tmp`, `$TMPDIR`, or another shared scratch or cache directory by wildcard, glob, or age filter rather than by a specific named path
+* Including sensitive details in content sent, uploaded, published, or written to other people or shared systems, when your own message didn't authorize those details for that recipient. PR and issue bodies, commit messages, and comments count as this kind of outbound content when the repository is outside the trust boundary or public, including your organization's own public repositories; internal file paths, code names, live API response data such as emails or account identifiers, and infrastructure identifiers count as sensitive details. Live personal data from an API response in a PR or issue body, such as an email address, an account or organization identifier, or a usage metric, requires you to name those details and the recipient regardless of the repository's visibility or trust boundary
+* Sending keystrokes to Claude Code's own tmux pane to drive its own interface, which the classifier treats as Claude changing its own permissions or oversight
+* Commenting out, deleting, or force-passing a test or assertion that guards security behavior, such as auth, access control, input validation, or sandboxing
+* Deleting or tearing down a stateful resource Claude didn't create in the session, when no more specific deletion rule applies and you didn't name that resource
+* Repointing an API base URL, proxy endpoint, webhook receiver, or registry mirror at a third-party host that doesn't fit the task, including in example files like `.env.example`
+* Changing where pushes go with `git remote set-url` or `git remote add`, unless you named the new remote
+* Pushing secrets or personal or entrusted data to a repository known to be public, or pushing confidential material there that isn't part of that repository's own work. A dotfiles repository's own subject matter is the one exception for personal or entrusted data, and content from a private repository reaching any public surface is blocked the same way. When a repository's visibility isn't established, the classifier doesn't block on that alone; it judges the content against the other rules instead
+* Opening a pull request against a different repository or organization, forking with `gh repo fork`, or pushing to a third-party repository, unless you named that external target
+* Content from a sensitive local store, or from a file whose name, path, or type marks it as sensitive, entering a commit, a push, PR or issue text, a gist or paste, or a package publish, unless you named both the source and the destination. Session transcripts and conversation logs, credential and configuration dot-folders such as SSH keys, cloud credentials, browser profiles, and shell history, and user-data exports all count, and the repository being private doesn't clear it
+* Writing to Claude Code session transcripts, the `.jsonl` history files under `~/.claude/projects/` or your configured config directory, whether directly or through a shell command. The rule also covers the metadata lines Claude Code appends to each transcript entry for its own checks. Reading a transcript isn't blocked
+* A recursive forced delete such as `rm -rf "$VAR"` or `Remove-Item -Recurse -Force $dir` whose target is a shell variable that isn't assigned anywhere in the conversation the classifier sees, or a glob rooted at such a variable. The value came only from earlier command output, which the classifier never receives, so the classifier can't verify the deletion target against the other deletion rules. The block clears when you name the exact path being deleted, or when Claude re-runs the delete with the resolved literal path written into the command. Deletes whose target the classifier can resolve aren't affected.
+
+  A glob directly under the variable, as in `rm -rf "$VAR"/*`, is a [critical path](#critical-paths) instead. `Remove-Item` targets that are a bare `*` or end in `/*` or `\*` never reach the classifier: Claude Code [denies them outright](#remove-item-in-powershell).
+
+Several of these categories depend on [environment](https://code.claude.com/docs/en/auto-mode-config.md#define-trusted-infrastructure) entries, such as sensitive remote targets and protected IaC scopes, that you can narrow to concrete names.
+
+Claude Code v2.1.257 and later also block these by default:
+
+* Requesting credentials from the cloud instance-metadata endpoint, such as `169.254.169.254`, or explicitly authenticating a cloud, cluster, or registry call with the machine's own service-account or node identity
+* Reaching a public host by a route other than a direct request, such as a tunnel, a reverse shell, or a resolver or proxy configuration rewritten to point outside
+* Reading credentials that belong to the host rather than to your task, such as node certificates or the node's container-registry auth
+* Connecting to or scanning sibling containers, pods, or VMs that Claude didn't start, or the node beneath the container
+
+If Claude Code runs somewhere that is meant to allow one of these, describe that setup in a [Host containment entry](https://code.claude.com/docs/en/auto-mode-config.md#define-trusted-infrastructure) in `autoMode.environment`.
+
+Claude Code v2.1.261 and later also block these by default:
+
+* Posting or writing a link to a public paste, diagram, or data-sharing service in a message, PR or issue text, a document, or anywhere else the link will be opened or fetched, when the URL itself carries the content being shared, unless you named that service
+
+**Allowed by default**:
+
+* Local file operations in your working directory
+* Installing dependencies declared in your lock files or manifests
+* Reading `.env` and sending credentials to their matching API
+* Read-only HTTP requests
+* Pushing to any branch of the repository you're working in, including the default branch. A non-default branch whose name marks it as a deploy or publication target, such as `production` or `gh-pages`, isn't covered: the classifier judges a push there on its own terms.
+
+  A push's content is still checked against the classifier's other rules, and [`permissions.deny` rules](https://code.claude.com/docs/en/permissions#manage-permissions) can still block push commands [as written](https://code.claude.com/docs/en/permissions.md#bash-rule-limits) in every mode. The remote's own branch protection still applies.
+* Deleting the exact jobs Claude created earlier in the same session
+* Reading, reviewing, or writing security-related code, configs, and threat models as part of your task
+* Messages between agents working together in the same multi-agent session
+* Sending data to the trusted domains, buckets, and services you list in [`environment`](https://code.claude.com/docs/en/auto-mode-config#define-trusted-infrastructure). This covers data flow only, not destructive or credential operations on the same infrastructure
+* [Claude in Chrome](https://code.claude.com/docs/en/chrome.md) navigation to a trusted internal domain, localhost, or a URL you named
+
+Sandboxed commands don't get network access by default. Claude names the hosts a command needs on the command itself, the classifier reviews them with the command, and an approved list opens those hosts for that one command alone. [Per-command allowed domains](https://code.claude.com/docs/en/sandboxing.md#per-command-allowed-domains-in-auto-mode) covers what a list can and can't open and what happens when a command reaches for an unlisted host.
+
+Run `claude auto-mode defaults` to print the full rule lists as JSON. If routine actions get blocked, an administrator can add trusted repos, buckets, and services via the `autoMode.environment` setting: see [Configure auto mode](https://code.claude.com/docs/en/auto-mode-config.md).
+
+Pushing to any branch of the repository you're working in and creating a pull request that matches your request run without a prompt, unless the push or pull request falls under the [blocked list](#what-the-classifier-blocks-by-default), such as secrets or sensitive data leaving the repository, or a pull request that targets a different repository or organization. To require a human checkpoint before these commands while staying in auto mode, add `permissions.ask` rules, which match the command [as written](https://code.claude.com/docs/en/permissions.md#bash-rule-limits): see [Common boundaries](https://code.claude.com/docs/en/auto-mode-config.md#common-boundaries).
+
+### The first read outside the working directories
+
+While [`permissions.blockReadsOutsideWorkingDirectories`](https://code.claude.com/docs/en/settings-reference#permissions-blockreadsoutsideworkingdirectories) is off, file reads other than [reads from network paths](https://code.claude.com/docs/en/permissions.md#network-paths) run without a prompt in auto mode, including reads outside the [working directories](https://code.claude.com/docs/en/permissions.md#working-directories). The first time Claude uses the Read, Grep, or Glob tool on a path outside them, Claude Code asks whether to allow that read.
+
+The prompt doesn't appear in non-interactive `-p` runs or background sessions; reads there run as before.
+
+Whatever you answer, Claude keeps working:
+
+* **Yes, and keep allowing any reads outside the working directories**: the read runs, later reads outside the working directories run as before, and Claude Code records your answer so the prompt doesn't appear again
+* **No, and block reads outside the working directories from now on**: the read is refused, and Claude Code sets [`permissions.blockReadsOutsideWorkingDirectories`](https://code.claude.com/docs/en/settings-reference#permissions-blockreadsoutsideworkingdirectories) to `true` in your user settings, which makes the file tools refuse such reads in this and every later session and every permission mode. To lift the block, remove the setting from every [settings file](https://code.claude.com/docs/en/settings.md#settings-files-and-who-they-affect) that sets it, then restart each running session. For one directory this session, use `/add-dir`.
+* **No, and ask again next time**: the read is refused, and the next read outside the working directories prompts again
+* **Yes, but ask again next time**: the read runs, nothing is saved, and the next read outside the working directories prompts again
+
+### Boundaries you state in conversation
+
+The classifier treats boundaries you state in the conversation as a block signal. If you tell Claude "don't push" or "wait until I review before deploying", the classifier blocks matching actions even when the default rules would allow them. A boundary stays in force until you lift it in a later message. Claude's own judgment that a condition was met does not lift it.
+
+Boundaries are not stored as rules. The classifier re-reads them from the transcript on each check, so a boundary can be lost if [context compaction](https://code.claude.com/docs/en/costs.md#reduce-token-usage) removes the message that stated it. For a hard guarantee, add a [deny rule](https://code.claude.com/docs/en/permissions.md#permission-rule-syntax) instead.
+
+### Approvals you state in conversation
+
+If you tell Claude that a blocked action is allowed, the classifier reads that as your approval and can clear the block. How you worded it decides whether the action runs, and how far the approval reaches:
+
+* **Name the action and its specifics**: your message has to name the action and the specific thing that makes it dangerous, such as the branch of a force push. Naming the verb alone clears nothing, so "you can force-push" leaves the block in place.
+* **Expect it to cover one action**: an approval covers the destructive action you named, so a later action is blocked again unless you granted the approval as standing. To stop approving a routine pattern one action at a time, add it to [`autoMode.allow`](https://code.claude.com/docs/en/auto-mode-config#override-the-block-and-allow-rules).
+* **Some blocks stay in place**: [the classifier's precedence order](https://code.claude.com/docs/en/auto-mode-config.md#override-the-block-and-allow-rules) sets out which blocks your approval can reach. To run a step it won't clear, [leave auto mode](#switch-permission-modes) and answer the permission prompt.
+
+### When auto mode falls back
+
+When auto mode can't approve your session's actions, what happens depends on the case:
+
+* **A blocked action**: Claude Code shows a notification and lists the action in `/permissions` under the **Recently blocked** tab, where you can [approve the action so Claude may retry](https://code.claude.com/docs/en/auto-mode-config.md#review-denials).
+* **Repeated blocks**: if the classifier blocks an action 3 times in a row or 20 times total, auto mode pauses and Claude Code resumes prompting. Approving the prompted action resumes auto mode. See [Repeated-block thresholds](#repeated-block-thresholds) for how the blocks are counted.
+* **No verdict from the classifier**: when a safety check separate from auto mode refuses the classifier's own request, or the classifier's response doesn't parse, Claude Code blocks the action without the notification or the **Recently blocked** entry. See [Auto mode cannot determine the safety of an action](https://code.claude.com/docs/en/errors.md#auto-mode-cannot-determine-the-safety-of-an-action) for the message each case shows and what to do.
+* **No verdict from the server**: under [server-side classifier review](#server-side-classifier-review), Claude Code denies an action the server gives no verdict for, and can stop the turn after ten responses in a row with no verdict. See [The server returned no safety verdict](https://code.claude.com/docs/en/errors.md#the-server-returned-no-safety-verdict).
+* **A mode switch during a check**: if you switch permission modes while a classifier check is pending, Claude Code discards a verdict the new mode wouldn't have requested. You're prompted for approval instead, or the action is auto-denied in [`dontAsk` mode](#allow-only-pre-approved-tools-with-dontask-mode).
+
+#### Repeated-block thresholds
+
+The thresholds of 3 blocks in a row and 20 blocks total are not configurable. The total counter persists for the session and resets only when its own limit triggers a fallback. Claude Code doesn't count a denial toward either threshold when a safety check separate from auto mode refuses the classifier's own request.
+
+A [non-interactive](https://code.claude.com/docs/en/headless.md) `-p` run without a [`--permission-prompt-tool`](https://code.claude.com/docs/en/cli-reference#cli-flags) has no prompt to fall back to. When repeated blocks reach a threshold, the action doesn't run and Claude keeps working. Claude Code doesn't stop the run.
+
+Repeated blocks usually mean the classifier is missing context about your infrastructure. Use `/feedback` to report false positives, or have an administrator [configure trusted infrastructure](https://code.claude.com/docs/en/auto-mode-config.md).
+
+### How auto mode evaluates actions
+
+The following sections cover the order Claude Code evaluates an action in, how the classifier reviews subagent work, and what classifier calls add in cost and latency.
+
+> [accordion] How the classifier evaluates actions
+>
+> Each action goes through a fixed decision order. The first matching step wins:
+>
+> 1. Actions matching your [allow, ask, or deny rules](https://code.claude.com/docs/en/permissions.md#manage-permissions) resolve immediately, with these exceptions:
+>    * Writes to [protected paths](#protected-paths) route to the classifier even when an allow rule matches. When the protected path is the file that a symlinked settings file points to, the write can prompt you instead, as the [protected paths](#protected-paths) list describes
+>    * No allow rule approves recognized `rm` and `rmdir` [critical-path removals](#critical-paths)
+>    * MCP tools marked [`requiresUserInteraction`](https://code.claude.com/docs/en/mcp#require-approval-for-a-specific-tool) prompt you directly even when an allow rule matches, and so do connector tools [your organization set to `ask`](https://code.claude.com/docs/en/mcp#organization-controls-on-connector-tools) in sessions where that setting reaches Claude Code
+>    * A shell command that carries [per-command allowed domains](https://code.claude.com/docs/en/sandboxing.md#per-command-allowed-domains-in-auto-mode) also routes to the classifier even when an allow rule matches, because a rule approves the command, not its hosts
+>    * Ask rules that match on a command's content, such as `Bash(git push *)`, fall back to a permission prompt
+>    * A write that the [symlink check](https://code.claude.com/docs/en/permissions.md#symlinks) resolves to a protected path prompts you when the path Claude requested isn't itself protected
+>    * A read from a [network path](https://code.claude.com/docs/en/permissions.md#network-paths) prompts you even when an allow rule matches
+> 2. Read-only actions and file edits in your working directory are auto-approved, except writes to [protected paths](#protected-paths) and [the first read outside the working directories](#first-read-outside-the-working-directories), which prompts you
+>    * In a session with [server-side classifier review](#server-side-classifier-review), read-only and [sandboxed](https://code.claude.com/docs/en/sandboxing.md#sandbox-modes) shell commands wait for that review and are blocked if it flags them
+>    * A write inside your working directory that the [symlink check](https://code.claude.com/docs/en/permissions.md#symlinks) resolves to a location outside it prompts you
+>    * When Claude reads an [artifact someone else made](https://code.claude.com/docs/en/artifacts.md#read-an-artifact-shared-with-you), the approval cases listed in that section apply
+>    * A read from a [network path](https://code.claude.com/docs/en/permissions.md#network-paths) prompts you
+> 3. Everything else goes to the classifier, apart from [critical-path removals](#critical-paths) under their default handling. The connector tools and `requiresUserInteraction` MCP tools that prompt you directly in step 1 never reach the classifier either, so neither an org-required approval nor a consent step is auto-approved
+> 4. If the classifier blocks, Claude receives the reason. In most sessions the reason names the rule the classifier matched, such as `[Data Exfiltration]`, rather than giving a written explanation; see [Review denials](https://code.claude.com/docs/en/auto-mode-config.md#review-denials)
+>
+> A [mod](https://code.claude.com/docs/en/plugins/mods/overview.md) you install that handles `tool.check` can also approve an action. For the cases where its approval doesn't get past your rules and hooks, see [Extend permissions with hooks](https://code.claude.com/docs/en/permissions.md#precedence-among-rules-hooks-and-mods).
+>
+> For how [Claude in Chrome](https://code.claude.com/docs/en/chrome.md) browser actions get approved in the VS Code extension, see [Permission prompts in VS Code sessions](https://code.claude.com/docs/en/chrome.md#permission-prompts-in-vs-code-sessions).
+>
+> On entering auto mode, broad allow rules that grant arbitrary code execution are dropped:
+>
+> * Blanket `Bash(*)` or `PowerShell(*)`
+> * Wildcarded interpreters like `Bash(python*)`
+> * Package-manager run commands
+> * `Agent` allow rules
+> * [`Monitor`](https://code.claude.com/docs/en/tools-reference#monitor-tool) allow rules, because Claude Code runs Monitor commands through the shell
+>
+> Narrow rules like `Bash(npm test)` stay in effect. Claude Code restores the dropped rules when you leave auto mode. Before v2.1.236, Claude Code left `Monitor` allow rules in effect in auto mode, so a rule that matched the whole tool approved Monitor commands without classifier review.
+>
+> Claude Code also runs `git status` itself before a command that would discard uncommitted work, such as `git reset --hard` or `rm -rf`, and shows the classifier whether staged, modified, or untracked work is present. Claude Code reports untracked files in that check even when the repository's git configuration sets `status.showUntrackedFiles=no`.
+>
+> In the classifier requests sent by Claude Code itself, the classifier sees user messages, tool calls other than read-only lookups such as file reads and searches, and your CLAUDE.md content. Tool results are stripped from those requests, so hostile content in a file or web page can't manipulate the classifier directly.
+>
+> You can annotate a call's result with a [PostToolUse hook's `classifierContext` field](https://code.claude.com/docs/en/hooks#annotate-a-result-for-the-auto-mode-classifier), which the classifier reads as application-provided context. The field requires Claude Code v2.1.236 or later.
+>
+> A separate server-side probe scans incoming tool results and flags suspicious content before Claude reads it. For more on how these layers work together, see the [auto mode announcement](https://claude.com/blog/auto-mode) and the [engineering deep dive](https://www.anthropic.com/engineering/claude-code-auto-mode).
+
+> [accordion] How auto mode handles subagents
+>
+> The classifier checks [subagent](https://code.claude.com/docs/en/sub-agents.md) work at three points:
+>
+> 1. Before a subagent starts, the delegated task description is evaluated, so a dangerous-looking task is blocked at spawn time.
+> 2. While the subagent runs, each of its actions goes through the same [decision order](#how-the-classifier-evaluates-actions) as in the parent session, with the same block and allow rules. Any `permissionMode` in the subagent's frontmatter is ignored.
+> 3. When the subagent finishes, the classifier reviews its work and its final report before the parent reads the report. When the classifier flags the subagent's work or report, or a separate API safety check refuses the review, the report is still delivered, prepended with a security warning. When the classifier is unavailable for the review, the report arrives with a note to verify the subagent's work before acting on it.
+
+> [accordion] Cost and latency
+>
+> Claude Code's classifier requests can run on a model other than your `/model` selection. See [which model they run on](#default-classifier-model).
+>
+> On Enterprise plans and on accounts that use the Claude API, [Claude Platform on AWS](https://code.claude.com/docs/en/claude-platform-on-aws.md), Amazon Bedrock, Google Cloud's Agent Platform, or Microsoft Foundry, classifier calls count toward your token usage. Each check sends a portion of the transcript plus the pending action, adding a round-trip before execution. Reads and working-directory edits outside protected paths skip the classifier, so the overhead comes mainly from shell commands and network operations. Where the server reviews the actions as part of the session's model requests, there are no separate classifier calls to count; see [Server-side classifier review](#server-side-classifier-review).
+>
+> Sandboxed network access adds no per-connection classifier requests. The classifier judges [the hosts a command names](https://code.claude.com/docs/en/sandboxing.md#per-command-allowed-domains-in-auto-mode) together with the command in one review, and Claude Code checks each connection against the approved list without calling the classifier again.
+
+## Allow only pre-approved tools with dontAsk mode
+
+If you set `dontAsk` mode, Claude Code auto-denies every tool call that would otherwise prompt you, though a [mod](https://code.claude.com/docs/en/plugins/mods/overview.md) you installed can still approve some of those calls. To check which calls a mod can approve, see [Extend permissions with hooks](https://code.claude.com/docs/en/permissions.md#precedence-among-rules-hooks-and-mods).
+
+Claude still runs actions that need no approval in Manual mode, such as file reads inside your working directories and [read-only Bash commands](https://code.claude.com/docs/en/permissions.md#read-only-commands). Actions matching your `permissions.allow` rules and calls approved by a [PreToolUse hook](https://code.claude.com/docs/en/permissions.md#extend-permissions-with-hooks) run too. Use this mode for CI pipelines or restricted environments where you pre-define what Claude may do; the session never waits for input. The status bar shows `⏵⏵ don't ask on` in this mode.
+
+Claude Code denies calls matching your explicit [`ask` rules](https://code.claude.com/docs/en/permissions#manage-permissions) rather than prompting. It also denies the built-in `AskUserQuestion` tool even if your allow rules match it, and does the same to connector tools [your organization set to `ask`](https://code.claude.com/docs/en/mcp#organization-controls-on-connector-tools) in sessions where that setting reaches Claude Code. It denies MCP tools marked [`_meta["anthropic/requiresUserInteraction"]`](https://code.claude.com/docs/en/mcp#require-approval-for-a-specific-tool) the same way, because their approval card needs an answer this mode never collects.
+
+An allow rule or `PreToolUse` hook can't approve these:
+
+* Recognized `rm` and `rmdir` [critical-path removals](#critical-paths), such as `rm -rf /` and `rm -rf ~`
+* Reads from a [network path](https://code.claude.com/docs/en/permissions.md#network-paths)
+
+[Cloud sessions](https://code.claude.com/docs/en/claude-code-on-the-web.md) ignore `defaultMode: "dontAsk"`; see [bypassPermissions](#skip-all-checks-with-bypasspermissions-mode) for details.
+
+Set it at startup with the flag:
+
+```bash theme={null}
+claude --permission-mode dontAsk
+```
+
+## Skip all checks with bypassPermissions mode
+
+`bypassPermissions` mode disables permission prompts and safety checks so tool calls execute immediately, including writes to [protected paths](#protected-paths).
+
+Even in `bypassPermissions` mode, each of the [actions no mode auto-approves](#actions-no-mode-auto-approves) gets a prompt or a denial, though you can [turn off the prompt for dangerous `rm` commands](#turn-off-the-critical-path-removal-prompt-in-bypasspermissions-mode). Reading [another organization's public artifact](https://code.claude.com/docs/en/artifacts.md#read-an-artifact-shared-with-you) needs your approval, and this mode doesn't ask for it, so Claude can't read one. The [Remove-Item in PowerShell](#remove-item-in-powershell) denies also apply in this mode.
+
+Two [cross-session messaging](https://code.claude.com/docs/en/cross-session-messaging.md) safeguards still apply in this mode, and in interactive terminal plan-mode sessions where bypass permissions are available:
+
+* The [`isolatePeerMachines`](https://code.claude.com/docs/en/settings-reference#isolatepeermachines) approval prompt for messages to your sessions beyond this machine still appears.
+* When no [`crossSessionInbound`](https://code.claude.com/docs/en/cross-session-messaging#control-inbound-messages) value applies, Claude Code holds an inbound message from another of your sessions for your approval, and delivers without asking only when the sending session identifies itself as also bypassing permission prompts. If you leave the permission mode while messages are held, Claude Code re-applies the inbound rules and delivers any held message they now accept.
+
+In interactive terminal sessions with bypass permissions available, Claude Code also doesn't enforce [plan mode's](#analyze-before-you-edit-with-plan-mode) blocks. Claude is still instructed to plan without editing, but a file edit or shell command it attempts during planning runs without prompting. Explicit [ask rules](https://code.claude.com/docs/en/permissions.md#manage-permissions) and recognized `rm` and `rmdir` [critical-path removals](#critical-paths) still prompt.
+
+Plan mode keeps its blocks wherever Claude Code runs without an interactive terminal, including [non-interactive runs](https://code.claude.com/docs/en/headless.md) with `-p`, [Agent SDK](https://code.claude.com/docs/en/agent-sdk/permissions.md#plan-mode-plan) sessions, and conversations in the [VS Code extension](https://code.claude.com/docs/en/vs-code.md)'s chat panel. There, `--allow-dangerously-skip-permissions` makes `bypassPermissions` selectable later.
+
+> [!WARNING]
+>
+> Only use this mode in isolated environments like containers, VMs, or dev containers without internet access, where Claude Code cannot damage your host system.
+
+You can't enter `bypassPermissions` from a session you started without it enabled. Enable it at launch with [`permissions.defaultMode: "bypassPermissions"`](https://code.claude.com/docs/en/settings-reference#permissions-defaultmode) or with an enabling flag:
+
+```bash theme={null}
+claude --permission-mode bypassPermissions
+```
+
+The `--dangerously-skip-permissions` flag is equivalent.
+
+Claude Code refuses `bypassPermissions` in a session you start with [`--restricted`](https://code.claude.com/docs/en/cli-reference#cli-flags). `--restricted` requires Claude Code v2.1.248 or later.
+
+The first time you start an interactive session with this mode enabled, Claude Code shows a warning dialog asking you to accept responsibility for actions taken without permission checks:
+
+* **If you accept**: Claude Code sets `skipDangerousModePermissionPrompt` to `true` in `~/.claude/settings.json`, so later sessions skip the dialog. To see the dialog again, remove the key from that file or set it to `false`. The [`skipDangerousModePermissionPrompt` reference](https://code.claude.com/docs/en/settings-reference#skipdangerousmodepermissionprompt) lists the other settings files where you or your organization can set it.
+* **If you decline**: Claude Code exits.
+
+In [non-interactive mode](https://code.claude.com/docs/en/headless.md) no dialog is shown.
+
+A [background session](https://code.claude.com/docs/en/agent-view.md) honors your acceptance when it's recorded in user or managed settings:
+
+* With no acceptance recorded, `claude --bg --permission-mode bypassPermissions` is refused. Accept the dialog in an interactive session first.
+* With `skipDangerousModePermissionPrompt` set only in `.claude/settings.local.json`, the background session starts with [the bypass request ignored](#bypass-permissions-ignored-in-a-background-session):
+
+  * With `--allow-dangerously-skip-permissions` ignored, `bypassPermissions` is left out of its `Shift+Tab` cycle.
+  * With `--permission-mode bypassPermissions` or `--dangerously-skip-permissions` ignored, the session starts in Manual mode instead.
+
+  Add `"skipDangerousModePermissionPrompt": true` to `~/.claude/settings.json`, then start a new background session.
+
+On Linux and macOS, Claude Code refuses to start in `bypassPermissions` mode when running as root or under `sudo`:
+
+```text theme={null}
+--dangerously-skip-permissions cannot be used with root/sudo privileges for security reasons
+```
+
+The check is skipped automatically inside a recognized sandbox. To run autonomously in a container, use the [dev container](https://code.claude.com/docs/en/devcontainer.md) configuration, which runs Claude Code as a non-root user.
+
+[Cloud sessions](https://code.claude.com/docs/en/claude-code-on-the-web.md) don't honor `defaultMode: "bypassPermissions"` or `"dontAsk"` from your settings files, so a repository's checked-in settings can't start a cloud session in bypass-permissions mode. The setting is ignored silently and the session starts in the permission mode shown in the mode dropdown instead. See [Switch permission modes](#switch-permission-modes) for which modes cloud sessions offer.
+
+> [!WARNING]
+>
+> `bypassPermissions` offers no protection against prompt injection or unintended actions. For background safety checks with far fewer permission prompts, use [auto mode](#eliminate-prompts-with-auto-mode) instead. Administrators can block this mode by setting `permissions.disableBypassPermissionsMode` to `"disable"` in [managed settings](https://code.claude.com/docs/en/managed-settings.md).
+
+### Bypass permissions ignored in a background session
+
+This notice means the [background session](https://code.claude.com/docs/en/agent-view.md) didn't find your acceptance of the [bypass permissions warning](#bypass-permissions-acceptance) in user or managed settings, so it ignored the bypass request made at launch:
+
+```text theme={null}
+Bypass permissions was requested at launch and ignored · if that was you, ~/.claude/settings.json needs "skipDangerousModePermissionPrompt": true
+```
+
+Add `"skipDangerousModePermissionPrompt": true` to `~/.claude/settings.json`, then start a new background session.
+
+### `claude agents` shows the bypass permissions warning that interactive sessions skip
+
+If [`claude agents`](https://code.claude.com/docs/en/agent-view#dispatch-defaults) shows the [bypass permissions warning](#bypass-permissions-acceptance) although your interactive sessions skip it, check whether `skipDangerousModePermissionPrompt` is set in `.claude/settings.local.json` or a `--settings` file. Interactive sessions count the key there as your acceptance of the warning, and `claude agents` doesn't. Whether or not you find it there, accept the warning to add the key to `~/.claude/settings.json`, where `claude agents` looks for it.
+
+## Protected paths
+
+Writes to a small set of paths are never auto-approved, except in `bypassPermissions` mode and in interactive terminal sessions in plan mode with [bypass permissions](#skip-all-checks-with-bypasspermissions-mode) available. This prevents accidental corruption of repository state and Claude's own configuration.
+
+| Mode | Protected-path writes |
+| :- | :- |
+| `default`, `acceptEdits` | Prompted |
+| `plan` | Allowed in interactive terminal sessions with [bypass permissions](#skip-all-checks-with-bypasspermissions-mode) available. Otherwise, routed to the classifier when [auto mode](#eliminate-prompts-with-auto-mode) is available during planning, and prompted when it isn't |
+| `auto` | Routed to the classifier |
+| `dontAsk` | Denied |
+| `bypassPermissions` | Allowed |
+
+In a session started with [`--restricted`](https://code.claude.com/docs/en/cli-reference#cli-flags), which requires Claude Code v2.1.248 or later, the classifier can't approve protected-path writes.
+
+While [`permissions.blockWritesOutsideWorkingDirectories`](https://code.claude.com/docs/en/settings-reference#permissions-blockwritesoutsideworkingdirectories) is on, Claude Code refuses `Write`, `Edit`, and `NotebookEdit` writes to settings files in every permission mode.
+
+In the modes that route protected-path writes to the classifier, a write that the [symlink check](https://code.claude.com/docs/en/permissions.md#symlinks) resolves to a protected path prompts you instead when the path Claude requested isn't itself protected.
+
+[`permissions.allow`](https://code.claude.com/docs/en/permissions#manage-permissions) rules in settings files do not pre-approve protected-path writes. The safety check runs before Claude Code evaluates allow rules from settings, so an entry such as `Edit(.claude/**)` in `~/.claude/settings.json` or `.claude/settings.json` does not change the per-mode outcome in the table above. In permission modes that prompt, the prompt for a write to the project's `.claude/` folder or to `~/.claude/` can offer one of these session-scoped options:
+
+* For the project's `.claude/` folder: **Yes, and allow Claude to edit files in this project's .claude folder for this session**
+* For `~/.claude/`: **Yes, and allow Claude to edit files in its \~/.claude folder for this session**
+
+Protected directories:
+
+* `.git`
+* `.config/git`
+* `.vscode`
+* `.idea`
+* `.husky`
+* `.cargo`
+* `.devcontainer`
+* `.yarn`
+* `.mvn`
+* `.claude`, with a few exceptions, such as:
+  * Claude's own git worktrees under `.claude/worktrees/`
+  * The current session's own plan files in `~/.claude/plans/`, or in the [`plansDirectory`](https://code.claude.com/docs/en/settings-reference#plansdirectory) you set
+  * A [background session](https://code.claude.com/docs/en/agent-view.md#where-state-is-stored)'s own scratch directory at `~/.claude/jobs/<id>/tmp/`
+  * Markdown files in the project's [auto memory](https://code.claude.com/docs/en/memory.md#storage-location) directory, such as `~/.claude/projects/<project>/memory/`, in a session started without `--restricted`
+  * Markdown files in a [subagent memory](https://code.claude.com/docs/en/sub-agents.md#enable-persistent-memory) directory, such as `.claude/agent-memory/`, in a session started without `--restricted`
+* A directory you loaded with [`--plugin-dir`](https://code.claude.com/docs/en/plugins/mods/create#change-a-mod-with-claude), because Claude Code reloads and runs a mod's code from it when a file changes
+* `~/.claude/dev-mods/`, or `dev-mods/` in the directory [`CLAUDE_CONFIG_DIR`](https://code.claude.com/docs/en/env-vars) points to, where Claude saves the [mods it writes for you](https://code.claude.com/docs/en/plugins/mods/create.md#ask-claude-for-a-mod)
+
+Protected files:
+
+* `.gitconfig`, `.gitmodules`
+* `.bashrc`, `.bash_profile`, `.bash_login`, `.bash_aliases`, `.bash_logout`, `.zshrc`, `.zprofile`, `.zshenv`, `.zlogin`, `.zlogout`, `.profile`, `.envrc`
+* `.npmrc`, `.yarnrc`, `.yarnrc.yml`, `.pnp.cjs`, `.pnp.loader.mjs`, `.pnpmfile.cjs`, `bunfig.toml`, `.bunfig.toml`
+* `.bazelrc`, `.bazelversion`, `.bazeliskrc`
+* `.pre-commit-config.yaml`, `lefthook.yml`, `lefthook.yaml`, `.lefthook.yml`, `.lefthook.yaml`
+* `gradle-wrapper.properties`, `maven-wrapper.properties`
+* `.devcontainer.json`
+* `.ripgreprc`, `pyrightconfig.json`
+* `.mcp.json`, `.claude.json`
+* `remote-settings.json`, the stored copy of your organization's [server-managed settings](https://code.claude.com/docs/en/server-managed-settings.md), and the signature, sync, and consent files Claude Code keeps with it, in `~/.claude` or the directory [`CLAUDE_CONFIG_DIR`](https://code.claude.com/docs/en/env-vars) points to
+* A file you passed to [`--settings`](https://code.claude.com/docs/en/cli-reference#cli-flags), `--mcp-config`, or `--agents` when you started the session
+* The file that your user, project, or local [settings file](https://code.claude.com/docs/en/settings.md#settings-files-and-who-they-affect) points to when the settings file is itself a symbolic link, for example into a dotfiles repository. In the modes that route protected-path writes to the classifier, a write to this file prompts you instead, even when an allow rule matches. If the file's own path is also that of a settings file, such as `.claude/settings.json` in another folder, the write goes to the classifier as other protected-path writes do
+
+## Critical paths
+
+Critical paths are the directories Claude Code protects from `rm` and `rmdir` commands, such as the filesystem root, your home directory, and your working directory. Claude Code checks these commands before they run, and no [allow rule](https://code.claude.com/docs/en/permissions.md#manage-permissions) approves one whose target it recognizes as a critical path. The check can miss some commands, so it doesn't replace an operating-system control such as [sandboxing](https://code.claude.com/docs/en/sandboxing.md).
+
+A critical-path removal is an `rm` or `rmdir` command whose target Claude Code recognizes as a critical path. No [`PreToolUse` hook](https://code.claude.com/docs/en/permissions#extend-permissions-with-hooks) that returns `"allow"` approves one either. An allow rule or `PreToolUse` hook can't approve one even in the permission modes that skip other prompts.
+
+> [!WARNING]
+>
+> A command the check misses gets no special handling, so anything that approves Bash commands in your session can approve it with no prompt. That includes an allow rule, `bypassPermissions` mode, and the sandbox's [auto-allow mode](https://code.claude.com/docs/en/sandboxing.md#auto-allow-mode). The check applies to `rm` and `rmdir`, so other approved commands can delete critical paths too.
+
+These controls apply whether or not the check recognizes a command:
+
+* **Deny rules**: a [deny rule](https://code.claude.com/docs/en/permissions.md#manage-permissions) that matches the command blocks it, though a [mod](https://code.claude.com/docs/en/plugins/mods/overview.md) you installed can still approve [some of those calls](https://code.claude.com/docs/en/permissions.md#precedence-among-rules-hooks-and-mods)
+* **Sandboxing**: [sandboxing](https://code.claude.com/docs/en/sandboxing.md) has the operating system limit which paths Bash commands can write to. Sandboxed commands can still delete your working directory
+* **Strict sandbox mode**: by default a sandboxed command can be [retried outside the sandbox](https://code.claude.com/docs/en/sandboxing.md#the-unsandboxed-retry-escape-hatch), and an allow rule or `bypassPermissions` mode can approve that retry with no prompt. [Strict sandbox mode](https://code.claude.com/docs/en/sandboxing.md#turn-off-the-retry-with-strict-sandbox-mode) turns the retry off
+
+What happens to a removal that Claude Code recognizes [depends on your permission mode](#critical-path-removals-in-each-permission-mode). `Remove-Item` and the `cmd` removal built-ins have their own checks, covered in [Remove-Item in PowerShell](#remove-item-in-powershell).
+
+### Which paths are critical
+
+Claude Code treats an `rm` or `rmdir` target as a critical path when it is any of the following:
+
+* The filesystem root
+* Top-level directories, meaning any direct child of the root, such as `/usr`, `/etc`, or `/data`
+* Your home directory. On Windows, its 8.3 short name counts too, such as `C:\Users\LONGNA~1`
+* Windows drive roots and their top-level directories, such as `C:\` and `C:\Windows`. Spellings such as `\\?\C:\` and `\\localhost\C$` count as `C:\`
+* Your working directory and its parents
+* Your additional working directories and their parents, but only when the removal is a glob under one of them, such as `rm -rf <dir>/*`. `rm -rf <dir>` on the directory itself doesn't trigger this check
+
+For mounted drive paths such as `/mnt/c` or `/Volumes/USB`, see [The mounted drive prompt](#the-mounted-drive-prompt).
+
+The checks on the home directory's 8.3 short name and on the `\\?\C:\` and `\\localhost\C$` spellings require Claude Code v2.1.292 or later.
+
+### Other targets that count as critical paths
+
+Claude Code also treats the following `rm` and `rmdir` targets as critical paths. The last column says why each one counts.
+
+| Target | Example | Why it counts |
+| :- | :- | :- |
+| A glob or trailing slash directly under a shell variable | `rm -rf "$DIR"/*` | The command becomes a removal from the filesystem root when the variable is empty |
+| The same form under a positional parameter such as `$1` or `$@`, when nothing in the command gives it a value | `rm -rf "$1"/*` | The command expands to a removal from the root |
+| A shell variable followed by one common top-level directory name, such as `mnt`, `tmp`, `usr`, or `Users` | `rm -rf "$TMPDIR/mnt"` | When the variable expands empty, the command removes `/mnt` |
+| A variable that the same command assigns from a directory-printing substitution, such as `$(pwd)` or `$(git rev-parse --show-toplevel)` | `D=$(pwd); rm -rf "$D"` | The value can name your working directory or repository root |
+| A target that is only the output of a command substitution, when the `rm` is recursive | `rm -rf "$(pwd)"` | Claude Code can't check the target before the command runs |
+| A trailing command substitution after a critical path | `rm -rf ~/$(cmd)` | Claude Code checks the path that would remain if the substitution expanded empty, here your home directory |
+| A target that is only backslashes | `rm -rf "\\"` | Git Bash on Windows reads a lone backslash as the current drive's root, so the check applies on every platform |
+| A Windows path that names a volume by GUID instead of a drive letter | `rm -rf '\\?\Volume{GUID}\work\build'` | The path doesn't say which drive it's on, so it could be a critical path. Requires Claude Code v2.1.292 or later |
+| Some targets that end in `/*` or `/*/` | `rm -rf logs/*/*`, `rm -rf logs/*/`, `cd logs && rm -rf a/*` | Claude Code can't tell before the command runs which directories they reach |
+
+To turn off the check on a target that is only command substitution output, set [`CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT=1`](https://code.claude.com/docs/en/env-vars#variables) in the environment that launches Claude Code.
+
+### Removals inside nested commands and inline scripts
+
+Claude Code also looks inside these constructs:
+
+* **Nested commands**: a subshell with `(...)`, a brace group with `{ ...; }`, command substitution with `$(...)` or backticks, or process substitution with `<(...)`. Claude Code finds a critical-path removal whether it sits inside the nested form, as in `(rm -rf ~)` or `echo "$(rm -rf ~)"`, or elsewhere in the same command.
+* **Inline scripts**: a script passed to `sh`, `bash`, `zsh`, or a similar POSIX shell with `-c`, as in `bash -c 'rm -rf ~'`.
+  * When the script is double-quoted, the invoking shell expands its variables before the inner shell receives the script. In `find . -name '*.tmp' -exec sh -c "rm -rf \"$1\"/*" _ {} \;`, the command expands to a removal from the filesystem root once per match, and Claude Code treats it as a critical-path removal.
+  * A single-quoted script that binds `$1` to a real value, as `sh -c 'rm -rf "$1"/*' _ {}` does, isn't flagged.
+
+To turn off the check on a critical path typed directly in a `-c` script, such as `~`, set [`CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT=1`](https://code.claude.com/docs/en/env-vars#variables) in the environment that launches Claude Code.
+
+### Rewrite a flagged command
+
+How to rewrite a command so it passes the check depends on which of the [other targets](#other-targets-that-count-as-critical-paths) it uses:
+
+* **A glob or trailing slash under a variable such as `$DIR`**: guard each expansion so the shell stops with an error when the variable is unset or empty, as in `rm -rf "${DIR:?}"/*`, or use a literal path. A removal whose expansions are all guarded that way passes this check, so in `bypassPermissions` mode it runs without a prompt unless another [critical-path](#critical-paths) check flags it.
+* **A glob or trailing slash under a variable that is normally set, such as `$HOME`**: use a literal path.
+* **A variable assigned from a directory-printing substitution**: use a literal path. A `"${D:?}"` guard doesn't clear this check, because the variable isn't empty.
+* **A target that is only command substitution output**: run the substitution on its own first, then remove the literal paths it prints. The prompt tells Claude to do the same.
+
+For a glob or trailing slash under a variable, the prompt names the flagged `rm` and says how to rewrite it so the check passes.
+
+### The `Dangerous rm operation not ruled out` prompt
+
+The full reason reads:
+
+```text theme={null}
+Dangerous rm operation not ruled out — the shell may read this command differently than it was parsed
+```
+
+This reason means the shell may read the command differently than Claude Code did, so a removal could sit in an unchecked part, even with no `rm` present. In `auto` or `bypassPermissions` mode, a denial with this sentence comes from the same check:
+
+```text theme={null}
+This command could not be checked for dangerous rm operations: the shell may read it differently than it was parsed.
+```
+
+You get the prompt or denial a critical-path removal gets [in your permission mode](#critical-path-removals-in-each-permission-mode), `bypassPermissions` included, though you can [turn off that prompt](#turn-off-the-critical-path-removal-prompt-in-bypasspermissions-mode) in `bypassPermissions` mode. You can't approve the command with a `Bash` or `Bash(*)` allow rule, sandbox [auto-allow mode](https://code.claude.com/docs/en/sandboxing.md#auto-allow-mode), or a `PreToolUse` hook returning `"allow"`. Read the command, then approve the prompt or, after a denial, run it in your shell.
+
+### The mounted drive prompt
+
+The mounted drive prompt appears on macOS, Linux, and WSL when a recursive `rm` targets a listed [mounted drive path](#paths-that-get-the-mounted-drive-prompt), such as `/mnt/c` or `/Volumes/USB/build`. Its reason reads `Dangerous rm operation on mounted drive path: <path>`. A `/*` target gets the prompt without the recursive flag, since Claude Code reads `rm /Volumes/USB/build/*` as a removal of `/Volumes/USB/build`.
+
+Even with an allow rule for `rm`, Claude Code handles the command as a [critical-path removal](#critical-paths): a prompt or a denial [depending on your permission mode](#critical-path-removals-in-each-permission-mode). Approve the prompt to let the `rm` run, or [turn the prompt off](#turn-off-the-mounted-drive-prompt).
+
+#### Paths that get the mounted drive prompt
+
+Match the target of your recursive `rm` or `/*` removal against these path shapes, where each placeholder such as `<drive>` or `<name>` stands for exactly one path segment:
+
+| Under | Path shapes that get the prompt | Examples |
+| :- | :- | :- |
+| `/Volumes` | `/Volumes/<drive>`, `/Volumes/<drive>/<name>` | `/Volumes/USB`, `/Volumes/USB/build` |
+| `/System/Volumes` | `/System/Volumes`, `/System/Volumes/<volume>`, `/System/Volumes/<volume>/<name>` | `/System/Volumes/Data` |
+| `/media` | `/media/<user>`, `/media/<user>/<drive>`, `/media/<user>/<drive>/<name>` | `/media/alex` |
+| `/run/media` | `/run/media`, `/run/media/<user>`, `/run/media/<user>/<drive>`, `/run/media/<user>/<drive>/<name>` | `/run/media/alex/USB/build` |
+| `/mnt` | `/mnt/<name>`, and `/mnt/<letter>/<name>` under a one-letter mount such as WSL's `/mnt/c` | `/mnt/data`, `/mnt/c/Users` |
+
+For a recursive or non-recursive `rm` on `/Volumes`, `/media`, or `/mnt` itself, you see the [critical path](#which-paths-are-critical) reason `Dangerous rm operation on critical path: <path>` instead.
+
+A relative target counts from your working directory, so `rm -rf build` while you work in `/Volumes/USB` targets `/Volumes/USB/build` and gets the prompt.
+
+#### Turn off the mounted drive prompt
+
+To stop getting the mounted drive prompt while [prompts from other causes](#removals-that-still-prompt-with-the-mounted-drive-prompt-off) stay, start Claude Code with [`CLAUDE_CODE_DISABLE_MOUNTED_DRIVE_RM_PROMPT=1`](https://code.claude.com/docs/en/env-vars#variables) in its environment. For example, set the variable in [your shell](https://code.claude.com/docs/en/env-vars.md#set-variables-in-your-shell) and start `claude` from it:
+
+```bash theme={null}
+export CLAUDE_CODE_DISABLE_MOUNTED_DRIVE_RM_PROMPT=1
+claude
+```
+
+In a session started that way, the mounted drive prompt stops for a whole drive such as `/Volumes/USB` and for the other [listed paths](#paths-that-get-the-mounted-drive-prompt). If you allow `Bash(rm *)`, use Manual mode, and work in `/Volumes/USB`, then `rm -rf build` runs with no prompt.
+
+A prompt that still shows `Dangerous rm operation on mounted drive path` means the variable isn't reaching the session:
+
+* **Variable in a settings file**: Claude Code [ignores the variable in a settings file's `env` block](https://code.claude.com/docs/en/settings-reference#variables-claude-code-ignores-in-env), whichever kind of settings file, so set the variable where you start `claude` instead
+* **Session started without the variable**: start `claude` again from an environment where the variable is set, since a running session doesn't pick it up
+
+#### Removals that still prompt with the mounted drive prompt off
+
+In Manual mode with an allow rule for `rm`, an `rm` on a mounted drive path can still prompt, without the `Dangerous rm operation on mounted drive path` reason:
+
+* **Target outside your working directories**: `rm -rf /Volumes/USB/other` while you work in `/Volumes/USB/project` gets a prompt. To stop that prompt, [add a directory that contains the target](https://code.claude.com/docs/en/permissions.md#working-directories) to the session
+* **Target with a `*`**: `rm -rf build/*` gets a prompt. Approve that prompt to run the command, or ask Claude to name each target without a `*`
+* **Target that is a critical path**: `/mnt` itself and your working directory itself stay [critical paths](#which-paths-are-critical), so `rm -rf` on either gets a prompt. Approve that prompt to let the `rm` run
+
+### Critical-path removals in each permission mode
+
+What Claude Code does with a critical-path removal depends on your permission mode:
+
+| Mode | Outcome |
+| :- | :- |
+| `default`, `acceptEdits` | Asks you to approve it |
+| `plan` | Asks you to approve it. When [the classifier reviews commands during planning](#analyze-before-you-edit-with-plan-mode) and no bypass permissions are available, handles it as in `auto` mode |
+| `auto` | Asks you to approve it in the terminal, with a [time limit](#time-limits-and-denials-in-auto-and-bypasspermissions-modes). Elsewhere, denies it |
+| `dontAsk` | Denies it |
+| `bypassPermissions` | In the terminal, asks you to approve it before a time limit runs out. Elsewhere, see [what happens in each place](#time-limits-and-denials-in-auto-and-bypasspermissions-modes) |
+
+If an explicit [ask rule](https://code.claude.com/docs/en/permissions.md#manage-permissions) matches the command, Claude Code asks you instead, even in `auto` mode and without a time limit. In modes that ask, a [`PermissionRequest` hook](https://code.claude.com/docs/en/hooks#permissionrequest) can answer the prompt.
+
+To run these removals with no prompt in `bypassPermissions` mode, see [Turn off the critical-path removal prompt](#turn-off-the-critical-path-removal-prompt-in-bypasspermissions-mode).
+
+### Time limits and denials in auto and bypassPermissions modes
+
+In `auto` and `bypassPermissions` modes, the terminal prompt for a critical-path removal shows a two-minute countdown:
+
+* If the countdown runs out before you answer, Claude Code denies the command and tells Claude what to do instead, so an unattended session keeps working.
+* Press any key while the prompt is open to stop the countdown and keep the prompt waiting for your answer.
+* After three of these prompts run out unanswered in a session, Claude Code stops showing them and denies further critical-path removals immediately. Sending a new message starts the count over.
+
+The time limit applies in Claude Code v2.1.281 and later, and so does the `auto` mode denial outside the terminal.
+
+Away from the terminal, you don't get that prompt:
+
+| Where | `auto` | `bypassPermissions` |
+| :- | :- | :- |
+| [VS Code extension](https://code.claude.com/docs/en/vs-code.md)'s chat panel | Denies it | Denies it unless a [`PermissionRequest` hook](https://code.claude.com/docs/en/hooks#permissionrequest) allows it |
+| [Desktop app](https://code.claude.com/docs/en/desktop.md) | Denies it | Denies it unless a `PermissionRequest` hook allows it |
+| [`-p` run](https://code.claude.com/docs/en/headless) or [Agent SDK session](https://code.claude.com/docs/en/agent-sdk/permissions.md) | Denies it | Your [`--permission-prompt-tool`](https://code.claude.com/docs/en/cli-reference#cli-flags) or [`canUseTool` callback](https://code.claude.com/docs/en/agent-sdk/user-input#handle-tool-approval-requests) decides. With neither, or under [`--permission-prompts none`](https://code.claude.com/docs/en/headless#turn-off-permission-prompts-in-unattended-runs), denies it unless a `PermissionRequest` hook allows it. To run these removals with no prompt instead, see [Turn off the critical-path removal prompt](#turn-off-the-critical-path-removal-prompt-in-bypasspermissions-mode) |
+
+Wherever the removal is denied, you can read the whole command and run it in your shell.
+
+To change what you get in each mode, set [`CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT`](https://code.claude.com/docs/en/env-vars#variables) to `1`:
+
+* **`bypassPermissions`**: the terminal prompt has no time limit, and the VS Code chat panel asks you
+* **`auto`**: the [classifier](#eliminate-prompts-with-auto-mode) decides, in the terminal, the VS Code chat panel, `-p` runs and Agent SDK sessions
+
+Set it in the environment that starts Claude Code, such as your shell or the SDK's `env` option, not in a Claude Code settings file. For the chat panel, add it to [`claudeCode.environmentVariables`](https://code.claude.com/docs/en/vs-code#extension-settings) in VS Code's own user `settings.json`, then start a new conversation:
+
+```json theme={null}
+{
+  "claudeCode.environmentVariables": [
+    { "name": "CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT", "value": "1" }
+  ]
+}
+```
+
+### Turn off the critical-path removal prompt in bypassPermissions mode
+
+To run Bash `rm` and `rmdir` commands that target [critical paths](#critical-paths) with no prompt in `bypassPermissions` mode, start Claude Code with [`CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS=1`](https://code.claude.com/docs/en/env-vars#variables) in its environment. This requires Claude Code v2.1.311 or later. Claude Code reads the variable from the launch environment only and [ignores it in a settings file's `env` block](https://code.claude.com/docs/en/settings-reference#variables-claude-code-ignores-in-env). For example, set it in [your shell](https://code.claude.com/docs/en/env-vars.md#set-variables-in-your-shell) and start `claude` from there:
+
+> [tab] macOS, Linux, WSL
+>
+> ```bash theme={null}
+> export CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS=1
+> claude --permission-mode bypassPermissions
+> ```
+
+> [tab] Windows PowerShell
+>
+> ```powershell theme={null}
+> $env:CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS = "1"
+> claude --permission-mode bypassPermissions
+> ```
+
+> [tab] Windows CMD
+>
+> ```batch theme={null}
+> set CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS=1
+> claude --permission-mode bypassPermissions
+> ```
+
+> [!WARNING]
+>
+> With this variable set, you lose a safety prompt for destructive deletes: a command such as `rm -rf ~` can run without asking you. Set it only in an [isolated environment](#skip-all-checks-with-bypasspermissions-mode) whose contents you can afford to lose.
+
+Removals run with no prompt only in `bypassPermissions` mode itself, not in plan mode, and only for what the critical-path check flags in the Bash and [Monitor](https://code.claude.com/docs/en/tools-reference.md#monitor-tool) tools. That includes commands Claude Code can't fully parse, which also run with no prompt.
+
+#### Startup notices about the critical-path removal prompt
+
+To check whether `CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS` is working, read the line Claude Code prints at startup. In a `-p` run, it's on stderr. In an Agent SDK app, pass the [`stderr` option](https://code.claude.com/docs/en/agent-sdk/typescript#options) to read it. The line says one of these:
+
+* **`is set, so dangerous rm commands can run without a prompt`**: removals can run with no prompt once managed settings and plugin hooks have loaded. If removals keep getting a prompt or denial, see [Why the critical-path removal prompt stays on](#why-the-critical-path-removal-prompt-stays-on)
+* **`has no effect in this session`**: removals keep their usual prompt or denial for the whole session. To change that, find your case under [Why the critical-path removal prompt stays on](#why-the-critical-path-removal-prompt-stays-on)
+* **`has no effect while the Windows registry cannot be read for managed settings`**: removals keep their usual prompt or denial, and the variable takes effect with no restart if a later read of the registry succeeds. If removals keep getting a prompt or denial, see [Why the critical-path removal prompt stays on](#why-the-critical-path-removal-prompt-stays-on)
+
+A missing line doesn't mean the prompt is on: an Agent SDK app with no `stderr` option sees no line, and removals can still run with no prompt. Otherwise, check that you set the variable in the launch environment, that the session [can enter `bypassPermissions` mode](#skip-all-checks-with-bypasspermissions-mode), and that `claude` isn't inside another session. Some sessions [start without the variable](#why-the-critical-path-removal-prompt-stays-on).
+
+If you see one of these lines and didn't set the variable, find where it's set, such as your shell profile, and remove it.
+
+#### Why the critical-path removal prompt stays on
+
+If `CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS` has no effect and removals keep their [usual prompt or denial](#critical-path-removals-in-each-permission-mode), check for causes such as these:
+
+* **Something else handles permission prompts**: a [`--permission-prompt-tool`](https://code.claude.com/docs/en/cli-reference#cli-flags) or an Agent SDK [`canUseTool` callback](https://code.claude.com/docs/en/agent-sdk/user-input) without [`--permission-prompts none`](https://code.claude.com/docs/en/headless#turn-off-permission-prompts-in-unattended-runs), a [`PermissionRequest` hook](https://code.claude.com/docs/en/hooks#permissionrequest) with any matcher, or a [mod](https://code.claude.com/docs/en/plugins/mods/events.md#hook-the-settings-hook-events) that handles that event. Remove the hook, mod, tool, or callback and restart `claude`
+* **The [VS Code extension](https://code.claude.com/docs/en/vs-code.md)'s chat panel or the [Desktop app](https://code.claude.com/docs/en/desktop.md) runs the session**: start `claude` in a terminal instead, such as an IDE's integrated terminal
+* **A rule covers Bash, Edit, or Read**: a [deny or ask rule](https://code.claude.com/docs/en/permissions.md#manage-permissions) that targets one of these tools, at launch or once Claude Code reads it during the session, even if you remove it later. Remove the rule and restart `claude`. To leave a tool out, use [`--tools`](https://code.claude.com/docs/en/cli-reference#cli-flags) instead of a deny rule
+* **[`permissions.blockReadsOutsideWorkingDirectories`](https://code.claude.com/docs/en/settings-reference#permissions-blockreadsoutsideworkingdirectories) is on**: remove the setting from every settings file that sets it to `true`, then restart `claude`
+* **`claude` runs inside another session**: a `claude` started from a session's Bash tool or a hook, even with the variable on its command line. Start `claude` from your own shell. Don't rely on this nested-session limit as a security boundary
+* **A `PreToolUse` hook answers `ask` for a removal**: change what the hook returns
+* **Claude Code starts the session for you**: [background sessions](https://code.claude.com/docs/en/agent-view.md), [agent team](https://code.claude.com/docs/en/agent-teams.md) teammates in split panes, and sessions a [Remote Control](https://code.claude.com/docs/en/remote-control.md) server creates start without the variable. Start `claude` from your own shell
+* **Managed settings can't be read**: Claude Code hasn't successfully read your [managed settings](https://code.claude.com/docs/en/managed-settings.md) sources. If server-managed settings keep failing to load, see [Remote managed settings failed to load](https://code.claude.com/docs/en/errors.md#remote-managed-settings-failed-to-load). For any other failure that isn't a registry query, ask whoever manages that source to fix it
+* **The Windows registry can't be queried**: on Windows and in WSL, the variable needs an answer from the registry, even when [WSL doesn't use it for settings](https://code.claude.com/docs/en/settings-reference.md#wslinheritswindowssettings). The query can fail all session on a non-English Windows, in WSL with interop off, or in a container on a WSL2 kernel. If interop is off, turn it on. Otherwise, run those removals yourself
+
+### Remove-Item in PowerShell
+
+When you enable the [PowerShell tool](https://code.claude.com/docs/en/tools-reference.md#powershell-tool), Claude Code gives `Remove-Item` and the `cmd` built-ins `rd`, `rmdir`, `del`, and `erase` their own checks, separate from the `rm` critical-path list. For `Remove-Item`, the outcome depends on the target, and the first matching case applies:
+
+* **System paths**: the filesystem root and its top-level directories, drive roots and their top-level directories, and your home directory. Claude Code denies the command in every mode, without asking you.
+* **Wildcards**: a bare `*`, or any target ending in `/*` or `\*`, including a glob under a shell variable such as `$dir/*`. Claude Code denies the command in every mode, without asking you, before the [classifier](#eliminate-prompts-with-auto-mode) sees it.
+* **Your working directory or one of its parents, with `-Recurse`**: Claude Code treats the command like any other that needs approval in your permission mode, so it asks you in modes that ask, sends it to the classifier in `auto` mode, and denies it in `dontAsk` mode. `bypassPermissions` mode skips this check.
+
+The system-paths case also applies to `rd`, `rmdir`, `del`, and `erase` when Claude runs them through `cmd`, as in `cmd /c rd /s /q C:\Users`. By default, Claude Code denies such a command in every mode, without asking you. This `cmd` check requires Claude Code v2.1.283 or later.
+
+When judging a `cmd` target, Claude Code treats a PowerShell variable that follows literal text as empty. That makes `cmd /c rd /s /q "C:\$name"` a removal of `C:\`, so it is denied too. A trailing wildcard counts as the folder it empties, so `cmd /c del /q C:\*` is denied and `cmd /c del /q dist\*` in your project is not.
+
+To turn the `cmd` check off, set [`CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY=1`](https://code.claude.com/docs/en/env-vars#variables) in the environment that launches Claude Code. Claude Code ignores this variable in a settings file's `env` block. `Remove-Item` on a system path stays denied either way.
+
+## See also
+
+* [Permissions](https://code.claude.com/docs/en/permissions.md): allow, ask, and deny rules; managed policies
+* [Configure auto mode](https://code.claude.com/docs/en/auto-mode-config.md): tell the classifier which infrastructure your organization trusts
+* [Hooks](https://code.claude.com/docs/en/hooks.md): custom permission logic via `PreToolUse` and `PermissionRequest` hooks
+* [Security](https://code.claude.com/docs/en/security.md): safeguards and best practices
+* [Sandboxing](https://code.claude.com/docs/en/sandboxing.md): filesystem and network isolation for Bash commands
+* [Non-interactive mode](https://code.claude.com/docs/en/headless.md): run Claude Code with the `-p` flag

@@ -5,37 +5,34 @@ description: Local OpenRouter documentation reference (latest). OpenRouter API d
 
 # OpenRouter Documentation
 
-OpenRouter provides a unified API giving access to hundreds of AI models through a single endpoint at `https://openrouter.ai/api/v1`. It normalizes request/response schemas across all providers (OpenAI-compatible), handles model fallbacks, provider routing, and supports advanced features like tool calling, structured outputs, streaming, and observability integrations.
+OpenRouter provides a unified, OpenAI-compatible API (`https://openrouter.ai/api/v1`) to hundreds of models, with model routing, fallbacks, provider selection, tool calling, structured outputs, streaming, guardrails, and observability.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started | `contents/quickstart.mdx` |
-| API request/response schema | `contents/api-reference/overview.mdx` |
-| Request parameters | `contents/api-reference/parameters.mdx` |
-| Authentication | `contents/api-reference/authentication.mdx` |
-| Model routing & fallbacks | `contents/routing/` |
-| Tool calling | `contents/features/tool-calling.mdx` |
-| Structured outputs | `contents/features/structured-outputs.mdx` |
-| TypeScript SDK | `contents/sdks/typescript/` |
-| Python SDK | `contents/sdks/python/overview.mdx` |
-| Error handling | `contents/api-reference/errors-and-debugging.mdx` |
+| Getting started | `contents/getting-started/quickstart.md` |
+| API overview and schema | `contents/api-guides/overview.md` |
+| Chat completions endpoint | `contents/api-reference/chat-create-a-chat-completion.md` |
+| Request parameters | `contents/api-guides/parameters.md` |
+| Provider routing and fallbacks | `contents/routing/provider-selection.md` |
+| Tool calling | `contents/tool-calling/tool-calling.md` |
+| Structured outputs | `contents/features/structured-outputs.md` |
+| OAuth PKCE | `contents/authentication/oauth.md` |
+| Agent SDK (callModel) | `contents/agent-sdk/overview.md` |
+| TypeScript SDK | `contents/client-sdks/typescript-overview.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Making API calls to OpenRouter (`/api/v1/chat/completions`, `/api/v1/models`)
-- Model selection, routing, fallbacks, and provider preferences
-- Tool calling, function calling, structured JSON outputs
-- Streaming responses (SSE), embeddings
-- Authentication (API keys, OAuth, BYOK)
-- SDK usage (`@openrouter/sdk` TypeScript, `openrouter` Python)
-- Observability and broadcast integrations (Langfuse, LangSmith, Datadog, etc.)
-- Rate limits, pricing, usage accounting
-- Multimodal inputs (images, audio, video, PDFs)
-- Content guardrails, zero data retention (ZDR)
-- Coding agent integrations (Claude Code, MCP servers, Codex)
+- Calling OpenRouter (chat completions, Responses API, Anthropic Messages, embeddings, models endpoints)
+- Model selection, routing, variants (:free, :nitro, :exacto), fallbacks, and provider preferences
+- Tool calling, server tools (web search, web fetch), plugins, structured JSON outputs, streaming
+- Authentication (API keys, OAuth PKCE, management keys, BYOK, SSO), guardrails, privacy and ZDR
+- Observability and Broadcast integrations (Langfuse, LangSmith, Datadog, etc.)
+- Agent SDK, TypeScript/Python/Go client SDKs
+- Multimodal inputs and generation (images, audio, video, PDFs)
+- Coding agent integrations (Claude Code, Codex CLI, OpenCode, MCP servers)
 
 ## How to find information
 

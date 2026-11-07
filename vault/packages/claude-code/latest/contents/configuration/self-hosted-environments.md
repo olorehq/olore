@@ -1,0 +1,150 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Self-hosted environments
+
+> Run Claude Code cloud sessions on infrastructure you control: set up a self-hosted environment, deploy runners, and route sessions to your own compute.
+
+> [!NOTE]
+>
+> Self-hosted environments are in public beta on Team and Enterprise plans and are off by default. See [Availability and limitations](#availability-and-limitations) for the enablement path and what's excluded.
+
+A self-hosted environment executes Claude Code cloud sessions on infrastructure your organization operates. A [cloud session](https://code.claude.com/docs/en/claude-code-on-the-web.md) is any session that runs somewhere other than the developer's machine. Developers start them from claude.ai, the mobile and desktop apps, the terminal with [`claude --cloud`](https://code.claude.com/docs/en/claude-code-on-the-web#from-terminal-to-cloud), and [cloud scheduled tasks](https://code.claude.com/docs/en/routines.md). By default, cloud sessions execute on Anthropic's infrastructure.
+
+In a self-hosted environment, those same sessions execute inside your network. The developer experience is otherwise the same apart from the differences in [Availability and limitations](#availability-and-limitations) and the deploy page's [known issues](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#known-issues-and-limitations).
+
+* If your team doesn't use cloud sessions, there's nothing here to configure: sessions in a terminal or IDE always run on the developer's own machine
+* To run Claude Code on your own always-on machine and drive it from other devices, use [Remote Control](https://code.claude.com/docs/en/remote-control.md), which is also available on Pro, Max, and Ultra plans
+* When you're ready to set up, go straight to the [quickstart](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md); to review the security posture first, start with [Deploy to production](https://code.claude.com/docs/en/self-hosted-environments-deploy.md)
+
+To learn how self-hosting works and when to choose it, read [How self-hosted environments work](#how-self-hosted-environments-work) and [Why self-host](#why-self-host).
+
+## How self-hosted environments work
+
+Self-hosting has three parts:
+
+* **Environment**: a named destination that cloud sessions can be sent to. Your organization creates environments in claude.ai admin settings, and each one groups a set of runners.
+* **Runner**: a program running on hosts inside your network. Runners execute the sessions; the idea is the same as a self-hosted CI runner.
+* **Session**: one Claude Code task a developer started.
+
+When a developer starts a cloud session, the session-start UI shows an environment picker listing Anthropic-hosted environments alongside any your organization has created. If they choose yours, Anthropic's control plane places the session on your environment's queue, where a runner claims it, clones the repository the developer chose, and starts a Claude Code process on your host to run it. The runner authenticates to your git host with credentials you configure; [Configure git](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#configure-git) covers the options. Sessions reach your internal services from inside your network, and your git host the same way when it's internal; the traffic to Anthropic, queue polling, the session's event stream, and by default model inference, is outbound HTTPS to `api.anthropic.com`, with the short list of further hosts sessions can reach in [Network requirements](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#network-requirements). Anthropic never connects into your network.
+
+![Architecture diagram of a self-hosted environment: your network boundary contains a runner, two Claude Code session processes inside it, and your git host, with api.anthropic.com outside holding queue, session stream, and inference. The runner polls the queue and reaches the git host, each session process opens its own stream, inference, and git connections, and every connection is outbound from your network, with none inbound.](https://mintcdn.com/claude-code/Y0sJ2uDoOVbOVZrQ/images/self-hosted-network-paths.svg?fit=max\&auto=format\&n=Y0sJ2uDoOVbOVZrQ\&q=85\&s=8056103fc1c5564c7f0ef219d260b99d)
+
+The two Claude Code boxes in the diagram are session processes: one runner executing two sessions at once, up to its configured capacity. A runner serves one [owner](#key-concepts) at a time and locks to that owner when it claims its first session, so checked-out code never mixes between owners; [Runner lifecycle](#runner-lifecycle) covers the rule.
+
+You can start runners yourself and keep them running, or run the [autoscaling orchestrator](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners), a second process you host, which starts runners as sessions queue. Either way, you set the environment up once, and it appears in the picker on every supported surface.
+
+## Availability and limitations
+
+Check these before planning a rollout:
+
+* **Plans**: public beta for Team and Enterprise organizations. Self-hosted environments are off by default; an [Owner](https://code.claude.com/docs/en/cloud-environments.md#organization-shared-environments) turns on **Allow self-hosted environments** on the [**Cloud environments** admin page](https://claude.ai/admin-settings/cloud-environments), which requires [cloud sessions](https://code.claude.com/docs/en/claude-code-on-the-web.md) to be enabled for the organization.
+* **Zero Data Retention and HIPAA**: unavailable for organizations with [Zero Data Retention](https://code.claude.com/docs/en/zero-data-retention.md) enabled or with the [HIPAA configuration](https://code.claude.com/docs/en/hipaa-setup.md) applied.
+* **Model inference**: sessions use the Anthropic API unless you configure a runner to [send model requests to Amazon Bedrock or Google Cloud's Agent Platform](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#send-model-requests-to-bedrock-or-agent-platform). Session content goes to Anthropic in both cases. On a runner configured this way, [server-managed settings](https://code.claude.com/docs/en/server-managed-settings.md) and organization policies from claude.ai don't reach sessions.
+* **Surfaces**: sessions started from [claude.ai/code](https://claude.ai/code), the mobile and desktop apps, [cloud scheduled tasks](https://code.claude.com/docs/en/routines.md), and the terminal, with [`claude --cloud`](https://code.claude.com/docs/en/claude-code-on-the-web#from-terminal-to-cloud) or an [`--environment` dispatch](https://code.claude.com/docs/en/self-hosted-environments-testing#run-the-test-loop), can run in self-hosted environments. [Claude Tag](https://claude.com/docs/claude-tag/overview) sessions can run in them too, but Claude can't use [Access bundles](https://claude.com/docs/claude-tag/concepts/glossary#access-bundle) in those sessions yet. [Claude Security](https://code.claude.com/docs/en/claude-security.md) and [Code Review](https://code.claude.com/docs/en/code-review.md) sessions don't route to them yet. Support for those two surfaces follows separately.
+* **Repositories**: sessions check out repositories from GitHub or GitHub Enterprise Server. Sessions started with an `--environment` dispatch can also use another git host:
+  * **GitHub**: see [GitHub authentication options](https://code.claude.com/docs/en/claude-code-on-the-web.md#github-authentication-options).
+  * **GitHub Enterprise Server**: see its [network requirements](https://code.claude.com/docs/en/github-enterprise-server.md#network-requirements).
+  * **Another git host**: see the [requirements for starting a session with `--environment`](https://code.claude.com/docs/en/self-hosted-environments-deploy#start-a-session-on-a-repository-outside-github).
+* **Billing**: sessions in a self-hosted environment consume your organization's Claude Code usage the same way sessions in Anthropic-hosted environments do.
+
+## Why self-host
+
+Most teams are better served by Anthropic-hosted environments, which need no infrastructure to run or maintain. Self-hosting is for teams whose network, tooling, or compliance requirements call for keeping session execution on infrastructure they control. If that's you, plan for the operational ownership it carries: you build and maintain the runner image, operate the fleet, and control its network.
+
+In exchange, self-hosting gives you network access, custom tooling, and compliance control:
+
+* **Network access**: sessions run inside your network and can reach internal services, databases, and registries without exposing them to the public internet
+* **Custom tooling**: pre-install compilers, SDKs, and internal CLIs in your runner image so every session starts ready to build
+* **Compliance**: repository checkouts and build artifacts stay on infrastructure you control. Session content still goes to `api.anthropic.com`.
+
+## Environments, runners, and sessions
+
+Environments are managed on the **Cloud environments** page in claude.ai admin settings; runners are processes you start and manage on your own infrastructure.
+
+### Key concepts
+
+These terms appear throughout the self-hosted pages:
+
+| Term | What it is |
+| :- | :- |
+| Environment | A named group of your runners, created in claude.ai settings. Sessions are routed to an environment, not to an individual runner. |
+| Environment secret | The single shared credential runners use to authenticate and register with the environment. Shown once at environment creation, labeled **environment key** in the admin UI. |
+| Runner | The long-lived process you deploy. A runner registers with the environment, receives a runner token, and polls for sessions. |
+| Session | One Claude Code task, started from claude.ai, the mobile app, or another Anthropic surface such as a scheduled task or an agent. Each session runs as a child Claude Code process the runner spawns. |
+
+In API fields, token claims, and metric names, the environment appears as `pool`, and the environment ID is the `pool_id`. The [reference](https://code.claude.com/docs/en/self-hosted-environments-reference.md) maps the two spellings, including the deprecated `pool` flag names.
+
+A runner serves one owner at a time. The first session a runner picks up locks the runner to that session's owner, and the runner then runs sessions only for that owner, up to a configured capacity. Who the owner is depends on how the session started:
+
+* **Sessions a user starts**: the owner is that user's account.
+* **Claude Tag channel sessions**: Claude runs them with no user account attached, so the owner is the [Claude Tag agent](https://claude.com/docs/claude-tag/concepts/glossary#agent-identity) that started the session. Every channel session that agent starts has the same owner, whoever sent the Slack message, so a runner locked to it serves sessions that different people started when you run it at a `--capacity` above one or with a positive `--drain-grace-sec`.
+
+The minimum fleet size is therefore the number of owners you expect to be active at once, counting users and Claude Tag agents.
+
+### Session lifecycle
+
+When a developer starts a session and selects your environment, Anthropic's control plane places the session on the environment's queue. From there:
+
+1. A runner with free capacity claims the session and holds a lease on it.
+2. The runner clones the repository into its working directory and spawns a child Claude Code process.
+3. The child streams events back over HTTPS while the runner keeps polling; each poll refreshes the lease and doubles as the heartbeat.
+4. If the runner stops polling, its lease lapses after about 60 seconds. The server can then take a few minutes and sometimes longer to requeue the session for another runner.
+
+The runner gives each poll request 10 seconds. When a request times out, is lost, or gets a response the runner can't parse, the runner keeps serving its live sessions and retries after a second or two instead of waiting for the next scheduled poll. For example, an intercepting proxy that answers the poll with its own page produces a response the runner can't parse. Each time another request fails in one of those ways, the runner doubles the gap before the next retry, up to 20 seconds, and shortens the gap whenever the lease is close to expiring.
+
+### Runner lifecycle
+
+The first session a runner picks up locks the runner to that session's owner, and the runner runs up to `--capacity` concurrent sessions for that owner. While the runner has active sessions and hasn't received a shutdown signal or reached its retire time, the runner keeps claiming the locked owner's queued work. What happens once they finish depends on [`--drain-grace-sec`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags):
+
+* **At the default of `0`**: the runner exits as soon as its active sessions finish, without polling for more, so the orchestrator you deploy it under, such as Kubernetes, can restart it with a fresh disk, ready to serve any owner.
+* **At a positive value**: the runner keeps polling the locked owner's queue for that many seconds before exiting.
+
+This lifecycle isolates each owner's checked-out code without requiring the runner to delete disk state between owners.
+
+How your infrastructure stops a runner decides whether you need `--retire-at`. A kill that delivers `SIGTERM` needs no flag: the runner drains as [Shutdown timing](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#shutdown-timing) describes, or keeps serving the sessions it already holds when you set [`--defer-shutdown-max-min`](https://code.claude.com/docs/en/self-hosted-environments-deploy#defer-the-drain-past-the-first-signal). If your infrastructure instead destroys hosts at a known wall-clock time without a signal, or with a grace period too short to drain, such as a sandbox lifetime cap or spot-instance reclamation, pass `--retire-at <epoch-seconds>` set to a few minutes before that time. At the retire time:
+
+1. The runner stops taking new work.
+2. The runner releases each active session through the same release path the [`--release-idle-session-min`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) flag uses, so the session resumes on a fresh runner when the user sends their next message. When the runner releases each session depends on its state:
+   * The runner releases a session that's mid-turn after that turn finishes. It first waits for the session's process to report the turn's end to Anthropic, for no longer than [`SELF_HOSTED_RUNNER_POST_TURN_SETTLE_MS`](https://code.claude.com/docs/en/self-hosted-environments-reference#environment-variable-only-settings). Before v2.1.280, the runner released the session as soon as the turn finished.
+   * When a turn finishes and leaves background tasks running, the runner waits up to 60 seconds for them, then releases the session even if they're still running. If the tasks have finished but the follow-up turn that reads their results hasn't run yet, the runner keeps the session until that turn finishes, and waits no longer than [`SELF_HOSTED_RUNNER_BG_RESULT_GRACE_MS`](https://code.claude.com/docs/en/self-hosted-environments-reference#environment-variable-only-settings) for that turn to start.
+3. The runner exits 0 once all its sessions are released.
+
+A turn that outlives the kill is still lost; [Shutdown timing](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#shutdown-timing) covers sizing the margin. Without `--retire-at`, a signal-less host kill is indistinguishable from a crash: the control plane records a lost worker rather than a clean release, and the session requeues to another runner.
+
+### Network paths
+
+The runner and its sessions make several kinds of outbound connection, and no inbound connectivity from Anthropic is required:
+
+* **Control plane**: the runner polls `api.anthropic.com` for work and posts setup-progress and failure events, all outbound HTTPS. Polling doubles as the runner's heartbeat.
+* **Git**: the runner clones from and pushes to your git host over HTTPS or SSH, authenticated with credentials your deployment provides. See [Configure git](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#configure-git) for the options, including per-session minted credentials. With the [Anthropic git proxy](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#use-the-anthropic-git-proxy), git traffic for repositories on github.com goes through `api.anthropic.com` instead.
+* **Session child**: the child Claude Code process holds the session's event stream to `api.anthropic.com`, and makes its own outbound calls for model inference and for git commands run during the session. In a session that uses [Anthropic-managed git](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#use-the-anthropic-git-proxy), the child opens a WebSocket connection to `api.anthropic.com` that carries github.com traffic from `git` and `gh`.
+* **SCM connector**: the optional orchestrator [SCM connector](https://code.claude.com/docs/en/self-hosted-environments-reference.md#scm-connector-flags) isn't available, so its tunnel doesn't open. The tunnel is a WebSocket connection to `api.anthropic.com`.
+
+See [Network requirements](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#network-requirements) for the full egress list. The [diagram above](#how-self-hosted-environments-work) shows these paths, apart from the optional SCM connector and the Anthropic-managed git connection.
+
+By default, model inference uses the Anthropic API. The control plane delivers the API endpoint to each session, and the session authenticates with an Anthropic-issued, session-scoped OAuth token. To send model requests to your own cloud account instead, see [Send model requests to Bedrock or Agent Platform](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#send-model-requests-to-bedrock-or-agent-platform).
+
+Corporate egress proxies are supported. The runner and the optional [autoscaling orchestrator](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners) honor the proxy and mTLS environment variables described in [Network configuration](https://code.claude.com/docs/en/network-config.md), such as `HTTPS_PROXY` and `NO_PROXY`; set them in each process's environment. The variables cover control-plane calls, the orchestrator's [SCM connector](https://code.claude.com/docs/en/self-hosted-environments-reference.md#scm-connector-flags) WebSocket, and the built-in clone for HTTPS remotes, and sessions inherit them from the runner. Session streaming uses server-sent events over HTTPS, so a proxy in the path must not buffer responses.
+
+* **Proxy authentication**: if your proxy also requires a `Proxy-Authorization` header, the runner can add it to each connection it opens to the proxy; see [Authenticate to an egress proxy](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#authenticate-to-an-egress-proxy).
+* **Long-lived responses**: if a runner picks up a session but Claude never answers its first message, your proxy may be the cause. See [A session is picked up, but Claude never answers its first message](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#when-a-sessions-first-message-is-never-answered).
+
+## What stays on your infrastructure
+
+Repository checkouts, build artifacts, secrets, and any files a session creates or modifies stay on the machines you provision. The conversation itself, including prompts, responses, and tool results, goes to `api.anthropic.com`, and Anthropic stores the session transcript so you can resume the session from another [supported surface](#availability-and-limitations). When a runner [sends model requests to Amazon Bedrock or Google Cloud's Agent Platform](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#send-model-requests-to-bedrock-or-agent-platform), the conversation still goes to `api.anthropic.com` in the session's event stream.
+
+A self-hosted environment moves session execution into your network. The control plane remains Anthropic-hosted: session orchestration, queueing, and the claude.ai interface continue to run on Anthropic's infrastructure.
+
+## Get started
+
+The self-hosted environments pages are organized by what you're doing:
+
+* [Quickstart](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md): install Claude Code, create an environment, start a runner, and route your first session
+* [Deploy to production](https://code.claude.com/docs/en/self-hosted-environments-deploy.md): security hardening, network egress, git credentials, Kubernetes and Compose recipes, known issues, and troubleshooting
+* [Customize sessions](https://code.claude.com/docs/en/self-hosted-environments-configuration.md): wrapper scripts for per-session credentials, lifecycle hooks, on-demand runners, MCP servers, and permissions
+* [Test end to end](https://code.claude.com/docs/en/self-hosted-environments-testing.md): a CI smoke test that verifies a runner image before you promote it
+* [Reference](https://code.claude.com/docs/en/self-hosted-environments-reference.md): every CLI flag, environment variable, metric, and the health endpoint
+* [Verify session identity](https://code.claude.com/docs/en/self-hosted-environments-identity.md): validate the session token from your own services before granting access

@@ -1,0 +1,191 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Publish and distribute a plugin
+
+> Publish a Claude Code plugin through your own marketplace or Anthropic's directory, with a pre-release checklist and how users get updates.
+
+Publishing a Claude Code plugin means listing it in a marketplace, a JSON catalog that lists plugins and where to fetch each one, so that other people can install it by name and receive your updates. You can run your own marketplace or submit your plugin to Anthropic's directory. To share a plugin without publishing it, send people the plugin's directory or a `.zip` of it to load themselves.
+
+This page is for the author of a working plugin who is ready to share it.
+
+> [!NOTE]
+>
+> These cases are covered on other pages:
+>
+> * **Your plugin isn't finished yet**: start with [Create a plugin](https://code.claude.com/docs/en/plugins/create.md)
+> * **You maintain a CLI or SDK with a plugin in an official marketplace**: see [Recommend your plugin from your CLI](https://code.claude.com/docs/en/plugins/cli-hints.md)
+
+Start with [Choose how to distribute](#choose-how-to-distribute) to compare the distribution options. If you already know your route, go to [Prepare your plugin for release](#prepare-your-plugin-for-release), then follow your route's section for what to tell your users and how they receive your updates.
+
+## Choose how to distribute
+
+Choose a distribution option based on who needs to install the plugin:
+
+| Route | Who can install | What you need | Do users get your updates automatically? |
+| :- | :- | :- | :- |
+| [No marketplace](#share-a-plugin-without-a-marketplace) | The people you send the plugin folder or a `.zip` of it | The plugin's folder | None. They load the copy you sent |
+| [Your own marketplace](#publish-through-your-own-marketplace) | Anyone who can reach the repository, which can be a private one your team can clone | A git repository or other host with a `.claude-plugin/marketplace.json` that lists your plugin | Off |
+| [Anthropic's directory](#submit-to-anthropics-directory) | People who add it on claude.ai or in Cowork. It also loads in their Claude Code sessions through [account sync](https://code.claude.com/docs/en/plugins/loading.md#synced-plugins) | A GitHub repository holding the plugin and a paid claude.ai plan to submit from | Yes, after the version you push is published |
+
+Auto-update is a per-marketplace setting on the user's side that fetches new versions in the background.
+
+## Prepare your plugin for release
+
+The name, the version, validation, and an install from a marketplace decide whether a release works for the people who install it. Check them before the first release and again before each later one.
+
+**1. Choose a permanent name**
+
+Users install, enable, and configure your plugin by `name@marketplace`, so a renamed plugin is a different plugin to every existing install. Choose a kebab-case name such as `deploy-helper`, because `claude plugin validate` warns on other forms, and treat it as permanent. Set `displayName` in `plugin.json` for the label users see.
+
+**2. Decide how you'll version**
+
+If you set `version` in `plugin.json` and later push commits without changing it, `claude plugin update` prints `<name> is already at the latest version (1.0.0).` and users keep the old copy. Either increment `version` on every release, or omit it in a git-hosted marketplace so Claude Code uses the commit SHA instead. See [Versions and updates](https://code.claude.com/docs/en/plugins/loading.md#versions-and-updates).
+
+**3. Validate**
+
+In your shell, run `claude plugin validate --strict ./your-plugin`. A clean run prints `✔ Validation passed`.
+
+* **In CI**: keep `--strict`, which also fails the run with exit code 1 on warnings such as an unknown manifest field or a missing `version`. Drop `--strict` if you chose to omit `version` in the previous step.
+* **Paths**: validation reports component paths that don't start with `./`. Inside hook commands and MCP server configs, refer to files as `${CLAUDE_PLUGIN_ROOT}/...`. See [path rules](https://code.claude.com/docs/en/plugins/manifest-reference.md#path-rules).
+
+**4. Install it from a local marketplace**
+
+In your shell, add a local marketplace that lists the plugin with `claude plugin marketplace add ./path-to-marketplace`, install the plugin from it, and start a session to confirm it loads.
+
+* For the smallest marketplace that works, see [Create a marketplace](https://code.claude.com/docs/en/plugins/create-marketplace.md).
+* To know whether an install loads your source directory or a cached copy, see [In-place and copied plugins](https://code.claude.com/docs/en/plugins/loading.md#in-place-and-copied-plugins).
+
+**5. Fill in the metadata users see**
+
+Set `description`, `author`, `homepage`, and `repository` in `plugin.json`, and add a `README.md` at the plugin root. `homepage` must parse as a URL. The [manifest reference](https://code.claude.com/docs/en/plugins/manifest-reference.md#fields) lists every field.
+
+**6. Run your eval suite**
+
+If you have an eval suite, run `claude plugin eval` in your shell. It runs the plugin's test cases and scores the results, which catches regressions when you change the plugin. See [Test plugins with evals](https://code.claude.com/docs/en/plugin-evals.md).
+
+## Share a plugin without a marketplace
+
+If the plugin is in a git repository, people can clone it and load the checkout, or start Claude Code from their shell with `--plugin-url` pointed at a `.zip` you attach to a release. To get your next version they pull or download again. If it isn't in a repository, send them the directory or a `.zip` of it. They load it in one of two ways:
+
+* **For one session**: they start Claude Code from their shell with `claude --plugin-dir ./deploy-helper`, where the path is the clone, the unzipped folder, or the `.zip` itself. See [Flags that load a plugin for one session](https://code.claude.com/docs/en/plugins/cli-reference.md#flags-that-load-a-plugin-for-one-session).
+* **For every session**: they move the plugin directory, with its `.claude-plugin/plugin.json`, under `~/.claude/skills/`. From then on Claude Code loads it at startup, unless their administrator has [blocked skills-directory plugins](https://code.claude.com/docs/en/plugins/loading.md#skills-directory-plugins-blocked-by-managed-settings).
+
+Adding a `.claude-plugin/marketplace.json` to that same repository is what lets people install by name and update with a command; see [Publish through your own marketplace](#publish-through-your-own-marketplace).
+
+### Ship a plugin with your own tool
+
+If you maintain a CLI or SDK, publish the plugin in a marketplace and have your installer or post-install message run or print the two commands a user needs: `claude plugin marketplace add <source>`, then `claude plugin install <name>@<marketplace>`. For in-session discovery when someone uses your tool, see [Recommend your plugin from your CLI](https://code.claude.com/docs/en/plugins/cli-hints.md).
+
+## Publish through your own marketplace
+
+Your own marketplace is a `.claude-plugin/marketplace.json` file that lists your plugin, added to a git repository. Once the file is in the repository, the plugin is published, with no submission form. You can keep the file in the plugin's own repository or in a separate one.
+
+### Add the marketplace file to your repository
+
+To publish from the plugin's own repository, save the marketplace file beside `plugin.json` in `.claude-plugin/`, with one entry whose `source` is `"./"`, the repository root. Give the entry the same `name` as `plugin.json`, per [Keep the entry name and the manifest name the same](https://code.claude.com/docs/en/plugins/create-marketplace.md#keep-the-entry-name-and-the-manifest-name-the-same):
+
+```json .claude-plugin/marketplace.json theme={null}
+{
+  "name": "your-marketplace",
+  "owner": { "name": "Your Name" },
+  "plugins": [
+    { "name": "deploy-helper", "source": "./" }
+  ]
+}
+```
+
+Replace `your-marketplace` with a name that other authors are unlikely to pick, because a user [can't have two marketplaces with the same name](https://code.claude.com/docs/en/plugins/marketplace-reference.md#marketplace-file). In your shell, run `claude plugin validate .` in the repository before you push. For what the run checks, see [Validate a directory](https://code.claude.com/docs/en/plugins/cli-reference.md#validate-a-directory).
+
+[Create a marketplace](https://code.claude.com/docs/en/plugins/create-marketplace.md) covers the layout with several plugins in one repository.
+
+### Control who can install
+
+Anyone who can clone the repository can install from it, so if the repository is private, the marketplace is private too. For hosts other than a git repository, see [Host a marketplace](https://code.claude.com/docs/en/plugins/host-marketplace.md). To reach everyone at a company, including people who don't use git, see [Roll out to a whole company](https://code.claude.com/docs/en/plugins/host-marketplace.md#roll-out-to-a-whole-company).
+
+### Tell users how to install
+
+Tell your users to add the marketplace and then install the plugin from their shell, replacing the source and names with yours:
+
+* Add the marketplace once: `claude plugin marketplace add your-org/your-marketplace`, where the argument is a GitHub `owner/repo` shorthand, a URL, or a path
+* Install the plugin: `claude plugin install deploy-helper@your-marketplace`
+* Or do both from inside a session: `/plugin install deploy-helper --marketplace your-org/your-marketplace`. Requires Claude Code v2.1.275 or later. See [Add a marketplace and install in one command](https://code.claude.com/docs/en/plugins/install.md#add-a-marketplace-and-install-in-one-command)
+* Or do both from the shell in one command: `claude plugin install deploy-helper --marketplace your-org/your-marketplace`. Requires Claude Code v2.1.292 or later
+
+### Ship updates to users
+
+Users receive a release when they ask for it or when auto-update is on for your marketplace:
+
+* **On request**: `claude plugin update deploy-helper@your-marketplace` in the user's shell refreshes the marketplace and installs the new copy when your plugin's version has changed
+* **Auto-update**: off by default for your marketplace. See [Turn on auto-update](https://code.claude.com/docs/en/plugins/host-marketplace.md#turn-on-auto-update). Once on, it does the same as `claude plugin update` on a delay after the session starts
+
+[Install plugins](https://code.claude.com/docs/en/plugins/install.md) covers the user-side commands, and [when auto-update runs](https://code.claude.com/docs/en/plugins/loading.md#when-auto-update-runs) covers the timing.
+
+## Submit to Anthropic's directory
+
+[Anthropic's directory](https://claude.ai/directory) is the catalog people browse on claude.ai and in Cowork to add plugins and connectors. One listing there reaches people on claude.ai, in Cowork, and in Claude Code. You submit from the developer portal at [claude.ai/directory/manage](https://claude.ai/directory/manage), and [Submit a plugin](https://claude.com/docs/plugins/submit#submit-a-plugin) on claude.com walks through the portal.
+
+Anthropic's official marketplace, `claude-plugins-official`, doesn't take submissions through the directory portal. If you work with an Anthropic partner contact, ask them about an official-marketplace listing.
+
+To submit a plugin:
+
+**1. Confirm you can submit**
+
+Submitting requires a paid claude.ai plan. On Pro, Max, and Ultra you submit from your own account. On Team and Enterprise, an Owner can submit, and on Enterprise an Owner can also grant the **Directory** permission to other members through a custom role under **Organization settings > Roles**. See [Confirm you can submit to the directory](https://claude.com/docs/directory/publish#confirm-you-can-submit-to-the-directory).
+
+**2. Validate the plugin locally**
+
+Run `claude plugin validate ./your-plugin --strict` in your shell. Replace `./your-plugin` with the path to your plugin directory. The command catches manifest errors locally; [plugin validate](https://code.claude.com/docs/en/plugins/cli-reference.md#plugin-validate) lists which files each run reads. The portal applies additional directory rules that the CLI doesn't check, so a clean local run doesn't guarantee a clean portal validation.
+
+The [plugin pre-submission checklist](https://claude.com/docs/plugins/pre-submission-checklist#run-the-checks-before-you-submit) on claude.com has the checks to run and fix before you submit.
+
+**3. Check what loads where**
+
+Some plugin components are Claude Code-only and don't load on claude.ai or in Cowork. The [component support table](https://claude.com/docs/plugins/platform-support#compare-component-support-by-app) lists each component by app, so you know what users outside Claude Code will get.
+
+**4. Submit in the developer portal**
+
+Open the developer portal at [claude.ai/directory/manage](https://claude.ai/directory/manage) and follow [Submit a plugin](https://claude.com/docs/plugins/submit#submit-a-plugin) on claude.com.
+
+The rest of the process is documented on claude.com:
+
+* [Prepare for review](https://claude.com/docs/directory/publish#prepare-for-review): what happens to each version before it's published
+* [Update a published plugin](https://claude.com/docs/plugins/submit#update-a-published-plugin): how a new version reaches the people who have your plugin
+* [Submit your plugin, and your MCP server as a connector](https://claude.com/docs/directory/publish#submit-your-plugin-and-your-mcp-server-as-a-connector): what you can submit
+* [Move an earlier submission to the developer portal](https://claude.com/docs/directory/publish#move-an-earlier-submission-to-the-developer-portal): what to do if you submitted a plugin through one of the earlier submission forms, before the portal existed
+
+### How a listed plugin reaches Claude Code users
+
+A person who installs your plugin from the directory on claude.ai has it on their account, and Claude Code loads it as `<name>@synced`. [Plugins synced from claude.ai](https://code.claude.com/docs/en/plugins/loading.md#synced-plugins) covers what they see and how they turn it off.
+
+## Ship updates, renames, and removals
+
+### Release a new version
+
+If you publish through your own marketplace and your `plugin.json` sets `version`, increment it and push. Users who run `claude plugin update` or have auto-update on then receive the new version, as described under [Ship updates to users](#ship-updates-to-users). For a directory listing, see [Update a published plugin](https://claude.com/docs/plugins/submit#update-a-published-plugin).
+
+### Tag a release
+
+Tag the release in git when other plugins declare a version range on yours, because those ranges resolve against tags. Otherwise you don't need a tag.
+
+To tag, run `claude plugin tag` in your shell from the plugin directory. It creates a `{name}--v{version}` tag. Add `--push` to send the tag to `origin`. The [`plugin tag` reference](https://code.claude.com/docs/en/plugins/cli-reference#plugin-tag) lists its flags.
+
+### Rename or remove a plugin
+
+Never change a published plugin's `name`. After a rename, users who already installed it lose the plugin, because their install is recorded under the old name. A `renames` entry in your marketplace file migrates them instead. Change `displayName` when you want a different label.
+
+If a rename is unavoidable, use the marketplace file's `renames` map so that existing installs migrate instead of failing with [`Plugin "<name>" not found in marketplace`](https://code.claude.com/docs/en/plugins/troubleshooting#plugin-not-found-in-marketplace). To remove a plugin from the marketplace, or for the full `renames` details, see [Rename or remove a plugin](https://code.claude.com/docs/en/plugins/host-marketplace.md#rename-or-remove-a-plugin) on the hosting page. The [marketplace reference](https://code.claude.com/docs/en/plugins/marketplace-reference.md#top-level-fields) has the field.
+
+## Declare dependencies
+
+If your plugin needs another plugin from the same marketplace to be enabled, list it in the `dependencies` array of `plugin.json`. Each entry is a bare name or an object with a semver `version` range. When a user installs your plugin, Claude Code installs and enables the dependency too.
+
+[Plugin dependencies](https://code.claude.com/docs/en/plugins/dependencies.md) covers the range syntax, cross-marketplace dependencies, and how users prune dependencies they no longer need.
+
+## Next steps
+
+* [Host and maintain a marketplace](https://code.claude.com/docs/en/plugins/host-marketplace.md): release new versions and keep users up to date
+* [Plugin dependencies](https://code.claude.com/docs/en/plugins/dependencies.md): declare and version the plugins yours relies on
+* [Recommend your plugin from your CLI](https://code.claude.com/docs/en/plugins/cli-hints.md): prompt Claude Code users of your CLI to install the plugin
+* [Measure plugin cost and usage](https://code.claude.com/docs/en/plugins/measure.md): see what your plugin costs in context and whether people use it
