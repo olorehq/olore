@@ -1,0 +1,22 @@
+---
+id: createResidualWhere
+title: createResidualWhere
+---
+
+```ts
+function createResidualWhere(expression): Where;
+```
+
+Defined in: [packages/db/src/query/ir.ts:446](https://github.com/TanStack/db/blob/main/packages/db/src/query/ir.ts#L446)
+
+Create a residual Where clause from an expression
+
+## Parameters
+
+### expression
+
+[`BasicExpression`](../type-aliases/BasicExpression.md)\<`boolean`\>
+
+## Returns
+
+[`Where`](../type-aliases/Where.md)

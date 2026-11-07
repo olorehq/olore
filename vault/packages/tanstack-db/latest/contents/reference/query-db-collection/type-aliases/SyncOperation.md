@@ -1,0 +1,40 @@
+---
+id: SyncOperation
+title: SyncOperation
+---
+
+```ts
+type SyncOperation<TRow, TKey, TInsertInput> = 
+  | {
+  data: TInsertInput | TInsertInput[];
+  type: "insert";
+}
+  | {
+  data: Partial<TRow> | Partial<TRow>[];
+  type: "update";
+}
+  | {
+  key: TKey | TKey[];
+  type: "delete";
+}
+  | {
+  data: Partial<TRow> | Partial<TRow>[];
+  type: "upsert";
+};
+```
+
+Defined in: [packages/query-db-collection/src/manual-sync.ts:30](https://github.com/TanStack/db/blob/main/packages/query-db-collection/src/manual-sync.ts#L30)
+
+## Type Parameters
+
+### TRow
+
+`TRow` *extends* `object`
+
+### TKey
+
+`TKey` *extends* `string` \| `number` = `string` \| `number`
+
+### TInsertInput
+
+`TInsertInput` *extends* `object` = `TRow`

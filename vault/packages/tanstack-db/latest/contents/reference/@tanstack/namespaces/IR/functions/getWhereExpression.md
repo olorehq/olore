@@ -1,0 +1,22 @@
+---
+id: getWhereExpression
+title: getWhereExpression
+---
+
+```ts
+function getWhereExpression(where): BasicExpression<boolean>;
+```
+
+Defined in: [packages/db/src/query/ir.ts:414](https://github.com/TanStack/db/blob/main/packages/db/src/query/ir.ts#L414)
+
+Extract the expression from a Where clause
+
+## Parameters
+
+### where
+
+[`Where`](../type-aliases/Where.md)
+
+## Returns
+
+[`BasicExpression`](../type-aliases/BasicExpression.md)\<`boolean`\>
