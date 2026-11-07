@@ -1,20 +1,20 @@
 ---
-title: Deploy Your Node.js App with Neon Postgres on Heroku
-subtitle: A step-by-step guide to deploying a Node application with a Neon Postgres
+title: Deploy Your Node.js App with Lakebase Postgres on Heroku
+subtitle: A step-by-step guide to deploying a Node application with a Lakebase Postgres
   database on Heroku
 summary: >-
-  Deploy a Node.js Express app to Heroku with Neon Postgres as the database
+  Deploy a Node.js Express app to Heroku with Lakebase Postgres as the database
   backend. Covers creating the Neon project, connecting via the `pg` driver
   and `DATABASE_URL`, and pushing to Heroku using the Heroku CLI and Git.
   Useful when migrating from Heroku Postgres or hosting a new Node app on
   Heroku with Neon.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-28T11:11:18.780Z'
 ---
 
 [Heroku](https://heroku.com) is a popular platform as a service (PaaS) that enables developers to build, run, and operate applications entirely in the cloud. It simplifies the deployment process, making it a favorite among developers for its ease of use and integration capabilities.
 
-This guide walks you through deploying a simple Node.js application connected to a Neon Postgres database, on Heroku.
+This guide walks you through deploying a simple Node.js application connected to a Lakebase Postgres database, on Heroku.
 
 ## Prerequisites
 
@@ -33,7 +33,7 @@ To follow along with this guide, you will need:
 
 2. Click **New Project** to create a new project.
 
-3. In your project dashboard, go to the **SQL Editor** and run the following SQL command to create a new table:
+3. In the Neon Console, go to **Postgres database** > **SQL Editor** and run the following SQL command to create a new table:
 
    ```sql
    CREATE TABLE music_albums (
@@ -52,7 +52,7 @@ To follow along with this guide, you will need:
 
 ### Retrieve your Neon database connection string
 
-You can find your database connection string by clicking the **Connect** button on your **Project Dashboard**. It should look similar to this:
+You can find your database connection string by clicking the **Connect** button in the Console nav. It should look similar to this:
 
 ```bash
 postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require
@@ -180,7 +180,7 @@ remote: Verifying deploy... done.
 
 Once the deployment is complete, you should see a message with the URL of your deployed application. Navigate to this URL in your browser to see your application live on Heroku.
 
-You've now successfully deployed a Node.js application on Heroku that connects to a Neon Postgres database. For further customization and scaling options, you can explore the Heroku and Neon documentation.
+You've now successfully deployed a Node.js application on Heroku that connects to a Lakebase Postgres database. For further customization and scaling options, you can explore the Heroku and Neon documentation.
 
 ## Removing Your Application and Neon Project
 
@@ -192,7 +192,7 @@ To delete your Neon project, follow the steps outlined in the Neon documentation
 
 - [Heroku Documentation](https://devcenter.heroku.com/)
 - [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli)
-- [Neon](/docs/introduction)
+- [Neon](/docs)
 - [Import data from Heroku Postgres to Neon](/docs/import/migrate-from-heroku)
 
 <NeedHelp/>

@@ -2,6 +2,7 @@
 title: 'Create Checks Automatically from Files'
 description: 'Learn how to automatically include checks in your project'
 sidebarTitle: 'Check Discovery and Creation'
+canonical: 'https://www.checklyhq.com/docs/constructs/including-checks/'
 ---
 
 The [Project](/constructs/project) and [CheckGroup](/constructs/check-group-v2) constructs allow you to use file-based routing to discover files and
@@ -9,8 +10,8 @@ create checks and monitors. This approach enables you to add and remove files fr
 
 ## `checks.checkMatch`
 
-The `checkMatch` property takes a [glob pattern](https://www.npmjs.com/package/glob) to match files inside your
-project structure that contain instances of a Check, i.e. `**/__checks__/*.check.ts`.
+The `checkMatch` property takes a [glob pattern](https://www.npmjs.com/package/glob), or an array of glob patterns, to match files inside your
+project structure that contain check constructs, for example `**/__checks__/*.check.ts`. Use an array to match several file extensions or directories, for example `["**/*.check.ts", "**/*.check.js"]`.
 
 The goal of this property is so you can add files to an existing repo that are automatically detected. This pattern should be very familiar to unit testing: the test runner takes
 care of finding, building and running all the files.
@@ -23,8 +24,11 @@ Here are some best practices:
 2. Store any Checkly related Checks inside a `__checks__` folder. This neatly indicates where your Checks are organized.
 3. Use multiple `__checks__` folders throughout your code base, near the functionality it should be checking.
 
-```ts checkly.config.ts highlight={4}
+{/* typecheck-wrap */}
+```ts checkly.config.ts highlight={6}
 const config = defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     // A glob pattern that matches the Checks inside your repo.
     checkMatch: "**/__checks__/**/*.check.ts",
@@ -37,22 +41,25 @@ const config = defineConfig({
 The `testMatch` property is very similar to `checkMatch`.
 
 This property allows you to write standard `*.spec.ts` Playwright files with no proprietary Checkly
-config or code added — this is why it's nested under `browserChecks` as it only applies to Browser Checks. In turn, this allows you to just use `npx playwright test` on the command line to write and debug these Checks.
+config or code added — this is why it's nested under `browserChecks` as it only applies to Browser checks. In turn, this allows you to just use `npx playwright test` on the command line to write and debug these Checks.
 
 Some caveats:
 
 1. As a `.spec.ts` file does not contain any Checkly specific properties like `frequency` or `tags`, the CLI will add
 these properties based on the defaults set inside the `browserChecks` config object.
 2. A `logicalId` and `name` will be generated based on the file name.
-3. If you want to explicitly set the properties for a Browser Check and not use the defaults, you need to add [a `BrowserCheck`
+3. If you want to explicitly set the properties for a Browser check and not use the defaults, you need to add [a `BrowserCheck`
 construct](/constructs/browser-check) in a separate `.check.ts` file and set file path to the `.spec.ts` file in the `code.entrypoint` property.
 4. When you rename a file that was previously deployed, the `logicalId` will change. The effect is that once you deploy
 again the new `logicalId` will trigger a deletion of the "old" Check and a creation of this "new" Check and you will lose
 any historical metrics.
 
 <CodeGroup>
-```ts checkly.config.ts highlight={7}
+{/* typecheck-wrap */}
+```ts checkly.config.ts highlight={9}
 const config = defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     checkMatch: "**/__checks__/**/*.check.ts",
     browserChecks: {
@@ -64,6 +71,7 @@ const config = defineConfig({
 })
 ```
 
+{/* typecheck-wrap: CheckGroupV2 */}
 ```ts group.check.ts highlight={6}
 const group = new CheckGroupV2("api-monitoring-group", {
   name: "Browser Check Monitoring Group",
@@ -82,12 +90,15 @@ The `testMatch` property for Multistep checks work the same as for [Browser chec
 
 Some caveats:
 1. `browserChecks.testMatch` will have priority to resolve directories. We recommend having a clear definition for each Browser and Multistep check
-to prevent loading the wrong check type. For example using `browserChecks.testMatch: ['__checks__/**/*.ts']` and `browserChecks.testMatch: ['__checks__/multistep/**/*.ts']` will result
+to prevent loading the wrong check type. For example using `browserChecks.testMatch: ['__checks__/**/*.ts']` and `multiStepChecks.testMatch: ['__checks__/multistep/**/*.ts']` will result
 in all checks created as Browser checks.
 
 <CodeGroup>
-```ts checkly.config.ts highlight={7}
+{/* typecheck-wrap */}
+```ts checkly.config.ts highlight={9}
 const config = defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     checkMatch: "**/__checks__/**/*.check.ts",
     // A glob pattern matches any Playwright .spec.ts files
@@ -99,6 +110,7 @@ const config = defineConfig({
 })
 ```
 
+{/* typecheck-wrap: CheckGroupV2 */}
 ```ts group.check.ts highlight={6}
 const group = new CheckGroupV2("api-multistep-group", {
   name: "API Multistep Monitoring Group",
@@ -112,7 +124,7 @@ const group = new CheckGroupV2("api-multistep-group", {
 </CodeGroup>
 
 <Note>Note that the recommended patterns are just conventions. You can set any glob pattern or turn off any globbing by setting
-`checkMatch: false` and / or `testMatch: false`.</Note>
+`checkMatch: []` and / or `testMatch: []`.</Note>
 
 
 

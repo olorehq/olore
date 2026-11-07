@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-lambda-setup.png
+image: https://remotion.media/docs/generated/articles-docs-lambda-setup.png
 id: setup
 title: Setup
 slug: /lambda/setup
@@ -148,36 +148,40 @@ When you update your Remotion code in the future, redeploy your site. Pass the s
 </TabItem>
 <TabItem value="node">
 
-First, you need to create an S3 bucket in your preferred region. If one already exists, it will be used instead:
+First, create an S3 bucket in your preferred region. If one already exists, it will be used instead:
 
 ```ts twoslash
-import path from 'path';
-import {deploySite, getOrCreateBucket} from '@remotion/lambda';
+import {getOrCreateBucket} from '@remotion/lambda';
 
 const {bucketName} = await getOrCreateBucket({
   region: 'us-east-1',
 });
 ```
 
-Next, upload your Remotion project to an S3 bucket. Specify the entry point of your Remotion project, this is the file where [`registerRoot()`](/docs/register-root) is called.
+Next, build your Remotion project and upload the resulting bundle to the bucket. The entry point is the file where [`registerRoot()`](/docs/register-root) is called.
 
 ```ts twoslash
 import path from 'path';
-import {deploySite, getOrCreateBucket} from '@remotion/lambda';
+import {bundle} from '@remotion/bundler';
+import {deploySiteFromBundle, getOrCreateBucket} from '@remotion/lambda';
 
 const {bucketName} = await getOrCreateBucket({
   region: 'us-east-1',
 });
 // ---cut---
-const {serveUrl} = await deploySite({
-  bucketName,
+const bundleDir = await bundle({
   entryPoint: path.resolve(process.cwd(), 'src/index.ts'),
+});
+
+const {serveUrl} = await deploySiteFromBundle({
+  bucketName,
+  bundleDir,
   region: 'us-east-1',
   siteName: 'my-video',
 });
 ```
 
-When you update your Remotion code in the future, redeploy your site. Pass the same [`siteName`](/docs/lambda/deploysite#sitename) to overwrite the previous deploy. If you don't pass [`siteName`](/docs/lambda/deploysite#sitename), a unique URL will be generated on every deploy.
+When you update your Remotion code, create and deploy a new bundle. Pass the same [`siteName`](/docs/lambda/deploysitefrombundle#sitename) to overwrite the previous deployment. If you don't pass [`siteName`](/docs/lambda/deploysitefrombundle#sitename), a unique URL will be generated on every deployment.
 
 </TabItem>
 </Tabs>
@@ -190,7 +194,7 @@ Check the concurrency limit that AWS has given to your account:
 npx remotion lambda quotas
 ```
 
-By default, it is `1000` concurrent invocations per region. However, new accounts might have a limit [as low as `10`](/docs/lambda/troubleshooting/rate-limit#new-accounts-using-aws-lambda). Each Remotion render may use as much as 200 functions per render concurrently, so if your assigned limit is very low, [you might want to request an increase right away](/docs/lambda/troubleshooting/rate-limit#request-an-increase).
+By default, it is `1000` concurrent invocations per region. However, new accounts might have a limit [as low as `10`](/docs/lambda/troubleshooting/rate-limit#new-accounts-using-aws-lambda). Each Remotion render may use as much as 200 functions per render concurrently, so if your assigned limit is very low, [request an increase](/docs/lambda/troubleshooting/rate-limit#request-an-increase). You can use [single-function rendering](/docs/lambda/troubleshooting/rate-limit#render-with-one-function) while waiting for the increase.
 
 ## 11. Render a video
 
@@ -214,37 +218,20 @@ Progress will be printed until the video finished rendering. Congrats! You rende
 </TabItem>
 <TabItem value="node">
 
-You already have the function name from a previous step. But since you only need to deploy a function once, it's useful to retrieve the name of your deployed function programmatically before rendering a video in case your Node.JS program restarts. We can call [`getFunctions()`](/docs/lambda/getfunctions) with the `compatibleOnly` flag to get only functions with a matching version.
+Retrieve a deployed function with a matching Remotion version using [`getFunctions()`](/docs/lambda/getfunctions), then call [`renderMediaOnLambdaAndStream()`](/docs/lambda/rendermediaonlambdaandstream) to stream progress and wait for the render to finish.
 
-```ts twoslash
-import {getFunctions, renderMediaOnLambda, getRenderProgress} from '@remotion/lambda/client';
+```ts twoslash title="render.ts"
+import {getFunctions, renderMediaOnLambdaAndStream} from '@remotion/lambda/client';
 
 const functions = await getFunctions({
   region: 'us-east-1',
   compatibleOnly: true,
 });
 
-const functionName = functions[0].functionName;
-```
-
-We can now trigger a render using the [`renderMediaOnLambda()`](/docs/lambda/rendermediaonlambda) function.
-
-```ts twoslash
-import {getFunctions, renderMediaOnLambda, getRenderProgress} from '@remotion/lambda/client';
-
-const url = 'string';
-const functions = await getFunctions({
+const result = await renderMediaOnLambdaAndStream({
   region: 'us-east-1',
-  compatibleOnly: true,
-});
-
-const functionName = functions[0].functionName;
-// ---cut---
-
-const {renderId, bucketName} = await renderMediaOnLambda({
-  region: 'us-east-1',
-  functionName,
-  serveUrl: url,
+  functionName: functions[0].functionName,
+  serveUrl: 'https://example.com/my-remotion-site',
   composition: 'HelloWorld',
   inputProps: {},
   codec: 'h264',
@@ -252,55 +239,15 @@ const {renderId, bucketName} = await renderMediaOnLambda({
   maxRetries: 1,
   framesPerLambda: 20,
   privacy: 'public',
+  onProgress: ({overallProgress}) => {
+    console.log(`${Math.round(overallProgress * 100)}%`);
+  },
 });
+
+console.log('Render finished!', result.outputFile);
 ```
 
-The render will now run and after a while the video will be available in your S3 bucket. You can at any time get the status of the video render by calling [`getRenderProgress()`](/docs/lambda/getrenderprogress).
-
-```ts twoslash
-import {getFunctions, renderMediaOnLambda, getRenderProgress} from '@remotion/lambda/client';
-
-const url = 'string';
-const functions = await getFunctions({
-  region: 'us-east-1',
-  compatibleOnly: true,
-});
-
-const functionName = functions[0].functionName;
-
-const {renderId, bucketName} = await renderMediaOnLambda({
-  region: 'us-east-1',
-  functionName,
-  serveUrl: url,
-  composition: 'HelloWorld',
-  inputProps: {},
-  codec: 'h264',
-  imageFormat: 'jpeg',
-  maxRetries: 1,
-  framesPerLambda: 20,
-  privacy: 'public',
-});
-// ---cut---
-while (true) {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  const progress = await getRenderProgress({
-    renderId,
-    bucketName,
-    functionName,
-    region: 'us-east-1',
-  });
-  if (progress.done) {
-    console.log('Render finished!', progress.outputFile);
-    process.exit(0);
-  }
-  if (progress.fatalErrorEncountered) {
-    console.error('Error enountered', progress.errors);
-    process.exit(1);
-  }
-}
-```
-
-This code will poll every second to check the progress of the video and exit the script if the render is done. Congrats! [Check your S3 Bucket](https://s3.console.aws.amazon.com/s3/) - you just rendered your first video using Remotion Lambda 🚀
+Use the Serve URL from step 9. The promise resolves when the render finishes and rejects if it fails. Your video is now available in your [S3 bucket](https://s3.console.aws.amazon.com/s3/).
 
 </TabItem>
 </Tabs>

@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-effects-pixel-dissolve.png
+image: https://remotion.media/docs/generated/articles-docs-effects-pixel-dissolve.png
 slug: /effects/pixel-dissolve
 title: pixelDissolve()
 sidebar_label: pixelDissolve()
@@ -19,13 +19,12 @@ A pixel dissolve effect that divides the frame into a grid and fades the cells o
 ## Example
 
 ```tsx twoslash title="MyComp.tsx"
-import {AbsoluteFill} from 'remotion';
 import {Video} from '@remotion/media';
 import {pixelDissolve} from '@remotion/effects/pixel-dissolve';
 
 export const MyComp: React.FC = () => {
   return (
-    <AbsoluteFill>
+    <>
       <Video
         src="https://remotion.media/video.mp4"
         effects={[
@@ -38,7 +37,7 @@ export const MyComp: React.FC = () => {
           }),
         ]}
       />
-    </AbsoluteFill>
+    </>
   );
 };
 ```
@@ -71,9 +70,12 @@ Softness of the dissolve edge from `0` (sharp) to `1` (fully feathered). Default
 
 When `true`, the effect is skipped. Defaults to `false`.
 
-## Requirements
+## Implementations
 
-`pixelDissolve()` uses a WebGL2 backend. During renders, enable WebGL via [`Config.setChromiumOpenGlRenderer('angle')`](/docs/config#setchromiumopenglrenderer). See [Using WebGL during renders](/docs/remotion/html-in-canvas#using-webgl-during-renders).
+- WebGL2
+- WebGPU<AvailableFrom v="4.0.540" inline />
+
+See: [Preferred effect backend](/docs/options/preferred-effect-backend).
 
 ## See also
 

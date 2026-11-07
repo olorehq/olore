@@ -1,0 +1,48 @@
+---
+title: 'Developer tools'
+description: 'Find out more about the Stately XState CLI (Command Line Interface) and Chrome Devtools.'
+---
+
+<Callout type="warning">
+
+The XState developer tools currently only work for XState version 4. Typegen is not supported in XState version 5.
+
+</Callout>
+
+Find more about our [XState CLI (Command Line Interface)](#xstate-cli-command-line-interface) below. We plan to make extensions for more IDEs (Integrated Development Environments) in the future.
+
+<Callout>
+
+[Read about our XState VS Code extension on its own page](xstate-vscode-extension).
+
+</Callout>
+
+## XState CLI (Command Line Interface)
+
+The [@xstate/cli (Command Line Interface) package](https://github.com/statelyai/xstate-tools/tree/master/apps/cli) contains commands for running typegen. The package is small right now, but we plan to add more features.
+
+### Installation
+
+Run `npm install @xstate/cli`.
+
+### Commands
+
+#### `xstate typegen <files>`
+
+Use the following command to run the typegen against a glob.
+
+`xstate typegen "src/**/*.ts?(x)"`
+
+Running typegen will scan every targeted file and generate a typegen file to accompany it. It will also import the typegen into your file, as described in [our typegen documentation](typegen).
+
+<Callout type="warning">
+
+Ensure you wrap your glob in quotes for correct execution. If you don’t wrap the glob in quotes, it will be interpreted as a list of files, not a glob, which will give unexpected results.
+
+</Callout>
+
+#### Options
+
+`xstate typegen "src/**/*.ts?(x)" --watch`
+
+Runs the task on a watch, monitoring for changed files and running the typegen script against them.

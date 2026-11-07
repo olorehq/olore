@@ -1,16 +1,11 @@
 ---
-image: /generated/articles-docs-web-renderer-types.png
+image: https://remotion.media/docs/generated/articles-docs-web-renderer-types.png
 id: types
 sidebar_label: Types
 title: TypeScript Types Reference
 slug: /web-renderer/types
 crumb: '@remotion/web-renderer'
 ---
-
-:::warning
-Experimental feature - expect bugs and breaking changes at any time.
-[Track progress on GitHub](https://github.com/remotion-dev/remotion/issues/5913) and discuss in the [`#web-renderer`](https://remotion.dev/discord) channel on Discord.
-:::
 
 The following types are part of the API of `@remotion/web-renderer`:
 
@@ -58,6 +53,17 @@ import type {WebRendererOutputTarget} from '@remotion/web-renderer';
 - `'arraybuffer'`: Returns the output as a `Blob` in memory
 - `'web-fs'`: Uses the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API) to write to a file
 
+## `WebRendererPageResponsiveness`<AvailableFrom v="4.0.487" />
+
+```tsx twoslash
+import type {WebRendererPageResponsiveness} from '@remotion/web-renderer';
+//                ^?
+```
+
+Controls intentional pauses while using [`renderMediaOnWeb()`](/docs/web-renderer/render-media-on-web#pageresponsiveness).
+See [Page responsiveness](/docs/client-side-rendering/page-responsiveness) for guidance.
+The default is `"medium"`.
+
 ## `FrameRange`
 
 ```tsx twoslash
@@ -99,10 +105,13 @@ import type {RenderMediaOnWebProgress} from '@remotion/web-renderer';
 //                ^?
 ```
 
-### `renderedFrames`
+### ~~`renderedFrames`~~
 
-Deprecated and kept for backward compatibility. The number of frames that have been rendered.
-Prefer `progress` for overall status updates.
+:::info Deprecated
+Kept for backward compatibility. Prefer `progress` for overall status updates.
+:::
+
+The number of frames that have been rendered.
 
 ### `encodedFrames`
 
@@ -148,6 +157,13 @@ import type {RenderMediaOnWebOptions} from '@remotion/web-renderer';
 
 ```tsx twoslash
 import type {RenderStillOnWebOptions} from '@remotion/web-renderer';
+//                ^?
+```
+
+## `RenderFramesOnWebOptions`<AvailableFrom v="4.0.540" />
+
+```tsx twoslash
+import type {RenderFramesOnWebOptions} from '@remotion/web-renderer';
 //                ^?
 ```
 

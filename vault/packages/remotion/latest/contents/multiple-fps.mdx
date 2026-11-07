@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-multiple-fps.png
+image: https://remotion.media/docs/generated/articles-docs-multiple-fps.png
 title: Supporting multiple frame rates
 crumb: Building apps
 ---
@@ -39,18 +39,16 @@ const animationProgress = interpolate(frame, [1 * fps, 2 * fps], [0, 1], {
 });
 ```
 
-Also use the `fps` value when specifying `from` and `durationInFrames` of a `<Sequence>`:
+Also use the `fps` value when specifying `from` and `durationInFrames`:
 
 ```tsx twoslash
 import React from 'react';
-import {interpolate, useCurrentFrame, Sequence, useVideoConfig} from 'remotion';
+import {Interactive, interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
 const frame = useCurrentFrame();
 const {fps, durationInFrames} = useVideoConfig();
 // ---cut---
 // Show for 3 seconds
-<Sequence durationInFrames={3 * fps}>
-  <div />
-</Sequence>;
+<Interactive.Div durationInFrames={3 * fps} />;
 ```
 
 And when passing `fps`, `delay` and `durationInFrames` of a `spring()`:
@@ -106,7 +104,7 @@ export const Root: React.FC = () => {
 ## FPS Convert is discouraged
 
 Previously, this page showed a FPS converter snippet.  
-It's usage is not recommended because it does not work with media tags (`<Html5Video>`, `<Audio>`, `<OffthreadVideo>`, etc.).
+It's usage is not recommended because it does not work with media tags ([`<Video>`](/docs/media/video), [`<Audio>`](/docs/media/audio), `<OffthreadVideo>`, `<Html5Video>`, etc.).
 
 ## See also
 

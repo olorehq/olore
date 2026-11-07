@@ -2,7 +2,7 @@
 
 This directory contains samples demonstrating how to use Azure AI's evaluation and red teaming capabilities with Agent Framework agents.
 
-For more details on the Red Team setup see [the Azure AI Foundry docs](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/run-scans-ai-red-teaming-agent)
+For more details on the Red Team setup see [the Microsoft Foundry docs](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/run-scans-ai-red-teaming-agent)
 
 ## Samples
 
@@ -26,12 +26,12 @@ A focused sample demonstrating Azure AI's RedTeam functionality to assess the sa
 ### Azure Resources
 1. **Azure AI Hub and Project**: Create these in the Azure Portal
    - Follow: https://learn.microsoft.com/azure/ai-foundry/how-to/create-projects
-2. **Azure OpenAI Deployment**: Deploy a model (e.g., gpt-4o)
+2. **Model Deployment**: Deploy a model (e.g., gpt-4o) in the Foundry project
 3. **Azure CLI**: Install and authenticate with `az login`
 
 ### Python Environment
 ```bash
-pip install agent-framework azure-ai-evaluation pyrit duckdb azure-identity
+pip install agent-framework-foundry azure-ai-evaluation pyrit==0.9.0 duckdb
 ```
 
 Note: The sample uses `python-dotenv` to load environment variables from a `.env` file.
@@ -41,13 +41,10 @@ Note: The sample uses `python-dotenv` to load environment variables from a `.env
 Create a `.env` file in this directory or set these environment variables:
 
 ```bash
-# Azure OpenAI (for the agent being tested)
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_MODEL=gpt-4o
-# AZURE_OPENAI_API_KEY is optional if using Azure CLI authentication
-
-# Azure AI Project (for red teaming)
-FOUNDRY_PROJECT_ENDPOINT=https://your-project.api.azureml.ms
+# Microsoft Foundry project, used by both the agent being tested (FoundryChatClient)
+# and the red teaming scan. Authentication uses Azure CLI credentials (`az login`).
+FOUNDRY_PROJECT_ENDPOINT=https://<resource>.services.ai.azure.com/api/projects/<project>
+FOUNDRY_MODEL=gpt-4o
 ```
 
 See `.env.example` for a template.
@@ -60,7 +57,7 @@ python red_team_agent_sample.py
 ```
 
 The sample will:
-1. Create a financial advisor agent using Azure OpenAI
+1. Create a financial advisor agent using `FoundryChatClient`
 2. Set up an async callback to interface the agent with RedTeam
 3. Run a comprehensive scan with 11 different attack strategies
 4. Display results as a scorecard in the console

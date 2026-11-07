@@ -12,9 +12,13 @@ description: "How to use Rive files with the Rive React Native runtime. "
     - **Option 3: Resource name** - Load files from native asset bundles
     - **Option 4: ArrayBuffer** - Load files from binary data
 
-    All loading methods use the `useRiveFile` hook, which returns a `RiveFile` object that you pass to the `RiveView` component via the `file` prop.
+    All loading methods use the `useRiveFile` hook, which returns a `RiveFile` object that you pass to the `RiveView` component via the `file` prop. The hook returns `{ riveFile, isLoading, error }`, where `error` is an `Error` object if loading failed.
 
-### Option 1: Using `require()` (Recommended)
+    <Note>
+      In `0.5.0` and later, the artboard you display must have a state machine. If the artboard has no [default state machine](/editor/fundamentals/artboards#default-state-machine), set `stateMachineName` on `RiveView`. Files that only contain timeline animations don't play.
+    </Note>
+
+### Option 1: using `require()` (recommended)
 
     <Note>
       Loading Rive files using `require()` is recommended because it doesn't require a native rebuild when you update the Rive file. During development, files loaded with `require()` are served by the Metro development server. When you build your app, the file is automatically bundled into the app's assets. With Expo, this also enables Over The Air (OTA) updates.
@@ -34,7 +38,7 @@ description: "How to use Rive files with the Rive React Native runtime. "
       }
 
       if (error || !riveFile) {
-        return <Text>Error: {error || "Failed to load file"}</Text>;
+        return <Text>Error: {error?.message ?? "Failed to load file"}</Text>;
       }
 
       return (
@@ -70,7 +74,7 @@ description: "How to use Rive files with the Rive React Native runtime. "
 
     ### Option 2: Loading from URL
 
-    You can load Rive files from a remote URL (e.g., AWS S3, Google Storage, CDN):
+    You can load Rive files from a remote URL (e.g., AWS S3, Google Storage, CDN). Pass the URL as a string starting with `http://` or `https://`, or as `{ uri: '...' }`:
 
     ```tsx
     import { View, ActivityIndicator, Text } from "react-native";
@@ -86,12 +90,13 @@ description: "How to use Rive files with the Rive React Native runtime. "
       }
 
       if (error || !riveFile) {
-        return <Text>Error: {error || "Failed to load file"}</Text>;
+        return <Text>Error: {error?.message ?? "Failed to load file"}</Text>;
       }
 
       return (
         <RiveView
           file={riveFile}
+          stateMachineName="bumpy"
           fit={Fit.Contain}
           autoPlay={true}
           style={{ width: 400, height: 400 }}
@@ -102,7 +107,7 @@ description: "How to use Rive files with the Rive React Native runtime. "
 
     ### Option 3: Loading from Resource Name
 
-    You can load Rive files from native asset bundles by referencing the resource name (without the `.riv` extension).
+    You can load Rive files from native asset bundles by referencing the resource name (without the `.riv` extension). Any string that doesn't start with `http://` or `https://` is treated as a resource name.
 
     ```tsx
     import { View, ActivityIndicator, Text } from "react-native";
@@ -116,7 +121,7 @@ description: "How to use Rive files with the Rive React Native runtime. "
       }
 
       if (error || !riveFile) {
-        return <Text>Error: {error || "Failed to load file"}</Text>;
+        return <Text>Error: {error?.message ?? "Failed to load file"}</Text>;
       }
 
       return (
@@ -183,12 +188,13 @@ Open the `android/` folder of your React Native project in Android Studio.
       }
 
       if (error || !riveFile) {
-        return <Text>Error: {error || "Failed to load file"}</Text>;
+        return <Text>Error: {error?.message ?? "Failed to load file"}</Text>;
       }
 
       return (
         <RiveView
           file={riveFile}
+          stateMachineName="bumpy"
           fit={Fit.Contain}
           autoPlay={true}
           style={{ width: 400, height: 400 }}

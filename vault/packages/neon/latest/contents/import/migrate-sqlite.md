@@ -1,21 +1,21 @@
 ---
-title: Migrate from SQLite to Neon Postgres
+title: Migrate from SQLite to Lakebase Postgres
 summary: >-
-  SQLite-to-Neon Postgres migration using pgloader transfers schemas and data
+  SQLite-to-Lakebase Postgres migration using pgloader transfers schemas and data
   while mapping SQLite type affinities to strict Postgres types. Use this page
   when moving an existing SQLite or Turso database to Neon and needing control
   over type casting via pgloader CAST clauses, as distinct from guides covering
   MySQL, CSV, or logical replication imports. Neon's Free plan supports up to
-  0.5 GB; the guide also covers sequence verification after import and a Docker
+  1 GB; the guide also covers sequence verification after import and a Docker
   SSL workaround.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-29T17:10:40.931Z'
 ---
 
-This guide describes how to migrate your SQLite database to Neon Postgres using [pgloader](https://pgloader.readthedocs.io/en/latest/intro.html)
+This guide describes how to migrate your SQLite database to Lakebase Postgres using [pgloader](https://pgloader.readthedocs.io/en/latest/intro.html)
 
-`pgloader` is an open-source data loading and migration tool that efficiently transfers data from various sources (like CSV, MySQL, SQLite, MS SQL, etc.) into Postgres, handling schema and data transformations on the fly. We'll use it to migrate a sample SQLite database to Neon Postgres
+`pgloader` is an open-source data loading and migration tool that efficiently transfers data from various sources (like CSV, MySQL, SQLite, MS SQL, etc.) into Postgres, handling schema and data transformations on the fly. We'll use it to migrate a sample SQLite database to Lakebase Postgres
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ Before you begin, ensure you have the following:
 - A Neon account and a project. If you don't have one, see [Sign up](/docs/get-started/signing-up).
 - A database created in your Neon project. For instructions, see [Create a database](/docs/manage/databases#create-a-database).
 - The file path to your source SQLite database file. If you don't have one, you can create a sample database in the next step.
-- Neon's Free plan supports 0.5 GB of data. If your data size is more than 0.5 GB, you'll need to upgrade to one of Neon's paid plans. See [Neon plans](/docs/introduction/plans) for more information.
+- Neon's Free plan supports 1 GB of data. If your data size is more than 1 GB, you'll need to upgrade to one of Neon's paid plans. See [Neon plans](/docs/introduction/plans) for more information.
 
 A review of the [pgloader SQLite to Postgres Guide](https://pgloader.readthedocs.io/en/latest/ref/sqlite.html) is also recommended. It provides a comprehensive overview of `pgloader`'s capabilities.
 
@@ -116,7 +116,7 @@ Now that you have your Neon database and SQLite database ready, you can use `pgl
 
 ## Retrieve your Neon database connection string
 
-Log in to the [Neon Console](https://console.neon.tech). Find the connection string for your database by clicking the **Connect** button on your **Project Dashboard**. Make sure the **Connection pooling** toggle is disabled:
+Log in to the [Neon Console](https://console.neon.tech). Find the connection string for your database by clicking the **Connect** button in the Console nav. Make sure the **Connection pooling** toggle is disabled:
 
 ![Connection details modal with connection pooling disabled](/docs/connect/connection_details_without_connection_pooling.png)
 

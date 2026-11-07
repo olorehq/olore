@@ -1,19 +1,19 @@
 ---
 title: Connect a React Router application to Neon
-subtitle: Set up a Neon project in seconds and connect from a React Router application
+subtitle: Set up a project on Neon in seconds and connect from a React Router application
 summary: >-
-  React Router full-stack integration with Neon Postgres runs database queries
+  React Router full-stack integration with Lakebase Postgres runs database queries
   server-side inside a route `loader` function, keeping credentials and SQL out
   of the browser. Use this guide when building a React Router app that needs a
   serverless Postgres backend, with driver options for node-postgres,
   postgres.js, or the Neon serverless driver.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-08T19:32:04.700Z'
 ---
 
 [React Router](https://reactrouter.com/home) is a powerful routing library for React that also includes modern, full-stack framework features. This guide explains how to connect a React Router application to Neon using a server-side `loader` function.
 
-To create a Neon project and access it from a React Router application:
+To create a project on Neon and access it from a React Router application:
 
 <Steps>
 
@@ -54,7 +54,7 @@ If you do not have one already, create a Neon project. Save your connection deta
 
 ## Store your Neon credentials
 
-Add a `.env` file to your project's root directory and add your Neon connection string to it. You can find the connection string for your database by clicking the **Connect** button on your **Project Dashboard**. For more information, see [Connect from any application](/docs/connect/connect-from-any-app).
+Add a `.env` file to your project's root directory and add your Neon connection string to it. You can find the connection string for your database by clicking the **Connect** button in the Console nav. For more information, see [Connect from any application](/docs/connect/connect-from-any-app).
 
 ```shell shouldWrap
 DATABASE_URL="postgresql://<user>:<password>@<endpoint_hostname>.neon.tech:<port>/<dbname>?sslmode=require&channel_binding=require"
@@ -175,7 +175,7 @@ With the types generated, start the development server:
 npm run dev
 ```
 
-Now, navigate to [http://localhost:5173/version](http://localhost:5173/version) in your browser. You should see a page displaying the version of your Neon Postgres database.
+Now, navigate to [http://localhost:5173/version](http://localhost:5173/version) in your browser. You should see a page displaying the version of your database.
 
 ```text shouldWrap
 Database Version
@@ -186,6 +186,7 @@ PostgreSQL 17.5 (6bc9ef8) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 
 
 ## Next steps
 
-- [Set up Neon Auth](/docs/auth/quick-start/react): Add managed authentication that branches with your database
+- [Set up Managed Better Auth](/docs/auth/quick-start/react): Add managed authentication that branches with your database
+- [Realtime](/docs/realtime/sdks/typescript#react): Build realtime React apps on Neon with end-to-end reactivity and type-safety &raquo;
 
 <NeedHelp/>

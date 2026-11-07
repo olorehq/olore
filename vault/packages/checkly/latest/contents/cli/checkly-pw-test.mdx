@@ -2,6 +2,7 @@
 title: checkly pw-test
 description: 'Run Playwright tests with Checkly monitoring features'
 sidebarTitle: 'checkly pw-test'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-pw-test/'
 ---
 
 <Note>Available since CLI v6.1.0.</Note>
@@ -36,7 +37,7 @@ Define `checkly pw-test` specific options before the `--` separator:
 |--------|----------|-------------|
 | `--config` | - | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts\|js` file in the current directory. |
 | `--create-check` | - | Create a Checkly check from the Playwright test. |
-| `--detach, -d` | - | Keep checks running in the cloud when you stop the CLI with Ctrl+C, instead of cancelling the run. |
+| `--detach, -d` | - | Start the checks in the cloud and exit after printing the test session ID, without waiting for results. |
 | `--env, -e` | - | Env vars to be passed to the test run. Default: [] |
 | `--env-file` | - | dotenv file path to be passed. For example `--env-file="./.env"` |
 | `--include, -i` | - | File patterns to include when bundling the test project (e.g., `"utils/**/*"`). Can be repeated. |
@@ -46,9 +47,9 @@ Define `checkly pw-test` specific options before the `--` separator:
 | `--[no-]record` | - | Record test results in Checkly as a test session with full logs, traces and videos. |
 | `--refresh-cache` | - | Force a fresh install of dependencies and update the cached version. |
 | `--reporter` | - | One or more custom reporters for the test output. Supports comma-separated values and repeated flags. |
-| `--stream-logs` | - | Stream logs from the test run to the console. |
+| `--[no-]stream-logs` | - | Stream logs from the test run to the console. Default: `true`. |
 | `--test-session-name` | - | A name to use when storing results in Checkly |
-| `--timeout` | - | A timeout (in seconds) to wait for checks to complete. |
+| `--timeout` | - | A timeout (in seconds) to wait for each check to make progress once it starts running: report a retry attempt or its result. Checks that have not started yet get up to 900 additional seconds for server-side scheduling. |
 | `--verbose` | - | Always show the full logs of the checks. |
 
 </Tab>
@@ -101,7 +102,8 @@ Running this command:
 
 Adds a new Playwright Check Suite to your `checkly.config.ts`:
 
-```typescript checkly.config.ts highlight={8-15}
+```typescript checkly.config.ts highlight={9-16}
+import { defineConfig } from 'checkly'
 const config = defineConfig({
   projectName: "Playwright Project",
   logicalId: "playwright-project",
@@ -122,13 +124,15 @@ const config = defineConfig({
 })
 ```
 
-<Note>If there's no existing `checkly.config.ts` file, the `--create-check` option will create one.</Note>
+<Note>
+If there's no existing `checkly.config.ts` file, the `--create-check` option will create one. `--create-check` doesn't run your tests. Run `npx checkly deploy` to deploy the new check. Use `--frequency, -f` to set its frequency in minutes: `1`, `2`, `5`, `10` (default), `15`, `30`, `60`, `120`, `180`, `360`, `720` or `1440`.
+</Note>
 
 </ResponseField>
 
 <ResponseField name="--detach, -d" type="boolean" default="false">
 
-By default, pressing <kbd>Ctrl</kbd>+<kbd>C</kbd> during a `pw-test` run cancels the recorded test session. With `--detach`, <kbd>Ctrl</kbd>+<kbd>C</kbd> exits the CLI immediately instead, leaving the checks running in the cloud.
+Start the checks in the cloud and exit as soon as they're scheduled. The CLI prints the test session ID and doesn't wait for results. Get the results later with `checkly test-sessions get <test-session-id>`. `--detach` can't be combined with the `json` or `github` reporters.
 
 **Usage:**
 
@@ -180,7 +184,7 @@ npx checkly pw-test -i="fixtures/**/*" -i="data/*.json"
 
 <ResponseField name="--install-command" type="string">
 
-Override the command used to install dependencies before running tests. By default, Checkly runs `npm install --dev`. Use this to customize the install step, for example to skip lifecycle scripts or use a different package manager.
+Override the command used to install dependencies before running tests. By default, Checkly uses the install command of the package manager your project uses, for example `npm install --no-save` for npm. Use this to customize the install step, for example to skip lifecycle scripts or use a different package manager.
 
 **Usage:**
 
@@ -267,7 +271,7 @@ npx checkly pw-test --reporter list --reporter json
 
 </ResponseField>
 
-<ResponseField name="--stream-logs" type="boolean">
+<ResponseField name="--[no-]stream-logs" type="boolean" default="true">
 
 Logs appear in real time as tests run.
 
@@ -292,9 +296,15 @@ npx checkly pw-test --test-session-name="Daily regression suite"
 
 </ResponseField>
 
-<ResponseField name="--timeout" type="number" default="600">
+<ResponseField name="--timeout" type="number" default="1200">
 
-Set a timeout (in seconds) to wait for checks to complete.
+A timeout (in seconds) to wait for each check to make progress once it starts running: report a retry attempt or its result. Checks that have not started yet get up to 900 additional seconds for server-side scheduling.
+
+The timer restarts whenever a check starts running and whenever it reports a failed attempt that will be retried, so a check that retries several times can take longer than this value in total. The timeout only ends the wait when a check stops reporting progress.
+
+Checkly can stagger the start of checks in large test sessions by up to 900 seconds. If a check still has not started within this value plus that allowance, the CLI reports that the check did not start. That usually means a problem on Checkly's side: check [the status page](https://is.checkly.online) or contact support.
+
+When the CLI stops waiting for a check, whether it stopped making progress or never started, it reports the check as timed out rather than failed: the CLI did not receive a result, and the check may still run and pass in Checkly. Reporters mark it with ⏱ (`T` in the `dot` reporter) and count it as timed out in the summary, and the `json` reporter gives it `"result": "Timed out"`. The run still exits with code 1.
 
 **Usage:**
 
@@ -303,7 +313,6 @@ npx checkly pw-test --timeout="300"
 npx checkly pw-test --timeout="1200"
 ```
 
-<Note>The current maximum timeout is 1200 seconds (20 minutes).</Note>
 
 </ResponseField>
 
@@ -451,7 +460,7 @@ npx checkly pw-test -- test.spec.ts
 
 Cancellation is available only for recorded test sessions.
 
-Press <kbd>Ctrl</kbd>+<kbd>C</kbd> during a `checkly pw-test` run to cancel the test session. The CLI keeps running to report the cancelled results; press <kbd>Ctrl</kbd>+<kbd>C</kbd> again to exit immediately without waiting. Pass the `--detach` flag to keep the checks running in the cloud instead — <kbd>Ctrl</kbd>+<kbd>C</kbd> then exits the CLI immediately without cancelling.
+Press <kbd>Ctrl</kbd>+<kbd>C</kbd> during a `checkly pw-test` run to cancel the test session. The CLI keeps running to report the cancelled results; press <kbd>Ctrl</kbd>+<kbd>C</kbd> again to exit immediately without waiting. To start checks without waiting for them, use `--detach`. The CLI then exits as soon as the checks are scheduled, and the checks keep running in the cloud.
 
 See [Cancellation](/concepts/cancellation) for the full flow.
 

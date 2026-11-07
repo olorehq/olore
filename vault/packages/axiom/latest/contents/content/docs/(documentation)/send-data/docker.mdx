@@ -1,0 +1,490 @@
+---
+title: 'Send data from Docker to Axiom'
+description: 'This page explains how to send logs and metrics from Docker containers to Axiom with Vector, the OpenTelemetry Collector, Fluent Bit, Fluentd, or Filebeat.'
+overview: 'Platform for building, shipping, and running containerized apps'
+sidebarTitle: Docker
+keywords: ['docker', 'axiom documentation', 'documentation', 'axiom', 'guide', 'container logs', 'docker logs', 'logging driver', 'docker compose', 'json-file', 'vector', 'opentelemetry', 'fluent bit', 'fluentd', 'filebeat']
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+
+Docker captures everything your containers write to `stdout` and `stderr` and hands it to a logging driver. By default, the `json-file` driver stores this output on the host. To send container logs to Axiom, run a collector on the host that reads those logs, or point one of Docker’s built-in logging drivers at a forwarder that sends the logs to Axiom.
+
+This page covers the methods that work with Axiom and explains when to use each. For containers that run on Kubernetes, see [Send data from Kubernetes](/send-data/kubernetes). For Amazon ECS and AWS Fargate, see [Send data from AWS FireLens](/send-data/aws-firelens).
+
+<Prerequisites />
+- Docker Engine on a Linux host. Depending on the method, the collector needs access to the Docker socket (`/var/run/docker.sock`) or to the container log directory (`/var/lib/docker/containers`).
+
+## Choose a method
+
+| Method | How it collects logs | Container metadata |
+| :--- | :--- | :--- |
+| [Vector](#send-docker-logs-with-vector) | The `docker_logs` source reads container output through the Docker socket. | Container name and ID, image, labels, stream |
+| [OpenTelemetry Collector](#send-docker-logs-with-the-opentelemetry-collector) | The `filelog` receiver tails the `json-file` log files. The `docker_stats` receiver adds container metrics. | Container ID, stream, and the path of the log file |
+| [Fluent Bit](#send-docker-logs-with-fluent-bit) | Docker’s `fluentd` logging driver pushes logs to the Fluent Bit `forward` input. | Container name and ID, stream |
+| [Fluentd](#send-docker-logs-with-fluentd) | Docker’s `fluentd` logging driver pushes logs to the Fluentd `forward` input. | Container name and ID, stream |
+| [Filebeat](#send-docker-logs-with-filebeat) | The `filestream` input with the `container` parser tails the `json-file` log files. | Container ID, name, image, and labels |
+
+Vector, the OpenTelemetry Collector, and Filebeat work with Docker’s default logging configuration. The Fluent Bit and Fluentd methods change the logging driver of your containers. In that case, `docker logs` still works because Docker keeps a local cache of the latest logs, unless you set the `cache-disabled` option to `true`.
+
+## Send Docker logs with Vector
+
+Vector’s `docker_logs` source collects the output of all containers through the Docker socket and adds the container name, ID, image, and labels to each event. The `axiom` sink sends the events to Axiom. This is the recommended method if you don’t already run another collector.
+
+### Run Vector on the host
+
+1. [Install Vector](https://vector.dev/docs/setup/quickstart/) on the Docker host. The user that runs Vector must have access to the Docker socket, for example as a member of the `docker` group.
+1. Create a configuration file `vector.toml` with the following content:
+
+    ```toml
+    [sources.docker_logs]
+    type = "docker_logs"
+    docker_host = "unix:///var/run/docker.sock"
+
+    # Keep the Docker log timestamp as the Axiom event time
+    [transforms.docker_time]
+    type = "remap"
+    inputs = ["docker_logs"]
+    source = '''
+    ._time = del(.timestamp)
+    '''
+
+    [sinks.axiom]
+    type = "axiom"
+    inputs = ["docker_time"]
+    dataset = "DATASET_NAME"
+    token = "API_TOKEN"
+    region = "AXIOM_DOMAIN"
+    ```
+
+1. Run Vector with the configuration file:
+
+    ```bash
+    vector --config /path/to/vector.toml
+    ```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+</Info>
+
+The `docker_time` transform moves Vector’s `timestamp` field to `_time`. Without it, Axiom assigns the ingest time to each event and stores the Docker timestamp in the `timestamp` field.
+
+To collect logs from a subset of containers, add `include_containers`, `exclude_containers`, `include_images`, or `include_labels` to the `docker_logs` source. Container names and IDs match by prefix. Exclusions take precedence over inclusions.
+
+### Run Vector as a container
+
+To run Vector as a container on the same host, mount the Docker socket and the configuration file into the container.
+
+1. Create a configuration file `vector.yaml` with the following content:
+
+    ```yaml
+    sources:
+      docker_logs:
+        type: docker_logs
+        # Optional: collect only from some containers (prefix match on name or ID)
+        # include_containers:
+        #   - api
+        #   - worker
+
+    transforms:
+      # Keep the Docker log timestamp as the Axiom event time
+      docker_time:
+        type: remap
+        inputs:
+          - docker_logs
+        source: |
+          ._time = del(.timestamp)
+
+    sinks:
+      axiom:
+        type: axiom
+        inputs:
+          - docker_time
+        dataset: DATASET_NAME
+        token: API_TOKEN
+        region: AXIOM_DOMAIN
+    ```
+
+1. Start Vector:
+
+    ```bash
+    docker run -d --name vector \
+      -v /var/run/docker.sock:/var/run/docker.sock:ro \
+      -v $(pwd)/vector.yaml:/etc/vector/vector.yaml:ro \
+      timberio/vector:0.59.0-alpine
+    ```
+
+    Alternatively, add Vector to your Docker Compose file:
+
+    ```yaml
+    services:
+      vector:
+        image: timberio/vector:0.59.0-alpine
+        restart: unless-stopped
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+          - ./vector.yaml:/etc/vector/vector.yaml:ro
+    ```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+Replace `0.59.0` with the Vector version you want to run.
+</Info>
+
+When Vector runs as a container, it automatically excludes its own logs.
+
+### Query Docker logs sent by Vector
+
+Each event contains the log line in `message`, the output stream in `stream`, and the container metadata in `container_name`, `container_id`, `image`, `container_created_at`, and `label`. For example, to see the latest output of the `api` container:
+
+```kusto
+['DATASET_NAME']
+| where container_name == "api"
+| project _time, stream, message
+| sort by _time desc
+```
+
+## Send Docker logs with the OpenTelemetry Collector
+
+The `filelog` receiver of the OpenTelemetry Collector tails the `json-file` log files that Docker writes. The `container` operator parses the Docker log format, and the `otlphttp` exporter sends the logs to Axiom. The `filelog` receiver is part of the Contrib distribution of the Collector.
+
+1. Create a configuration file `otel-collector.yaml` with the following content:
+
+    ```yaml
+    receivers:
+      filelog:
+        include:
+          - /var/lib/docker/containers/*/*-json.log
+        start_at: end
+        include_file_path: true
+        operators:
+          # Parse the json-file format: the log text becomes the body, the stream
+          # becomes the log.iostream attribute, and the time becomes the timestamp
+          - type: container
+            format: docker
+            add_metadata_from_filepath: false
+          # Add the container ID from the log file path
+          - type: regex_parser
+            regex: '/containers/(?P<container_id>[^/]+)/'
+            parse_from: attributes["log.file.path"]
+          # Optional: parse JSON log lines into fields
+          - type: json_parser
+            if: body matches '^{.*}\\s*$'
+
+    processors:
+      batch:
+
+    exporters:
+      otlphttp:
+        compression: zstd
+        endpoint: https://AXIOM_DOMAIN
+        headers:
+          authorization: Bearer API_TOKEN
+          x-axiom-dataset: DATASET_NAME
+
+    service:
+      pipelines:
+        logs:
+          receivers:
+            - filelog
+          processors:
+            - batch
+          exporters:
+            - otlphttp
+    ```
+
+1. Start the Collector. The Collector needs read access to `/var/lib/docker/containers`, which is only readable by root, so run the container as root:
+
+    ```bash
+    docker run -d --name otel-collector \
+      --user 0 \
+      -v /var/lib/docker/containers:/var/lib/docker/containers:ro \
+      -v $(pwd)/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro \
+      otel/opentelemetry-collector-contrib:0.162.0
+    ```
+
+    Alternatively, add the Collector to your Docker Compose file:
+
+    ```yaml
+    services:
+      otel-collector:
+        image: otel/opentelemetry-collector-contrib:0.162.0
+        restart: unless-stopped
+        user: "0"
+        volumes:
+          - /var/lib/docker/containers:/var/lib/docker/containers:ro
+          - ./otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+Replace `0.162.0` with the Collector version you want to run.
+</Info>
+
+Each event contains the log line as the body, the output stream in `log.iostream`, the log file in `log.file.path`, and the container ID in `container_id`. When a log line is a JSON object, the `json_parser` operator turns its keys into fields. Docker keeps the trailing newline of each line, so the condition of the operator allows whitespace after the closing brace. Docker doesn’t record container names in the log files. To query by container name, use Vector or the `fluentd` logging driver instead.
+
+### Send container metrics with the OpenTelemetry Collector
+
+The `docker_stats` receiver collects CPU, memory, network, and block I/O metrics for every running container through the Docker socket. Send these metrics to a dataset of type **Metrics**, separate from the dataset that holds your logs. The receiver runs on Linux only.
+
+Add the receiver, an exporter for the metrics dataset, and a metrics pipeline to the Collector configuration:
+
+```yaml
+receivers:
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 30s
+
+processors:
+  batch:
+
+exporters:
+  otlphttp/metrics:
+    compression: zstd
+    endpoint: https://AXIOM_DOMAIN
+    headers:
+      authorization: Bearer API_TOKEN
+      x-axiom-metrics-dataset: METRICS_DATASET_NAME
+
+service:
+  pipelines:
+    metrics:
+      receivers:
+        - docker_stats
+      processors:
+        - batch
+      exporters:
+        - otlphttp/metrics
+```
+
+Mount the Docker socket into the Collector container with `-v /var/run/docker.sock:/var/run/docker.sock:ro`.
+
+<Info>
+<ReplaceDomain />
+Replace `API_TOKEN` with the Axiom API token you have generated. For added security, store the API token in an environment variable.
+
+Replace `METRICS_DATASET_NAME` with the name of the Axiom dataset of type **Metrics** where you send the container metrics.
+</Info>
+
+## Send Docker logs with Fluent Bit
+
+Docker’s built-in `fluentd` logging driver sends container logs to a Fluentd-compatible `forward` input. Fluent Bit implements this protocol, so you can run Fluent Bit as a small forwarder and point the logging driver at it. Fluent Bit then sends the logs to Axiom with its `http` output. Each record contains the log line in `log`, the output stream in `source`, and the container metadata in `container_id` and `container_name`.
+
+1. Create a configuration file `fluent-bit.conf` with the following content:
+
+    ```ini
+    [SERVICE]
+        Flush          1
+        Log_Level      info
+        Parsers_File   /fluent-bit/etc/parsers.conf
+
+    [INPUT]
+        Name           forward
+        Listen         0.0.0.0
+        Port           24224
+
+    [OUTPUT]
+        Name               http
+        Match              *
+        Host               AXIOM_DOMAIN
+        Port               443
+        URI                /v1/ingest/DATASET_NAME
+        Header             Authorization Bearer API_TOKEN
+        Compress           gzip
+        Format             json
+        JSON_Date_Key      _time
+        JSON_Date_Format   iso8601
+        TLS                On
+    ```
+
+    The `JSON_Date_Key` option writes the timestamp of each record to the `_time` field, so Axiom uses the time that Docker recorded.
+
+1. Start Fluent Bit and publish port `24224` on the host. The Docker daemon, not the container, connects to this port:
+
+    ```bash
+    docker run -d --name fluent-bit \
+      -p 24224:24224 \
+      -v $(pwd)/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro \
+      cr.fluentbit.io/fluent/fluent-bit:5.1.3
+    ```
+
+1. Start your containers with the `fluentd` logging driver:
+
+    ```bash
+    docker run -d \
+      --log-driver=fluentd \
+      --log-opt fluentd-address=localhost:24224 \
+      --log-opt fluentd-async=true \
+      --log-opt tag="{{.Name}}" \
+      nginx
+    ```
+
+    The `fluentd-async` option lets the container start even when Fluent Bit isn’t reachable yet. Docker buffers the logs until the connection is established.
+
+    To use the driver for all new containers, set it as the default in `/etc/docker/daemon.json` and restart Docker:
+
+    ```json
+    {
+      "log-driver": "fluentd",
+      "log-opts": {
+        "fluentd-address": "localhost:24224",
+        "fluentd-async": "true",
+        "tag": "{{.Name}}"
+      }
+    }
+    ```
+
+    In Docker Compose, run Fluent Bit as a service and configure the `logging` key of each service that sends logs:
+
+    ```yaml
+    services:
+      fluent-bit:
+        image: cr.fluentbit.io/fluent/fluent-bit:5.1.3
+        restart: unless-stopped
+        ports:
+          - "24224:24224"
+        volumes:
+          - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+
+      api:
+        image: nginx
+        depends_on:
+          - fluent-bit
+        logging:
+          driver: fluentd
+          options:
+            fluentd-address: localhost:24224
+            fluentd-async: "true"
+            tag: "{{.Name}}"
+    ```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+Replace `5.1.3` with the Fluent Bit version you want to run.
+</Info>
+
+If your containers write JSON log lines, add a `parser` filter between the input and the output to turn the keys of the `log` field into fields of the record:
+
+```ini
+[FILTER]
+    Name           parser
+    Match          *
+    Key_Name       log
+    Parser         json
+    Reserve_Data   On
+```
+
+## Send Docker logs with Fluentd
+
+If you already run Fluentd, point Docker’s `fluentd` logging driver at its `forward` input and send the logs to Axiom with the `http` output plugin. The records contain the same `log`, `source`, `container_id`, and `container_name` fields as with Fluent Bit.
+
+1. Create a configuration file `fluent.conf` with the following content:
+
+    ```xml
+    <source>
+      @type forward
+      port 24224
+    </source>
+
+    # Keep the Docker log timestamp as the Axiom event time
+    <filter **>
+      @type record_transformer
+      enable_ruby true
+      <record>
+        _time ${time.utc.strftime('%Y-%m-%dT%H:%M:%S.%NZ')}
+      </record>
+    </filter>
+
+    <match **>
+      @type http
+      endpoint https://AXIOM_DOMAIN/v1/ingest/DATASET_NAME
+      headers {"Authorization": "Bearer API_TOKEN"}
+      json_array false
+      open_timeout 3
+      <format>
+        @type json
+      </format>
+      <buffer>
+        flush_interval 5s
+      </buffer>
+    </match>
+    ```
+
+    The `record_transformer` filter adds the event time as the `_time` field. The `http` output doesn’t include the event time in the record on its own.
+
+1. Start Fluentd and publish port `24224` on the host:
+
+    ```bash
+    docker run -d --name fluentd \
+      -p 24224:24224 \
+      -v $(pwd)/fluent.conf:/fluentd/etc/fluent.conf:ro \
+      fluent/fluentd:v1.19-2 \
+      -c /fluentd/etc/fluent.conf
+    ```
+
+1. Start your containers with the `fluentd` logging driver, as described in [Send Docker logs with Fluent Bit](#send-docker-logs-with-fluent-bit).
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+Replace `v1.19-2` with the Fluentd version you want to run.
+</Info>
+
+If your containers write JSON log lines, add a `parser` filter before the `match` section to turn the keys of the `log` field into fields of the record:
+
+```xml
+<filter **>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type json
+  </parse>
+</filter>
+```
+
+## Send Docker logs with Filebeat
+
+Filebeat’s `filestream` input tails the `json-file` log files, and the `container` parser extracts the log line and stream from the Docker log format. The `add_docker_metadata` processor looks up the container ID from the path of the log file and adds the container name, image, and labels to each event. Filebeat sends the events to Axiom’s Elasticsearch-compatible bulk API.
+
+<Note>
+Use the open-source software (OSS) version 8.12.1 or lower of Filebeat. Other versions don’t work with Axiom. For more information, see [Send data from Elastic Beats](/send-data/elastic-beats).
+</Note>
+
+1. [Install Filebeat OSS](https://www.elastic.co/downloads/beats/filebeat-oss) on the Docker host.
+1. Create a configuration file `filebeat.yml` with the following content:
+
+    ```yaml
+    setup.ilm.enabled: false
+    filebeat.inputs:
+      - type: filestream
+        id: docker-containers
+        paths:
+          - /var/lib/docker/containers/*/*-json.log
+        parsers:
+          - container:
+              stream: all
+              format: docker
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+    output.elasticsearch:
+      hosts: ['https://AXIOM_DOMAIN:443/v1/ingest/DATASET_NAME/elastic']
+      api_key: 'axiom:API_TOKEN'
+      allow_older_versions: true
+    ```
+
+1. Run Filebeat as root so it can read the container log files and the Docker socket.
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+</Info>
+
+Filebeat stores the log line in the `message` field, the output stream in `stream`, and the Docker log timestamp in `@timestamp`. Axiom’s Elasticsearch-compatible API uses `@timestamp` as the event time.

@@ -1,4 +1,5 @@
 ---
+icon: referenceSecurity
 title: Security
 description: Better Auth security features.
 ---
@@ -11,9 +12,11 @@ Better Auth uses the `scrypt` algorithm to hash passwords by default. This algor
 
 ## Secret Rotation
 
-Better Auth supports non-destructive rotation of `BETTER_AUTH_SECRET`. When you configure versioned secrets via the `secrets` option or the `BETTER_AUTH_SECRETS` environment variable, all new encrypted data includes a key version identifier. Decryption performs a direct key lookup by version — no trial decryption.
+Better Auth supports non-destructive rotation of `BETTER_AUTH_SECRET` within the same encryption format and purpose. When you configure versioned secrets via the `secrets` option or the `BETTER_AUTH_SECRETS` environment variable, all new encrypted data includes a key version identifier. Decryption performs a direct key lookup by version, with no trial decryption.
 
-Legacy data encrypted before rotation (bare-hex format) is still decryptable using the original `BETTER_AUTH_SECRET` as a fallback. No database migrations or downtime are required. Data is lazily re-encrypted with the current key when it is next written.
+Within the same encryption purpose, legacy data encrypted before rotation (bare-hex format) remains decryptable using the original `BETTER_AUTH_SECRET` as a fallback. Ordinary key rotation requires no database migration or downtime. Data is lazily re-encrypted with the current key when it is next written.
+
+Upgrading from shared encryption keys to purpose-specific keys changes the format used for pending OAuth and SAML state cookies and OAuth Proxy payloads. Keeping the original secret does not preserve these pending flows. Upgrade participating servers together and restart sign-in and account-linking flows that began before the cutover. See the [state-cookie upgrade guidance](/docs/reference/options#storestatestrategy) and [OAuth Proxy upgrade instructions](/docs/plugins/oauth-proxy#upgrading-existing-deployments).
 
 See the [`secrets` option](/docs/reference/options#secrets) for configuration details.
 
@@ -41,6 +44,8 @@ Better Auth includes multiple safeguards to prevent Cross-Site Request Forgery (
 2. **Origin Validation**
    Each request’s `Origin` header is verified to confirm it comes from your application or another explicitly trusted source. Requests from untrusted origins are rejected. By default, Better Auth trusts the base URL of your app, but you can specify additional trusted origins via the `trustedOrigins` configuration option.
 
+   A same-origin form submission from a page using `Referrer-Policy: no-referrer` can carry `Origin: null`. When `Sec-Fetch-Site` confirms the request is same-origin, Better Auth validates the request URL's origin against `trustedOrigins` instead. Requests without that Fetch Metadata evidence and requests targeting an untrusted origin remain rejected.
+
 3. **Secure Cookie Settings**
    Session cookies use the `SameSite=Lax` attribute by default, preventing browsers from sending cookies with most cross-site requests. You can override this behavior using the `defaultCookieAttributes` option.
 
@@ -65,6 +70,19 @@ Better Auth includes multiple safeguards to prevent Cross-Site Request Forgery (
 
 5. **No Mutations on GET Requests (with additional safeguards)**
    `GET` requests are assumed to be read-only and should not alter the application's state. In cases where a `GET` request must perform a mutation—such as during OAuth callbacks - Better Auth applies extra security measures, including validating `nonce` and `state` parameters to ensure the request's authenticity.
+
+6. **Your own routes that call `auth.api`**
+   These checks run only for requests that reach `auth.handler`. A direct `auth.api` call skips them, even when you pass the browser's headers. It also skips the `trustedOrigins` check on `callbackURL`, `errorCallbackURL`, `newUserCallbackURL`, and `redirectTo`, so validate any of those your route takes from the request. If your own route changes state for a cookie-authenticated browser request, reject it unless its `Origin` is trusted:
+
+   ```ts
+   const origin = request.headers.get("origin");
+   const context = await auth.$context;
+   if (!origin || !context.isTrustedOrigin(origin)) {
+     return new Response(null, { status: 403 });
+   }
+   ```
+
+   `isTrustedOrigin` checks the origins resolved at startup. If your `trustedOrigins` function adds origins based on the request, include those in the check, or forward the request to `auth.handler` when the endpoint has an HTTP route.
 
 ### Disabling Security Checks
 
@@ -146,28 +164,12 @@ Better Auth includes built-in rate limiting to safeguard against brute-force att
 
 ## IP Address Headers
 
-Better Auth uses client IP addresses for rate limiting and security monitoring. By default, it reads the IP address from the standard `X-Forwarded-For` header. However, you can configure a specific trusted header to ensure accurate IP address detection and prevent IP spoofing attacks.
+Better Auth uses client IP addresses for rate limiting and security monitoring. By default, it reads the address from the `X-Forwarded-For` header. Clients can set this header themselves. Per-client limits only work in one of these setups:
 
-You can configure the IP address header in your Better Auth configuration:
+* Your proxy or server code sets the address in a header on every request and replaces any value the client sent.
+* Your proxies append to `X-Forwarded-For`, and you list them in `trustedProxies`.
 
-```typescript
-{
-  advanced: {
-    ipAddress: {
-      ipAddressHeaders: ['cf-connecting-ip'] // or any other custom header
-    }
-  }
-}
-```
-
-This ensures that Better Auth only accepts IP addresses from your trusted proxy's header, making it more difficult for attackers to bypass rate limiting or other IP-based security measures by spoofing headers.
-
-<Callout type="info">
-  **Important**
-
-  * When setting a custom IP address header, ensure that your proxy or load balancer is properly configured to set this header, and that it cannot be set by end users directly.
-  * In dev/test environments, if the IP cannot be retrieved from headers, 127.0.0.1 is used as a fallback.
-</Callout>
+[Connecting IP Address](/docs/concepts/rate-limit#connecting-ip-address) explains how to configure each setup.
 
 ## Trusted Proxy Headers
 
@@ -203,6 +205,8 @@ If you're serving your app from multiple approved domains, you'll typically want
 ## Trusted Origins
 
 Trusted origins prevent CSRF attacks and block open redirects. You can set a list of trusted origins in the `trustedOrigins` configuration option. Requests from origins not on this list are automatically blocked.
+
+Relative callback and redirect URLs support standard path, query, and fragment syntax, but must begin with a single `/`. Better Auth rejects protocol-relative URLs (`//...`), backslashes, control characters, and encoded path separators in the path.
 
 ### Basic Usage
 
@@ -283,6 +287,10 @@ You can also dynamically set the list of trusted origins by providing a function
   **Important**: This function will be invoked per incoming request, so be careful if you decide to dynamically fetch your list of trusted domains.
 </Callout>
 
+## Outbound OAuth Requests
+
+During sign-in, Better Auth makes server-side requests to OAuth and OIDC provider endpoints: the token exchange, token refresh, token introspection, and key-set (JWKS) requests. These requests do not follow HTTP redirects. A conformant provider answers these endpoints with a direct response and never redirects, so standard integrations are unaffected. Refusing redirects keeps a provider endpoint from steering a server-side request to an unintended internal address.
+
 ## Email Enumeration Protection
 
 Better Auth prevents email enumeration on the sign-up and change-email endpoints. When `requireEmailVerification` is enabled or `autoSignIn` is set to `false`, the sign-up endpoint returns the same `200` response whether the email is already registered or not, following [OWASP authentication best practices](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#authentication-and-error-messages). Timing attacks are mitigated by simulating password hashing on duplicate sign-up attempts.
@@ -291,4 +299,4 @@ See [Email and Password — Email Enumeration Protection](/docs/authentication/e
 
 ## Reporting Vulnerabilities
 
-If you discover a security vulnerability in Better Auth, please report it to us at [security@better-auth.com](mailto:security@better-auth.com). We address all reports promptly, and credits will be given for validated discoveries.
+If you discover a security vulnerability in Better Auth, please report it via [GitHub Security Advisories](https://github.com/better-auth/better-auth/security/advisories/new). We address all reports promptly, and credits will be given for validated discoveries.

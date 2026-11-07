@@ -1,5 +1,5 @@
 ---
-title: McpClient
+title: MCP Client
 description: Connect Agents to external MCP servers to use their tools, resources, and prompts over the Model Context Protocol.
 pcx_content_type: reference
 tags:
@@ -12,7 +12,9 @@ products:
 
 import { Render, TypeScriptExample, LinkCard } from "~/components";
 
-Connect your agent to external [Model Context Protocol (MCP)](/agents/model-context-protocol/) servers to use their tools, resources, and prompts. This enables your agent to interact with GitHub, Slack, databases, and other services through a standardized protocol.
+Connect your agent to external [Model Context Protocol (MCP)](/agents/model-context-protocol/) servers to use their tools, resources, and prompts. Agents SDK v0.20.0 uses `@modelcontextprotocol/client` and negotiates stateless or legacy behavior automatically. The MCP client does not need `@modelcontextprotocol/sdk` or `@modelcontextprotocol/server`.
+
+Refer to [Migrate to MCP SDK v2](/agents/model-context-protocol/guides/migrate-to-mcp-sdk-v2/) for package, type, OAuth provider, and rollout changes.
 
 ## Overview
 
@@ -25,7 +27,7 @@ The MCP client capability lets your agent:
 
 :::note
 
-This page covers connecting to MCP servers as a client. To create your own MCP server, refer to [Creating MCP servers](/agents/model-context-protocol/apis/agent-api/).
+This page covers connecting to MCP servers as a client. To create your own MCP server, refer to [`createMcpHandler`](/agents/model-context-protocol/apis/handler-api/).
 
 :::
 
@@ -60,7 +62,7 @@ export class MyAgent extends Agent {
 
 </TypeScriptExample>
 
-Connections persist in the agent's [SQL storage](/agents/runtime/lifecycle/state/), and when an agent connects to an MCP server, all tools from that server become available automatically.
+Connections persist in the agent's [SQL storage](/agents/agent-class/state/), and when an agent connects to an MCP server, all tools from that server become available automatically.
 
 ## Adding MCP servers
 
@@ -123,6 +125,36 @@ await this.addMcpServer("server", "https://mcp.example.com/mcp", {
 | `streamable-http` | HTTP with streaming                                 |
 | `sse`             | Server-Sent Events - legacy/compatibility transport |
 
+### RPC transport
+
+`addMcpServer()` can also connect to an [`McpAgent`](/agents/model-context-protocol/apis/agent-api/) through its Durable Object binding instead of a URL. Messages travel over [Workers RPC](/workers/runtime-apis/bindings/service-bindings/rpc/), so the server needs no HTTP endpoint.
+
+:::caution[Use Streamable HTTP for new servers]
+The RPC transport is still supported, but it only connects to `McpAgent`, which is deprecated. There is no RPC transport for servers built with [`createMcpHandler`](/agents/model-context-protocol/apis/handler-api/). For new servers, serve them with `createMcpHandler` and connect with a URL over Streamable HTTP.
+:::
+
+<TypeScriptExample>
+
+```ts
+export class MyAgent extends Agent<Env> {
+	async onStart() {
+		// env.MyMCP is the Durable Object binding for an McpAgent class
+		await this.addMcpServer("my-mcp", this.env.MyMCP, {
+			props: { userId: "user-123", role: "admin" },
+		});
+	}
+}
+```
+
+</TypeScriptExample>
+
+- **No authentication.** The RPC transport has no OAuth flow. Pass user context in `props`. The `McpAgent` reads it as `this.props`.
+- **Restored after hibernation.** The binding name and props are stored, so the connection comes back without extra code.
+- **Deduplicated by name.** Calling `addMcpServer()` again with a name that already has an active RPC connection returns the existing connection, so it is safe to call in `onStart()`.
+- **No MCP SDK v1 on the Agent side.** Connecting does not need `@modelcontextprotocol/sdk`. Import `RPCClientTransport` and `RPC_DO_PREFIX` from `agents/mcp/client`, not `agents/mcp`, which loads the v1 SDK.
+
+For the server side, including bindings and the tool timeout, refer to [RPC transport](/agents/model-context-protocol/apis/agent-api/#rpc-transport) in the `McpAgent` reference.
+
 ### Custom headers
 
 For servers behind authentication (like Cloudflare Access) or using bearer tokens:
@@ -155,8 +187,6 @@ MCP server URLs are validated before connection to prevent Server-Side Request F
 - Cloud metadata endpoints (`metadata.google.internal`)
 
 Loopback addresses (`localhost`, `127.x.x.x`, `[::1]`) are **allowed** for local development.
-
-For production connections to internal services, use the [RPC transport](/agents/model-context-protocol/protocol/transport/) with a Durable Object binding instead of HTTP.
 
 ### Return value
 
@@ -318,23 +348,58 @@ export class MyAgent extends Agent {
 
 Once connected, access the server's capabilities:
 
-### Getting available tools
+### Get available tools
+
+Use `listTools()` to inspect the raw MCP catalog without preparing tools for an AI SDK model call:
 
 <TypeScriptExample>
 
 ```ts
-const state = this.getMcpServers();
+const tools = this.mcp.listTools();
 
-// All tools from all connected servers
-for (const tool of state.tools) {
+for (const tool of tools) {
 	console.log(`Tool: ${tool.name}`);
 	console.log(`  From server: ${tool.serverId}`);
-	console.log(`  Title: ${tool.title ?? tool.name}`);
+	console.log(`  Title: ${tool.title ?? tool.annotations?.title ?? tool.name}`);
 	console.log(`  Description: ${tool.description}`);
 }
 ```
 
 </TypeScriptExample>
+
+`getMcpServers().tools` returns the same raw tool records as part of the full MCP client state. Neither API converts the tool schemas.
+
+#### Integration with AI SDK
+
+To use MCP tools with the AI SDK, use `this.mcp.getAITools()` which converts MCP tools to AI SDK format:
+
+<TypeScriptExample>
+
+```ts
+import { generateText } from "ai";
+import { createAI } from "agents/models/ai-sdk";
+
+export class MyAgent extends Agent<Env> {
+	async onRequest(request: Request) {
+		const ai = createAI({ binding: this.env.AI });
+		const response = await generateText({
+			model: ai("@cf/zai-org/glm-4.7-flash"),
+			prompt: "What's the weather in San Francisco?",
+			tools: this.mcp.getAITools(),
+		});
+
+		return new Response(response.text);
+	}
+}
+```
+
+</TypeScriptExample>
+
+:::note
+
+Use `this.mcp.listTools()` or `getMcpServers().tools` for discovery. Call `this.mcp.getAITools()` when passing tools to the AI SDK. `getAITools()` converts each input and output schema to Zod, then reuses those schemas while the live connection keeps the same current catalog.
+
+:::
 
 ### Resources and prompts
 
@@ -356,76 +421,194 @@ for (const prompt of state.prompts) {
 
 </TypeScriptExample>
 
-### Server status
+### Elicitation
+
+MCP servers can request user input while handling another operation. On the stateless path, elicitation returns `input_required` and completes through multi-round-trip requests (MRTR). On the legacy path, the server sends pushed `elicitation/create` requests. Both use form and URL modes.
+
+Register a handler for each mode your Agent supports in `onStart()`. The same handlers serve both lanes:
 
 <TypeScriptExample>
 
 ```ts
-const state = this.getMcpServers();
+import { Agent } from "agents";
+import type { ElicitRequest, ElicitResult } from "agents/mcp/client";
 
-for (const [id, server] of Object.entries(state.servers)) {
-	console.log(`${server.name}: ${server.state}`);
-	// state: "ready" | "authenticating" | "connecting" | "connected" | "discovering" | "failed"
-}
-```
-
-</TypeScriptExample>
-
-### Integration with AI SDK
-
-To use MCP tools with the AI SDK, use `this.mcp.getAITools()` which converts MCP tools to AI SDK format:
-
-<TypeScriptExample>
-
-```ts
-import { generateText } from "ai";
-import { createWorkersAI } from "workers-ai-provider";
-
-export class MyAgent extends Agent<Env> {
-	async onRequest(request: Request) {
-		const workersai = createWorkersAI({ binding: this.env.AI });
-		const response = await generateText({
-			model: workersai("@cf/zai-org/glm-4.7-flash"),
-			prompt: "What's the weather in San Francisco?",
-			tools: this.mcp.getAITools(),
+class MyAgent extends Agent<Env> {
+	onStart() {
+		this.mcp.configureElicitationHandlers({
+			form: (request, serverId) =>
+				this.forwardElicitationToBrowser(request, serverId),
+			url: (request, serverId) =>
+				this.forwardElicitationToBrowser(request, serverId),
 		});
+	}
 
-		return new Response(response.text);
+	private forwardElicitationToBrowser(
+		request: ElicitRequest,
+		serverId: string,
+	): Promise<ElicitResult> {
+		// Forward the request to your UI and resolve after the user responds.
+		// A complete implementation appears in Forward elicitation to a UI.
+		throw new Error(
+			`Implement elicitation for ${serverId}: ${request.params.message}`,
+		);
 	}
 }
 ```
 
 </TypeScriptExample>
 
-:::note
+The `serverId` identifies the connection that sent the request. Use it to tell the user which server is asking for input and to apply server-specific policy.
 
-`getMcpServers().tools` returns raw MCP `Tool` objects for inspection. Use `this.mcp.getAITools()` when passing tools to the AI SDK.
+#### Capability negotiation and hibernation
 
-:::
+The SDK advertises only the modes with configured handlers. Connections on the legacy path advertise them during `initialize`. Requests on the stateless path carry them with request capabilities. A form-only handler advertises form mode. A URL-only handler advertises URL mode. A connection without handlers advertises no elicitation capability, which lets the server use its fallback.
 
-## Managing servers
+The SDK stores the advertised modes with each server registration. A connection restored after Durable Object hibernation can therefore advertise the same modes when it reconnects. Callback functions remain in memory and reattach when `onStart()` runs.
 
-### Removing a server
+You can explicitly narrow the advertised modes when adding a server:
 
 <TypeScriptExample>
 
 ```ts
-await this.removeMcpServer(serverId);
+await this.addMcpServer("portal", "https://portal.example.com/mcp", {
+	client: {
+		capabilities: {
+			elicitation: { form: {} },
+		},
+	},
+});
 ```
 
 </TypeScriptExample>
 
-This disconnects from the server and removes it from storage.
+An explicit `client.capabilities.elicitation` value takes precedence over handler-derived modes and persists with the server registration. Do not advertise a mode without a matching handler. If the server sends that mode, the connection returns an error because it cannot handle the request.
 
-### Persistence
+#### Form mode
 
-MCP servers persist across agent restarts:
+Form mode collects structured, non-sensitive data in the client. The request includes a restricted JSON Schema in `requestedSchema`. If the user submits the form, return `action: "accept"` with matching `content`:
 
-- Server configuration stored in SQLite
-- OAuth tokens stored securely
-- Connections restored automatically when agent wakes
+<TypeScriptExample>
 
-### Listing all servers
+```ts
+this.mcp.configureElicitationHandlers({
+	form: async (request) => {
+		const content = await showFormToUser(request.params.requestedSchema);
+		return content ? { action: "accept", content } : { action: "cancel" };
+	},
+});
+```
+
+</TypeScriptExample>
+
+Allow the user to review and edit values before submission. Validate accepted content against `requestedSchema`. Do not use form mode to request passwords, API keys, access tokens, payment credentials, or other secrets.
+
+#### URL mode
+
+URL mode asks the user to open an external page. Use it for out-of-band interactions that may collect secrets, such as third-party authorization or payment. Keep the URL in the dedicated elicitation path and out of model-visible messages and tool-result text.
+
+A URL handler should:
+
+1. Show which MCP server sent the request.
+2. Show the request message, target host, and full URL.
+3. Ask for consent before opening the URL.
+4. Open the page in a browser context the Agent and model cannot inspect.
+5. Return `action: "accept"` without `content` after consent.
+6. Offer distinct decline and cancel controls.
+
+Do not prefetch the URL or its metadata. Treat the URL as untrusted input. Production servers should send HTTPS URLs.
+
+For URL mode, `accept` means the user consented to open the URL. It does not mean the external interaction finished. A server may later send `notifications/elicitation/complete` with the request `elicitationId`.
+
+#### Response actions
+
+Both modes support three actions:
+
+| Action    | Meaning                                                           |
+| --------- | ----------------------------------------------------------------- |
+| `accept`  | The user submitted the form or consented to open the URL.         |
+| `decline` | The user explicitly rejected the request.                         |
+| `cancel`  | The user dismissed the request without making an explicit choice. |
+
+Include `content` only for an accepted form response. Omit it for URL, decline, and cancel responses.
+
+#### Forward elicitation to a UI
+
+A handler returns a promise, but the response often comes from a browser. Broadcast the request to connected clients, then resolve the promise through a `@callable` method:
+
+<TypeScriptExample>
+
+```ts
+import { Agent, callable } from "agents";
+import type { ElicitRequest, ElicitResult } from "agents/mcp/client";
+
+type PendingResolver = {
+	resolve: (result: ElicitResult) => void;
+	timeout: ReturnType<typeof setTimeout>;
+};
+
+class MyAgent extends Agent<Env> {
+	private pendingElicitations = new Map<string, PendingResolver>();
+
+	onStart() {
+		this.mcp.configureElicitationHandlers({
+			form: (request, serverId) => this.forward(request, serverId),
+			url: (request, serverId) => this.forward(request, serverId),
+		});
+	}
+
+	private forward(
+		request: ElicitRequest,
+		serverId: string,
+	): Promise<ElicitResult> {
+		const id = crypto.randomUUID();
+
+		const result = new Promise<ElicitResult>((resolve) => {
+			const timeout = setTimeout(() => {
+				if (this.pendingElicitations.delete(id)) {
+					resolve({ action: "cancel" });
+				}
+			}, 55_000);
+			this.pendingElicitations.set(id, { resolve, timeout });
+		});
+
+		this.broadcast(
+			JSON.stringify({
+				type: "mcp-elicitation",
+				id,
+				serverId,
+				params: request.params,
+			}),
+		);
+
+		return result;
+	}
+
+	@callable()
+	respondToElicitation(id: string, result: ElicitResult) {
+		const pending = this.pendingElicitations.get(id);
+		if (!pending) return;
+
+		this.pendingElicitations.delete(id);
+		clearTimeout(pending.timeout);
+		pending.resolve(result);
+	}
+}
+```
+
+</TypeScriptExample>
+
+The example uses a 55-second timeout because MCP SDK requests default to 60 seconds. If your client call sets a longer request timeout, adjust this timeout to finish first.
+
+Refer to the [`mcp-client` example](https://github.com/cloudflare/agents/tree/main/examples/mcp-client) for the browser implementation. [`mcp-elicitation-mrtr`](https://github.com/cloudflare/agents/tree/main/examples/mcp-elicitation-mrtr) demonstrates stateless elicitation.
+
+For the server side, refer to [Elicitation with a stateless handler](/agents/model-context-protocol/apis/handler-api/#elicitation-with-a-stateless-handler).
+
+## Managing servers
+
+MCP server registrations persist across Agent restarts. The SDK stores server configuration in SQLite, stores OAuth tokens securely, and restores connections when the Agent wakes.
+
+### List all servers
 
 <TypeScriptExample>
 
@@ -438,6 +621,36 @@ for (const [id, server] of Object.entries(state.servers)) {
 ```
 
 </TypeScriptExample>
+
+### Get server status
+
+Use the server ID to inspect an individual connection:
+
+<TypeScriptExample>
+
+```ts
+const state = this.getMcpServers();
+const server = state.servers[serverId];
+
+if (server) {
+	console.log(`${server.name}: ${server.state}`);
+	// state: "ready" | "authenticating" | "connecting" | "connected" | "discovering" | "failed"
+}
+```
+
+</TypeScriptExample>
+
+### Remove a server
+
+<TypeScriptExample>
+
+```ts
+await this.removeMcpServer(serverId);
+```
+
+</TypeScriptExample>
+
+This disconnects from the server and removes it from storage.
 
 ## Client-side integration
 
@@ -503,7 +716,7 @@ async addMcpServer(
     callbackHost?: string;
     callbackPath?: string;
     agentsPrefix?: string;
-    client?: ClientOptions;
+    client?: McpClientOptions;
     transport?: {
       headers?: HeadersInit;
       type?: "sse" | "streamable-http" | "auto";
@@ -515,15 +728,13 @@ async addMcpServer(
   | { id: string; state: "ready" }
 >
 
-// RPC transport (Durable Object binding — no HTTP overhead)
+// RPC transport (Durable Object binding for an McpAgent)
 async addMcpServer(
   serverName: string,
-  binding: DurableObjectNamespace,
+  binding: DurableObjectNamespace<McpAgent>,
   options?: {
     id?: string;
     props?: Record<string, unknown>;
-    client?: ClientOptions;
-    retry?: RetryOptions;
   }
 ): Promise<{ id: string; state: "ready" }>
 ```
@@ -537,23 +748,21 @@ async addMcpServer(
   - `callbackHost` — Host for OAuth callback URL. Only needed for OAuth-authenticated servers. If omitted, automatically derived from the incoming request or WebSocket connection URI — you typically do not need to set this unless you are using a custom domain that differs from the Worker's hostname
   - `callbackPath` — Custom callback URL path that bypasses the default `/agents/{class}/{name}/callback` construction. **Required when `sendIdentityOnConnect` is `false`** to prevent leaking the instance name. When set, the callback URL becomes `{callbackHost}/{callbackPath}`. You must route this path to the agent instance via `getAgentByName`
   - `agentsPrefix` — URL prefix for OAuth callback path. Default: `"agents"`. Ignored when `callbackPath` is provided
-  - `client` — MCP client configuration options (passed to `@modelcontextprotocol/sdk` Client constructor). By default, includes `CfWorkerJsonSchemaValidator` for validating tool parameters against JSON schemas
+  - `client` — The Agents-supported `McpClientOptions` subset from `@modelcontextprotocol/client`. The default validator supports JSON Schema 2020-12 and legacy draft-07 schemas in Workers
   - `transport` — Transport layer configuration:
     - `headers` — Custom HTTP headers for authentication
     - `type` — Transport type: `"auto"` (default), `"streamable-http"`, or `"sse"`
-  - `retry` — Retry options for connection and reconnection attempts. Persisted and used when restoring connections after hibernation or after OAuth completion. Default: 3 attempts, 500ms base delay, 5s max delay. Refer to [Retries](/agents/runtime/execution/retries/) for details on `RetryOptions`.
+  - `retry` — Retry options for connection and reconnection attempts. Persisted and used when restoring connections after hibernation or after OAuth completion. Default: 3 attempts, 500ms base delay, 5s max delay. Refer to [Retries](/agents/agent-class/retries/) for details on `RetryOptions`.
 
 #### Parameters (RPC transport)
 
 - `serverName` (string, required) — Display name for the MCP server
-- `binding` (`DurableObjectNamespace`, required) — The Durable Object binding for the `McpAgent` class
-- `options` (object, optional) — Connection configuration:
+- `binding` (`DurableObjectNamespace`, required) — Durable Object binding for an `McpAgent` class
+- `options` (object, optional):
   - `id` — Optional stable, caller-supplied server ID. Refer to [Stable server IDs](#stable-server-ids)
-  - `props` — Initialization data passed to the `McpAgent`'s `onStart(props)`. Use this to pass user context, configuration, or other data to the MCP server instance
-  - `client` — MCP client configuration options
-  - `retry` — Retry options for the connection
+  - `props` — Data passed to the `McpAgent` and available as `this.props`, such as user context
 
-RPC transport connects your Agent directly to an `McpAgent` via Durable Object bindings without HTTP overhead. Refer to [MCP Transport](/agents/model-context-protocol/protocol/transport/) for details on configuring RPC transport.
+The RPC transport only connects to the deprecated `McpAgent`. Prefer the HTTP transport with a [`createMcpHandler`](/agents/model-context-protocol/apis/handler-api/) server. Refer to [RPC transport](#rpc-transport).
 
 #### Returns
 
@@ -563,7 +772,6 @@ A Promise that resolves to a discriminated union based on connection state:
   - `id` (string) — Unique identifier for this server connection
   - `state` (`"authenticating"`) — Server is waiting for OAuth authorization
   - `authUrl` (string) — OAuth authorization URL for user authentication
-
 - When `state` is `"ready"`:
   - `id` (string) — Unique identifier for this server connection
   - `state` (`"ready"`) — Server is fully connected and operational
@@ -684,6 +892,80 @@ export class MyAgent extends Agent {
 ```
 
 </TypeScriptExample>
+
+### `configureElicitationHandlers()`
+
+Configure handlers for stateless elicitation and legacy `elicitation/create` requests. Add a handler for each elicitation mode your Agent supports.
+
+```txt
+this.mcp.configureElicitationHandlers(handlers?: {
+  form?: (
+    request: ElicitRequest,
+    serverId: string,
+    signal?: AbortSignal,
+  ) => Promise<ElicitResult>;
+  url?: (
+    request: ElicitRequest,
+    serverId: string,
+    signal?: AbortSignal,
+  ) => Promise<ElicitResult>;
+}): void
+```
+
+#### Parameters
+
+- `handlers` (object, optional) — Elicitation handlers keyed by mode:
+  - `form` (function, optional) — Handles form-mode requests for structured, non-sensitive input.
+  - `url` (function, optional) — Handles URL-mode requests for out-of-band interactions.
+- `request` (`ElicitRequest`) — The MCP elicitation request. Inspect `request.params.mode` for the mode-specific fields.
+- `serverId` (string) — The ID of the MCP server connection that sent the request.
+- `signal` (`AbortSignal`, optional) — Aborts when the originating MCP operation is cancelled.
+
+Each handler returns a promise containing an `ElicitResult`. Return `accept`, `decline`, or `cancel`. Accepted form responses include `content` that matches `requestedSchema`. URL responses omit `content`.
+
+Passing `undefined` clears all configured handlers.
+
+#### Capability behavior
+
+The client advertises only modes with configured handlers during legacy negotiation and on stateless requests. Handler changes apply immediately to live connections, but servers receive updated advertised modes after those connections reconnect.
+
+The SDK stores the handler-derived modes with each MCP server registration. Restored connections advertise those modes after Durable Object hibernation, and callbacks reattach when `onStart()` runs.
+
+#### Usage
+
+Configure handlers in `onStart()`:
+
+<TypeScriptExample>
+
+```ts
+import { Agent } from "agents";
+import type { ElicitRequest, ElicitResult } from "agents/mcp/client";
+
+export class MyAgent extends Agent<Env> {
+	onStart() {
+		this.mcp.configureElicitationHandlers({
+			form: (request, serverId) =>
+				this.forwardElicitationToBrowser(request, serverId),
+			url: (request, serverId) =>
+				this.forwardElicitationToBrowser(request, serverId),
+		});
+	}
+
+	private forwardElicitationToBrowser(
+		request: ElicitRequest,
+		serverId: string,
+	): Promise<ElicitResult> {
+		// Forward the request to your UI and resolve after the user responds.
+		throw new Error(
+			`Implement elicitation for ${serverId}: ${request.params.message}`,
+		);
+	}
+}
+```
+
+</TypeScriptExample>
+
+For the complete browser forwarding pattern and mode-specific requirements, refer to [Elicitation](#elicitation).
 
 ## Custom OAuth provider
 
@@ -810,7 +1092,7 @@ const disposable = this.mcp.onServerStateChanged(() => {
 </TypeScriptExample>
 
 :::note
-MCP server list broadcasts (`cf_agent_mcp_servers`) are automatically filtered to exclude connections where [`shouldSendProtocolMessages`](/agents/runtime/communication/protocol-messages/) returned `false`.
+MCP server list broadcasts (`cf_agent_mcp_servers`) are automatically filtered to exclude connections where [`shouldSendProtocolMessages`](/agents/agent-class/protocol-messages/) returned `false`.
 :::
 
 ### Lifecycle methods
@@ -875,7 +1157,7 @@ await this.mcp.waitForConnections({ timeout: 10_000 });
 ```
 
 :::note
-`AIChatAgent` calls this automatically via its [`waitForMcpConnections`](/agents/communication-channels/chat/chat-agents/#waitformcpconnections) property (defaults to `{ timeout: 10_000 }`). You only need `waitForConnections()` directly when using `Agent` with MCP, or when you want finer control inside `onChatMessage`.
+`AIChatAgent` calls this automatically via its [`waitForMcpConnections`](/agents/agent-class/communication-channels/chat/chat-agents/#waitformcpconnections) property (defaults to `{ timeout: 10_000 }`). You only need `waitForConnections()` directly when using `Agent` with MCP, or when you want finer control inside `onChatMessage`.
 :::
 
 #### `this.mcp.closeConnection()`
@@ -894,6 +1176,16 @@ Close all active server connections while preserving registrations.
 async closeAllConnections(): Promise<void>
 ```
 
+#### `this.mcp.listTools()`
+
+Get raw MCP tool records without converting their schemas to Zod.
+
+```ts
+listTools(filter?: MCPServerFilter): Array<Tool & { serverId: string }>
+```
+
+Use this method for catalog discovery and inspection. Pass an `MCPServerFilter` to limit the returned tools to specific connections.
+
 #### `this.mcp.getAITools()`
 
 Get all discovered MCP tools in a format compatible with the AI SDK.
@@ -903,6 +1195,8 @@ getAITools(filter?: MCPServerFilter): ToolSet
 ```
 
 Tools are automatically namespaced by server ID to prevent conflicts when multiple MCP servers expose tools with the same name.
+
+`getAITools()` reuses converted schemas for the current catalog on each live connection. It converts schemas again after discovery replaces the catalog or the live connection changes. Each call returns fresh tool records and execute functions. Use `this.mcp.listTools()` when you only need the raw catalog.
 
 Pass an `MCPServerFilter` to scope the returned tools to a subset of connected servers:
 
@@ -969,18 +1263,18 @@ export class MyAgent extends Agent {
 
 <LinkCard
 	title="Creating MCP servers"
-	href="/agents/model-context-protocol/apis/agent-api/"
-	description="Build your own MCP server."
+	href="/agents/model-context-protocol/apis/handler-api/"
+	description="Build your own MCP server with createMcpHandler."
 />
 
 <LinkCard
 	title="Client SDK"
-	href="/agents/communication-channels/chat/client-sdk/"
+	href="/agents/agent-class/communication-channels/chat/client-sdk/"
 	description="Connect from browsers with onMcpUpdate."
 />
 
 <LinkCard
 	title="Store and sync state"
-	href="/agents/runtime/lifecycle/state/"
+	href="/agents/agent-class/state/"
 	description="Learn about agent persistence."
 />

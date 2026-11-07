@@ -1,0 +1,138 @@
+---
+title: max
+description: 'This page explains how to use the max aggregation function in APL.'
+---
+
+The `max` aggregation in APL allows you to find the highest value in a specific column of your dataset. This is useful when you need to identify the maximum value of numerical data, such as the longest request duration, highest sales figures, or the latest timestamp in logs. The `max` function is ideal when you are working with large datasets and need to quickly retrieve the largest value, ensuring you’re focusing on the most critical or recent data point.
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize max(ColumnName)
+```
+
+### Parameters
+
+- `ColumnName`: The column or field from which you want to retrieve the maximum value. The column should contain numerical data, timespans, or dates.
+
+### Returns
+
+The maximum value from the specified column.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you might want to find the longest request duration to diagnose performance issues.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize max(req_duration_ms)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20max(req_duration_ms)%22%7D)
+
+**Output**
+
+| max_req_duration_ms |
+|---------------------|
+| 5400                |
+
+This query returns the highest request duration from the `req_duration_ms` field, which helps you identify the slowest requests.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+When analyzing OpenTelemetry traces, you can find the longest span duration to determine performance bottlenecks in distributed services.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize max(duration)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20max(duration)%22%7D)
+
+**Output**
+
+| max_duration        |
+|---------------------|
+| 00:00:07.234        |
+
+This query returns the longest trace span from the `duration` field, helping you pinpoint the most time-consuming operations.
+
+</Tab>
+<Tab title="Security logs">
+
+In security log analysis, you may want to identify the most recent event for monitoring threats or auditing activities.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize max(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20max(_time)%22%7D)
+
+**Output**
+
+| max_time            |
+|---------------------|
+| 2024-09-25 12:45:01 |
+
+This query returns the most recent timestamp from your logs, allowing you to monitor the latest security events.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**min**](/apl/aggregation-function/min): Retrieves the minimum value from a column, which is useful when you need to find the smallest or earliest value, such as the lowest request duration or first event in a log.
+- [**avg**](/apl/aggregation-function/avg): Calculates the average value of a column. This function helps when you want to understand the central tendency, such as the average response time for requests.
+- [**sum**](/apl/aggregation-function/sum): Sums all values in a column, making it useful when calculating totals, such as total sales or total number of requests over a period.
+- [**count**](/apl/aggregation-function/count): Counts the number of records or non-null values in a column. It’s useful for finding the total number of log entries or transactions.
+- [**percentile**](/apl/aggregation-function/percentile): Finds a value below which a specified percentage of data falls. This aggregation is helpful when you need to analyze performance metrics like latency at the 95th percentile.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `max` function works similarly, used to find the maximum value in a given field. The syntax in APL, however, requires you to specify the column to aggregate within a query and make use of APL's structured flow.
+
+<CodeGroup>
+```sql Splunk example
+| stats max(req_duration_ms)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize max(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `MAX` works similarly to APL’s `max`. In SQL, you aggregate over a column using the `MAX` function in a `SELECT` statement. In APL, you achieve the same result using the `summarize` operator followed by the `max` function.
+
+<CodeGroup>
+```sql SQL example
+SELECT MAX(req_duration_ms) FROM sample_http_logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize max(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

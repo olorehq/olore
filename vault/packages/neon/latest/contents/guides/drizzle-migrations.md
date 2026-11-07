@@ -1,23 +1,23 @@
 ---
-title: Schema migration with Neon Postgres and Drizzle ORM
-subtitle: Set up Neon Postgres and run migrations for your TypeScript project using
+title: Schema migration with Lakebase Postgres and Drizzle ORM
+subtitle: Set up a database on Neon and run migrations for your TypeScript project using
   Drizzle ORM
 summary: >-
-  Drizzle ORM schema migrations with Neon Postgres walks through defining
+  Drizzle ORM schema migrations with Lakebase Postgres walks through defining
   TypeScript schemas, generating SQL migration files with drizzle-kit, and
-  applying them to a Neon database via the Neon serverless driver. Use this
+  applying them to a database via the Neon serverless driver. Use this
   guide when you need a complete migration workflow for a Node.js TypeScript
   project, including initial table creation, seeding, and iterative schema
   changes. The guide uses drizzle-orm, drizzle-kit, @neondatabase/serverless,
   and Hono.js, and requires a direct (non-pooled) connection string for
   migrations.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-16T19:45:35.340Z'
 ---
 
 [Drizzle](https://orm.drizzle.team/) is a TypeScript-first ORM that connects to all major databases and works across most Javascript runtimes. It provides a simple way to define database schemas and queries in an SQL-like dialect and tools to generate and run migrations.
 
-This guide shows how to use `Drizzle` with the `Neon` Postgres database in a Typescript project. We'll create a simple Node.js application with `Hono.js` and demonstrate the full workflow of setting up and working with your database using `Drizzle`.
+This guide shows how to use `Drizzle` with the Lakebase Postgres database in a Typescript project. We'll create a simple Node.js application with `Hono.js` and demonstrate the full workflow of setting up and working with your database using `Drizzle`.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ To follow along with this guide, you will need:
 
 ### Retrieve your Neon database connection string
 
-Find your database connection string by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. It should look similar to this:
+Find your database connection string by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. It should look similar to this:
 
 ```bash
 postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require
@@ -44,7 +44,7 @@ postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbna
 Keep your connection string handy for later use.
 
 <Admonition type="note">
-Neon supports both direct and pooled database connection strings, which you can find by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. A pooled connection string connects your application to the database via a PgBouncer connection pool, allowing for a higher number of concurrent connections. However, using a pooled connection string for migrations can lead to errors. For this reason, we recommend using a direct (non-pooled) connection when performing migrations. For more information about direct and pooled connections, see [Connection pooling](/docs/connect/connection-pooling).
+Neon supports both direct and pooled database connection strings, which you can find by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. A pooled connection string connects your application to the database via a PgBouncer connection pool, allowing for a higher number of concurrent connections. However, using a pooled connection string for migrations can lead to errors. For this reason, we recommend using a direct (non-pooled) connection when performing migrations. For more information about direct and pooled connections, see [Connection pooling](/docs/connect/connection-pooling).
 </Admonition>
 
 ## Setting up the TypeScript application

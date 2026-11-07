@@ -8,7 +8,7 @@ import Overview from "/snippets/runtimes/caching/overview.mdx"
 
 <Overview />
 
-## Example Usage
+## Example usage
 
 <Demos examples={["cachingARiveFile"]} runtime="react"/>
 
@@ -63,3 +63,10 @@ return (
 
 export default App;
 ```
+
+<Note>
+  A file from `useRiveFile` created with `enableGPUCanvas: true` can't be shared across components the way this example shares one — 
+  GPU Canvas binds a file to a single `<canvas>`, so the first Rive component claims it. Call `useRiveFile` inside each component 
+  instead of reusing one file across multiple components. While sharing a file won't fail; the runtime prints a warning and re-imports
+  the file for each additional Rive instance, which means the file you passed in goes unused. See [GPU Canvas](/runtimes/react/gpu-canvas).
+</Note>

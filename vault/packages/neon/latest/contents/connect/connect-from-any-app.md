@@ -8,7 +8,10 @@ summary: >-
   your driver requires a native connection. A serverless driver enables
   WebSocket and HTTP for edge runtimes where TCP is unavailable.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+redirectFrom:
+  - /docs/connect/connection-string
+  - /docs/introduction/connection-string
+updatedOn: '2026-09-16T20:12:32.981Z'
 ---
 
 <InfoBlock>
@@ -37,11 +40,11 @@ You are responsible for maintaining the records and associations of any connecti
 
 When connecting to Neon from an application or client, you connect to a database in your Neon project. In Neon, a database belongs to a branch, which may be the default branch of your project (`main`) or a child branch.
 
-You can find the connection details for your database by clicking the **Connect** button on your **Project Dashboard**. This opens the **Connect to your database** modal. Select a branch, a compute, a database, and a role. A connection string is constructed for you.
+You can find the connection details for your database by clicking the **Connect** button in the Console nav. This opens the **Connect to your branch** modal. Select a branch, a compute, a database, and a role. A connection string is constructed for you.
 
-![Connection details modal](/docs/connect/connection_details.png)
+![Connection details modal](/docs/connect/connect_to_branch_modal.png)
 
-Neon supports both pooled and direct connections to your database. Neon's connection pooler supports a higher number of concurrent connections, so we provide pooled connection details in the **Connect to your database** modal by default, which adds a `-pooler` option to your connection string. If needed, you can get direct database connection details from the modal disabling the **Connection pooling** toggle. For more information about pooled connections, see [Connection pooling](/docs/connect/connection-pooling#connection-pooling).
+Neon supports both pooled and direct connections to your database. Neon's connection pooler supports a higher number of concurrent connections, so we provide pooled connection details in the **Connect to your branch** modal by default, which adds a `-pooler` option to your connection string. If needed, you can get direct database connection details from the modal disabling the **Connection pooling** toggle. For more information about pooled connections, see [Connection pooling](/docs/connect/connection-pooling#connection-pooling).
 
 A Neon connection string includes the role, password, hostname, and database name.
 
@@ -57,7 +60,7 @@ postgresql://alex:AbC123dEf@ep-cool-darkness-a1b2c3d4-pooler.us-east-2.aws.neon.
 The hostname includes the ID of the compute, which has an `ep-` prefix: `ep-cool-darkness-123456`. For more information about Neon connection strings, see [connection string](/docs/reference/glossary#connection-string).
 </Admonition>
 
-You can use the details from the **Connect to your database** modal to configure your database connection. For example, you might place the connection details in an `.env` file, assign the connection string to a variable, or pass the connection string on the command-line.
+You can use the details from the **Connect to your branch** modal to configure your database connection. For example, you might place the connection details in an `.env` file, assign the connection string to a variable, or pass the connection string on the command-line.
 
 **.env file**
 
@@ -69,7 +72,9 @@ PGPASSWORD=AbC123dEf
 PGPORT=5432
 ```
 
-**Variable**
+**Variable (`DATABASE_URL`)**
+
+Most frameworks read the connection string from a `DATABASE_URL` environment variable. The connection string you copy from the **Connect** modal _is_ your `DATABASE_URL`. Assign it as-is:
 
 ```text shouldWrap
 DATABASE_URL="postgresql://alex:AbC123dEf@ep-cool-darkness-a1b2c3d4-pooler.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require"
@@ -85,6 +90,16 @@ psql postgresql://alex:AbC123dEf@ep-cool-darkness-a1b2c3d4-pooler.us-east-2.aws.
 Neon requires that all connections use SSL/TLS encryption, but you can increase the level of protection by configuring the `sslmode` option. For more information, see [Connect to Neon securely](/docs/connect/connect-securely).
 </Admonition>
 
+### Get a connection string from the CLI
+
+If you prefer the terminal, the Neon CLI returns the same connection string with the [`neon connection-string`](/docs/cli/connection-string) command:
+
+```bash
+neon connection-string
+```
+
+Pass a branch name as a positional argument, and use `--database-name`, `--role-name`, or `--pooled` to control the output. This is handy when you want to assign the result to an environment variable such as `DATABASE_URL` in a script.
+
 ## Connect with the Neon VS Code extension
 
 The [Neon VS Code extension](/docs/local/vscode-extension) lets you connect to any Neon branch and manage your database directly in your IDE. Available for VS Code, Cursor, and other VS Code-compatible editors, this extension lets you:
@@ -99,11 +114,11 @@ The extension provides a streamlined workflow for working with Neon during devel
 
 ## Where can I find my password?
 
-It's included in your Neon connection string. Click the **Connection** button on your **Project Dashboard** to open the **Connect to your database** modal.
+It's included in your Neon connection string. Click the **Connect** button in the Console nav to open the **Connect to your branch** modal.
 
 ### Save your connection details to 1Password
 
-If you have a [1Password](https://1password.com/) browser extension, you can save your database connection details to 1Password directly from the Neon Console. In your **Project Dashboard**, click **Connect**, then click **Save in 1Password**.
+If you have a [1Password](https://1password.com/) browser extension, you can save your database connection details to 1Password directly from the Neon Console. Click **Connect** in the Console nav, then click **Save in 1Password**.
 
 ![1Password button on connection modal](/docs/connect/1_password_button.png)
 
@@ -111,13 +126,47 @@ If you have a [1Password](https://1password.com/) browser extension, you can sav
 
 Neon uses the default Postgres port, `5432`.
 
-## Connection examples
+## How do I connect my application using the connection string?
 
-The **Connect to your database** modal provides connection examples for different frameworks and languages, constructed for the branch, database, and role that you select.
+Save the connection string as an environment variable (commonly `DATABASE_URL`), then read it from your code and pass it to a Postgres driver. Neon speaks the standard Postgres wire protocol, so any Postgres client works: `pg`, `psycopg2`, `psql`, Prisma, Drizzle, SQLAlchemy, and others.
+
+<CodeTabs labels={["Node.js (pg)", "Node.js (neon)", "Python (psycopg2)", "psql"]}>
+
+```javascript
+import { Pool } from 'pg';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [1]);
+```
+
+```javascript
+// Best for serverless and edge runtimes
+import { neon } from '@neondatabase/serverless';
+
+const sql = neon(process.env.DATABASE_URL);
+const rows = await sql`SELECT * FROM users WHERE id = ${1}`;
+```
+
+```python
+import os
+import psycopg2
+
+conn = psycopg2.connect(os.environ["DATABASE_URL"])
+```
+
+```bash
+psql "$DATABASE_URL"
+```
+
+</CodeTabs>
+
+Read the string from the environment rather than hardcoding it in source, which is a common source of credential leaks. For Prisma, Drizzle, SQLAlchemy, and other ORMs, see the [frameworks](/docs/get-started/frameworks) and [languages](/docs/get-started/languages) guides.
+
+### Connection examples in the Console
+
+The **Connect to your branch** modal provides connection examples for different frameworks and languages, constructed for the branch, database, and role that you select.
 
 ![Language and framework connection examples](/docs/connect/code_connection_examples.png)
-
-See our [frameworks](/docs/get-started/frameworks) and [languages](/docs/get-started/languages) guides for more connection examples.
 
 ## Network protocol support
 

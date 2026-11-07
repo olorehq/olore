@@ -24,6 +24,16 @@ curl -L -X POST https://api.turso.tech/v1/auth/api-tokens/{tokenName} \
   -d '{"organization": "my-org"}'
 ```
 
+```bash cURL (org-scoped, with scopes)
+curl -L -X POST https://api.turso.tech/v1/auth/api-tokens/{tokenName} \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "organization": "my-org",
+    "scopes": ["org:read"]
+  }'
+```
+
 ```bash cURL (deprecated, unrestricted)
 curl -L -X POST https://api.turso.tech/v1/auth/api-tokens/{tokenName} \
   -H 'Authorization: Bearer TOKEN'

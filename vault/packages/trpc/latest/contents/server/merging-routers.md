@@ -3,6 +3,8 @@ id: merging-routers
 title: Merging Routers
 sidebar_label: Merging Routers
 slug: /server/merging-routers
+section: "Backend Usage"
+order: 11
 ---
 
 Writing all API-code in the same file can become unwieldy. It's easy to merge routers together in order to break them up.
@@ -94,7 +96,7 @@ export type AppRouter = typeof appRouter;
 
 ## Merging with `t.mergeRouters`
 
-If you prefer having all procedures flat in one single namespace, you can instead use `t.mergeRouters`
+If you prefer having all procedures flat in one single namespace, you can instead use `t.mergeRouters`. It throws if two routers define the same procedure path, so keep the names unique. Merge routers from the same [`t`](/docs/server/routers#initialize-trpc): it also throws if they come from separate tRPC instances that each set a transformer or error formatter.
 
 ```ts twoslash title='routers/user.ts'
 // @filename: trpc.ts

@@ -1,13 +1,14 @@
 ---
-title: 'Multistep Checks Overview'
+title: 'Multistep checks overview'
 description: 'Monitor complex API workflows with sequential requests using Playwright API testing mode for comprehensive end-to-end validation.'
 sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/multistep-checks/overview/'
 ---
 
 import GenericRuntimeVariablesTable from '/snippets/generic-runtime-variables-table.mdx';
 
 <Tip>
-**Monitoring as Code**: Learn more about the [Multistep Check Construct](/constructs/multistep-check).
+**Monitoring as Code**: Learn more about the [Multistep check construct](/constructs/multistep-check).
 </Tip>
 
 <Frame>
@@ -25,9 +26,9 @@ import GenericRuntimeVariablesTable from '/snippets/generic-runtime-variables-ta
 />
 </Frame>
 
-## What are Multistep Checks?
+## What are Multistep checks?
 
-Multistep checks are API-focused tests that perform multiple sequential HTTP requests within a single check. They're designed to test complete user workflows that span multiple API endpoints, ensuring that complex business processes work correctly from start to finish.
+Multistep checks are API-focused tests that perform multiple sequential HTTP requests within a single check. They're designed to test complete user workflows that span multiple API endpoints, ensuring that complex business processes work correctly from start to finish. Multistep checks use Playwright's `request` fixture.
 
 **Multistep checks are perfect for:**
 - User authentication and authorization flows
@@ -37,14 +38,14 @@ Multistep checks are API-focused tests that perform multiple sequential HTTP req
 - Complex business transaction testing
 - API dependency chain validation
 
-## How Multistep Checks Work
+## How Multistep checks work
 
 Multistep checks execute a series of API requests in sequence, with the ability to pass data between steps:
 
 1. **Step Execution** - Runs each API request in defined order
 2. **Data Flow** - Passes response data from one step to the next
 3. **State Validation** - Verifies system state at each step
-4. **Error Handling** - Manages failures and rollback scenarios
+4. **Error Handling** - Fails the check when a request or assertion fails. Handle cleanup steps in an `afterAll` hook
 5. **Performance Tracking** - Measures timing across the entire workflow
 6. **Result Aggregation** - Combines results from all steps
 
@@ -80,13 +81,13 @@ As with Browser checks, Checkly runs Multistep checks for a maximum of 240s. Scr
 
 ## Built-in Runtime Variables
 
-The Multistep Check [runtime](/platform/runtimes/overview) exposes a set of environment variables (e.g. `process.env.CHECK_NAME`) that indicate what check, check type etc. you are running.
+The Multistep check [runtime](/platform/runtimes/overview) exposes a set of environment variables (e.g. `process.env.CHECK_NAME`) that indicate what check, check type etc. you are running.
 
 <GenericRuntimeVariablesTable/>
 
 [Learn more about environment variables.](/platform/variables)
 
-## Multistep Check Results
+## Multistep check results
 
 Multistep check results are navigated using the tree on the left side of the screen. If you are running checks in parallel, first select the location you are interested in.
 

@@ -1,0 +1,138 @@
+import { MenubarDemos } from '@docs/demos';
+import { Layout } from '@/layout';
+import { MDX_DATA } from '@/mdx';
+
+export default Layout(MDX_DATA.Menubar);
+
+## Usage
+
+`Menubar` is a desktop-application style menu bar: a horizontal row of triggers
+(File, Edit, View, …), each of them opens a dropdown. `Menubar` is built on top of
+[Menu](/core/menu), dropdown content is composed from `Menu.Item`, `Menu.Divider` and other
+`Menu` components.
+
+<Demo data={MenubarDemos.usage} />
+
+## How it differs from Menu
+
+[Menu](/core/menu) is one target that toggles one dropdown. `Menubar` coordinates multiple menus:
+
+- Only one menu is open at a time. Moving to another target while a menu is open switches the open menu.
+- The whole bar is a single tab stop, arrow keys move focus between targets.
+
+If you need a single dropdown attached to one button, use [Menu](/core/menu) instead.
+
+## Composition
+
+- `Menubar` – root element
+- `Menubar.Menu` – wraps a single menu, accepts the same props as `Menu`
+- `Menubar.Target` – top-level trigger button
+- `Menubar.Dropdown` – dropdown container, accepts the same children as `Menu.Dropdown`
+
+```tsx
+import { Menu, Menubar } from '@mantine/core';
+
+function Demo() {
+  return (
+    <Menubar>
+      <Menubar.Menu>
+        <Menubar.Target>File</Menubar.Target>
+        <Menubar.Dropdown>
+          <Menu.Item>New file</Menu.Item>
+          <Menu.Item>Open…</Menu.Item>
+        </Menubar.Dropdown>
+      </Menubar.Menu>
+
+      <Menubar.Menu>
+        <Menubar.Target>Edit</Menubar.Target>
+        <Menubar.Dropdown>
+          <Menu.Item>Undo</Menu.Item>
+          <Menu.Item>Redo</Menu.Item>
+        </Menubar.Dropdown>
+      </Menubar.Menu>
+    </Menubar>
+  );
+}
+```
+
+## Trigger and loop
+
+By default, a menu opens when its target is clicked. Once a menu is open, hovering another
+target switches to it. Set `trigger="hover"` to open menus on hover, the menu closes when
+the pointer leaves the bar.
+
+Set `loop={false}` to stop arrow key navigation from wrapping around from the last menu
+to the first and vice versa.
+
+<Demo data={MenubarDemos.hover} />
+
+## Submenus
+
+Use `Menu.Sub` inside `Menubar.Dropdown` to create nested submenus, see the
+[Menu submenus documentation](/core/menu/#submenus). The [usage demo](#usage) includes
+a submenu in the File menu.
+
+## Checkbox and radio items
+
+Use `Menu.CheckboxItem` for toggles and `Menu.RadioGroup` with `Menu.RadioItem` for
+single-choice options. By default, clicking these items does not close the menu.
+
+<Demo data={MenubarDemos.selectable} />
+
+## Controlled
+
+Use `openIndex` and `onOpenChange` props to control which menu is open. `openIndex` is the
+index of the opened `Menubar.Menu` or `null` when all menus are closed.
+
+Use `defaultOpenIndex` to open a menu initially without controlling the state.
+
+<Demo data={MenubarDemos.controlled} />
+
+## Position
+
+By default, dropdowns are positioned at `bottom-start`. Set the `position` prop to use a different
+[Floating UI position](/core/menu/#dropdown-position) for all menus in the bar:
+
+```tsx
+import { Menubar } from '@mantine/core';
+
+function Demo() {
+  return (
+    <Menubar position="bottom-end">
+      {/* ...menus */}
+    </Menubar>
+  );
+}
+```
+
+To override settings of a single menu, pass [Menu](/core/menu) props to `Menubar.Menu`,
+for example `position` or `closeOnItemClick`.
+
+## Keyboard interactions
+
+When RTL direction is set, `ArrowLeft` and `ArrowRight` are swapped.
+
+<KeyboardEventsTable
+  data={[
+    { key: 'ArrowRight', description: 'Move to the next top-level menu, switch the open menu if one is open' },
+    { key: 'ArrowLeft', description: 'Move to the previous top-level menu, switch the open menu if one is open' },
+    { key: 'ArrowDown / Enter / Space', description: 'Open the focused menu and move focus to its first item' },
+    { key: 'ArrowUp', description: 'Open the focused menu and move focus to its last item' },
+    { key: 'Escape', description: 'Close the open menu and return focus to its target' },
+    { key: 'Home / End', description: 'Move to the first / last top-level menu' },
+    { key: 'Character keys', description: 'Move focus to the next top-level menu that starts with the typed character' },
+    { key: 'Tab', description: 'Move focus into or out of the menu bar (single tab stop)' },
+  ]}
+/>
+
+<StylesApiSelectors component="Menubar" />
+
+<Demo data={MenubarDemos.stylesApi} />
+
+## Accessibility
+
+`Menubar` follows the [WAI-ARIA menubar pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menubar/):
+
+- The root element has `role="menubar"`
+- Each `Menubar.Target` has `role="menuitem"`, `aria-haspopup="menu"` and `aria-expanded`
+- `Menubar.Target` children are used as accessible names of the triggers

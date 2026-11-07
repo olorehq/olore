@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-layout-utils-debug.png
+image: https://remotion.media/docs/generated/articles-docs-layout-utils-debug.png
 title: Debugging font measurement bugs
 sidebar_label: Debugging
 crumb: '@remotion/layout-utils'
@@ -15,7 +15,6 @@ zoom level.<br/>
 <Step>3</Step>Render at the bottom of your component a `<div>` that contains the string and all the properties that you passed to [`measureText()`](/docs/layout-utils/measure-text).
 
 ```tsx twoslash title="Sample markup"
-import {AbsoluteFill} from 'remotion';
 
 const MyComp: React.FC = () => {
   const fontSize = 100;
@@ -27,7 +26,7 @@ const MyComp: React.FC = () => {
   const textTransform = undefined;
 
   return (
-    <AbsoluteFill>
+    <>
       <div
         id="remotion-measurer"
         style={{
@@ -43,7 +42,7 @@ const MyComp: React.FC = () => {
       >
         {text}
       </div>
-    </AbsoluteFill>
+    </>
   );
 };
 ```

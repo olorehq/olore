@@ -3,7 +3,7 @@ name: olore-clerk-latest
 description: Local Clerk documentation reference (latest). Clerk authentication documentation. Use for user authentication, session management, organizations, OAuth, social login, React/Next.js integration, and user management.
 ---
 
-# Clerk Documentation
+# clerk Documentation
 
 Clerk authentication documentation. Use for user authentication, session management, organizations, OAuth, social login, React/Next.js integration, and user management.
 
@@ -11,32 +11,22 @@ Clerk authentication documentation. Use for user authentication, session managem
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started | `contents/getting-started/quickstart.mdx` |
-| Framework quickstarts | `contents/getting-started/quickstart.{framework}.mdx` |
+| Getting started | `contents/getting-started/quickstart/` |
 | Core concepts | `contents/getting-started/core-concepts.mdx` |
-| Next.js SDK reference | `contents/reference/nextjs/overview.mdx` |
-| React hooks | `contents/reference/hooks/overview.mdx` |
-| Backend SDK (Node) | `contents/reference/backend/overview.mdx` |
-| UI components | `contents/reference/components/` |
-| Custom sign-in/sign-up flows | `contents/guides/development/custom-flows/` |
-| OAuth / social login config | `contents/guides/configure/auth-strategies/social-connections/` |
+| Components | `contents/reference/components/` |
+| Hooks | `contents/reference/hooks/` |
+| Backend SDK | `contents/reference/backend/` |
+| Next.js | `contents/reference/nextjs/` |
+| Configuration | `contents/guides/configure/` |
 | Organizations | `contents/guides/organizations/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Authentication and sign-in/sign-up flows (email, password, social, passkeys, SSO)
-- Session management and JWT tokens
-- Organizations, roles, and permissions (RBAC)
-- Clerk SDK integration (Next.js, React, Astro, Expo, Express, Vue, Nuxt, Ruby, Go, etc.)
-- UI components (`<SignIn>`, `<SignUp>`, `<UserButton>`, `<ClerkProvider>`, etc.)
-- React hooks (`useAuth`, `useUser`, `useSession`, `useOrganization`, etc.)
-- Backend SDK methods (user CRUD, sessions, invitations, organizations)
-- Webhooks from Clerk
-- Custom flows and headless UI (Elements)
-- Machine-to-machine (M2M) authentication and API keys
-- Billing and subscription management
-- Appearance customization and theming
+- Authentication, sign-in/sign-up, sessions, and user management
+- Clerk SDKs and components for React, Next.js, Expo, Astro, Vue/Nuxt, and others
+- Organizations, billing, OAuth/social login, and enterprise SSO
+- Clerk Backend API / JS Backend SDK
 
 ## How to find information
 

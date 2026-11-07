@@ -11,7 +11,7 @@ In this guide you will learn how to set up the `@sentry/aws-serverless` SDK for 
 We recommend starting the SDK automatically via environment variables so that you only have to make minimal code changes to your lambda function.
 If you need more control over the SDK setup, you can also [initialize the SDK in code](#option-b-manual-setup).
 
-However, you need to modify your code and deploy the Sentry dependencies alongside your function code. If you're looking for the most simple way to set up Sentry, use the [Lambda Layer](/platforms/javascript/guides/aws-lambda/install/layer) instead.
+However, you need to modify your code and deploy the Sentry dependencies alongside your function code. If you're looking for the most simple way to set up Sentry, use the [Lambda Layer](/platforms/javascript/guides/aws-lambda/install/layer/) instead.
 
 ## 1. Prerequisites
 
@@ -22,7 +22,7 @@ Before you begin, make sure you have the following:
 
 ## 2. Install
 
-In addition to capturing errors, you can monitor interactions between multiple services or applications by [enabling tracing](/concepts/key-terms/tracing/). You can also collect and analyze performance profiles from real users with [profiling](/product/explore/profiling/).
+In addition to capturing errors, you can monitor interactions between multiple services or applications by [enabling tracing](/concepts/key-terms/tracing/). You can also collect and analyze performance profiles from real users with [profiling](/product/profiling/).
 
 Select which Sentry features you'd like to install in addition to Error Monitoring to get the corresponding installation and configuration instructions below.
 
@@ -99,9 +99,6 @@ const { nodeProfilingIntegration } = require("@sentry/profiling-node");
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
 
-  // To disable sending user data, uncomment the line below. For more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/aws-lambda/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false },
   // ___PRODUCT_OPTION_START___ profiling
   integrations: [nodeProfilingIntegration()],
 
@@ -134,9 +131,6 @@ import { nodeProfilingIntegration } from "@sentry/profiling-node";
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
 
-  // To disable sending user data, uncomment the line below. For more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/aws-lambda/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false },
   // ___PRODUCT_OPTION_START___ profiling
   integrations: [nodeProfilingIntegration()],
 
@@ -170,6 +164,10 @@ NODE_OPTIONS="--import ./instrument.js"
 To set environment variables, navigate to your Lambda function, select **Configuration**, then **Environment variables**.
 
 That's it - make sure to re-deploy your function and you're all set!
+
+## 4. Control the Data You Send to Sentry (Optional)
+
+<PlatformContent includePath="getting-started-data-collection" />
 
 ## Using the v7 SDK
 

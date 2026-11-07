@@ -62,7 +62,7 @@ APIs wait for the element to be attached and visible.
 
 ```js
 // Get the element handle
-const elementHandle = page.waitForSelector('#box');
+const elementHandle = await page.waitForSelector('#box');
 
 // Assert bounding box for the element
 const boundingBox = await elementHandle.boundingBox();
@@ -89,11 +89,11 @@ assertTrue(classNames.contains("highlighted"));
 
 ```python async
 # Get the element handle
-element_handle = page.wait_for_selector('#box')
+element_handle = await page.wait_for_selector('#box')
 
 # Assert bounding box for the element
 bounding_box = await element_handle.bounding_box()
-assert bounding_box.width == 100
+assert bounding_box["width"] == 100
 
 # Assert attribute for the element
 class_names = await element_handle.get_attribute('class')
@@ -106,7 +106,7 @@ element_handle = page.wait_for_selector('#box')
 
 # Assert bounding box for the element
 bounding_box = element_handle.bounding_box()
-assert bounding_box.width == 100
+assert bounding_box["width"] == 100
 
 # Assert attribute for the element
 class_names = element_handle.get_attribute('class')
@@ -115,8 +115,7 @@ assert 'highlighted' in class_names
 
 ```csharp
 // Get the element handle
-var jsHandle = await page.WaitForSelectorAsync("#box");
-var elementHandle = jsHandle as ElementHandle;
+var elementHandle = await page.WaitForSelectorAsync("#box");
 
 // Assert bounding box for the element
 var boundingBox = await elementHandle.BoundingBoxAsync();
@@ -168,7 +167,7 @@ int length = (int) page.evaluate("a => a.length", myArrayHandle);
 Map<String, Object> arg = new HashMap<>();
 arg.put("myArray", myArrayHandle);
 arg.put("newElement", 2);
-page.evaluate("arg => arg.myArray.add(arg.newElement)", arg);
+page.evaluate("arg => arg.myArray.push(arg.newElement)", arg);
 
 // Release the object when it is no longer needed.
 myArrayHandle.dispose();
@@ -225,7 +224,7 @@ var myArrayHandle = await page.EvaluateHandleAsync(@"() => {
 var length = await page.EvaluateAsync<int>("a => a.length", myArrayHandle);
 
 // Add one more element to the array using the handle
-await page.EvaluateAsync("arg => arg.myArray.add(arg.newElement)",
+await page.EvaluateAsync("arg => arg.myArray.push(arg.newElement)",
     new { myArray = myArrayHandle, newElement = 2 });
 
 // Release the object when it is no longer needed.

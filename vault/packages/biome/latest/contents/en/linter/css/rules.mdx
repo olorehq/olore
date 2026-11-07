@@ -1,0 +1,126 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: "https://github.com/biomejs/website/edit/main/codegen/src/lintdoc.rs"
+
+title: CSS Rules
+description: List of available lint rules for CSS
+localized: false
+---
+
+
+import { Icon } from "@astrojs/starlight/components";
+
+Below the list of rules supported by Biome, divided by group. Here's a legend of the emojis:
+- The icon <span class='inline-icon' title="This rule is recommended"><Icon name="approve-check-circle" label="This rule is recommended" /></span> indicates that the rule is part of the recommended rules.
+- The icon <span class='inline-icon' title="This rule has a safe fix"><Icon name="seti:config" label="The rule has a safe fix" /></span> indicates that the rule provides a code action (fix) that is **safe** to apply.
+- The icon <span class='inline-icon' title="This rule has an unsafe fix"><Icon name="warning" label="The rule has an unsafe fix" /></span> indicates that the rule provides a code action (fix) that is **unsafe** to apply.
+- The icon <span class='inline-icon' title="This rule is not released yet"><Icon name="moon" label="This rule is not released yet" /></span> indicates that the rule has been implemented and scheduled for the next release.
+
+## `a11y`
+
+| Rule name | Description | Properties |
+| --- | --- | --- |
+| [useGenericFontNames](/linter/rules/use-generic-font-names/css) | Require a generic fallback in font-family lists. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+
+## `complexity`
+
+| Rule name | Description | Properties |
+| --- | --- | --- |
+| [noExcessiveSelectorClasses](/linter/rules/no-excessive-selector-classes/css) | Limit the number of classes in a selector. |  |
+| [noImportantStyles](/linter/rules/no-important-styles/css) | Disallow `!important` declarations. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span><span class='inline-icon' title="The rule has an unsafe fix" ><Icon name="warning" label="The rule has an unsafe fix" size="1.2rem" /></span> |
+
+## `correctness`
+
+| Rule name | Description | Properties |
+| --- | --- | --- |
+| [noInvalidDirectionInLinearGradient](/linter/rules/no-invalid-direction-in-linear-gradient/css) | Disallow non-standard directions in linear gradients. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noInvalidGridAreas](/linter/rules/no-invalid-grid-areas/css) | Disallow invalid named areas in CSS grid templates. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noInvalidPositionAtImportRule](/linter/rules/no-invalid-position-at-import-rule/css) | Disallow `@import` after other rules. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noMissingVarFunction](/linter/rules/no-missing-var-function/css) | Require `var()` when using a declared CSS custom property. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUnknownFunction](/linter/rules/no-unknown-function/css) | Disallow unrecognized CSS value functions. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUnknownMediaFeatureName](/linter/rules/no-unknown-media-feature-name/css) | Disallow unrecognized feature names in media queries. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUnknownProperty](/linter/rules/no-unknown-property/css) | Disallow unrecognized CSS properties. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUnknownPseudoClass](/linter/rules/no-unknown-pseudo-class/css) | Disallow unrecognized pseudo-class selectors. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUnknownPseudoElement](/linter/rules/no-unknown-pseudo-element/css) | Disallow unrecognized pseudo-element selectors. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUnknownTypeSelector](/linter/rules/no-unknown-type-selector/css) | Disallow unrecognized element names in type selectors. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUnknownUnit](/linter/rules/no-unknown-unit/css) | Disallow unrecognized CSS units. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUnmatchableAnbSelector](/linter/rules/no-unmatchable-anb-selector/css) | Disallow `An+B` formulas that cannot select an element. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+
+## `nursery`
+
+| Rule name | Description | Properties |
+| --- | --- | --- |
+| [noExcessiveNestedBlocks](/linter/rules/no-excessive-nested-blocks/css) | Enforce a maximum depth that blocks can be nested. |  |
+| [noInvalidPropertyInitValue](/linter/rules/no-invalid-property-init-value/css) | Checks that the `initial-value` of an `@property` rule follows the value format declared by its `syntax`. |  |
+| [noMissingScssInterpolation](/linter/rules/no-missing-scss-interpolation/css) | Disallow Sass variables and function calls in custom property values without `#{}` interpolation. | <span class='inline-icon' title="The rule has an unsafe fix" ><Icon name="warning" label="The rule has an unsafe fix" size="1.2rem" /></span> |
+| [noPseudoElementInFunctionalPseudoClass](/linter/rules/no-pseudo-element-in-functional-pseudo-class/css) | Disallow pseudo-elements inside `:is()`, `:where()`, `:not()` and `:has()`. |  |
+| [noSelfNestedLayer](/linter/rules/no-self-nested-layer/css) | Disallow nesting a cascade layer inside a layer with the same name. |  |
+| [noShortTimeValues](/linter/rules/no-short-time-values/css) | Disallow animation and transition times that are shorter than a configured minimum. |  |
+| [noUndeclaredCustomProperties](/linter/rules/no-undeclared-custom-properties/css) | Reports custom properties used with `var()` that have no visible declaration. |  |
+| [noUnusedClasses](/linter/rules/no-unused-classes/css) | Reports CSS class selectors that are never referenced in any JSX or HTML file. |  |
+| [noZeroLengthUnit](/linter/rules/no-zero-length-unit/css) | Disallow units on zero lengths. | <span class='inline-icon' title="The rule has an unsafe fix" ><Icon name="warning" label="The rule has an unsafe fix" size="1.2rem" /></span> |
+| [useConsistentLightnessNotation](/linter/rules/use-consistent-lightness-notation/css) | Enforce a consistent notation for the lightness of colors. | <span class='inline-icon' title='The rule has a safe fix.'><Icon name="seti:config" label="The rule has a safe fix" size="1.2rem"  /></span> |
+| [useConsistentUnicodeBom](/linter/rules/use-consistent-unicode-bom/css) | Require or disallow a Unicode byte order mark at the beginning of a file. | <span class='inline-icon' title='The rule has a safe fix.'><Icon name="seti:config" label="The rule has a safe fix" size="1.2rem"  /></span> |
+| [useLayeredStyles](/linter/rules/use-layered-styles/css) | Enforce style rules to be defined within a cascade layer. |  |
+| [useLogicalProperties](/linter/rules/use-logical-properties/css) | Prefer logical CSS properties over physical properties. | <span class='inline-icon' title="The rule has an unsafe fix" ><Icon name="warning" label="The rule has an unsafe fix" size="1.2rem" /></span> |
+| [useNamedLayer](/linter/rules/use-named-layer/css) | Disallow anonymous cascade layers. |  |
+
+## `style`
+
+| Rule name | Description | Properties |
+| --- | --- | --- |
+| [noDescendingSpecificity](/linter/rules/no-descending-specificity/css) | Disallow lower-specificity selectors after higher-specificity selectors. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noExcessiveLinesPerFile](/linter/rules/no-excessive-lines-per-file/css) | Restrict the number of lines in a file. |  |
+| [noHexColors](/linter/rules/no-hex-colors/css) | Disallow hex colors. |  |
+| [noValueAtRule](/linter/rules/no-value-at-rule/css) | Disallow the `@value` rule in CSS Modules. |  |
+
+## `suspicious`
+
+| Rule name | Description | Properties |
+| --- | --- | --- |
+| [noDeprecatedMediaType](/linter/rules/no-deprecated-media-type/css) | Disallow deprecated media types. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noDuplicateAtImportRules](/linter/rules/no-duplicate-at-import-rules/css) | Disallow duplicate `@import` rules. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noDuplicateCustomProperties](/linter/rules/no-duplicate-custom-properties/css) | Disallow duplicate custom properties within declaration blocks. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noDuplicateFontNames](/linter/rules/no-duplicate-font-names/css) | Disallow duplicate names in font-family lists. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noDuplicateProperties](/linter/rules/no-duplicate-properties/css) | Disallow duplicate properties within declaration blocks. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noDuplicateSelectors](/linter/rules/no-duplicate-selectors/css) | Disallow duplicate selectors. |  |
+| [noDuplicateSelectorsKeyframeBlock](/linter/rules/no-duplicate-selectors-keyframe-block/css) | Disallow duplicate selectors within keyframe blocks. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noEmptyBlock](/linter/rules/no-empty-block/css) | Disallow empty CSS blocks. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noEmptySource](/linter/rules/no-empty-source/css) | Disallow empty sources. |  |
+| [noImportantInKeyframe](/linter/rules/no-important-in-keyframe/css) | Disallow `!important` in `@keyframes` declarations. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noIrregularWhitespace](/linter/rules/no-irregular-whitespace/css) | Disallow whitespace characters that CSS does not treat as normal spaces. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noShorthandPropertyOverrides](/linter/rules/no-shorthand-property-overrides/css) | Disallow shorthand properties that override earlier, more specific properties. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUnknownAtRules](/linter/rules/no-unknown-at-rules/css) | Disallow unrecognized CSS at-rules. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span> |
+| [noUselessEscapeInString](/linter/rules/no-useless-escape-in-string/css) | Disallow unnecessary escapes in string literals. | <span class='inline-icon' title="This rule is recommended" ><Icon name="approve-check-circle" size="1.2rem" label="This rule is recommended" /></span><span class='inline-icon' title='The rule has a safe fix.'><Icon name="seti:config" label="The rule has a safe fix" size="1.2rem"  /></span> |
+| [useBaseline](/linter/rules/use-baseline/css) | Disallow CSS properties, values, at-rules, functions, and selectors that are not part of the configured Baseline. |  |
+## Recommended rules 
+- [useGenericFontNames](/linter/rules/use-generic-font-names/css) (Severity: [error](/reference/diagnostics#error))
+- [noImportantStyles](/linter/rules/no-important-styles/css) (Severity: [warning](/reference/diagnostics#warning))
+- [noInvalidDirectionInLinearGradient](/linter/rules/no-invalid-direction-in-linear-gradient/css) (Severity: [error](/reference/diagnostics#error))
+- [noInvalidGridAreas](/linter/rules/no-invalid-grid-areas/css) (Severity: [error](/reference/diagnostics#error))
+- [noInvalidPositionAtImportRule](/linter/rules/no-invalid-position-at-import-rule/css) (Severity: [error](/reference/diagnostics#error))
+- [noMissingVarFunction](/linter/rules/no-missing-var-function/css) (Severity: [error](/reference/diagnostics#error))
+- [noUnknownFunction](/linter/rules/no-unknown-function/css) (Severity: [error](/reference/diagnostics#error))
+- [noUnknownMediaFeatureName](/linter/rules/no-unknown-media-feature-name/css) (Severity: [error](/reference/diagnostics#error))
+- [noUnknownProperty](/linter/rules/no-unknown-property/css) (Severity: [error](/reference/diagnostics#error))
+- [noUnknownPseudoClass](/linter/rules/no-unknown-pseudo-class/css) (Severity: [error](/reference/diagnostics#error))
+- [noUnknownPseudoElement](/linter/rules/no-unknown-pseudo-element/css) (Severity: [error](/reference/diagnostics#error))
+- [noUnknownTypeSelector](/linter/rules/no-unknown-type-selector/css) (Severity: [error](/reference/diagnostics#error))
+- [noUnknownUnit](/linter/rules/no-unknown-unit/css) (Severity: [error](/reference/diagnostics#error))
+- [noUnmatchableAnbSelector](/linter/rules/no-unmatchable-anb-selector/css) (Severity: [error](/reference/diagnostics#error))
+- [noDescendingSpecificity](/linter/rules/no-descending-specificity/css) (Severity: [warning](/reference/diagnostics#warning))
+- [noDeprecatedMediaType](/linter/rules/no-deprecated-media-type/css) (Severity: [warning](/reference/diagnostics#warning))
+- [noDuplicateAtImportRules](/linter/rules/no-duplicate-at-import-rules/css) (Severity: [error](/reference/diagnostics#error))
+- [noDuplicateCustomProperties](/linter/rules/no-duplicate-custom-properties/css) (Severity: [error](/reference/diagnostics#error))
+- [noDuplicateFontNames](/linter/rules/no-duplicate-font-names/css) (Severity: [error](/reference/diagnostics#error))
+- [noDuplicateProperties](/linter/rules/no-duplicate-properties/css) (Severity: [error](/reference/diagnostics#error))
+- [noDuplicateSelectorsKeyframeBlock](/linter/rules/no-duplicate-selectors-keyframe-block/css) (Severity: [error](/reference/diagnostics#error))
+- [noEmptyBlock](/linter/rules/no-empty-block/css) (Severity: [warning](/reference/diagnostics#warning))
+- [noImportantInKeyframe](/linter/rules/no-important-in-keyframe/css) (Severity: [error](/reference/diagnostics#error))
+- [noIrregularWhitespace](/linter/rules/no-irregular-whitespace/css) (Severity: [warning](/reference/diagnostics#warning))
+- [noShorthandPropertyOverrides](/linter/rules/no-shorthand-property-overrides/css) (Severity: [error](/reference/diagnostics#error))
+- [noUnknownAtRules](/linter/rules/no-unknown-at-rules/css) (Severity: [error](/reference/diagnostics#error))
+- [noUselessEscapeInString](/linter/rules/no-useless-escape-in-string/css) (Severity: [warning](/reference/diagnostics#warning))
+
+Missing a rule? Help us by [contributing](https://github.com/biomejs/biome/blob/main/CONTRIBUTING.md) to the [analyzer](https://github.com/biomejs/biome/blob/main/crates/biome_analyze/CONTRIBUTING.md) or create a rule suggestion [here](https://github.com/biomejs/biome/discussions/categories/rule-suggestion).

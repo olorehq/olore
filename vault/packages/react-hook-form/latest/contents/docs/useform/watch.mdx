@@ -1,21 +1,25 @@
 ---
 title: watch
+seoTitle: "watch: Track React Form Values"
 description: Subscribe to input value changes and trigger re-renders.
 metaDescription: Subscribe to one or more input value changes and trigger re-renders. Useful for conditional form logic and dependent field calculations.
 sidebar: apiLinks
 ---
 
-## \</> `watch:` <TypeText>UseFormWatch</TypeText>
+## \</> `watch:` <TypeText>[UseFormWatch](/ts#UseFormWatch)</TypeText>
 
-This method will watch specified inputs and return their values. It is useful to render input value and for determining what to render by condition.
+This method watches specified inputs and returns their values. It is useful for rendering input values and determining what to render based on conditions.
 
 ### Overloads
 
-This function mainly serves **two purposes**:
+---
+
+This function has four overloads:
 
 - <TypeText>`watch(name: string, defaultValue?: unknown): unknown`</TypeText>
 - <TypeText>`watch(names: string[], defaultValue?: {[key:string]: unknown}): unknown[]`</TypeText>
 - <TypeText>`watch(): {[key:string]: unknown}`</TypeText>
+- <TypeText>`watch(callback, defaultValues?): { unsubscribe: () => void }`</TypeText> _(deprecated, see below)_
 
 The explanation of each of these four overloads follows below.
 
@@ -23,7 +27,7 @@ The explanation of each of these four overloads follows below.
 
 ---
 
-Watch and subscribe to a single field used outside of render.
+Call `watch` inside your component to subscribe to a field's value and re-render when it changes.
 
 **Params**
 
@@ -42,7 +46,7 @@ const name = watch("name")
 
 ---
 
-Watch and subscribe to an array of fields used outside of render.
+Call `watch` inside your component to subscribe to an array of fields and re-render when any of them change.
 
 **Params**
 
@@ -61,7 +65,7 @@ const [name, name1] = watch(["name", "name1"])
 
 ---
 
-Watch and subscribe to the entire form update/change based on onChange and re-render at the useForm.
+Watch and subscribe to the entire form's changes based on `onChange`, triggering re-renders at the `useForm` level.
 
 **Params** None
 
@@ -71,11 +75,11 @@ Watch and subscribe to the entire form update/change based on onChange and re-re
 const formValues = watch()
 ```
 
-#### 2. <b>Deprecated:</b> consider use or migrate to [subscribe](/docs/useform/subscribe). Watching with callback fn <TypeText>`watch(callback: (data, { name, type }) => void, defaultValues?: {[key:string]: unknown}): { unsubscribe: () => void }`</TypeText>
+#### 2. <b>Deprecated:</b> consider use or migrate to [subscribe](/docs/useform/subscribe). Watching with callback fn <TypeText>`watch(callback: (data, { name, type }) => void, defaultValues?: {[key:string]: unknown}): { unsubscribe: () => void }`</TypeText> <Since version="7.0.0" />
 
 ---
 
-Subscribe to field update/change without trigger re-render.
+Subscribe to field updates or changes without triggering a re-render.
 
 **Params**
 
@@ -94,12 +98,13 @@ The `type` argument indicates the originating DOM event (typed as `EventType`). 
 
 ---
 
-- When `defaultValue` is not defined, the first render of `watch` will return `undefined` because it is called before `register`. It's **recommended** to provide `defaultValues` at `useForm` to avoid this behaviour, but you can set the inline `defaultValue` as the second argument.
-- When both `defaultValue` and `defaultValues` are supplied, `defaultValue` will be returned.
-- This API will trigger re-render at the root of your app or form, consider using a callback or the [useWatch](/docs/usewatch) api if you are experiencing performance issues.
-- `watch` result is optimised for render phase instead of `useEffect`'s deps, to detect value update you may want to use an external custom hook for value comparison.
+- When `defaultValue` is not defined, the first render of `watch` will return `undefined` because it is called before `register`. It's **recommended** to provide `defaultValues` to `useForm` to avoid this behavior, but you can also set an inline `defaultValue` as the second argument.
+- When both `defaultValue` and `defaultValues` are supplied, the value from `defaultValues` takes precedence; the inline `defaultValue` is only used as a fallback when no value exists for that field at all.
+- This API will trigger a re-render at the root of your application or form. Consider using [subscribe](/docs/useform/subscribe) or the [useWatch](/docs/usewatch) API if you experience performance issues. See [which API to use for reading values](/faqs#watchvsgetValuesvsstate).
+- With the [React Compiler](https://react.dev/learn/react-compiler), `watch` keeps the same reference across renders, so the compiler may cache its result and render stale values. Use [useWatch](/docs/usewatch) in compiled components, or opt out with `"use no memo"`.
+- The `watch` result is optimized for the render phase rather than `useEffect` dependencies. To detect value updates, you may want to use an external custom hook for value comparison.
 
-### Examples:
+### Examples
 
 ---
 
@@ -124,7 +129,7 @@ function App() {
     handleSubmit,
   } = useForm<IFormInputs>()
   const watchShowAge = watch("showAge", false) // you can supply default value as second argument
-  const watchAllFields = watch() // when pass nothing as argument, you are watching everything
+  const watchAllFields = watch() // when you pass nothing as an argument, you are watching everything
   const watchFields = watch(["showAge", "age"]) // you can also target specific fields by their names
 
   const onSubmit = (data: IFormInputs) => console.log(data)
@@ -156,7 +161,7 @@ function App() {
     handleSubmit,
   } = useForm()
   const watchShowAge = watch("showAge", false) // you can supply default value as second argument
-  const watchAllFields = watch() // when pass nothing as argument, you are watching everything
+  const watchAllFields = watch() // when you pass nothing as an argument, you are watching everything
   const watchFields = watch(["showAge", "number"]) // you can also target specific fields by their names
 
   const onSubmit = (data) => console.log(data)
@@ -185,7 +190,6 @@ function App() {
 <TabGroup buttonLabels={["TS", "JS"]}>
 
 ```tsx copy sandbox="https://codesandbox.io/s/watch-with-usefieldarray-z54xwd"
-import * as React from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 
 type FormValues = {
@@ -228,8 +232,8 @@ function App() {
         type="button"
         onClick={() =>
           append({
-            firstName: "bill" + renderCount,
-            lastName: "luo" + renderCount,
+            firstName: "bill",
+            lastName: "luo",
           })
         }
       >
@@ -241,7 +245,6 @@ function App() {
 ```
 
 ```javascript copy sandbox="https://codesandbox.io/s/watch-with-usefieldarray-52yy3z"
-import * as React from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 
 function App() {
@@ -277,8 +280,8 @@ function App() {
         type="button"
         onClick={() =>
           append({
-            firstName: "bill" + renderCount,
-            lastName: "luo" + renderCount,
+            firstName: "bill",
+            lastName: "luo",
           })
         }
       >
@@ -291,8 +294,47 @@ function App() {
 
 </TabGroup>
 
-## Video
+### Video
 
 ---
 
 <YouTube youTubeId="3qLd69WMqKk" />
+
+### Tips
+
+---
+
+- `watch` is fine for small forms and for simple conditional fields, such as `watch("hasPhone") && <input {...register("phone")} />`. As the form grows, move the watched part into a child component with [`useWatch`](/docs/usewatch) or the [`Watch`](/docs/usewatch/watch) component.
+- Watch only the fields you need, for example `watch("country")` and not `watch()`. Watching the whole form re-renders the host component on every key press.
+- To run side effects when values change, such as saving to `localStorage` or calling an analytics API, use [`subscribe`](/docs/useform/subscribe). It does not re-render.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### A `useEffect` that depends on `watch()` runs on every render
+
+<Why>
+
+`watch()` returns a new object on every render, even when no value changed, so React always sees a changed dependency.
+
+</Why>
+
+<Fix>
+
+To run code when values change, use [`subscribe`](/docs/useform/subscribe) instead of an effect. To render values, use [`useWatch`](/docs/usewatch), which returns the same value until a watched field changes.
+
+```javascript
+useEffect(() => {
+  return subscribe({
+    formState: { values: true },
+    callback: ({ values }) => save(values),
+  })
+}, [subscribe])
+```
+
+</Fix>
+
+</Troubleshoot>

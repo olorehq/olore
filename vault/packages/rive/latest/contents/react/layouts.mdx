@@ -29,6 +29,8 @@ import Rive, { Layout, Fit, Alignment } from '@rive-app/react-canvas';
 export const Simple = () => (
   <Rive
     src="https://cdn.rive.app/animations/vehicles.riv"
+    artboard="Truck"
+    stateMachine="bumpy"
     layout={new Layout({ fit: Fit.Contain, alignment: Alignment.TopCenter })}
   />
 );
@@ -43,7 +45,7 @@ export default function Example() {
   const { RiveComponent } = useRive({
     src: 'my-file.riv',
     artboard: 'my-artboard',
-    animations: 'my-animation',
+    stateMachine: 'my-state-machine',
     layout: new Layout({
       fit: Fit.Cover,
       alignment: Alignment.TopCenter,
@@ -70,7 +72,7 @@ import { useRive, Layout, Fit } from "@rive-app/react-canvas";
 export const RiveComponent = () => {
   const { RiveComponent } = useRive({
     src: "your-rive-file.riv",
-    stateMachines: "State Machine 1",
+    stateMachine: "State Machine 1",
     layout: new Layout({
       fit: Fit.Layout,
       // layoutScaleFactor: 2, // Optional: 2x scale of the layout

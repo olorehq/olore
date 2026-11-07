@@ -1,7 +1,8 @@
 ---
-title: 'Browser Check Timeouts'
+title: 'Browser check timeouts'
 description: 'Browser check timeouts.'
 sidebarTitle: 'Timeouts'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/timeouts/'
 ---
 
 
@@ -16,7 +17,7 @@ There are different kinds of timeouts you will encounter while working with Brow
 
 
 Checkly runs your Browser check code for a maximum of **240 seconds**. Tests that exceed this time will be capped and 
-time out. Everything in your Browser Check needs to happen within those 240 seconds, no matter what. 
+time out. Everything in your Browser check needs to happen within those 240 seconds, no matter what.
 
 Playwright does offer multiple [configurable timeouts](https://playwright.dev/docs/test-timeouts). Make sure you configure these in a way that prevents your 
 check from hitting the general 240 seconds timeout.
@@ -63,7 +64,7 @@ test('add item to wishlist', async ({ page }) => {
 ### Your check run has reached the maximum run time of 240000 ms.
 
 In this case, your script is hitting Checkly's 240s total Browser check timeout. This can't be configured and is in 
-place to prevent checks from running way longer than acceptable. No assets will be available for review after the check has gone over the maximum run time. If you encounter this, try to make your check shorter by following [best practices](/learn/playwright/writing-tests/). Additionally, to ensure your assets are saved, please set a test timeout lower than the browser check execution timeout.
+place to prevent checks from running way longer than acceptable. No assets will be available for review after the check has gone over the maximum run time. If you encounter this, try to make your check shorter by following [best practices](/learn/playwright/writing-tests/). Additionally, to ensure your assets are saved, please set a test timeout lower than the Browser check execution timeout.
 
 ### Timeout 20000ms exceeded
 

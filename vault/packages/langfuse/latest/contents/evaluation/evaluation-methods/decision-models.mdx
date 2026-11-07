@@ -1,0 +1,183 @@
+---
+title: Decision model evaluators
+sidebarTitle: Decision model evaluators
+description: Use OpenAI or TypeSafe decision models to ask typed questions about observations and write structured evaluation scores.
+---
+
+# Decision model evaluators
+
+Decision models answer **typed questions** about an observation instead of generating free-form text. Each Choice, Score, or Yes / no question writes one [score](/docs/evaluation/scores/overview).
+
+They are often cheaper to run than [LLM-as-a-Judge](/docs/evaluation/evaluation-methods/llm-as-a-judge), which is why you would use them when you do not need written reasoning. Use an LLM judge when you do, or [code evaluators](/docs/evaluation/evaluation-methods/code-evaluators) for deterministic checks.
+
+<span id="how-jev-as-a-judge-works" />
+<span id="why-use-jev-as-a-judge" />
+
+<Frame fullWidth>
+  ![Decision-model evaluator with a Score question, mapped input, and live test results](/images/docs/evaluation/configure-decision-model-evaluator.png)
+</Frame>
+
+## Set up step-by-step [#set-up-step-by-step]
+
+<Steps>
+
+### Create a decision-model evaluator [#create-a-jev-evaluator]
+
+Go to the [Evaluators page](https://cloud.langfuse.com/project/~/evals) and click **New evaluator**. Choose **New decision model evaluator**, then select an [OpenAI](#connect-openai) or [TypeSafe](#connect-typesafe-jev) connection and model. Add the connection under **Settings → LLM Connections** if you do not have one yet.
+
+<Frame fullWidth>
+  ![New decision model evaluator in the template gallery, with a Yes / no question](/images/docs/evaluation/create-decision-model-evaluator.png)
+</Frame>
+
+### Define the questions [#question-types]
+
+Add one question per criterion. For each question, pick the type, write the instruction, define the allowed answers, and set the score name. One evaluator can ask several questions in a single call.
+
+| Question type | Langfuse score                                             | Example                                                                   |
+| ------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Choice**    | Categorical score with the selected option                 | "Which team should handle this ticket?" → `billing`, `technical`, `sales` |
+| **Score**     | Numeric score with the expected level, `0` to `levels - 1` | "How frustrated is the customer?" → `0` calm … `3` angry                  |
+| **Yes / no**  | Numeric score with `P(true)` between `0` and `1`           | "Does the message request a refund?" → `0.93`                             |
+
+<Callout type="info">
+  Keep each question **atomic**: one decision per question. If you are asking
+  "is the answer correct and polite?", split it into two. Both run in the same
+  call.
+</Callout>
+
+<span id="build-the-state" />
+
+### Map the model input
+
+Map the observation data the model should evaluate.
+
+### Test the evaluator
+
+On the right, filter to representative sample observations, select one, and run the evaluator. The test panel shows one row per question with its probability distribution and confidence where available, along with the estimated cost. Use **Raw output** to inspect the provider request.
+
+### Save the evaluator
+
+After saving, you can:
+
+- Create a [rule](/docs/evaluation/core-concepts#evaluators-and-rules) from the filters you used to select test samples, or attach the evaluator to an existing rule to run it on incoming observations.
+- Continue without a rule. You can still use the evaluator for [batch evaluation](/docs/evaluation/core-concepts#batch-evaluation) or [prompt experiments](/docs/evaluation/experiments/experiments-via-ui).
+
+</Steps>
+
+<span id="use-an-openai-decision-model" />
+<span id="add-a-typesafe-connection" />
+
+## Connect a provider [#connect-a-provider]
+
+### OpenAI [#connect-openai]
+
+Add an **OpenAI** connection with access to `gpt-6-luna`. Langfuse calls the OpenAI Decisions API through this connection.
+
+Map observation data to the single state named `input`. Questions evaluate that state as a whole and cannot reference individual fields. Score levels need a label and can include an optional description.
+
+<Callout type="warning">
+  If OpenAI refuses any question, the run fails and writes no scores.
+</Callout>
+
+### TypeSafe Jev [#connect-typesafe-jev]
+
+Add a connection with the adapter **typesafe**, choose the upstream that serves Jev, and paste its API key:
+
+| Upstream          | API key                                                                             | Billing                   |
+| ----------------- | ----------------------------------------------------------------------------------- | ------------------------- |
+| TypeSafe          | A key from the [TypeSafe console](https://console.typesafe.ai/settings/keys)        | Billed by TypeSafe        |
+| Vercel AI Gateway | An [AI Gateway API key](https://vercel.com/docs/ai-gateway/authentication-and-byok) | Billed through AI Gateway |
+| OpenRouter        | An [OpenRouter API key](https://openrouter.ai/settings/keys)                        | Billed through OpenRouter |
+
+These upstreams need no base URL or extra headers.
+
+<Callout type="info">
+  Use `jev-latest` to follow new releases, or pin a version such as `jev-1.13.0`
+  when an evaluation threshold should stay stable.
+</Callout>
+
+Build the JSON state from observation input, output, metadata, tool calls, **Expected Output**, or **Experiment Item Metadata**. Reference those fields in question instructions with backticks, for example ``Compare `output` with `expectedOutput`.`` Jev Score levels require a description.
+
+<Callout type="info">
+  TypeSafe connections are only available to decision-model evaluators because
+  Jev cannot generate text.
+</Callout>
+
+### Other System One-compatible models [#connect-system-one-compatible]
+
+Other vendors serve decision models through TypeSafe's [System One API](https://docs.typesafe.ai/api/system-one) (`POST <base URL>/systemone`). Add a **TypeSafe (System One)** connection, select the **Custom** upstream, enter the vendor's base URL without the `/systemone` suffix, and add the model name under **Custom models**. Langfuse authenticates with `Authorization: Bearer <API key>`; use **Extra Headers** for any additional headers the vendor requires.
+
+| Vendor                                                                         | Model                                   | Base URL                                                       | Notes                                                                                                                           |
+| ------------------------------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [Subquadratic SubQ Snap](https://docs.subq.ai/endpoints/decisions-api/)        | `subq-snap-preview`                     | `https://api.subq.ai/v1`                                       | API key from the SubQ console.                                                                                                  |
+| [Strands Decider](https://strandsagents.com/blog/introducing-strands-decider/) | Any name, for example `strands-decider` | `<your server URL>/v1`, for example `http://localhost:8000/v1` | Open weights you serve yourself with `strands-decider serve`. The server has no authentication, so use any placeholder API key. |
+
+On Langfuse Cloud, custom base URLs must use HTTPS and resolve to a public address. Self-hosted Langfuse can reach `localhost` or internal hosts once you allow them with `LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST`; otherwise saving the connection fails with `Blocked hostname detected`.
+
+## FAQ
+
+import { Details, Summary } from "@/components/Details";
+
+<FaqDetails>
+
+<Details>
+<Summary>Why is my Yes / no score a number and not a boolean?</Summary>
+
+Decision models return the probability that the statement is true, not a hard label. Langfuse stores that probability as a numeric score between `0` and `1` so you keep the calibration. Choose a threshold when you filter or alert, for example `>= 0.7`. If you need a boolean, use a Choice question with `yes` and `no`.
+
+</Details>
+
+<Details>
+<Summary>Can I use decision-model evaluators in experiments and batch evaluation?</Summary>
+
+Yes. They run on incoming observations through rules, on historical observations through [batch evaluation](/docs/evaluation/core-concepts#batch-evaluation), and on [experiments](/docs/evaluation/experiments/experiments-via-ui). Map the experiment fields your questions need into the provider input.
+
+</Details>
+
+<Details>
+<Summary>Where do I get a TypeSafe API key?</Summary>
+
+Create an account at [typesafe.ai](https://typesafe.ai) and generate a key in the [TypeSafe console](https://console.typesafe.ai/settings/keys). Access currently runs through a waitlist on TypeSafe's side. If you already use Vercel AI Gateway or OpenRouter, pick that upstream instead and use its API key. See [Connect TypeSafe Jev](#connect-typesafe-jev).
+
+</Details>
+
+<Details>
+<span id="debug-executions" />
+<span id="scores" />
+<Summary>How do I debug a decision-model run?</Summary>
+
+Every run creates an execution trace in the internal environment `langfuse-llm-as-a-judge`, named `Execute evaluator: <evaluator name>`. Internal environments are hidden from the default tracing view: filter by `environment = langfuse-llm-as-a-judge` or open the trace from a score.
+
+Probabilities and confidence are stored in score metadata (`metadata.openai` or `metadata.typesafe`) where the provider returns them, not in the score value.
+
+</Details>
+
+<Details>
+<span id="limits" />
+<Summary>What are the limits?</Summary>
+
+| Constraint              | Limit / guidance                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Questions per evaluator | 1 to 50, all answered in one call.                                                                                                                                        |
+| Choice options          | 2 to 255 options with unique values.                                                                                                                                      |
+| Score levels            | 2 to 10 ordered levels.                                                                                                                                                   |
+| Input size              | TypeSafe accepts roughly 32k tokens for the state plus the longest question. Keep either provider's input focused on the data needed for the decision.                    |
+| Refusals                | OpenAI can refuse a question; one refusal fails the run without writing scores. Jev always picks an answer, so add an `other` or `unclear` option when input may be thin. |
+| Data handling           | Input and questions are sent through the selected connection. Review your provider terms, and use [masking](/docs/observability/features/masking) where needed.           |
+
+</Details>
+
+</FaqDetails>
+
+## Related resources
+
+- [Catching conversation signals in Langfuse](/blog/2026-09-23-catching-conversation-signals-in-langfuse): score production chat with the User Conversation Signal template.
+- [Using TypeSafe's Jev for evals](/blog/2026-09-18-using-typesafes-jev-for-evals): what Jev is good for and a walkthrough of Jev-as-a-judge.
+- [Writing good evaluators](/academy/evaluate/writing-evaluators): how to define criteria that hold up.
+- [TypeSafe documentation](https://docs.typesafe.ai/introduction): question primitives, model versions, and known limitations.
+
+## GitHub Discussions
+
+import { GhDiscussionsPreview } from "@/components/gh-discussions/GhDiscussionsPreview";
+
+<GhDiscussionsPreview labels={["feat-evals"]} />

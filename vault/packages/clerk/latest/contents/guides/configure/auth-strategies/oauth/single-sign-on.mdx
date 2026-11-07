@@ -6,25 +6,25 @@ description: Learn how to implement single sign-on with OAuth & OpenID Connect i
 You've likely seen buttons like "Sign in with Google" or "Sign in with GitHub" countless times. Clerk supports both sides of this experience:
 
 1. **Sign in with \[Other App]** – Let users sign in to your Clerk app using their existing credentials from social providers like Google, Facebook, or GitHub.
-1. **Sign in with \[Your App]** – Let users sign in to _other_ apps using their Clerk credentials from your app. In this case, _your app_ becomes the identity provider.
+1. **Sign in with \[Your App]** – Let users sign in to _other_ apps using their Clerk credentials from your app. For OpenID Connect (OIDC) sign-in, Clerk acts as the identity provider ([IdP](!identity-provider)).
 
 These features help you streamline authentication for your users, whether they're signing into your Clerk-powered app or accessing external apps with their Clerk credentials. This guide covers both options in detail and provides links to additional resources where applicable.
 
 ## Option 1: Sign in with \[Other App]
 
-This feature allows users to sign up or sign in to your Clerk app using their existing credentials from popular social providers (also known as Identity Providers, or IdPs) like Google, Facebook, or GitHub. For example, if you enable GitHub as a social provider, then a user can sign in to your Clerk app by selecting GitHub as an option and authenticating with their GitHub account credentials.
+This feature allows users to sign up or sign in to your Clerk app using their existing credentials from popular social providers (also known as IdPs) like Google, Facebook, or GitHub. For example, if you enable GitHub as a social provider, then a user can sign in to your Clerk app by selecting GitHub as an option and authenticating with their GitHub account credentials.
 
 Refer to the appropriate provider's [guide](/docs/guides/configure/auth-strategies/social-connections/overview) for implementation details.
 
 ## Option 2: Sign in with \[Your App]
 
-Clerk can be configured as an OAuth 2.0 and OpenID Connect (OIDC) Identity Provider (IdP) to enable Single Sign-On (SSO) with other [clients](!oauth-client) that support these protocols. This allows users to authenticate to third-party applications using their Clerk credentials, enabling user information sharing between your Clerk app and OAuth clients.
+Clerk can act as an OAuth 2.0 authorization server for third-party [clients](!oauth-client). When those clients use OIDC for sign-in, Clerk also acts as their IdP, allowing users to authenticate with their Clerk credentials.
 
 It's the reverse of Option 1: instead of using an external provider to authenticate into your Clerk app, users use their Clerk credentials to sign in to external apps.
 
 ### What you can build
 
-With Clerk as an IdP, you can:
+With Clerk's OAuth and OIDC support, you can:
 
 - **Integrate with third-party tools** – Let users authenticate into platforms like Notion, Retool, or custom internal tools using their credentials from your app.
 - **Build a developer ecosystem** – Enable partners or third-party developers to offer "Sign in with \[Your App]" in their applications.
@@ -33,9 +33,9 @@ With Clerk as an IdP, you can:
 
 ### How it works: The big picture
 
-When you configure Clerk as an IdP, you're registering a third-party app as an OAuth [client](!oauth-client) in your Clerk Dashboard. You then provide that client with credentials (a Client ID and Client Secret) that it uses to redirect users to Clerk for authentication. After the user authenticates with Clerk, they're redirected back to the third-party app with the authorization they need.
+When you configure Clerk for third-party sign-in, you're registering a third-party app as an OAuth [client](!oauth-client) in your Clerk Dashboard. You then provide that client with credentials (a Client ID and Client Secret) that it uses to redirect users to Clerk for authentication. After the user authenticates with Clerk, they're redirected back to the third-party app with the authorization they need.
 
-## Configure Clerk as an IdP
+## Configure Clerk for third-party sign-in
 
 The following steps walk you through setting up Clerk as an OAuth provider for a third-party [client](!oauth-client).
 
@@ -52,10 +52,14 @@ Ensure you have setup a new connection within the third-party [client](!oauth-cl
 
 ### Create a Clerk OAuth application
 
+<If is="llm">
+  **For AI agents:** Instead of creating the OAuth application through the Dashboard modal below, use the CLI: run `npx clerk@latest api ls oauth` to discover the OAuth applications endpoints, then create one with `npx clerk@latest api oauth_applications -d '<json>'` — the create response includes the Client ID and Client Secret. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
+
 To create a Clerk OAuth application:
 
 1. In the Clerk Dashboard, navigate to the [**OAuth applications**](https://dashboard.clerk.com/~/oauth-applications) page.
-1. Select **Add OAuth application**. A modal will open.
+1. Select **Add application** → **Create OAuth application**. A modal will open.
 1. Complete the following fields:
    - `Name` - Helps you identify your application.
    - `Scopes` - The scopes that you would like to leverage. Learn more about [OAuth scopes currently supported by Clerk](/docs/guides/configure/auth-strategies/oauth/how-clerk-implements-oauth#scopes).
@@ -83,7 +87,7 @@ Other available settings that may be useful include:
 
 ## Get additional user information with the OAuth 2.0 flow
 
-After a user has successfully completed an OAuth 2.0 flow, you can retrieve additional user information from Clerk's [`/oauth/userinfo`](/docs/reference/frontend-api/tag/oauth2-identify-provider/post/oauth/userinfo){{ target: '_blank' }} endpoint. When making the request to this endpoint, you must include the OAuth access token in the `Authorization` header.
+After a user has successfully completed an OAuth 2.0 flow, you can retrieve additional user information from Clerk's [`/oauth/userinfo`](/docs/reference/frontend-api/tag/oauth2-identity-provider/POST/oauth/userinfo){{ target: '_blank' }} endpoint. When making the request to this endpoint, you must include the OAuth access token in the `Authorization` header.
 
 This example is written for Next.js App Router **but can be adapted for any framework/language**. It assumes the OAuth flow has already been completed and that you have obtained an [access token](!oauth-access-token) from Clerk.
 
@@ -170,7 +174,7 @@ The `/oauth/userinfo` endpoint provides the following user properties, depending
 
 ### Get token information
 
-For validating [access tokens](!oauth-access-token) or refresh tokens and retrieving additional token metadata, Clerk provides a standard OAuth 2.0 [Token Introspection Endpoint](https://datatracker.ietf.org/doc/html/rfc7662) at [`/oauth/token_info`](/docs/reference/frontend-api/tag/oauth2-identify-provider/post/oauth/token_info){{ target: '_blank' }}.
+For validating [access tokens](!oauth-access-token) or refresh tokens and retrieving additional token metadata, Clerk provides a standard OAuth 2.0 [Token Introspection Endpoint](https://datatracker.ietf.org/doc/html/rfc7662) at [`/oauth/token_info`](/docs/reference/frontend-api/tag/oauth2-identity-provider/POST/oauth/token_info){{ target: '_blank' }}.
 
 The endpoint returns detailed token information such as if the token is still active, the Client ID, and the granted scopes.
 
@@ -244,7 +248,7 @@ export async function POST(req: NextRequest) {
 > [!IMPORTANT]
 > Not all third-party apps expect or use OIDC. However, this feature was designed with OIDC compatibility in mind, which is why it's included in this guide. Ensure that your integration target supports OIDC before proceeding.
 
-In order to enable OIDC in your OAuth flow, you can follow the same steps outlined above, but ensure to select the `openid` scope when configuring your OAuth app in the Clerk Dashboard. This scope triggers OIDC and instructs the authorization server to issue an ID token alongside your [access token](!oauth-access-token).
+In order to enable OIDC in your OAuth flow, you can follow the same steps outlined above, but ensure to select the `openid` scope when configuring your OAuth app in the Clerk Dashboard. This scope triggers OIDC and instructs the [authorization server](!oauth-authorization-service) to issue an ID token alongside your [access token](!oauth-access-token).
 
 You'll also need to include this `openid` scope in the query parameters of your authorization endpoint when initiating the OAuth flow. For example:
 

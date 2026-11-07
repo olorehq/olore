@@ -1,0 +1,82 @@
+---
+title: "Focus"
+description: "Let users move through your Rive graphic with Tab and arrow keys in the React runtime."
+---
+
+import Overview from "/snippets/runtimes/web/focus/overview.mdx"
+import KeyboardNavigation from "/snippets/runtimes/web/focus/keyboard-navigation.mdx"
+import TabIndex from "/snippets/runtimes/web/focus/tab-index.mdx"
+import FocusInterrupt from "/snippets/runtimes/web/focus/focus-interrupt.mdx"
+import FocusInterruptOptions from "/snippets/runtimes/web/focus/focus-interrupt-options.mdx"
+import ClearingFocus from "/snippets/runtimes/web/focus/clearing-focus.mdx"
+
+<Overview runtimeName="React" />
+
+<KeyboardNavigation runtime="react" />
+
+<TabIndex />
+
+```jsx highlight={9}
+import { useRive } from "@rive-app/react-canvas";
+
+export default function Menu() {
+  const { RiveComponent } = useRive({
+    src: "/menu.riv",
+    stateMachine: "State Machine 1",
+    autoplay: true,
+    autoBind: true,
+    tabIndex: -1, // Reachable by click, but skipped when tabbing through the page
+  });
+
+  return <RiveComponent />;
+}
+```
+
+<FocusInterrupt />
+
+```jsx highlight={9-11}
+import { useRive } from "@rive-app/react-canvas";
+
+export default function Menu() {
+  const { RiveComponent } = useRive({
+    src: "/menu.riv",
+    stateMachine: "State Machine 1",
+    autoplay: true,
+    autoBind: true,
+    focusOptions: {
+      allowFocusInterrupt: true,
+    },
+  });
+
+  return <RiveComponent />;
+}
+```
+
+<FocusInterruptOptions />
+
+<ClearingFocus />
+
+```jsx highlight={12}
+import { useRive } from "@rive-app/react-canvas";
+
+export default function Menu({ onClose }) {
+  const { rive, RiveComponent } = useRive({
+    src: "/menu.riv",
+    stateMachine: "State Machine 1",
+    autoplay: true,
+    autoBind: true,
+  });
+
+  const closeMenu = () => {
+    rive?.clearFocus();
+    onClose();
+  };
+
+  return (
+    <>
+      <RiveComponent />
+      <button onClick={closeMenu}>Close menu</button>
+    </>
+  );
+}
+```

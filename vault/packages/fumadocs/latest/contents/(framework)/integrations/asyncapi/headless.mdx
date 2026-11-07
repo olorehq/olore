@@ -1,0 +1,166 @@
+---
+title: Headless
+description: The state and logic of AsyncAPI pages, without UI.
+---
+
+## Overview
+
+Everything outside `@fumadocs/asyncapi/ui` is headless.
+
+| Path                            | Module                                                    |
+| ------------------------------- | --------------------------------------------------------- |
+| `@fumadocs/asyncapi`            | the page: the document, its servers and your components   |
+| `@fumadocs/asyncapi/operation`  | an operation: its channel, parameters, messages and reply |
+| `@fumadocs/asyncapi/playground` | a session on the channel of an operation                  |
+
+## Page
+
+`createAsyncAPIRenderer()` takes your components and returns `<AsyncAPIPage />`, which accepts the props of generated pages.
+
+```tsx title="components/api-page.tsx"
+'use client';
+import { type CodeBlockProps, createAsyncAPIRenderer } from '@fumadocs/asyncapi';
+import { Operation } from '@/components/my-operation';
+import { SchemaUI } from '@/components/my-schema';
+
+export const AsyncAPIPage = createAsyncAPIRenderer({
+  components: {
+    Operation,
+    SchemaUI,
+    CodeBlock({ lang, code }: CodeBlockProps) {
+      return (
+        <pre>
+          <code className={`language-${lang}`}>{code}</code>
+        </pre>
+      );
+    },
+  },
+});
+```
+
+| Component   | Renders                                                      |
+| ----------- | ------------------------------------------------------------ |
+| `Operation` | each operation of the page, see [Operation](#operation)      |
+| `SchemaUI`  | the JSON schemas of parameters, headers and message payloads |
+| `Layout`    | optional, wraps the rendered operations                      |
+
+### Hooks
+
+Components under the page read its state.
+
+| Hook                 | Returns                                            |
+| -------------------- | -------------------------------------------------- |
+| `useAsyncAPI()`      | the dereferenced document (`doc`) and page options |
+| `useComponents()`    | the components passed to the page                  |
+| `useServer()`        | the servers, the selected one and its variables    |
+| `useRenderContext()` | the render options of the page, like `content`     |
+
+To render operations yourself, mount `<AsyncAPIProvider document={bundled} components={...} />` in place of `createAsyncAPIRenderer()`.
+
+## Operation
+
+`<OperationProvider />` derives the details of an operation once: traits are applied, and its channel, parameters, messages and reply are resolved.
+
+```tsx title="components/my-operation.tsx"
+'use client';
+import {
+  OperationProvider,
+  type PageOperationProps,
+  useOperation,
+  useOperationSecurity,
+} from '@fumadocs/asyncapi/operation';
+
+export function Operation(props: PageOperationProps) {
+  return (
+    <OperationProvider {...props}>
+      <Content />
+    </OperationProvider>
+  );
+}
+
+function Content() {
+  const { title, channel, parameters, messages } = useOperation();
+  const security = useOperationSecurity();
+
+  return (
+    <>
+      <h2>{title}</h2>
+      <code>{channel.address}</code>
+      <ul>
+        {parameters.map((param) => (
+          <li key={param.name}>{param.name}</li>
+        ))}
+      </ul>
+      {messages.map((message) => (
+        <section key={message.id}>
+          <h3>{message.name}</h3>
+          {message.examples.map((example) => (
+            <pre key={example.id}>{JSON.stringify(example.payload, null, 2)}</pre>
+          ))}
+        </section>
+      ))}
+      <p>{security.operation.map((item) => item.id).join(', ')}</p>
+    </>
+  );
+}
+```
+
+| Hook                     | Returns                                                                      |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `useOperation()`         | the operation with its details resolved                                      |
+| `useOperationSecurity()` | security schemes of the selected server and the operation, both apply        |
+| `useChannelMessages()`   | messages readers receive and send on the channel, from all of its operations |
+
+<auto-type-table path="props.ts" name="OperationInfo" />
+
+Examples of a message come from the document, or are generated from its schemas.
+
+<auto-type-table path="props.ts" name="OperationMessage" />
+
+## Playground
+
+`usePlayground()` connects to the channel of an operation with a transport, under `<OperationProvider />`.
+
+```tsx
+'use client';
+import { usePlayground } from '@fumadocs/asyncapi/playground';
+import { mqttTransport } from '@/lib/mqtt-transport';
+
+export function Playground() {
+  const { url, status, connect, disconnect, send, log } = usePlayground({
+    // on top of the page's `playground.transports`
+    transports: { mqtt: mqttTransport },
+  });
+  if (!url) return null; // no transport for the server
+
+  return (
+    <>
+      <button onClick={status === 'closed' ? connect : disconnect}>{status}</button>
+      {send && <button onClick={() => send('{"type":"ping"}')}>Ping</button>}
+      {log.map((entry) => (
+        <p key={entry.id}>
+          {entry.type} {entry.message?.name} {entry.data}
+        </p>
+      ))}
+    </>
+  );
+}
+```
+
+- The address parameters, query and auth inputs are the form `stf`, `url` follows its values.
+- `send` is available while connected, unless the connection can only receive.
+- Received messages are matched against the payloads of messages on the channel, `entry.message` is the documented message. Binary messages are `entry.binary`.
+
+<auto-type-table path="props.ts" name="Playground" />
+
+### Transports
+
+A transport connects to the servers of a protocol, see [the MQTT example](/docs/integrations/asyncapi/api-page#custom-transports). They are picked from the `transports` of `usePlayground()`, then the page's `playground.transports`, then the built-in WebSocket one.
+
+`usePlaygroundTransport()` takes the same `transports` and returns the transport of the selected server, `undefined` when none connects to it.
+
+<auto-type-table path="props.ts" name="PlaygroundTransport" />
+
+`connect()` reports to `events`: `open()`, `message(data)` with text or an `ArrayBuffer`, and `close()` or `error()`, which end the connection.
+
+<auto-type-table path="props.ts" name="ConnectTarget" />

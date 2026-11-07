@@ -1,0 +1,97 @@
+---
+title: set_difference
+description: 'This page explains how to use the set_difference function in APL.'
+---
+
+Use the `set_difference` function in APL to compute the distinct elements in one array that aren’t present in another. This function helps you filter out shared values between two arrays, producing a new array that includes only the unique values from the first input array.
+
+Use `set_difference` when you need to identify new or missing elements, such as:
+
+- Users who visited today but not yesterday.
+- Error codes that occurred in one region but not another.
+- Service calls that appear in staging but not production.
+
+## Usage
+
+### Syntax
+
+```kusto
+set_difference(Array1, Array2)
+```
+
+### Parameters
+
+| Name     | Type  | Description                                          |
+| -------- | ----- | ---------------------------------------------------- |
+| `Array1` | array | The array to subtract from.                          |
+| `Array2` | array | The array containing values to remove from `Array1`. |
+
+### Returns
+
+An array that includes all values from `Array1` that aren’t present in `Array2`. The result doesn’t include duplicates.
+
+## Example
+
+Use `set_difference` to return the difference between two arrays.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend difference = set_difference(dynamic([1, 2, 3]), dynamic([2, 3, 4, 5]))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20difference%20%3D%20set_difference(dynamic(%5B1%2C%202%2C%203%5D)%2C%20dynamic(%5B2%2C%203%2C%204%2C%205%5D))%22%7D)
+
+**Output**
+
+| _time            | difference |
+| ---------------- | --- |
+| May 22, 11:42:52 | [5, 1, 4] |
+
+## List of related functions
+
+- [set_has_element](/apl/scalar-functions/mathematical-functions/set-has-element): Tests whether a set contains a specific value. Prefer it when you only need a Boolean result.
+- [set_union](/apl/scalar-functions/mathematical-functions/set-union): Returns the union of two or more sets. Use it when you need any element that appears in at least one set instead of every set.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, similar logic often uses the `setdiff` function from the `mv` (multivalue) function family. APL’s `set_difference` behaves similarly, returning values that are only in the first multivalue field.
+
+<CodeGroup>
+```sql Splunk example
+| eval a=mvappend("a", "b", "c"), b=mvappend("b", "c")
+| eval diff=mvfilter(NOT match(a, b))
+````
+
+```kusto APL equivalent
+print a=dynamic(['a', 'b', 'c']), b=dynamic(['b', 'c'])
+| extend diff=set_difference(a, b)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t support array operations directly, but you can emulate set difference with `EXCEPT` when working with rows, not arrays. APL provides native array functions like `set_difference` for this purpose.
+
+<CodeGroup>
+```sql SQL example
+SELECT value FROM array1
+EXCEPT
+SELECT value FROM array2;
+```
+
+```kusto APL equivalent
+print a=dynamic(['a', 'b', 'c']), b=dynamic(['b', 'c'])
+| extend diff=set_difference(a, b)
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

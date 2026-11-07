@@ -1,5 +1,6 @@
 ---
 title: "Native SDK Version Customization"
+sidebarTitle: "Custom SDK Version"
 description: "How to override the underlying iOS or Android Rive Native SDK version used by Rive React Native"
 ---
 
@@ -11,32 +12,36 @@ This section is for advanced users who need to use specific versions of the Rive
 
 </Warning>
 
-### Default Behavior
+### Default behavior
 
-By default, Rive React Native uses the native SDK versions specified in `package.json`:
+By default, Rive React Native uses the native SDK versions specified in its `package.json`. For example, `@rive-app/react-native` `0.5.5` uses:
 
 ```json
 "runtimeVersions": {
-  "ios": "6.12.0",
-  "android": "10.4.5"
+  "ios": "6.28.1",
+  "android": "11.12.1"
 }
 ```
 
-These versions are tested and known to work well with this version of Rive React Native.
+These versions are tested and known to work well with that version of Rive React Native. Check the [release notes](https://github.com/rive-app/rive-nitro-react-native/releases) for the versions used by each release.
 
-### Customizing Versions
+### Customizing versions
 
 You can override these default versions using platform-specific configuration files.
 
 See the available native Rive [Android](https://github.com/rive-app/rive-android/releases) and [iOS](https://github.com/rive-app/rive-ios/releases) versions.
 
-#### iOS (Vanilla React Native)
+<Note>
+  Some features need a minimum native SDK version. For example, [GPU Canvas](/runtimes/react-native/gpu-canvas) requires Rive iOS `6.25.0` and Rive Android `11.12.0` or later.
+</Note>
+
+#### iOS (vanilla React Native)
 
 Create or edit `ios/Podfile.properties.json`:
 
 ```json
 {
-  "RiveRuntimeIOSVersion": "6.13.0"
+  "RiveRuntimeIOSVersion": "{{versionApple}}"
 }
 ```
 
@@ -46,52 +51,62 @@ Then run:
 cd ios && pod install
 ```
 
-#### Android (Vanilla React Native)
+#### Android (vanilla React Native)
 
 Add to `android/gradle.properties`:
 
 ```properties
-Rive_RiveRuntimeAndroidVersion=10.5.0
+Rive_RiveRuntimeAndroidVersion={{versionAndroid}}
 ```
 
-#### Expo Projects
+#### Expo projects
 
-For Expo projects, use config plugins in your `app.config.ts`:
+For Expo projects, use an inline config plugin in your `app.config.ts`:
 
 ```typescript
 import { ExpoConfig, ConfigContext } from "expo/config";
-import { withPodfileProperties } from "@expo/config-plugins";
-import { withGradleProperties } from "@expo/config-plugins";
+import {
+  withPodfileProperties,
+  withGradleProperties,
+} from "@expo/config-plugins";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   plugins: [
-    [
-      withPodfileProperties,
-      {
-        RiveRuntimeIOSVersion: "6.13.0",
-      },
-    ],
-    [
-      withGradleProperties,
-      {
-        Rive_RiveRuntimeAndroidVersion: "10.5.0",
-      },
-    ],
+    (config) => {
+      config = withPodfileProperties(config, (config) => {
+        config.modResults["RiveRuntimeIOSVersion"] = "{{versionApple}}";
+        return config;
+      });
+
+      config = withGradleProperties(config, (config) => {
+        config.modResults.push({
+          type: "property",
+          key: "Rive_RiveRuntimeAndroidVersion",
+          value: "{{versionAndroid}}",
+        });
+        return config;
+      });
+
+      return config;
+    },
   ],
 });
 ```
 
-### Version Resolution Priority
+### Version resolution priority
 
 The library resolves versions in the following order:
 
 **iOS:**
 
-1. `ios/Podfile.properties.json` → `RiveRuntimeIOSVersion`
-2. `package.json` → `runtimeVersions.ios` (default)
+1. `RIVE_RUNTIME_IOS_VERSION` environment variable when running `pod install`
+2. `$RiveRuntimeIOSVersion` global in your `Podfile`
+3. `ios/Podfile.properties.json` → `RiveRuntimeIOSVersion`
+4. `package.json` → `runtimeVersions.ios` (default)
 
 **Android:**
 
-1. `android/gradle.properties` → `Rive_RiveRuntimeAndroidVersion`
-2. `package.json` → `runtimeVersions.android` (default)
+1. `RiveRuntimeAndroidVersion` in your root project's `ext` block (`android/build.gradle`)
+2. `android/gradle.properties` → `Rive_RiveRuntimeAndroidVersion`
+3. `package.json` → `runtimeVersions.android` (default)

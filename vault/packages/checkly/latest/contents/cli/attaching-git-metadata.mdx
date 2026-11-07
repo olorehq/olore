@@ -1,6 +1,8 @@
 ---
 title: 'Attaching Git metadata'
+description: "Attach git metadata like branch, commit SHA, and owner to your Checkly test sessions and deployments so you can cross-reference monitoring with code changes."
 sidebarTitle: 'Attaching Git Metadata'
+canonical: 'https://www.checklyhq.com/docs/cli/attaching-git-metadata/'
 ---
 
 import CliEnvVars from "/snippets/cli-env-vars.mdx"
@@ -36,3 +38,20 @@ Or, if you want to set repo URL you invoke:
 ```bash Terminal
 CHECKLY_REPO_URL="https://my.git.solution/project/" npx checkly test
 ```
+
+## Working with multiple repositories
+
+Each `checkly test --record` or `checkly deploy` run attaches one repository URL. If your checks live in more than one repository, for example a backend and a frontend repository, give each repository its own Checkly project: a `checkly.config.ts` with a unique [`logicalId`](/constructs/project#param-logical-id) and its own [`repoUrl`](/constructs/project#param-repo-url).
+
+```ts checkly.config.ts
+import { defineConfig } from 'checkly'
+
+export default defineConfig({
+  projectName: 'Backend monitoring',
+  logicalId: 'backend-monitoring',
+  repoUrl: 'https://github.com/acme/backend',
+  /* More options... */
+})
+```
+
+Do not deploy two repositories with the same `logicalId`. A deploy deletes the checks in the project that its code does not declare, so the second repository's deploy removes the first one's checks.

@@ -81,6 +81,7 @@ Returned repo tokens are secrets. Do not log them or store them in long-lived re
 
 ```ts
 export type NamespaceName = string;
+export type Jurisdiction = "eu" | "us";
 export type RepoName = string;
 export type BranchName = string;
 export type Scope = "read" | "write";
@@ -154,6 +155,31 @@ export interface TokenInfo {
 
 ## Namespaces
 
+### Create a namespace
+
+Route: `POST /artifacts/namespaces`
+
+Use the account-level base URL.
+
+Request body:
+
+- `namespace` <Type text="NamespaceName" /> <MetaInfo text="required" />
+- `jurisdiction` <Type text='"eu" | "us"' /> <MetaInfo text="optional (default: unrestricted)" />
+
+```bash
+curl --request POST "$ARTIFACTS_ACCOUNT_BASE_URL/namespaces" \
+  --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "namespace": "my-eu-namespace",
+    "jurisdiction": "eu"
+  }'
+```
+
+The jurisdiction applies to every repo in the namespace and cannot be changed after creation. If you omit `jurisdiction`, Artifacts creates an unrestricted namespace.
+
+For more information, refer to [Data localization](/artifacts/guides/data-localization/).
+
 ### List namespaces
 
 Route: `GET /artifacts/namespaces?limit=&cursor=`
@@ -173,6 +199,25 @@ Route: `GET /artifacts/namespaces/:namespace`
 curl "$ARTIFACTS_ACCOUNT_BASE_URL/namespaces/$ARTIFACTS_NAMESPACE" \
   --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
 ```
+
+### Delete a namespace
+
+Route: `DELETE /artifacts/namespaces/:namespace`
+
+The namespace must be empty before you delete it.
+
+```sh
+curl --request DELETE "$ARTIFACTS_ACCOUNT_BASE_URL/namespaces/$ARTIFACTS_NAMESPACE" \
+  --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+```
+
+The API returns the following response status codes:
+
+| Status | Description                                                                |
+| ------ | -------------------------------------------------------------------------- |
+| `204`  | Namespace deleted.                                                         |
+| `404`  | Namespace is missing or already deleted.                                   |
+| `409`  | Namespace contains repositories, or activation or deletion is in progress. |
 
 ## Repos
 

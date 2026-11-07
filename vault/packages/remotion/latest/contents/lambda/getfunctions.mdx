@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-lambda-getfunctions.png
+image: https://remotion.media/docs/generated/articles-docs-lambda-getfunctions.png
 title: getFunctions()
 id: getfunctions
 slug: /lambda/getfunctions
@@ -7,6 +7,8 @@ crumb: 'Lambda API'
 ---
 
 Retrieves a list of functions that Remotion deployed to AWS Lambda in a certain region.
+
+Only names starting with `remotion-render-` are included. For [custom function names](/docs/lambda/custom-function-names) outside that prefix, retain the deployed name and use [`getFunctionInfo()`](/docs/lambda/getfunctioninfo) to inspect it.
 
 The parameter `compatibleOnly` determines whether only functions that are compatible with the installed version of Remotion Lambda should be returned.
 
@@ -32,7 +34,7 @@ for (const fn of info) {
   console.log(fn.functionName); // "remotion-render-d8a03x"
   console.log(fn.memorySizeInMb); // 1536
   console.log(fn.timeoutInSeconds); // 120
-  console.log(fn.diskSizeInMb); // 2048
+  console.log(fn.diskSizeInMb); // 10240 (Remotion >=5.0 default)
   console.log(fn.version); // "2021-07-25"
 }
 ```
@@ -71,7 +73,12 @@ The amount of memory allocated to the function.
 
 ### `diskSizeInMb`
 
-The amount of ephemereal disk storage allocated to the function.
+The amount of ephemereal disk storage allocated to the function. See [Disk size](/docs/lambda/disk-size) for defaults when deploying:
+
+| Remotion Version | Default |
+| ---------------- | ------- |
+| &lt;5.0.0        | 2048MB  |
+| &gt;=5.0.0       | 10240MB |
 
 ### `version`
 
@@ -81,9 +88,15 @@ The version of the function. Remotion is versioning the Lambda function and a re
 
 The timeout that has been assigned to the Lambda function.
 
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions="Node.js runtime" clientSideRendering="" serverSideRendering="" player="" studio="" hideBrowsers />
+
+For serverless functions, use the [light client](/docs/lambda/light-client).
+
 ## See also
 
-- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda/src/api/get-functions.ts)
+- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda-client/src/get-functions.ts)
 - [`getFunctionInfo()`](/docs/lambda/getfunctioninfo)
 - [`deployFunction()`](/docs/lambda/deployfunction)
 - [`deleteFunction()`](/docs/lambda/deletefunction)

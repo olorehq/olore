@@ -1,6 +1,8 @@
 ---
 title: 'Alert Notification Log'
+description: "Browse and filter the Alert Notification Log to troubleshoot failed alert deliveries, inspect status codes, and see the exact configuration used per channel."
 sidebarTitle: 'Notification Log'
+canonical: 'https://www.checklyhq.com/docs/communicate/alerts/notification-log/'
 ---
 
 Checkly tries to deliver all your failure, degradation and recovery notifications as reliably as possible, but sometimes
@@ -17,9 +19,9 @@ Here's an example:
 In the above example, we see:
 
 1. SMS and Email were correctly delivered.
-2. The OpsGenie notification failed though. The notification result shows we got a `422` status code back and the error 
+2. The Opsgenie notification failed though. The notification result shows we got a `422` status code back and the error
 message states our API key was invalid.
-3. We also see the configuration used to instrument our call to the OpsGenie API.
+3. We also see the configuration used to instrument our call to the Opsgenie API.
 4. We see some extra meta data about the notification: What channel was used, what check triggered the alert, when it was 
 sent etc.
 
@@ -27,9 +29,7 @@ sent etc.
 
 There are some limits to how we track notifications currently.
 
-1. SMS delivery can not be tracked up to your phone correctly receiving the SMS. We currently only track if our SMS 
-provider ([AWS SNS](https://docs.aws.amazon.com/sns/latest/dg/sns-mobile-phone-number-as-subscriber.html)) has correctly 
-received our request to send the SMS.
+1. SMS alerts are sent through our SMS provider, [Twilio](https://www.twilio.com/). The notification log shows the delivery status that Twilio reports back, such as **Sent** or **Undelivered**.
 2. Email delivery is tracked up to our request to our email provider. We use [Postmark](https://postmarkapp.com/) to send our emails.
 3. Many alert channels are retried transparently: we only show you the result of the last retry.
 4. SSL certificate expiration alerts are not shown in the notification log.

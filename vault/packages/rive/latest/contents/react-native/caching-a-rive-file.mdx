@@ -7,7 +7,7 @@ import Overview from "/snippets/runtimes/caching/overview.mdx"
 
 <Overview />
 
-## Example Usage
+## Example usage
 
 <Tabs>
     <Tab title="New Runtime (Recommended)">
@@ -50,7 +50,7 @@ import Overview from "/snippets/runtimes/caching/overview.mdx"
             }
 
             if (error || !riveFile) {
-            return <Text>Failed to load Rive file: {error || 'Unknown error'}</Text>;
+            return <Text>Failed to load Rive file: {error?.message ?? 'Unknown error'}</Text>;
             }
 
             // Each RiveExample component uses the same RiveFile we loaded earlier,

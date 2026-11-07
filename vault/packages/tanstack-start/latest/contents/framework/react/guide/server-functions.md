@@ -21,6 +21,9 @@ const time = await getServerTime()
 
 Server functions provide server capabilities (database access, environment variables, file system) while maintaining type safety across the network boundary.
 
+> [!NOTE]
+> Server functions are meant to be called by your TanStack Start application. They are easy to use from your app code, and Start handles serialization across the client/server boundary. If you need an endpoint that can be called from outside your Start app, use [server routes](./server-routes) instead.
+
 ## Same-Origin Requests
 
 Server functions are same-origin RPC endpoints for your application. Browser requests to server functions should come from the same origin, verified with Fetch Metadata (`Sec-Fetch-Site`), `Origin`, or `Referer` headers. Use server routes for public APIs or endpoints that intentionally support cross-origin requests.
@@ -387,7 +390,7 @@ Stream typed data from server functions to the client. See the [Streaming Data f
 
 ### Raw Responses
 
-Return `Response` objects binary data, or custom content types.
+Return a `Response` for binary data or custom content types, and the call resolves with it. Throw a `Response` instead to reject the call with it. Either way, the caller receives its body and headers, and its status unless a response helper set one. The browser follows a `Response` with a redirect status and a `Location` header before the caller sees it, so use `redirect()` to send the user elsewhere.
 
 ### Progressive Enhancement
 

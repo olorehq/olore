@@ -3,6 +3,8 @@ id: context
 title: Context
 sidebar_label: Context
 slug: /server/context
+section: "Backend Usage"
+order: 8
 ---
 
 Your context holds data that all of your tRPC procedures will have access to, and is a great place to put things like authentication information.
@@ -43,7 +45,7 @@ t.procedure.use((opts) => {
 
 ## Creating the context
 
-The `createContext()` function must be passed to the handler mounting your appRouter. The handler may use HTTP or a [server-side call](server-side-calls).
+The `createContext()` function must be passed to the handler mounting your appRouter. The handler may use HTTP or a [server-side call](./server-side-calls.md).
 
 `createContext()` is called once per request, so all procedures within a single batched request share the same context.
 
@@ -124,7 +126,7 @@ const helpers = createServerSideHelpers({
 
 ## Example code
 
-<!-- prettier-ignore-start -->
+<!-- oxfmt-ignore-start -->
 
 ```ts twoslash
 // -------------------------------------------------
@@ -183,7 +185,7 @@ export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
 });
 ```
 
-<!-- prettier-ignore-end -->
+<!-- oxfmt-ignore-end -->
 
 ## Inner and outer context
 

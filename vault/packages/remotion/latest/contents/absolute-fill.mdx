@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-absolute-fill.png
+image: https://remotion.media/docs/generated/articles-docs-absolute-fill.png
 id: absolute-fill
 title: <AbsoluteFill>
 crumb: 'API'
@@ -26,13 +26,14 @@ const style: React.CSSProperties = {
 This component is useful for layering content on top of each other. For example, you can use it to create a full-screen video background:
 
 ```tsx twoslash title="Layer example"
-import {AbsoluteFill, OffthreadVideo} from 'remotion';
+import {AbsoluteFill} from 'remotion';
+import {Video} from '@remotion/media';
 
 const MyComp = () => {
   return (
     <AbsoluteFill>
       <AbsoluteFill>
-        <OffthreadVideo src="https://example.com/video.mp4" />
+        <Video src="https://example.com/video.mp4" />
       </AbsoluteFill>
       <AbsoluteFill>
         <h1>This text is written on top!</h1>
@@ -44,11 +45,31 @@ const MyComp = () => {
 
 The layers that get rendered last appear on top - this is because of how HTML works.
 
-## Adding a ref
+## API
 
-You can add a [React ref](https://react.dev/learn/manipulating-the-dom-with-refs) to an `<AbsoluteFill>` from version `v3.2.13` on. If you use TypeScript, you need to type it with `HTMLDivElement`:
+### Inherited props<AvailableFrom v="4.0.501" />
 
-```tsx twoslash
+`<AbsoluteFill>` inherits [`from`](/docs/sequence#from), [`durationInFrames`](/docs/sequence#durationinframes), [`trimBefore`](/docs/sequence#trimbefore), [`playbackRate`](/docs/sequence#playbackrate), [`freeze`](/docs/sequence#freeze), [`hidden`](/docs/sequence#hidden), [`name`](/docs/sequence#name) and [`showInTimeline`](/docs/sequence#showintimeline) from [`<Sequence>`](/docs/sequence).
+
+From <AvailableFrom v="4.0.528" inline />, it also inherits [`premountFor`](/docs/sequence#premountfor), [`postmountFor`](/docs/sequence#postmountfor), [`styleWhilePremounted`](/docs/sequence#stylewhilepremounted) and [`styleWhilePostmounted`](/docs/sequence#stylewhilepostmounted) from [`<Sequence>`](/docs/sequence).
+
+```tsx twoslash title="Clip starting at frame 30, lasting 90 frames"
+import {AbsoluteFill} from 'remotion';
+
+export const MyComp: React.FC = () => {
+  return (
+    <AbsoluteFill name="Background" from={30} durationInFrames={90}>
+      This layer is visible from frame 30 to 119.
+    </AbsoluteFill>
+  );
+};
+```
+
+### `ref?`
+
+You can add a [React ref](https://react.dev/learn/manipulating-the-dom-with-refs) to an `<AbsoluteFill>` from version `v3.2.13` on. If you use TypeScript, type it with `HTMLDivElement`:
+
+```tsx twoslash title="MyComp.tsx"
 import {useRef} from 'react';
 import {AbsoluteFill} from 'remotion';
 
@@ -59,6 +80,10 @@ const MyComp = () => {
   return <AbsoluteFill ref={ref}>{content}</AbsoluteFill>;
 };
 ```
+
+### Other props
+
+All props of a regular `<div>` element are forwarded, including `className`, `style` and event handlers.
 
 ## TailwindCSS class detection<AvailableFrom v="4.0.249" />
 
@@ -75,7 +100,7 @@ Review the source code below to see how we detect Tailwind classes.
 
 ## Compatibility
 
-<CompatibilityTable chrome firefox safari nodejs="" bun="" serverlessFunctions="" clientSideRendering serverSideRendering player studio hideServers/>
+<CompatibilityTable chrome firefox safari nodejs="" bun="" serverlessFunctions="" clientSideRendering serverSideRendering player studio hideServers />
 
 ## See also
 

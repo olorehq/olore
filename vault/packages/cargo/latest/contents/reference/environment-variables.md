@@ -88,6 +88,7 @@ See the [configuration chapter][config-env] for more details.
 In summary, the supported environment variables are:
 
 * `CARGO_ALIAS_<name>` --- Command aliases, see [`alias`].
+* `CARGO_BUILD_WARNINGS` --- The effective level of lint warnings for local packages, see [`build.warnings`].
 * `CARGO_BUILD_JOBS` --- Number of parallel jobs, see [`build.jobs`].
 * `CARGO_BUILD_RUSTC` --- The `rustc` executable, see [`build.rustc`].
 * `CARGO_BUILD_RUSTC_WRAPPER` --- The `rustc` wrapper, see [`build.rustc-wrapper`].
@@ -96,12 +97,14 @@ In summary, the supported environment variables are:
 * `CARGO_BUILD_TARGET` --- The default target platform, see [`build.target`].
 * `CARGO_BUILD_TARGET_DIR` --- The default output directory, see [`build.target-dir`].
 * `CARGO_BUILD_BUILD_DIR` --- The default build directory, see [`build.build-dir`].
+* `CARGO_BUILD_PROFILE` --- The default profile, see [`build.profile`].
 * `CARGO_BUILD_RUSTFLAGS` --- Extra `rustc` flags, see [`build.rustflags`].
 * `CARGO_BUILD_RUSTDOCFLAGS` --- Extra `rustdoc` flags, see [`build.rustdocflags`].
 * `CARGO_BUILD_INCREMENTAL` --- Incremental compilation, see [`build.incremental`].
 * `CARGO_BUILD_DEP_INFO_BASEDIR` --- Dep-info relative directory, see [`build.dep-info-basedir`].
 * `CARGO_CACHE_AUTO_CLEAN_FREQUENCY` --- Configures how often automatic cache cleaning runs, see [`cache.auto-clean-frequency`].
 * `CARGO_CARGO_NEW_VCS` --- The default source control system with [`cargo new`], see [`cargo-new.vcs`].
+* `CARGO_CREDENTIAL_ALIAS_<name>` --- Credential provider aliases, see [`credential-alias`].
 * `CARGO_FUTURE_INCOMPAT_REPORT_FREQUENCY` --- How often we should generate a future incompat report notification, see [`future-incompat-report.frequency`].
 * `CARGO_HTTP_DEBUG` --- Enables HTTP debugging, see [`http.debug`].
 * `CARGO_HTTP_PROXY` --- Enables HTTP proxy, see [`http.proxy`].
@@ -114,6 +117,7 @@ In summary, the supported environment variables are:
 * `CARGO_HTTP_MULTIPLEXING` --- Whether HTTP/2 multiplexing is used, see [`http.multiplexing`].
 * `CARGO_HTTP_USER_AGENT` --- The HTTP user-agent header, see [`http.user-agent`].
 * `CARGO_INSTALL_ROOT` --- The default directory for [`cargo install`], see [`install.root`].
+* `CARGO_INSTALL_PROFILE` --- The default profile, see [`install.profile`].
 * `CARGO_NET_RETRY` --- Number of times to retry network errors, see [`net.retry`].
 * `CARGO_NET_GIT_FETCH_WITH_CLI` --- Enables the use of the `git` executable to fetch, see [`net.git-fetch-with-cli`].
 * `CARGO_NET_OFFLINE` --- Offline mode, see [`net.offline`].
@@ -131,19 +135,29 @@ In summary, the supported environment variables are:
 * `CARGO_PROFILE_<name>_STRIP` --- Controls stripping of symbols and/or debuginfos, see [`profile.<name>.strip`].
 * `CARGO_REGISTRIES_<name>_CREDENTIAL_PROVIDER` --- Credential provider for a registry, see [`registries.<name>.credential-provider`].
 * `CARGO_REGISTRIES_<name>_INDEX` --- URL of a registry index, see [`registries.<name>.index`].
+* `CARGO_REGISTRIES_<name>_MIN_PUBLISH_AGE` --- Minimum publish age for packages from a registry, see [`registries.<name>.min-publish-age`].
 * `CARGO_REGISTRIES_<name>_TOKEN` --- Authentication token of a registry, see [`registries.<name>.token`].
+* `CARGO_REGISTRIES_CRATES_IO_PROTOCOL` --- The protocol used to access [crates.io], see [`registries.crates-io.protocol`].
 * `CARGO_REGISTRY_CREDENTIAL_PROVIDER` --- Credential provider for [crates.io], see [`registry.credential-provider`].
 * `CARGO_REGISTRY_DEFAULT` --- Default registry for the `--registry` flag, see [`registry.default`].
 * `CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS` --- Credential providers for registries that do not have a specific provider defined. See [`registry.global-credential-providers`].
+* `CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE` --- Default minimum publish age for packages from registries, see [`registry.global-min-publish-age`].
 * `CARGO_REGISTRY_TOKEN` --- Authentication token for [crates.io], see [`registry.token`].
-* `CARGO_TARGET_<triple>_LINKER` --- The linker to use, see [`target.<triple>.linker`]. The triple must be [converted to uppercase and underscores](config.md#environment-variables).
-* `CARGO_TARGET_<triple>_RUNNER` --- The executable runner, see [`target.<triple>.runner`].
-* `CARGO_TARGET_<triple>_RUSTFLAGS` --- Extra `rustc` flags for a target, see [`target.<triple>.rustflags`].
+* `CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE` --- How recently published versions are treated during dependency resolution, see [`resolver.incompatible-publish-age`].
+* `CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS` --- How incompatible Rust versions are treated during dependency resolution, see [`resolver.incompatible-rust-versions`].
+* `CARGO_RESOLVER_LOCKFILE_PATH` --- The path to the lockfile, see [`resolver.lockfile-path`].
+* `CARGO_TARGET_<tuple>_LINKER` --- The linker to use, see [`target.<tuple>.linker`]. The tuple must be [converted to uppercase and underscores](config.md#environment-variables).
+* `CARGO_TARGET_<tuple>_RUNNER` --- The executable runner, see [`target.<tuple>.runner`].
+* `CARGO_TARGET_<tuple>_RUSTFLAGS` --- Extra `rustc` flags for a target, see [`target.<tuple>.rustflags`].
+* `CARGO_TARGET_<tuple>_RUSTDOCFLAGS` --- Extra `rustdoc` flags for a target, see [`target.<tuple>.rustdocflags`].
 * `CARGO_TERM_QUIET` --- Quiet mode, see [`term.quiet`].
 * `CARGO_TERM_VERBOSE` --- The default terminal verbosity, see [`term.verbose`].
 * `CARGO_TERM_COLOR` --- The default color mode, see [`term.color`].
+* `CARGO_TERM_HYPERLINKS` --- Whether hyperlinks are used in the terminal, see [`term.hyperlinks`].
+* `CARGO_TERM_UNICODE` --- Whether terminal output can use non-ASCII Unicode characters, see [`term.unicode`].
 * `CARGO_TERM_PROGRESS_WHEN` --- The default progress bar showing mode, see [`term.progress.when`].
 * `CARGO_TERM_PROGRESS_WIDTH` --- The default progress bar width, see [`term.progress.width`].
+* `CARGO_TERM_PROGRESS_TERM_INTEGRATION` --- Whether progress is reported to the terminal emulator, see [`term.progress.term-integration`].
 
 [`cargo doc`]: ../commands/cargo-doc.md
 [`cargo install`]: ../commands/cargo-install.md
@@ -154,6 +168,7 @@ In summary, the supported environment variables are:
 [crates.io]: https://crates.io/
 [incremental compilation]: profiles.md#incremental
 [`alias`]: config.md#alias
+[`build.warnings`]: config.md#buildwarnings
 [`build.jobs`]: config.md#buildjobs
 [`build.rustc`]: config.md#buildrustc
 [`build.rustc-wrapper`]: config.md#buildrustc-wrapper
@@ -162,10 +177,12 @@ In summary, the supported environment variables are:
 [`build.target`]: config.md#buildtarget
 [`build.target-dir`]: config.md#buildtarget-dir
 [`build.build-dir`]: config.md#buildbuild-dir
+[`build.profile`]: config.md#buildprofile
 [`build.rustflags`]: config.md#buildrustflags
 [`build.rustdocflags`]: config.md#buildrustdocflags
 [`build.incremental`]: config.md#buildincremental
 [`build.dep-info-basedir`]: config.md#builddep-info-basedir
+[`credential-alias`]: config.md#credential-alias
 [`doc.browser`]: config.md#docbrowser
 [`cache.auto-clean-frequency`]: config.md#cacheauto-clean-frequency
 [`cargo-new.name`]: config.md#cargo-newname
@@ -183,6 +200,7 @@ In summary, the supported environment variables are:
 [`http.multiplexing`]: config.md#httpmultiplexing
 [`http.user-agent`]: config.md#httpuser-agent
 [`install.root`]: config.md#installroot
+[`install.profile`]: config.md#installprofile
 [`net.retry`]: config.md#netretry
 [`net.git-fetch-with-cli`]: config.md#netgit-fetch-with-cli
 [`net.offline`]: config.md#netoffline
@@ -198,21 +216,32 @@ In summary, the supported environment variables are:
 [`profile.<name>.rpath`]: config.md#profilenamerpath
 [`profile.<name>.split-debuginfo`]: config.md#profilenamesplit-debuginfo
 [`profile.<name>.strip`]: config.md#profilenamestrip
+[`resolver.lockfile-path`]: config.md#resolverlockfile-path
+[`resolver.incompatible-rust-versions`]: config.md#resolverincompatible-rust-versions
+[`resolver.incompatible-publish-age`]: config.md#resolverincompatible-publish-age
 [`registries.<name>.credential-provider`]: config.md#registriesnamecredential-provider
 [`registries.<name>.index`]: config.md#registriesnameindex
+[`registries.<name>.min-publish-age`]: config.md#registriesnamemin-publish-age
 [`registries.<name>.token`]: config.md#registriesnametoken
+[`registries.crates-io.protocol`]: config.md#registriescrates-ioprotocol
 [`registry.credential-provider`]: config.md#registrycredential-provider
 [`registry.default`]: config.md#registrydefault
 [`registry.global-credential-providers`]: config.md#registryglobal-credential-providers
+[`registry.global-min-publish-age`]: config.md#registryglobal-min-publish-age
+[`registry.min-publish-age`]: config.md#registrymin-publish-age
 [`registry.token`]: config.md#registrytoken
-[`target.<triple>.linker`]: config.md#targettriplelinker
-[`target.<triple>.runner`]: config.md#targettriplerunner
-[`target.<triple>.rustflags`]: config.md#targettriplerustflags
+[`target.<tuple>.linker`]: config.md#targettuplelinker
+[`target.<tuple>.runner`]: config.md#targettuplerunner
+[`target.<tuple>.rustflags`]: config.md#targettuplerustflags
+[`target.<tuple>.rustdocflags`]: config.md#targettuplerustdocflags
 [`term.quiet`]: config.md#termquiet
 [`term.verbose`]: config.md#termverbose
 [`term.color`]: config.md#termcolor
+[`term.hyperlinks`]: config.md#termhyperlinks
+[`term.unicode`]: config.md#termunicode
 [`term.progress.when`]: config.md#termprogresswhen
 [`term.progress.width`]: config.md#termprogresswidth
+[`term.progress.term-integration`]: config.md#termprogressterm-integration
 
 ## Environment variables Cargo sets for crates
 
@@ -255,8 +284,8 @@ corresponding environment variable is set to the empty string, `""`.
   file extension, such as `.exe`.
 * `OUT_DIR` --- If the package has a build script, this is set to the folder
   where the build script should place its output. See below for more information.
-  (Only set during compilation.) Cargo does not guarantee that this directory
-  is empty, and it is not cleaned between builds.
+  Cargo does not guarantee that this directory is empty, and it is not cleaned
+  between builds.
 * `CARGO_BIN_EXE_<name>` --- The absolute path to a binary target's executable.
   This is only set when building an [integration test] or benchmark. This may
   be used with the [`env` macro] to find the executable to run for testing
@@ -361,12 +390,14 @@ let out_dir = env::var("OUT_DIR").unwrap();
     * `CARGO_CFG_TARGET_POINTER_WIDTH=64` --- The CPU [pointer width].
     * `CARGO_CFG_TARGET_ENDIAN=little` --- The CPU [target endianness].
     * `CARGO_CFG_TARGET_FEATURE=mmx,sse` --- List of CPU [target features] enabled.
-  > Note that different [target triples][Target Triple] have different sets of `cfg` values,
-  > hence variables present in one target triple might not be available in the other.
+  > [!NOTE]
+  > Different [target tuples][Target Tuple] have different sets of `cfg` values,
+  > hence variables present in one target tuple might not be available in the other.
   >
   > Some cfg values like `test` are not available.
-  >
-  > **Tip:** For a typed API to read these values, consider using the [`build-rs`]
+  <!-- Keep alerts separate -->
+  > [!TIP]
+  > For a typed API to read these values, consider using the [`build-rs`]
   > crate instead of parsing environment variables manually. Also note that
   > `CARGO_CFG_*` variables should be used instead of the `cfg!` macro or `#[cfg]`
   > attribute in build scripts, those check the *host* platform, not the *target*.
@@ -375,10 +406,12 @@ let out_dir = env::var("OUT_DIR").unwrap();
   and it is unique for the package in question. Cargo does not clean or reset this
   directory between builds, and its contents may persist across rebuilds. Build
   scripts should not assume that `OUT_DIR` is empty, and are responsible for
-  managing or cleaning up any files they create.
-* `TARGET` --- the target triple that is being compiled for. Native code should be
-  compiled for this triple. See the [Target Triple] description for more information.
-* `HOST` --- the host triple of the Rust compiler.
+  managing or cleaning up any files they create. This is set during execution
+  of the build script and compilation of the crate, but it is **not** available
+  at runtime.
+* `TARGET` --- the target tuple that is being compiled for. Native code should be
+  compiled for this tuple. See the [Target Tuple] description for more information.
+* `HOST` --- the host tuple of the Rust compiler.
 * `NUM_JOBS` --- the parallelism specified as the top-level parallelism. This can
   be useful to pass a `-j` parameter to a system like `make`. Note that care
   should be taken when interpreting this environment variable. For historical
@@ -409,6 +442,20 @@ let out_dir = env::var("OUT_DIR").unwrap();
   [`build.rustflags`]. Note that since Rust 1.55, `RUSTFLAGS` is removed from
   the environment; scripts should use `CARGO_ENCODED_RUSTFLAGS` instead.
 * `CARGO_PKG_<var>` --- The package information variables, with the same names and values as are [provided during crate building][variables set for crates].
+* `CARGO_TRIM_PATHS_SCOPE` --- The value of the [`trim-paths`] profile option.
+  If the build script introduces absolute paths to built artifacts (such as by invoking a compiler),
+  the user may request them to be sanitized in different types of artifacts.
+  Common paths requiring sanitization include `OUT_DIR`, `CARGO_MANIFEST_DIR` and `CARGO_MANIFEST_PATH`,
+  plus any other introduced by the build script, such as include directories.
+  > [!NOTE]
+  > For forward compatibility,
+  > build scripts should accept a comma-separated list of scopes.
+* `CARGO_TRIM_PATHS_REMAP` --- The `<from>=<to>` path remap pairs Cargo passes to the compiler,
+  joined by the platform path separator.
+  Empty when `trim-paths` is `"none"`.
+  Build scripts can forward these mappings to C/C++ compilers and other tools,
+  for example via `cc`'s `-ffile-prefix-map`,
+  to sanitize paths consistently with the rest of the build.
 
 [`tracing`]: https://docs.rs/tracing
 [debug logging]: https://doc.crates.io/contrib/implementation/debugging.html#logging
@@ -427,13 +474,14 @@ let out_dir = env::var("OUT_DIR").unwrap();
 [configuration]: ../../reference/conditional-compilation.html
 [jobserver]: https://www.gnu.org/software/make/manual/html_node/Job-Slots.html
 [cargo-config]: config.md
-[Target Triple]: ../appendix/glossary.md#target
+[Target Tuple]: ../appendix/glossary.md#target
 [variables set for crates]: #environment-variables-cargo-sets-for-crates
 [profile]: profiles.md
 [`dev`]: profiles.md#dev
 [`release`]: profiles.md#release
 [`debug`]: profiles.md#debug
 [`opt-level`]: profiles.md#opt-level
+[`trim-paths`]: profiles.md#trim-paths
 [`build-rs`]: https://crates.io/crates/build-rs
 
 ## Environment variables Cargo sets for `cargo test`

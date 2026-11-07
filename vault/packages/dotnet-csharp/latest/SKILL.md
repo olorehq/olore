@@ -17,7 +17,7 @@ C# language documentation from the official dotnet/docs repository. Covers langu
 | Operators reference | `contents/language-reference/operators/` |
 | async/await (TAP model) | `contents/asynchronous-programming/task-asynchronous-programming-model.md` |
 | LINQ | `contents/linq/index.md` |
-| Pattern matching | `contents/fundamentals/functional/pattern-matching.md` |
+| Pattern matching | `contents/fundamentals/patterns/pattern-matching.md` |
 | Nullable reference types | `contents/fundamentals/null-safety/nullable-reference-types.md` |
 | Generics | `contents/programming-guide/generics/constraints-on-type-parameters.md` |
 | Records | `contents/fundamentals/types/records.md` |

@@ -2,6 +2,7 @@
 title: checkly init
 description: 'Initialize Checkly in your project with interactive or AI-assisted onboarding.'
 sidebarTitle: 'checkly init'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-init/'
 ---
 
 <Note>Available since CLI v7.8.0.</Note>
@@ -74,7 +75,7 @@ When you choose the manual path, the command:
 
 ### CI Mode
 
-In CI environments (when `CI=true`), the command runs non-interactively and outputs setup instructions.
+In CI environments, the command runs non-interactively and outputs setup instructions. The CLI detects CI from `CI=true` and, since CLI v10.0.0, from the variables that CI providers set, such as GitHub Actions, GitLab CI, Jenkins, TeamCity and AWS CodeBuild. Set `CI=false` to turn CI detection off, or set `CHECKLY_CLI_MODE` to choose the mode yourself. A detected AI agent takes precedence over CI.
 
 ```bash Terminal
 CI=true npx checkly init

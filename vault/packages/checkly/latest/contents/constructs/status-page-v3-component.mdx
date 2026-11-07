@@ -1,0 +1,120 @@
+---
+title: 'StatusPageV3Component Construct'
+description: 'Learn how to configure status page components with the Checkly CLI.'
+sidebarTitle: 'Status page component'
+canonical: 'https://www.checklyhq.com/docs/constructs/status-page-v3-component/'
+---
+
+Components are the building blocks of a [`StatusPageV3`](/constructs/status-page-v3) page. A component is either a `SERVICE` (a monitored thing with its own status) or a `GROUP` (a container for other components).
+
+```ts
+import { StatusPageV3, StatusPageV3Component } from "checkly/constructs"
+
+const statusPage = new StatusPageV3("company-status", {
+  name: "Company Status",
+  url: "company-status",
+})
+
+const backend = new StatusPageV3Component("backend-group", {
+  statusPage,
+  type: "GROUP",
+  name: "Backend",
+  displayOrder: 0,
+})
+
+new StatusPageV3Component("api-component", {
+  statusPage,
+  name: "API",
+  description: "Public REST API",
+  parent: backend,
+  displayOrder: 1,
+})
+```
+
+## Configuration
+
+### `StatusPageV3Component` Options
+
+<ResponseField name="statusPage" type="StatusPageV3 | StatusPageV3Ref" required>
+The page this component belongs to. A component belongs to exactly one page and cannot move to another one later.
+
+**Usage:**
+
+{/* typecheck-wrap: StatusPageV3Component */}
+```ts highlight={2}
+new StatusPageV3Component("api-component", {
+  statusPage,
+  name: "API",
+  displayOrder: 0,
+})
+```
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+The name shown on the status page.
+</ResponseField>
+
+<ResponseField name="displayOrder" type="number" required>
+Position among its siblings; lower comes first.
+</ResponseField>
+
+<ResponseField name="type" type="string" default="SERVICE">
+`'SERVICE'` (a monitored thing with its own status) or `'GROUP'` (a container for other components). A group needs at least one component.
+
+**Usage:**
+
+{/* typecheck-wrap: StatusPageV3Component */}
+```ts highlight={3}
+new StatusPageV3Component("backend-group", {
+  statusPage,
+  type: "GROUP",
+  name: "Backend",
+  displayOrder: 0,
+})
+```
+</ResponseField>
+
+<ResponseField name="description" type="string">
+Shown next to the name on the status page.
+</ResponseField>
+
+<ResponseField name="hidden" type="boolean" default="false">
+Hide the component from the public page while keeping it available for incidents and automation.
+</ResponseField>
+
+<ResponseField name="showHistoricalData" type="boolean" default="true">
+Show the component's historical data on the status page.
+</ResponseField>
+
+<ResponseField name="expandedByDefault" type="boolean" default="false">
+Only for `GROUP` components. Show the group expanded when the status page loads.
+</ResponseField>
+
+<ResponseField name="parent" type="StatusPageV3Component | StatusPageV3ComponentRef">
+The `GROUP` component to nest this component under. Must be on the same status page.
+
+**Usage:**
+
+{/* typecheck-wrap: StatusPageV3Component */}
+```ts highlight={4}
+new StatusPageV3Component("api-component", {
+  statusPage,
+  name: "API",
+  parent: backendGroup,
+  displayOrder: 1,
+})
+```
+</ResponseField>
+
+<Info>
+Unlike v2 services, a component belongs to one status page. It cannot be shared between pages.
+</Info>
+
+## Referencing an existing component
+
+Use `StatusPageV3Component.fromId()` to point an [automation rule](/constructs/status-page-v3-automation-rule) or a `parent` at a component created in the UI:
+
+{/* typecheck-wrap */}
+```ts
+const cdn = StatusPageV3Component.fromId("790f145a-6ce9-4d94-b7b2-a92e0e2c6a1a")
+```

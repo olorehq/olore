@@ -1,7 +1,20 @@
 ---
 title: Integrating Checkly in GitLab CI/CD
+description: "Run and deploy Checkly checks from a GitLab CI/CD pipeline, using a branch-aware setup that only promotes checks to monitors after they pass against production."
 sidebarTitle: GitLab
+canonical: 'https://www.checklyhq.com/docs/integrations/ci-cd/gitlab/overview/'
 ---
+
+## Prerequisites
+
+Before adding the pipeline, set the required credentials as GitLab CI/CD variables. In your GitLab project, go to **Settings > CI/CD > Variables** and add:
+
+- `CHECKLY_API_KEY`: a Checkly API key, created on the [API keys tab](https://app.checklyhq.com/settings/user/api-keys) in your Checkly user settings. Mark this variable as **Masked** so it does not appear in job logs.
+- `CHECKLY_ACCOUNT_ID`: your Checkly account ID, found on the [Account settings tab](https://app.checklyhq.com/settings/account/general).
+
+Leave **Protect variable** unchecked for both, or the `e2e-staging` job, which runs on unprotected feature branches, cannot read them.
+
+GitLab passes these variables to every job as environment variables, and `checkly test` and `checkly deploy` read them from there.
 
 ## A Basic GitLab Pipeline Example
 

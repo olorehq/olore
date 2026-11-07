@@ -37,6 +37,14 @@ The libtest harness may be disabled by setting `harness = false` in the target
 manifest settings, in which case your code will need to provide its own `main`
 function to handle running tests.
 
+By default, `cargo test` uses the [`test` profile], which enables
+some optimizations and disables debugging information for fast feedback. If you need to debug a
+test, you can use the `--profile=debug` command-line option to switch to
+the debug profile. You can then run the debug-enabled test within a
+debugger.
+
+[`test` profile]: ../reference/profiles.html#test
+
 ### Documentation tests
 
 Documentation tests are also run by default, which is handled by `rustdoc`. It
@@ -298,8 +306,8 @@ be specified multiple times, which enables all specified features.</p>
 
 <dl>
 
-<dt class="option-term" id="option-cargo-test---target"><a class="option-anchor" href="#option-cargo-test---target"><code>--target</code> <em>triple</em></a></dt>
-<dd class="option-desc"><p>Test for the specified target architecture. Flag may be specified multiple times. The default is the host architecture. The general format of the triple is
+<dt class="option-term" id="option-cargo-test---target"><a class="option-anchor" href="#option-cargo-test---target"><code>--target</code> <em>tuple</em></a></dt>
+<dd class="option-desc"><p>Test for the specified target architecture. Flag may be specified multiple times. The default is the host architecture. The general format of the tuple is
 <code>&lt;arch&gt;&lt;sub&gt;-&lt;vendor&gt;-&lt;sys&gt;-&lt;abi&gt;</code>.</p>
 <p>Possible values:</p>
 <ul>

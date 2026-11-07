@@ -1,0 +1,488 @@
+---
+title: 'Send logs from Elixir to Axiom'
+description: 'This guide demonstrates how to configure logging in an Elixir app to send logs to Axiom'
+overview: 'Dynamic, functional language for building scalable and maintainable apps on the Erlang VM'
+sidebarTitle: Elixir
+keywords: ['guides', 'elixir', 'logger', 'req', 'otp', 'beam']
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+import BaseDomains from "@/content/snippets/base-domains.mdx"
+
+This guide explains how to integrate Axiom as a logging solution in an Elixir app. Elixir’s `Logger` is built on the Erlang/OTP `:logger` framework, which lets you attach custom handlers to the logging pipeline. In this guide, you create a handler that receives every log event, buffers events in a GenServer, and forwards them in batches to the ingest endpoint of your Axiom [edge deployment](/reference/edge-deployments) using the [Req](https://hexdocs.pm/req) HTTP client.
+
+<Prerequisites />
+- [Elixir](https://elixir-lang.org/install.html) 1.15 or later with Erlang/OTP 26 or later
+- Familiarity with Mix and OTP applications
+
+## Installation
+
+### Create an Elixir project
+
+Create a new Mix project with a supervision tree. The `--sup` flag generates an `Application` module where you start the process that buffers log events.
+
+```bash
+mix new axiom_elixir_demo --sup
+cd axiom_elixir_demo
+```
+
+### Add the HTTP client
+
+Axiom doesn’t provide an Elixir SDK. Instead, this guide uses [Req](https://hexdocs.pm/req), a popular Elixir HTTP client, to call the Axiom ingest API directly. Req encodes request bodies as JSON with Jason, so you don’t need to add a JSON library yourself.
+
+Open `mix.exs` and add `req` to the dependencies:
+
+```elixir
+defmodule AxiomElixirDemo.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :axiom_elixir_demo,
+      version: "0.1.0",
+      elixir: "~> 1.15",
+      start_permanent: Mix.env() == :prod,
+      deps: deps()
+    ]
+  end
+
+  def application do
+    [
+      extra_applications: [:logger],
+      mod: {AxiomElixirDemo.Application, []}
+    ]
+  end
+
+  defp deps do
+    [
+      {:req, "~> 0.5"}
+    ]
+  end
+end
+```
+
+Fetch the dependencies:
+
+```bash
+mix deps.get
+```
+
+## Configure the Axiom connection
+
+Mix evaluates `config/runtime.exs` when your app starts, including in releases, which makes it the right place to read secrets from environment variables. Create the file with the following content:
+
+```elixir
+import Config
+
+config :axiom_elixir_demo, AxiomLogger,
+  token: System.fetch_env!("AXIOM_TOKEN"),
+  dataset: System.fetch_env!("AXIOM_DATASET"),
+  domain: System.fetch_env!("AXIOM_DOMAIN"),
+  batch_size: 100,
+  flush_interval: 2_000
+```
+
+Set the environment variables before you run the app:
+
+```bash
+export AXIOM_TOKEN=API_TOKEN
+export AXIOM_DATASET=DATASET_NAME
+export AXIOM_DOMAIN=AXIOM_DOMAIN
+```
+
+<Info>
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+### Target your edge deployment
+
+Axiom ingests, stores, and queries your event data within the edge deployment your dataset lives in. `AXIOM_DOMAIN` is the base domain of that edge deployment, and the handler sends events to `https://AXIOM_DOMAIN/v1/ingest/DATASET_NAME`. Axiom currently offers edge deployments in the US and in the EU:
+
+<BaseDomains />
+
+For example, if your dataset lives in the `EU Central 1 (AWS)` edge deployment, set `AXIOM_DOMAIN` to `eu-central-1.aws.edge.axiom.co`. The handler then sends events to `https://eu-central-1.aws.edge.axiom.co/v1/ingest/DATASET_NAME`, and your event data is ingested, stored, and queried within the EU. For more information, including how to determine the edge deployment of your organization and how to create datasets in other edge deployments, see [Edge deployments](/reference/edge-deployments).
+
+The `batch_size` and `flush_interval` options control how often the handler sends events to Axiom. With the values above, the handler sends a request when it has collected 100 events or when two seconds have passed since the last request, whichever comes first. Axiom accepts up to 10,000 events in a single request. For more information, see [Limits](/reference/limits).
+
+## Getting started with log levels in Elixir
+
+Elixir’s `Logger` supports the eight syslog severity levels. Starting with the most severe:
+
+- **emergency**: Your app is unusable and needs immediate attention.
+- **alert**: Similar to emergency, but less severe.
+- **critical**: Critical errors within the main parts of your app.
+- **error**: Error conditions in your app.
+- **warning**: Something unusual happened that may need to be addressed later.
+- **notice**: Important information, but not a warning or error.
+- **info**: General updates about what your app is doing.
+- **debug**: Detailed messages used while debugging.
+
+Each level has a matching macro in the `Logger` module. Pass structured data as metadata in the second argument. The handler you build in this guide forwards that metadata to Axiom as fields.
+
+```elixir
+require Logger
+
+Logger.debug("Checking details.")
+Logger.info("User logged in.", user_id: "exampleUserId")
+Logger.notice("User tried a feature.")
+Logger.warning("Feature might not work as expected.")
+Logger.error("Feature failed to load.", error_code: 500)
+Logger.critical("Major issue with the app.")
+Logger.alert("Immediate action needed.")
+Logger.emergency("The app is down.")
+```
+
+Output in the console:
+
+```text
+00:30:05.795 [debug] Checking details.
+00:30:05.800 [info] User logged in.
+00:30:05.801 [notice] User tried a feature.
+00:30:05.801 [warning] Feature might not work as expected.
+00:30:05.801 [error] Feature failed to load.
+00:30:05.801 [critical] Major issue with the app.
+00:30:05.801 [alert] Immediate action needed.
+00:30:05.801 [emergency] The app is down.
+```
+
+Elixir’s default log level is `:debug`, so every level reaches the handlers. To reduce noise in production, raise the level in your configuration with `config :logger, level: :info`.
+
+## Creating the custom logger handler
+
+The integration consists of two modules:
+
+- `AxiomLogger.Handler` is an Erlang `:logger` handler. Its `log/2` callback runs in the process that emitted the log event, so it only converts the event into a map and hands it to the buffer.
+- `AxiomLogger.Buffer` is a GenServer that collects events and sends them to Axiom in batches. Doing the HTTP work in a separate process means that logging never blocks your app.
+
+### Handler
+
+Create `lib/axiom_logger/handler.ex` with the following content:
+
+```elixir
+defmodule AxiomLogger.Handler do
+  @moduledoc """
+  An Erlang `:logger` handler that converts log events into JSON-friendly maps
+  and hands them to `AxiomLogger.Buffer`, which batches them and sends them to Axiom.
+  """
+
+  # Default metadata keys that are noise in Axiom.
+  @skip_metadata [:gl, :time, :report_cb, :erl_level, :initial_call, :process_label, :domain, :ancestors, :callers]
+
+  # Called by :logger when the handler is added.
+  def adding_handler(config), do: {:ok, config}
+
+  # Called by :logger when the handler is removed. Flush so nothing is lost on shutdown.
+  def removing_handler(_config), do: AxiomLogger.Buffer.flush()
+
+  # Never forward the buffer's own log events. This prevents infinite loops.
+  def log(%{meta: %{axiom_internal: true}}, _config), do: :ok
+
+  # Called by :logger in the process that emitted the log event, so keep it cheap:
+  # build the event and hand it to the buffer.
+  def log(%{level: level, msg: msg, meta: meta}, _config) do
+    AxiomLogger.Buffer.push(build_event(level, msg, meta))
+  end
+
+  defp build_event(level, msg, meta) do
+    timestamp =
+      meta
+      |> Map.get(:time, System.system_time(:microsecond))
+      |> DateTime.from_unix!(:microsecond)
+      |> DateTime.to_iso8601()
+
+    %{"_time" => timestamp, "level" => Atom.to_string(level), "metadata" => build_metadata(meta)}
+    |> put_message(msg)
+  end
+
+  # Plain string messages, for example Logger.info("User logged in.")
+  defp put_message(event, {:string, chardata}) do
+    Map.put(event, "message", IO.chardata_to_string(chardata))
+  end
+
+  # Structured reports, for example Logger.info(%{event: "order_placed", order_id: 42})
+  defp put_message(event, {:report, report}) when is_map(report) do
+    Map.put(event, "report", sanitize(report))
+  end
+
+  defp put_message(event, {:report, report}) when is_list(report) do
+    if Keyword.keyword?(report) do
+      Map.put(event, "report", report |> Map.new() |> sanitize())
+    else
+      Map.put(event, "message", inspect(report))
+    end
+  end
+
+  # Erlang-style format strings, for example :logger.info(~c"~p items", [3])
+  defp put_message(event, {format, args}) do
+    Map.put(event, "message", format |> :io_lib.format(args) |> IO.chardata_to_string())
+  rescue
+    _ -> Map.put(event, "message", inspect({format, args}))
+  end
+
+  defp build_metadata(meta) do
+    {mfa, meta} = Map.pop(meta, :mfa)
+    {file, meta} = Map.pop(meta, :file)
+
+    meta
+    |> Map.drop(@skip_metadata)
+    |> sanitize()
+    |> maybe_put("file", file && to_string(file))
+    |> put_mfa(mfa)
+  end
+
+  defp put_mfa(metadata, {module, function, arity}) do
+    Map.merge(metadata, %{"module" => inspect(module), "function" => "#{function}/#{arity}"})
+  end
+
+  defp put_mfa(metadata, _), do: metadata
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  # Convert any Elixir term into something the JSON encoder accepts.
+  defp sanitize(value) when is_binary(value) do
+    if String.valid?(value), do: value, else: inspect(value)
+  end
+
+  defp sanitize(value) when is_number(value) or is_boolean(value) or is_nil(value), do: value
+  defp sanitize(value) when is_atom(value), do: Atom.to_string(value)
+  defp sanitize(%DateTime{} = value), do: DateTime.to_iso8601(value)
+  defp sanitize(%NaiveDateTime{} = value), do: NaiveDateTime.to_iso8601(value)
+  defp sanitize(value) when is_struct(value), do: inspect(value)
+
+  defp sanitize(value) when is_map(value) do
+    Map.new(value, fn {key, val} -> {sanitize_key(key), sanitize(val)} end)
+  end
+
+  defp sanitize(value) when is_list(value) do
+    if value != [] and Keyword.keyword?(value) do
+      value |> Map.new() |> sanitize()
+    else
+      Enum.map(value, &sanitize/1)
+    end
+  end
+
+  # PIDs, references, tuples, functions, and ports
+  defp sanitize(value), do: inspect(value)
+
+  defp sanitize_key(key) when is_atom(key), do: Atom.to_string(key)
+  defp sanitize_key(key) when is_binary(key), do: key
+  defp sanitize_key(key), do: inspect(key)
+end
+```
+
+How the handler works:
+
+- **Timestamps**: The `:time` metadata holds the time of the log call in microseconds. The handler converts it to an ISO 8601 string in a field named `_time`, which Axiom uses as the timestamp of the event. Without this field, Axiom uses the time it received the event instead.
+- **Messages and reports**: Plain string messages are sent in the `message` field. Structured reports, such as `Logger.info(%{event: "order_placed"})`, are sent as a `report` object so that you can query each key as a separate field.
+- **Metadata**: Default metadata such as the module, function, line, file, and PID is sent in a `metadata` object together with any metadata you pass to the `Logger` calls. Values that JSON can’t represent, such as PIDs, references, and tuples, are converted to strings with `inspect/1`.
+- **Loop prevention**: The buffer marks itself with the `axiom_internal` metadata key. The first `log/2` clause ignores events that carry this key, so errors logged by the buffer are never sent back to Axiom.
+- **Shutdown**: When the handler is removed, `removing_handler/1` flushes the buffer so that the last events aren’t lost.
+
+### Buffer
+
+Create `lib/axiom_logger/buffer.ex` with the following content:
+
+```elixir
+defmodule AxiomLogger.Buffer do
+  @moduledoc """
+  Collects log events and sends them to the Axiom ingest API in batches.
+
+  Events are flushed when the batch reaches `:batch_size` events or when
+  `:flush_interval` milliseconds have passed, whichever comes first.
+  """
+  use GenServer
+  require Logger
+
+  @default_batch_size 100
+  @default_flush_interval 2_000
+
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
+
+  @doc "Adds an event to the buffer. Never blocks the caller."
+  def push(event), do: GenServer.cast(__MODULE__, {:push, event})
+
+  @doc "Sends all buffered events immediately and waits for the request to finish."
+  def flush, do: GenServer.call(__MODULE__, :flush, 30_000)
+
+  @impl true
+  def init(opts) do
+    # Run terminate/2 on shutdown so the last batch is sent.
+    Process.flag(:trap_exit, true)
+
+    # Mark this process so AxiomLogger.Handler ignores anything it logs.
+    Logger.metadata(axiom_internal: true)
+
+    domain = Keyword.fetch!(opts, :domain)
+    dataset = Keyword.fetch!(opts, :dataset)
+
+    state = %{
+      url: "https://#{domain}/v1/ingest/#{URI.encode(dataset)}",
+      token: Keyword.fetch!(opts, :token),
+      batch_size: Keyword.get(opts, :batch_size, @default_batch_size),
+      flush_interval: Keyword.get(opts, :flush_interval, @default_flush_interval),
+      events: [],
+      count: 0
+    }
+
+    {:ok, schedule_flush(state)}
+  end
+
+  @impl true
+  def handle_cast({:push, event}, state) do
+    state = %{state | events: [event | state.events], count: state.count + 1}
+
+    if state.count >= state.batch_size do
+      {:noreply, do_flush(state)}
+    else
+      {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_call(:flush, _from, state), do: {:reply, :ok, do_flush(state)}
+
+  @impl true
+  def handle_info(:flush, state), do: {:noreply, state |> do_flush() |> schedule_flush()}
+
+  @impl true
+  def terminate(_reason, state) do
+    do_flush(state)
+    :ok
+  end
+
+  defp schedule_flush(state) do
+    Process.send_after(self(), :flush, state.flush_interval)
+    state
+  end
+
+  defp do_flush(%{events: []} = state), do: state
+
+  defp do_flush(state) do
+    events = Enum.reverse(state.events)
+
+    # retry: :transient retries HTTP 408/429/5xx responses and connection errors.
+    case Req.post(state.url, json: events, auth: {:bearer, state.token}, retry: :transient) do
+      {:ok, %Req.Response{status: 200, body: %{"failed" => 0}}} ->
+        :ok
+
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        Logger.warning("Axiom rejected some events: #{inspect(body["failures"])}")
+
+      {:ok, %Req.Response{status: status, body: body}} ->
+        Logger.error("Axiom ingest failed with HTTP #{status}: #{inspect(body)}")
+
+      {:error, error} ->
+        Logger.error("Axiom ingest request failed: #{Exception.message(error)}")
+    end
+
+    %{state | events: [], count: 0}
+  end
+end
+```
+
+How the buffer works:
+
+- **Endpoint**: Events are sent to `https://AXIOM_DOMAIN/v1/ingest/DATASET_NAME`, the ingest endpoint of your [edge deployment](/reference/edge-deployments). The dataset name is URL-encoded.
+- **Authentication**: The `auth: {:bearer, token}` option sets the `Authorization: Bearer API_TOKEN` header.
+- **Payload**: The `json:` option encodes the list of events as a JSON array and sets the `Content-Type` header to `application/json`, which is the format the ingest endpoint expects.
+- **Retries**: By default, Req only retries GET and HEAD requests. Setting `retry: :transient` also retries POST requests that fail with a connection error or with HTTP status 408, 429, 500, 502, 503, or 504.
+- **Response**: A successful request returns HTTP 200 with a body that includes `ingested` and `failed` counts. The buffer logs a warning if Axiom rejects some events and an error if the request fails.
+- **Shutdown**: The process traps exits so that `terminate/2` runs when the app stops and sends the remaining events.
+
+## Attaching the handler
+
+Open `lib/axiom_elixir_demo/application.ex` and replace its content with the following:
+
+```elixir
+defmodule AxiomElixirDemo.Application do
+  @moduledoc false
+  use Application
+
+  @impl true
+  def start(_type, _args) do
+    children = [
+      {AxiomLogger.Buffer, Application.fetch_env!(:axiom_elixir_demo, AxiomLogger)}
+    ]
+
+    opts = [strategy: :one_for_one, name: AxiomElixirDemo.Supervisor]
+    {:ok, pid} = Supervisor.start_link(children, opts)
+
+    # Attach the handler after the buffer process is running.
+    :ok = :logger.add_handler(:axiom, AxiomLogger.Handler, %{level: :debug})
+
+    {:ok, pid}
+  end
+
+  @impl true
+  def prep_stop(state) do
+    # Removing the handler flushes buffered events before the supervision tree stops.
+    :logger.remove_handler(:axiom)
+    state
+  end
+end
+```
+
+The `start/2` callback starts the buffer under the supervisor first and then attaches the handler with `:logger.add_handler/3`. The `level: :debug` option sets the minimum level for this handler. The `prep_stop/1` callback removes the handler before the supervision tree shuts down, which flushes the remaining events.
+
+## Creating the test module
+
+Replace the content of `lib/axiom_elixir_demo.ex` with a module that logs a message at every level:
+
+```elixir
+defmodule AxiomElixirDemo do
+  @moduledoc "Emits a log event at every level so you can see them arrive in Axiom."
+  require Logger
+
+  def run do
+    Logger.debug("Checking details.", action: "detail_check", status: "initiated")
+    Logger.info("User logged in.", user_id: "exampleUserId", method: "standard_login")
+    Logger.notice("User tried a feature.", feature: "experimental_feature_x", status: "trial")
+    Logger.warning("Feature might not work as expected.", feature: "experimental_feature", stage: "beta")
+    Logger.error("Feature failed to load.", feature: "feature_y", error_code: 500)
+    Logger.critical("Major issue with the app.", system: "payment_processing", error: "service_unavailable")
+    Logger.alert("Immediate action needed.", issue: "security", severity: "high")
+    Logger.emergency("The app is down.", system: "entire_application", status: "offline")
+
+    # Structured report: the map becomes the `report` field in Axiom.
+    Logger.info(%{event: "order_placed", order_id: 1234, total: 59.99, currency: "USD"})
+
+    # Send whatever is still buffered before the script exits.
+    AxiomLogger.Buffer.flush()
+  end
+end
+```
+
+The final call to `AxiomLogger.Buffer.flush/0` sends the buffered events immediately. This is useful in scripts that exit right after logging. In a long-running app, the buffer flushes automatically.
+
+## Run the app
+
+Run the test module with Mix:
+
+```bash
+mix run -e "AxiomElixirDemo.run()"
+```
+
+You can also start an interactive session with `iex -S mix` and call `AxiomElixirDemo.run()` from there. If the environment variables aren’t set, the app fails to start with a `System.EnvError` that names the missing variable.
+
+## View the logs in Axiom
+
+Open your dataset in Axiom. Each event has a `level` and a `message` field, and Axiom flattens the nested objects into fields such as `metadata.module`, `metadata.function`, `metadata.line`, and `metadata.user_id`. Structured reports appear as `report.event`, `report.order_id`, and so on.
+
+For example, the following query lists the most severe events together with the module and line that logged them:
+
+```kusto
+['DATASET_NAME']
+| where level in ("error", "critical", "alert", "emergency")
+| project _time, level, message, ['metadata.module'], ['metadata.line']
+| order by _time desc
+```
+
+## Conclusion
+
+This guide has introduced you to integrating Axiom for logging in Elixir apps. You’ve learned how to attach a custom `:logger` handler, batch events in a GenServer, and forward them to Axiom with Req. With this knowledge, you’re set to track errors and analyze structured log data from your Elixir apps in Axiom.

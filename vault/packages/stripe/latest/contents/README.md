@@ -18,7 +18,7 @@ See the [`stripe-node` API docs](https://stripe.com/docs/api?lang=node) for Node
 
 ## Requirements
 
-Per our [Language Version Support Policy](https://docs.stripe.com/sdks/versioning?lang=node#stripe-sdk-language-version-support-policy), we currently support all LTS versions of **Node.js 18+**.
+Per our [Language Version Support Policy](https://docs.stripe.com/sdks/versioning?lang=node#stripe-sdk-language-version-support-policy), we currently support all LTS versions of **Node.js 20+**.
 
 Read more and see the full schedule in the docs: https://docs.stripe.com/sdks/versioning?lang=node#stripe-sdk-language-version-support-policy
 
@@ -51,19 +51,18 @@ console.log(customer.id);
 ```
 
 Or using CJS:
+
 ```js
 const Stripe = require('stripe');
 const stripeClient = Stripe('sk_test_...');
 
-stripeClient.customers.create({
-  email: 'customer@example.com',
-})
-  .then(customer => console.log(customer.id))
-  .catch(error => console.error(error));
+stripeClient.customers
+  .create({
+    email: 'customer@example.com',
+  })
+  .then((customer) => console.log(customer.id))
+  .catch((error) => console.error(error));
 ```
-
-
-
 
 > [!WARNING]
 > If you're using `v17.x.x` or later and getting an error about a missing API key despite being sure it's available, it's likely you're importing the file that instantiates `Stripe` while the key isn't present (for instance, during a build step).
@@ -166,6 +165,16 @@ The TypeScript types in stripe-node always reflect the latest shape of the Strip
 
 Please feel welcome to share your thoughts about the versioning policy in a Github issue. For now, we judge it to be better than the two alternatives: outdated, inaccurate types, or vastly more frequent major releases, which would distract from any future breaking changes with potentially more disruptive runtime implications.
 
+### Open and Closed Enum
+
+Many of Stripe API enums are open, meaning Stripe may add new values even on older API versions.
+To reflect this, open enum fields in TypeScript include a string type (via `OtherString`) in addition to the known literal values.
+This ensures the field has the correct type for both values known at SDK release time and other values that may be added later.
+
+A small number of enums are closed, meaning Stripe guarantees no new values will be added without an API version change.
+
+Refer to the [API Reference](https://docs.stripe.com) for the latest set of allowed values.
+
 ### Using Promises
 
 Every method returns a chainable promise which can be used instead of a regular
@@ -214,6 +223,10 @@ import Stripe from 'npm:stripe';
 Please see https://github.com/stripe-samples/stripe-node-deno-samples for more detailed examples and instructions on how to use stripe-node in Deno.
 
 ## Configuration
+
+### Suppressing Stripe notices
+
+The SDK may print notices from Stripe that it receives in the `Stripe-Notice` header. These notices are always printed when the SDK runs in an agent environment. For API calls to test accounts or sandboxes, notices are also printed when the SDK runs outside an agent environment. To suppress notices when the SDK runs outside an agent environment, set the `STRIPE_SUPPRESS_NOTICES` environment variable to `true` before running your integration.
 
 ### Initialize with config object
 
@@ -309,6 +322,13 @@ const stripeClient = Stripe('sk_test_...', {
   maxNetworkRetries: 0, // Disable retries
 });
 ```
+
+> [!NOTE]
+> Even with `maxNetworkRetries: 0`, a request that fails with a closed connection
+> (`ECONNRESET` or `EPIPE`) is still reattempted once. These usually mean the
+> request never reached the API — most often a stale keep-alive socket, such as
+> one held across a frozen AWS Lambda execution context. Subsequent
+> connection-closed errors are not retried.
 
 ```js
 const stripeClient = Stripe('sk_test_...', {
@@ -424,7 +444,11 @@ const header = stripeClient.webhooks.generateTestHeaderString({
   secret,
 });
 
-const event = stripeClient.webhooks.constructEvent(payloadString, header, secret);
+const event = stripeClient.webhooks.constructEvent(
+  payloadString,
+  header,
+  secret
+);
 
 // Do something with mocked signed event
 expect(event.id).to.equal(payload.id);
@@ -441,8 +465,9 @@ See [undocumented params and properties](https://docs.stripe.com/sdks/server-sid
 If you're writing a plugin that uses the library, we'd appreciate it if you instantiated your stripe client with `appInfo`, eg;
 
 With ES modules or TypeScript:
+
 ```js
-import Stripe from "stripe";
+import Stripe from 'stripe';
 const stripeClient = new Stripe(apiKey, {
   appInfo: {
     name: 'MyAwesomePlugin',
@@ -453,6 +478,7 @@ const stripeClient = new Stripe(apiKey, {
 ```
 
 Or using CJS:
+
 ```js
 const Stripe = require('stripe');
 const stripeClient = Stripe('sk_test_...', {
@@ -463,7 +489,6 @@ const stripeClient = Stripe('sk_test_...', {
   },
 });
 ```
-
 
 This information is passed along when the library makes calls to the Stripe API.
 
@@ -636,6 +661,9 @@ New features and bug fixes are released on the latest major version of the `stri
 - [Using Stripe Connect](https://github.com/stripe/stripe-node/wiki/Using-Stripe-Connect-with-node.js)
 
 ## Development
+
+> [!WARNING]
+> External contributions to this repo from first-time contributors are currently on hiatus. If you'd like to see a change made to the package, please open an issue.(
 
 [Contribution guidelines for this project](CONTRIBUTING.md)
 

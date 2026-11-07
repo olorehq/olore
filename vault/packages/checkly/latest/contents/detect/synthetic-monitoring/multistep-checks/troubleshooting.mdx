@@ -1,11 +1,30 @@
 ---
 
-title: 'Troubleshooting Multistep Checks'
-description: 'Learn how to troubleshoot multistep checks.'
+title: 'Troubleshooting Multistep checks'
+description: 'Learn how to troubleshoot Multistep checks.'
 sidebarTitle: Troubleshooting
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/multistep-checks/troubleshooting/'
 ---
 
 Multistep checks are a powerful tool for monitoring complex API workflows. However, they can sometimes be tricky to troubleshoot. Here are some common issues and solutions:
+
+## Expected non-2xx responses
+**Issue: A step expects a non-2xx response (like a 401, 403, or 404), the API returns it, but the check still fails**
+
+Playwright's `request` fixture returns a response for every status code unless you set `failOnStatusCode: true`, so a 403 does not fail the step by itself. If the check fails, one of your assertions failed.
+
+The most common cause is `expect(response).toBeOK()`. This assertion only passes for status codes in the 200-299 range, so it fails on an expected 403.
+
+**Solution**: Assert the exact status code you expect instead of using `toBeOK()`:
+
+```typescript
+await test.step('GET /admin without permissions', async () => {
+  const response = await request.get(`${baseUrl}/admin`, { headers })
+  expect(response.status()).toBe(403)
+})
+```
+
+The check result's error log names the assertion that failed.
 
 ## Authentication and Authorization
 **Issue: Authentication failures or token expiration**

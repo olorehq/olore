@@ -1,403 +1,432 @@
-# mantine Table of Contents
+# Mantine Table of Contents
+
+Total: 336 files under `contents/` (MDX).
 
 ## Directory Map
 
 ```
 contents/
-├── getting-started.mdx         # Installation and setup
-├── browser-support.mdx         # Browser compatibility
-├── eslint-config-mantine.mdx   # ESLint configuration
-├── core/                       # Core UI components (113 files)
-├── hooks/                      # React hooks (82 files)
-├── styles/                     # Styling system (22 files)
-├── guides/                     # Framework integration guides (20 files)
-├── charts/                     # Chart components (17 files)
-├── dates/                      # Date/time picker components (16 files)
-├── form/                       # Form management (16 files)
-├── schedule/                   # Schedule/calendar components (9 files)
-└── x/                          # Extension packages (9 files)
+├── charts/          # @mantine/charts components (23 files)
+├── code-highlight/  # @mantine/code-highlight (3 files)
+├── core/            # @mantine/core components (122 files)
+├── dates/           # @mantine/dates pickers (16 files)
+├── form/            # @mantine/form (16 files)
+├── guides/          # Framework, testing, migration guides (19 files)
+├── hooks/           # @mantine/hooks (82 files)
+├── schedule/        # @mantine/schedule calendar views (14 files)
+├── styles/          # Styling system (23 files)
+├── theming/         # Theme and MantineProvider (6 files)
+├── x/               # Extension packages (9 files)
+└── *.mdx            # Root pages: getting started, browser support (3 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| New user | `contents/getting-started.mdx` |
-| Core components | `contents/core/package.mdx` |
-| Hooks reference | `contents/hooks/package.mdx` |
-| Form handling | `contents/form/use-form.mdx` |
-| Theming/dark mode | `contents/theming/mantine-provider.mdx` |
-| Styling system | `contents/styles/styles-overview.mdx` |
-| Charts | `contents/charts/getting-started.mdx` |
-| Date pickers | `contents/dates/getting-started.mdx` |
-| Extension packages | `contents/x/extensions.mdx` |
+| Install / new project | `contents/getting-started.mdx` |
+| Theme and dark mode | `contents/theming/mantine-provider.mdx` |
+| Component lookup | `contents/core/package.mdx` |
+| Forms | `contents/form/use-form.mdx` |
+| Styling | `contents/styles/styles-overview.mdx` |
+| Hooks | `contents/hooks/package.mdx` |
+| Framework setup | `contents/guides/next.mdx` |
+| Migration | `contents/guides/8x-to-9x.mdx` |
 
 ## Detailed Structure
 
-### Root (3 files)
+### root (3 files)
 
 | File | Description |
 |------|-------------|
-| `getting-started.mdx` | Installation and setup guide |
-| `browser-support.mdx` | Browser compatibility reference |
-| `eslint-config-mantine.mdx` | ESLint config setup |
+| `browser-support.mdx` | Browsers and versions officially supported by Mantine |
+| `getting-started.mdx` | Starting templates and installation overview for Mantine |
+| `oxc-config-mantine.mdx` | Oxlint/oxc config preset for Mantine projects |
 
-### core/ (113 files)
-
-| File | Description |
-|------|-------------|
-| `package.mdx` | @mantine/core package overview |
-| `accordion.mdx` | Accordion component |
-| `action-icon.mdx` | ActionIcon button component |
-| `affix.mdx` | Affix fixed-position component |
-| `alert.mdx` | Alert notification component |
-| `alpha-slider.mdx` | Color alpha slider |
-| `anchor.mdx` | Anchor link component |
-| `angle-slider.mdx` | Angle slider component |
-| `app-shell.mdx` | AppShell layout component |
-| `aspect-ratio.mdx` | AspectRatio container |
-| `autocomplete.mdx` | Autocomplete input |
-| `avatar.mdx` | Avatar component |
-| `background-image.mdx` | BackgroundImage component |
-| `badge.mdx` | Badge component |
-| `blockquote.mdx` | Blockquote component |
-| `box.mdx` | Box primitive component |
-| `breadcrumbs.mdx` | Breadcrumbs navigation |
-| `burger.mdx` | Burger menu icon |
-| `button.mdx` | Button component |
-| `card.mdx` | Card component |
-| `center.mdx` | Center layout component |
-| `checkbox.mdx` | Checkbox input |
-| `chip.mdx` | Chip toggle component |
-| `close-button.mdx` | CloseButton component |
-| `code.mdx` | Inline code component |
-| `collapse.mdx` | Collapse animation component |
-| `color-input.mdx` | Color input with picker |
-| `color-picker.mdx` | Color picker component |
-| `color-swatch.mdx` | Color swatch display |
-| `combobox.mdx` | Combobox/autocomplete primitive |
-| `container.mdx` | Container layout component |
-| `copy-button.mdx` | CopyButton component |
-| `dialog.mdx` | Dialog component |
-| `divider.mdx` | Divider component |
-| `drawer.mdx` | Drawer/sidebar component |
-| `fieldset.mdx` | Fieldset form grouping |
-| `file-button.mdx` | File upload button |
-| `file-input.mdx` | File input component |
-| `flex.mdx` | Flex layout component |
-| `floating-indicator.mdx` | FloatingIndicator component |
-| `floating-window.mdx` | FloatingWindow component |
-| `focus-trap.mdx` | FocusTrap accessibility |
-| `grid.mdx` | Grid layout component |
-| `group.mdx` | Group layout component |
-| `highlight.mdx` | Text highlight component |
-| `hover-card.mdx` | HoverCard popover |
-| `hue-slider.mdx` | Color hue slider |
-| `image.mdx` | Image component |
-| `indicator.mdx` | Indicator badge overlay |
-| `input.mdx` | Input base component |
-| `json-input.mdx` | JSON text input |
-| `kbd.mdx` | Keyboard key display |
-| `list.mdx` | List component |
-| `loader.mdx` | Loader/spinner component |
-| `loading-overlay.mdx` | LoadingOverlay component |
-| `mark.mdx` | Mark text highlight |
-| `marquee.mdx` | Marquee scrolling text |
-| `mask-input.mdx` | Masked input component |
-| `menu.mdx` | Menu dropdown component |
-| `modal.mdx` | Modal dialog component |
-| `multi-select.mdx` | MultiSelect input |
-| `native-select.mdx` | Native select element |
-| `nav-link.mdx` | NavLink navigation item |
-| `notification.mdx` | Notification component |
-| `number-formatter.mdx` | NumberFormatter display |
-| `number-input.mdx` | NumberInput component |
-| `overflow-list.mdx` | OverflowList component |
-| `overlay.mdx` | Overlay backdrop component |
-| `pagination.mdx` | Pagination component |
-| `paper.mdx` | Paper surface component |
-| `password-input.mdx` | PasswordInput component |
-| `pill.mdx` | Pill tag component |
-| `pills-input.mdx` | PillsInput component |
-| `pin-input.mdx` | PinInput OTP component |
-| `popover.mdx` | Popover component |
-| `portal.mdx` | Portal rendering |
-| `progress.mdx` | Progress bar component |
-| `radio.mdx` | Radio input component |
-| `range-slider.mdx` | RangeSlider component |
-| `rating.mdx` | Rating stars component |
-| `ring-progress.mdx` | RingProgress circular chart |
-| `rolling-number.mdx` | RollingNumber animation |
-| `scroll-area.mdx` | ScrollArea component |
-| `scroller.mdx` | Scroller component |
-| `segmented-control.mdx` | SegmentedControl component |
-| `select.mdx` | Select dropdown component |
-| `semi-circle-progress.mdx` | SemiCircleProgress chart |
-| `simple-grid.mdx` | SimpleGrid responsive grid |
-| `skeleton.mdx` | Skeleton loading placeholder |
-| `slider.mdx` | Slider component |
-| `space.mdx` | Space spacing component |
-| `splitter.mdx` | Splitter resizable panes |
-| `spoiler.mdx` | Spoiler show/hide content |
-| `stack.mdx` | Stack vertical layout |
-| `stepper.mdx` | Stepper wizard component |
-| `switch.mdx` | Switch toggle component |
-| `table-of-contents.mdx` | TableOfContents component |
-| `table.mdx` | Table component |
-| `tabs.mdx` | Tabs component |
-| `tags-input.mdx` | TagsInput component |
-| `text-input.mdx` | TextInput component |
-| `text.mdx` | Text typography component |
-| `textarea.mdx` | Textarea component |
-| `theme-icon.mdx` | ThemeIcon component |
-| `timeline.mdx` | Timeline component |
-| `title.mdx` | Title heading component |
-| `tooltip.mdx` | Tooltip component |
-| `transition.mdx` | Transition animation component |
-| `tree-select.mdx` | TreeSelect component |
-| `tree.mdx` | Tree component |
-| `typography.mdx` | Typography components overview |
-| `unstyled-button.mdx` | UnstyledButton component |
-| `visually-hidden.mdx` | VisuallyHidden accessibility |
-
-### hooks/ (82 files)
+### charts/ (23 files)
 
 | File | Description |
 |------|-------------|
-| `package.mdx` | @mantine/hooks package overview |
-| `use-click-outside.mdx` | Detect clicks outside element |
-| `use-clipboard.mdx` | Clipboard read/write |
-| `use-collapse.mdx` | Collapse animation state |
-| `use-color-scheme.mdx` | Dark/light mode detection |
-| `use-counter.mdx` | Counter state management |
-| `use-debounced-callback.mdx` | Debounced function callback |
-| `use-debounced-state.mdx` | Debounced state value |
-| `use-debounced-value.mdx` | Debounced derived value |
-| `use-did-update.mdx` | Effect that skips mount |
-| `use-disclosure.mdx` | Open/close toggle state |
-| `use-document-title.mdx` | Set document title |
-| `use-document-visibility.mdx` | Page visibility API |
-| `use-drag.mdx` | Drag interaction hook |
-| `use-element-size.mdx` | Element size tracking |
-| `use-event-listener.mdx` | Event listener management |
-| `use-eye-dropper.mdx` | Eye dropper color picker |
-| `use-favicon.mdx` | Favicon management |
-| `use-fetch.mdx` | Fetch data hook |
-| `use-file-dialog.mdx` | File dialog trigger |
-| `use-floating-window.mdx` | Floating window state |
-| `use-focus-return.mdx` | Restore focus on close |
-| `use-focus-trap.mdx` | Trap focus in container |
-| `use-focus-within.mdx` | Detect focus within element |
-| `use-force-update.mdx` | Force component re-render |
-| `use-fullscreen.mdx` | Fullscreen API |
-| `use-hash.mdx` | URL hash state |
-| `use-headroom.mdx` | Hide/show on scroll |
-| `use-hotkeys.mdx` | Keyboard shortcut bindings |
-| `use-hover.mdx` | Hover state detection |
-| `use-id.mdx` | Generate unique IDs |
-| `use-idle.mdx` | User idle detection |
-| `use-in-viewport.mdx` | Viewport intersection |
-| `use-input-state.mdx` | Input state management |
-| `use-intersection.mdx` | Intersection Observer |
-| `use-interval.mdx` | setInterval management |
-| `use-is-first-render.mdx` | Detect first render |
-| `use-isomorphic-effect.mdx` | SSR-safe useEffect |
-| `use-list-state.mdx` | Array state operations |
-| `use-local-storage.mdx` | localStorage state sync |
-| `use-logger.mdx` | Debug logging hook |
-| `use-long-press.mdx` | Long press detection |
-| `use-map.mdx` | Map data structure state |
-| `use-mask.mdx` | Input masking |
-| `use-media-query.mdx` | CSS media query hook |
-| `use-merged-ref.mdx` | Merge multiple refs |
-| `use-mounted.mdx` | Track mount state |
-| `use-mouse.mdx` | Mouse position tracking |
-| `use-move.mdx` | Drag/move interaction |
-| `use-mutation-observer.mdx` | MutationObserver hook |
-| `use-network.mdx` | Network status detection |
-| `use-orientation.mdx` | Device orientation |
-| `use-os.mdx` | Operating system detection |
-| `use-page-leave.mdx` | Page leave detection |
-| `use-pagination.mdx` | Pagination logic |
-| `use-previous.mdx` | Previous value tracking |
-| `use-queue.mdx` | Queue data structure |
-| `use-radial-move.mdx` | Radial drag interaction |
-| `use-reduced-motion.mdx` | Reduced motion preference |
-| `use-resize-observer.mdx` | ResizeObserver hook |
-| `use-roving-index.mdx` | Roving tabindex |
-| `use-scroll-direction.mdx` | Scroll direction detection |
-| `use-scroll-into-view.mdx` | Scroll element into view |
-| `use-scroll-spy.mdx` | Active section detection |
-| `use-scroller.mdx` | Scroller state hook |
-| `use-selection.mdx` | Selection state management |
-| `use-set-state.mdx` | Partial state updates |
-| `use-set.mdx` | Set data structure state |
-| `use-shallow-effect.mdx` | Shallow comparison effect |
-| `use-splitter.mdx` | Splitter resize state |
-| `use-state-history.mdx` | Undo/redo state history |
-| `use-text-selection.mdx` | Text selection detection |
-| `use-throttled-callback.mdx` | Throttled function |
-| `use-throttled-state.mdx` | Throttled state |
-| `use-throttled-value.mdx` | Throttled derived value |
-| `use-timeout.mdx` | setTimeout management |
-| `use-toggle.mdx` | Toggle between values |
-| `use-uncontrolled.mdx` | Uncontrolled/controlled bridging |
-| `use-validated-state.mdx` | State with validation |
-| `use-viewport-size.mdx` | Viewport dimensions |
-| `use-window-event.mdx` | Window event listener |
-| `use-window-scroll.mdx` | Window scroll position |
+| `area-chart.mdx` | AreaChart: stacked, percent, split and gradient area charts |
+| `bar-chart.mdx` | BarChart: stacked, grouped and horizontal bar charts |
+| `bars-list.mdx` | BarsList: list of named horizontal bars with values |
+| `bubble-chart.mdx` | BubbleChart: scatter-style chart with sized bubbles |
+| `bullet-chart.mdx` | BulletChart: compact KPI chart comparing actual value to target |
+| `candlestick-chart.mdx` | CandlestickChart: financial OHLC chart |
+| `composite-chart.mdx` | CompositeChart: combine Line, Area and Bar series in one chart |
+| `donut-chart.mdx` | DonutChart: donut chart based on recharts PieChart |
+| `funnel-chart.mdx` | FunnelChart: conversion funnel visualisation |
+| `gauge-chart.mdx` | GaugeChart: single value on a radial arc |
+| `getting-started.mdx` | Install @mantine/charts and import styles |
+| `heatmap.mdx` | Heatmap: calendar-style activity grid |
+| `line-chart.mdx` | LineChart: line charts with gradient, dashed and multi-series options |
+| `matrix-chart.mdx` | MatrixChart: x/y heatmap with categorical axes |
+| `pie-chart.mdx` | PieChart: pie chart based on recharts |
+| `radar-chart.mdx` | RadarChart: multi-axis radar/spider chart |
+| `radial-bar-chart.mdx` | RadialBarChart: circular bar chart |
+| `sankey-chart.mdx` | SankeyChart: flow diagram between nodes |
+| `scatter-chart.mdx` | ScatterChart: scatter plots with legends and custom axes |
+| `sparkline.mdx` | Sparkline: minimal inline area chart |
+| `sunburst-chart.mdx` | SunburstChart: hierarchical radial chart |
+| `treemap.mdx` | Treemap: nested rectangles for hierarchical data |
+| `waffle-chart.mdx` | WaffleChart: parts of a whole as a grid of cells |
 
-### styles/ (22 files)
+### code-highlight/ (3 files)
 
 | File | Description |
 |------|-------------|
-| `styles-overview.mdx` | Styling system overview |
-| `css-variables.mdx` | CSS custom properties |
-| `css-variables-list.mdx` | Full CSS variables reference |
-| `css-files-list.mdx` | CSS files reference |
-| `css-modules.mdx` | CSS Modules usage |
-| `style.mdx` | style prop usage |
-| `style-props.mdx` | Style props system |
-| `styles-api.mdx` | Styles API for component customization |
-| `styles-performance.mdx` | Styling performance tips |
-| `global-styles.mdx` | Global styles setup |
-| `mantine-styles.mdx` | Mantine built-in styles |
-| `data-attributes.mdx` | Data attributes for state styling |
-| `variants-sizes.mdx` | Custom variants and sizes |
-| `color-functions.mdx` | Color utility functions |
-| `responsive.mdx` | Responsive design patterns |
-| `rem.mdx` | rem/em unit utilities |
-| `rtl.mdx` | Right-to-left layout support |
-| `postcss-preset.mdx` | PostCSS preset configuration |
-| `sass.mdx` | Sass integration |
-| `emotion.mdx` | Emotion CSS-in-JS integration |
-| `vanilla-extract.mdx` | Vanilla Extract integration |
-| `unstyled.mdx` | Unstyled component mode |
+| `code-highlight.mdx` | CodeHighlight: syntax-highlighted code blocks |
+| `getting-started.mdx` | Install @mantine/code-highlight and set up highlighters |
+| `json-viewer.mdx` | JsonViewer: interactive JSON tree viewer |
 
-### theming/ (6 files)
+### core/ (122 files)
 
 | File | Description |
 |------|-------------|
-| `mantine-provider.mdx` | MantineProvider setup |
-| `theme-object.mdx` | Theme object structure |
-| `colors.mdx` | Color system configuration |
-| `color-schemes.mdx` | Dark/light/auto color schemes |
-| `typography.mdx` | Typography theme settings |
-| `default-props.mdx` | Default component props |
-
-### guides/ (20 files)
-
-| File | Description |
-|------|-------------|
-| `next.mdx` | Next.js integration |
-| `vite.mdx` | Vite integration |
-| `gatsby.mdx` | Gatsby integration |
-| `react-router.mdx` | React Router integration |
-| `redwood.mdx` | RedwoodJS integration |
-| `storybook.mdx` | Storybook integration |
-| `typescript.mdx` | TypeScript usage guide |
-| `javascript.mdx` | JavaScript (no TypeScript) guide |
-| `jest.mdx` | Jest testing setup |
-| `vitest.mdx` | Vitest testing setup |
-| `icons.mdx` | Icons usage guide |
-| `llms.mdx` | LLM/AI usage context |
-| `polymorphic.mdx` | Polymorphic components |
-| `custom-components.mdx` | Creating custom components |
-| `controlled-vs-uncontrolled.mdx` | Controlled vs uncontrolled pattern |
-| `functions-reference.mdx` | Utility functions reference |
-| `tiptap-3-migration.mdx` | Tiptap 3 migration guide |
-| `6x-to-7x.mdx` | Migration from v6 to v7 |
-| `7x-to-8x.mdx` | Migration from v7 to v8 |
-| `8x-to-9x.mdx` | Migration from v8 to v9 |
-
-### charts/ (17 files)
-
-| File | Description |
-|------|-------------|
-| `getting-started.mdx` | Charts package setup |
-| `area-chart.mdx` | AreaChart component |
-| `bar-chart.mdx` | BarChart component |
-| `bars-list.mdx` | BarsList component |
-| `bubble-chart.mdx` | BubbleChart component |
-| `composite-chart.mdx` | CompositeChart component |
-| `donut-chart.mdx` | DonutChart component |
-| `funnel-chart.mdx` | FunnelChart component |
-| `heatmap.mdx` | Heatmap chart |
-| `line-chart.mdx` | LineChart component |
-| `pie-chart.mdx` | PieChart component |
-| `radar-chart.mdx` | RadarChart component |
-| `radial-bar-chart.mdx` | RadialBarChart component |
-| `sankey-chart.mdx` | SankeyChart component |
-| `scatter-chart.mdx` | ScatterChart component |
-| `sparkline.mdx` | Sparkline chart |
-| `treemap.mdx` | Treemap chart |
+| `accordion.mdx` | Accordion: collapsible content sections |
+| `action-bar.mdx` | ActionBar: fixed bottom bar shown for selected items |
+| `action-icon.mdx` | ActionIcon: icon button with variants and sizes |
+| `affix.mdx` | Affix: render content at a fixed screen position |
+| `alert.mdx` | Alert: callout with icon, title and close button |
+| `alpha-slider.mdx` | AlphaSlider: pick color opacity |
+| `anchor.mdx` | Anchor: styled link with underline options |
+| `angle-slider.mdx` | AngleSlider: pick an angle from 0 to 360 |
+| `app-shell.mdx` | AppShell: responsive layout with header, navbar, aside, footer |
+| `aspect-ratio.mdx` | AspectRatio: keep a fixed width/height ratio |
+| `autocomplete.mdx` | Autocomplete: text input with suggestions |
+| `avatar.mdx` | Avatar: user image, initials or placeholder, plus Avatar.Group |
+| `background-image.mdx` | BackgroundImage: element with a background image |
+| `badge.mdx` | Badge: small status or label chip |
+| `blockquote.mdx` | Blockquote: styled quotation with citation |
+| `box.mdx` | Box: base component with style props and polymorphism |
+| `breadcrumbs.mdx` | Breadcrumbs: navigation path with separators |
+| `burger.mdx` | Burger: open/close menu button |
+| `button.mdx` | Button: variants, sizes, loading state, sections, Button.Group |
+| `card.mdx` | Card: container with Card.Section |
+| `cascader.mdx` | Cascader: select from hierarchical data in columns |
+| `center.mdx` | Center: center content horizontally and vertically |
+| `checkbox.mdx` | Checkbox: controlled/indeterminate checkbox, Checkbox.Group and Card |
+| `chip.mdx` | Chip: toggleable pill, Chip.Group |
+| `close-button.mdx` | CloseButton: button with an X icon |
+| `code.mdx` | Code: inline and block code |
+| `collapse.mdx` | Collapse: animated show/hide of content |
+| `color-input.mdx` | ColorInput: text input with color picker and eye dropper |
+| `color-picker.mdx` | ColorPicker: full color selection (hex, rgb, hsl) |
+| `color-swatch.mdx` | ColorSwatch: display a color sample |
+| `combobox.mdx` | Combobox: primitives for custom select/autocomplete components |
+| `combobox-popover.mdx` | ComboboxPopover: dropdown of selectable options on any button |
+| `container.mdx` | Container: centered max-width wrapper |
+| `copy-button.mdx` | CopyButton: copy value to clipboard render-prop |
+| `data-list.mdx` | DataList: description list of label-value pairs |
+| `dialog.mdx` | Dialog: simplified floating modal |
+| `divider.mdx` | Divider: horizontal/vertical separator with label |
+| `drawer.mdx` | Drawer: sliding overlay panel, Drawer.Stack |
+| `empty-state.mdx` | EmptyState: placeholder for no-data situations |
+| `fieldset.mdx` | Fieldset: group related inputs with legend |
+| `file-button.mdx` | FileButton: open the file picker from any element |
+| `file-input.mdx` | FileInput: input for selecting files |
+| `flex.mdx` | Flex: flexbox container with responsive props |
+| `floating-indicator.mdx` | FloatingIndicator: highlight the active element in a group |
+| `floating-window.mdx` | FloatingWindow: draggable fixed-position element |
+| `focus-trap.mdx` | FocusTrap: trap keyboard focus inside a node |
+| `grid.mdx` | Grid: 12-column responsive layout |
+| `group.mdx` | Group: horizontal flex container |
+| `highlight.mdx` | Highlight: mark substrings within text |
+| `hover-card.mdx` | HoverCard: popover shown on hover |
+| `hue-slider.mdx` | HueSlider: pick color hue |
+| `image.mdx` | Image: img wrapper with fallback |
+| `indicator.mdx` | Indicator: status dot or badge on an element |
+| `input.mdx` | Input: base for custom inputs, Input.Wrapper and Input.Label |
+| `json-input.mdx` | JsonInput: textarea with JSON validation and formatting |
+| `kbd.mdx` | Kbd: keyboard key display |
+| `list.mdx` | List: ordered/unordered lists with custom icons |
+| `loader.mdx` | Loader: loading indicators (oval, bars, dots) |
+| `loading-overlay.mdx` | LoadingOverlay: overlay with loader over a container |
+| `mark.mdx` | Mark: highlighted text |
+| `marquee.mdx` | Marquee: continuous scrolling animation |
+| `mask-input.mdx` | MaskInput: input with formatting mask |
+| `menu.mdx` | Menu: dropdown menu with submenus |
+| `menubar.mdx` | Menubar: desktop-style horizontal menu bar |
+| `modal.mdx` | Modal: dialog overlay, Modal.Root and ModalBase |
+| `multi-select.mdx` | MultiSelect: select multiple values from a list |
+| `native-select.mdx` | NativeSelect: native select element |
+| `nav-link.mdx` | NavLink: sidebar navigation item with nested links |
+| `notification.mdx` | Notification: base notification component |
+| `number-formatter.mdx` | NumberFormatter: format numbers for display |
+| `number-input.mdx` | NumberInput: numeric input with formatting, min/max, step |
+| `overflow-list.mdx` | OverflowList: render items that fit, collapse the rest |
+| `overlay.mdx` | Overlay: dimmed layer over a container |
+| `package.mdx` | @mantine/core package overview: installation and component list |
+| `pagination.mdx` | Pagination: page navigation controls |
+| `paper.mdx` | Paper: surface with background, border and shadow |
+| `password-input.mdx` | PasswordInput: input with visibility toggle |
+| `pill.mdx` | Pill: tag-like element for inputs, Pill.Group |
+| `pills-input.mdx` | PillsInput: base for custom tag inputs |
+| `pin-input.mdx` | PinInput: one-time code input |
+| `popover.mdx` | Popover: floating dropdown for any content |
+| `portal.mdx` | Portal: render children in a different DOM node |
+| `progress.mdx` | Progress: progress bar with sections |
+| `radio.mdx` | Radio: radio inputs, Radio.Group and Radio.Card |
+| `range-slider.mdx` | RangeSlider: select a numeric range |
+| `rating.mdx` | Rating: star rating input |
+| `ring-progress.mdx` | RingProgress: circular progress with sections |
+| `rolling-number.mdx` | RollingNumber: animated digit transitions |
+| `scroll-area.mdx` | ScrollArea: custom scrollbars |
+| `scroller.mdx` | Scroller: horizontal scroll container with nav buttons |
+| `segmented-control.mdx` | SegmentedControl: toggle between options |
+| `select.mdx` | Select: searchable single-value dropdown |
+| `semi-circle-progress.mdx` | SemiCircleProgress: half-circle progress |
+| `simple-grid.mdx` | SimpleGrid: responsive equal-width columns |
+| `skeleton.mdx` | Skeleton: loading placeholders |
+| `slider.mdx` | Slider: single-value slider with marks |
+| `space.mdx` | Space: add horizontal/vertical spacing |
+| `splitter.mdx` | Splitter: resizable split panes |
+| `spoiler.mdx` | Spoiler: show more/less for long content |
+| `stack.mdx` | Stack: vertical flex container |
+| `stepper.mdx` | Stepper: multi-step progress and wizard |
+| `switch.mdx` | Switch: on/off toggle, Switch.Group |
+| `table.mdx` | Table: data tables, sticky headers, Table.ScrollContainer |
+| `table-of-contents.mdx` | TableOfContents: heading navigation with scroll spy |
+| `tabs.mdx` | Tabs: tabbed content panels |
+| `tags-input.mdx` | TagsInput: enter multiple free-form values |
+| `text.mdx` | Text: text with size, color, truncate, line clamp |
+| `text-input.mdx` | TextInput: single-line text input |
+| `textarea.mdx` | Textarea: multi-line input with autosize |
+| `theme-icon.mdx` | ThemeIcon: icon with themed background |
+| `timeline.mdx` | Timeline: vertical event timeline |
+| `title.mdx` | Title: h1-h6 headings |
+| `toggle.mdx` | Toggle: button with active/inactive state |
+| `toolbar.mdx` | Toolbar: toggle button group with arrow-key navigation |
+| `tooltip.mdx` | Tooltip: hover hint, Tooltip.Group, Tooltip.Floating |
+| `tour.mdx` | Tour: step-by-step onboarding guide |
+| `transition.mdx` | Transition: animate presence of elements |
+| `tree.mdx` | Tree: hierarchical data display with expand/select |
+| `tree-select.mdx` | TreeSelect: pick values from hierarchical tree |
+| `typography.mdx` | TypographyStylesProvider: styles for rendered HTML content |
+| `unstyled-button.mdx` | UnstyledButton: reset button for custom buttons |
+| `visually-hidden.mdx` | VisuallyHidden: hide content visually for screen readers |
 
 ### dates/ (16 files)
 
 | File | Description |
 |------|-------------|
-| `getting-started.mdx` | Date package setup |
-| `date-picker.mdx` | DatePicker component |
-| `date-picker-input.mdx` | DatePickerInput component |
-| `date-input.mdx` | DateInput component |
-| `date-time-picker.mdx` | DateTimePicker component |
-| `inline-date-time-picker.mdx` | Inline DateTimePicker |
-| `calendar.mdx` | Calendar component |
-| `mini-calendar.mdx` | Mini calendar component |
-| `month-picker.mdx` | MonthPicker component |
-| `month-picker-input.mdx` | MonthPickerInput component |
-| `year-picker.mdx` | YearPicker component |
-| `year-picker-input.mdx` | YearPickerInput component |
-| `time-input.mdx` | TimeInput component |
-| `time-picker.mdx` | TimePicker component |
-| `time-grid.mdx` | TimeGrid component |
-| `time-value.mdx` | TimeValue utilities |
+| `calendar.mdx` | Calendar: build custom date pickers |
+| `date-input.mdx` | DateInput: typed date entry with parsing |
+| `date-picker.mdx` | DatePicker: inline date selection (single, multiple, range) |
+| `date-picker-input.mdx` | DatePickerInput: date picker in a dropdown |
+| `date-time-picker.mdx` | DateTimePicker: date and time in one input |
+| `getting-started.mdx` | Install @mantine/dates, dayjs setup, locale and shared props |
+| `inline-date-time-picker.mdx` | InlineDateTimePicker: inline date and time picker |
+| `mini-calendar.mdx` | MiniCalendar: compact scrollable day strip |
+| `month-picker.mdx` | MonthPicker: inline month selection |
+| `month-picker-input.mdx` | MonthPickerInput: month picker in a dropdown |
+| `time-grid.mdx` | TimeGrid: pick a time from a grid of slots |
+| `time-input.mdx` | TimeInput: native time input |
+| `time-picker.mdx` | TimePicker: time input with dropdowns, 12/24h |
+| `time-value.mdx` | TimeValue: display formatted time |
+| `year-picker.mdx` | YearPicker: inline year selection |
+| `year-picker-input.mdx` | YearPickerInput: year picker in a dropdown |
 
 ### form/ (16 files)
 
 | File | Description |
 |------|-------------|
-| `package.mdx` | @mantine/form package overview |
-| `use-form.mdx` | useForm hook - main entry point |
-| `use-field.mdx` | useField hook for single fields |
-| `values.mdx` | Form values management |
-| `validation.mdx` | Form validation |
-| `validators.mdx` | Built-in validators |
-| `schema-validation.mdx` | Zod/Yup/Joi schema validation |
-| `errors.mdx` | Form error handling |
-| `get-input-props.mdx` | getInputProps helper |
-| `status.mdx` | Form status tracking |
-| `nested.mdx` | Nested forms |
-| `all-inputs.mdx` | All input types example |
-| `uncontrolled.mdx` | Uncontrolled form mode |
-| `actions.mdx` | Form actions |
-| `create-form-context.mdx` | createFormContext for shared forms |
-| `recipes.mdx` | Form recipes and patterns |
+| `actions.mdx` | Update form state from anywhere with form actions |
+| `all-inputs.mdx` | use-form with every Mantine input |
+| `create-form-context.mdx` | createFormContext: share form via React context |
+| `errors.mdx` | Read, set and clear form errors |
+| `get-input-props.mdx` | form.getInputProps and form.key for binding inputs |
+| `nested.mdx` | Nested objects and lists, array handlers |
+| `package.mdx` | @mantine/form package overview and installation |
+| `recipes.mdx` | Form recipes: common patterns and examples |
+| `schema-validation.mdx` | Validate with Zod, Valibot and other Standard Schema libraries |
+| `status.mdx` | Touched, dirty and field status tracking |
+| `uncontrolled.mdx` | Uncontrolled mode for better performance |
+| `use-field.mdx` | use-field: single-field state and validation |
+| `use-form.mdx` | use-form: form state, validation, submit handling |
+| `validation.mdx` | Validation rules, validate on blur/change |
+| `validators.mdx` | Built-in validator functions |
+| `values.mdx` | Initial values, setValues, reset and transform |
 
-### schedule/ (9 files)
+### guides/ (19 files)
 
 | File | Description |
 |------|-------------|
-| `getting-started.mdx` | Schedule package setup |
-| `schedule.mdx` | Schedule component overview |
-| `day-view.mdx` | Day view layout |
-| `week-view.mdx` | Week view layout |
-| `month-view.mdx` | Month view layout |
-| `mobile-month-view.mdx` | Mobile month view |
-| `year-view.mdx` | Year view layout |
-| `events-data.mdx` | Events data format |
-| `recurring-events.mdx` | Recurring events setup |
+| `6x-to-7x.mdx` | Migrate from Mantine 6.x to 7.x |
+| `7x-to-8x.mdx` | Migrate from Mantine 7.x to 8.x |
+| `8x-to-9x.mdx` | Migrate from Mantine 8.x to 9.x |
+| `controlled-vs-uncontrolled.mdx` | Controlled vs uncontrolled input modes |
+| `custom-components.mdx` | Create custom components integrated with the theme and Styles API |
+| `functions-reference.mdx` | Reference of exported utility functions |
+| `icons.mdx` | Using icon libraries with Mantine |
+| `javascript.mdx` | Using Mantine without TypeScript |
+| `jest.mdx` | Set up Jest and React Testing Library |
+| `llms.mdx` | Give AI tools accurate Mantine knowledge (llms.txt, skills) |
+| `next.mdx` | Use Mantine with Next.js |
+| `polymorphic.mdx` | Polymorphic components and the component prop |
+| `react-router.mdx` | Use Mantine with React Router |
+| `storybook.mdx` | Integrate Mantine with Storybook 10+ |
+| `tanstack-start.mdx` | Use Mantine with TanStack Start |
+| `tiptap-3-migration.mdx` | Upgrade TipTap 2 to 3 |
+| `typescript.mdx` | TypeScript usage and types |
+| `vite.mdx` | Use Mantine with Vite |
+| `vitest.mdx` | Set up Vitest and React Testing Library |
+
+### hooks/ (82 files)
+
+| File | Description |
+|------|-------------|
+| `package.mdx` | @mantine/hooks package overview and hook list |
+| `use-click-outside.mdx` | Detect clicks outside an element |
+| `use-clipboard.mdx` | Copy text to clipboard with copied state |
+| `use-collapse.mdx` | Hook version of Collapse animation |
+| `use-color-scheme.mdx` | OS preferred color scheme |
+| `use-counter.mdx` | Counter state with min/max |
+| `use-debounced-callback.mdx` | Debounced function callback |
+| `use-debounced-state.mdx` | State with debounced updates |
+| `use-debounced-value.mdx` | Debounce a changing value |
+| `use-did-update.mdx` | useEffect that skips first mount |
+| `use-disclosure.mdx` | Boolean open/close/toggle state |
+| `use-document-title.mdx` | Set document.title |
+| `use-document-visibility.mdx` | Track document visibility state |
+| `use-drag.mdx` | Pointer drag gestures over an element |
+| `use-element-size.mdx` | Element width and height via ResizeObserver |
+| `use-event-listener.mdx` | Attach event listener to a ref element |
+| `use-eye-dropper.mdx` | EyeDropper API for picking screen colors |
+| `use-favicon.mdx` | Set page favicon |
+| `use-fetch.mdx` | GET request with loading and error state |
+| `use-file-dialog.mdx` | Open file dialog without an input element |
+| `use-floating-window.mdx` | Make an element draggable |
+| `use-focus-return.mdx` | Return focus to last focused element |
+| `use-focus-trap.mdx` | Trap focus inside a node |
+| `use-focus-within.mdx` | Detect focus within an element |
+| `use-force-update.mdx` | Force a component re-render |
+| `use-fullscreen.mdx` | Fullscreen API for an element |
+| `use-hash.mdx` | URL hash value and changes |
+| `use-headroom.mdx` | Hide header on scroll past a distance |
+| `use-hotkeys.mdx` | Keyboard shortcut handlers |
+| `use-hover.mdx` | Detect hover on an element |
+| `use-id.mdx` | Stable random id across renders |
+| `use-idle.mdx` | Detect user inactivity |
+| `use-in-viewport.mdx` | Detect if element is in viewport |
+| `use-input-state.mdx` | State handler for native and custom inputs |
+| `use-intersection.mdx` | IntersectionObserver information |
+| `use-interval.mdx` | setInterval with start/stop controls |
+| `use-is-first-render.mdx` | True on first render only |
+| `use-isomorphic-effect.mdx` | useLayoutEffect safe for SSR |
+| `use-list-state.mdx` | List state with array handlers |
+| `use-local-storage.mdx` | localStorage value as React state |
+| `use-logger.mdx` | Log values on every render |
+| `use-long-press.mdx` | Long press events for mouse and touch |
+| `use-map.mdx` | Map object as React state |
+| `use-mask.mdx` | Input masking for any input element |
+| `use-media-query.mdx` | Subscribe to media queries |
+| `use-merged-ref.mdx` | Merge multiple refs |
+| `use-mounted.mdx` | True if component is mounted |
+| `use-mouse.mdx` | Mouse position relative to element or document |
+| `use-move.mdx` | Move behavior over an element (sliders) |
+| `use-mutation-observer.mdx` | MutationObserver wrapper |
+| `use-network.mdx` | Network connection status |
+| `use-orientation.mdx` | Device orientation |
+| `use-os.mdx` | Detect user operating system |
+| `use-page-leave.mdx` | Callback when mouse leaves page |
+| `use-pagination.mdx` | Pagination state management |
+| `use-previous.mdx` | Previous value of state |
+| `use-queue.mdx` | Limit items in state, queue the rest |
+| `use-radial-move.mdx` | Radial sliders and angular movement |
+| `use-reduced-motion.mdx` | Detect prefers-reduced-motion |
+| `use-resize-observer.mdx` | ResizeObserver rect for an element |
+| `use-roving-index.mdx` | Roving tabindex keyboard navigation |
+| `use-scroll-direction.mdx` | Detect scroll up or down |
+| `use-scroll-into-view.mdx` | Scroll element into view with alignment |
+| `use-scroll-spy.mdx` | Active heading from scroll position |
+| `use-scroller.mdx` | Horizontal scroll container behavior |
+| `use-selection.mdx` | Item selection state |
+| `use-set.mdx` | Set object as React state |
+| `use-set-state.mdx` | Shallow-merging object state |
+| `use-shallow-effect.mdx` | useEffect with shallow dependency comparison |
+| `use-splitter.mdx` | Resizable split-pane behavior |
+| `use-state-history.mdx` | State with undo/redo history |
+| `use-text-selection.mdx` | Current text selection |
+| `use-throttled-callback.mdx` | Throttled function callback |
+| `use-throttled-state.mdx` | State with throttled updates |
+| `use-throttled-value.mdx` | Throttle a changing value |
+| `use-timeout.mdx` | setTimeout with start/clear controls |
+| `use-toggle.mdx` | Toggle state between given values |
+| `use-uncontrolled.mdx` | State for controlled and uncontrolled components |
+| `use-validated-state.mdx` | State validated by a rule |
+| `use-viewport-size.mdx` | Viewport width and height |
+| `use-window-event.mdx` | Window event listener |
+| `use-window-scroll.mdx` | Window scroll position and scrollTo |
+
+### schedule/ (14 files)
+
+| File | Description |
+|------|-------------|
+| `agenda-view.mdx` | AgendaView: vertical event list grouped by day |
+| `day-view.mdx` | DayView: single-day events with time slots |
+| `events-data.mdx` | Event data format, props and handlers |
+| `getting-started.mdx` | Install @mantine/schedule and set up styles |
+| `mobile-month-view.mdx` | MobileMonthView: month grid with event list |
+| `month-view.mdx` | MonthView: calendar month grid with event badges |
+| `recurring-events.mdx` | Recurring events via RFC 5545 rules |
+| `resources-day-view.mdx` | ResourcesDayView: resources as rows, time as columns |
+| `resources-month-view.mdx` | ResourcesMonthView: month grid with resource lanes |
+| `resources-schedule.mdx` | ResourcesSchedule: unified resource views |
+| `resources-week-view.mdx` | ResourcesWeekView: resources by week |
+| `schedule.mdx` | Schedule: unified Day/Week/Month/Year views |
+| `week-view.mdx` | WeekView: weekly events with time slots |
+| `year-view.mdx` | YearView: 12-month overview with event dots |
+
+### styles/ (23 files)
+
+| File | Description |
+|------|-------------|
+| `color-functions.mdx` | Functions to manipulate colors |
+| `css-files-list.mdx` | List of importable CSS files |
+| `css-modules.mdx` | Styling with CSS modules |
+| `css-variables.mdx` | CSS variables from the theme |
+| `css-variables-list.mdx` | All default-theme CSS variables |
+| `data-attributes.mdx` | data-* attributes used for styling |
+| `emotion.mdx` | Emotion and migrating from pre-7.0 |
+| `global-styles.mdx` | Global styles included in @mantine/core |
+| `mantine-styles.mdx` | Importing package styles |
+| `postcss-preset.mdx` | postcss-preset-mantine functions and mixins |
+| `rem.mdx` | rem units and scaling |
+| `responsive.mdx` | Breakpoints and responsive styles |
+| `rtl.mdx` | Right-to-left support |
+| `sass.mdx` | Using Sass with Mantine |
+| `style.mdx` | The style prop |
+| `style-props.mdx` | Inline style props (m, p, c, bg, etc.) |
+| `styles-api.mdx` | Styles API: classNames, styles and selectors |
+| `styles-overview.mdx` | Overview of styling approaches |
+| `styles-performance.mdx` | Styling performance tips |
+| `stylex.mdx` | Using StyleX |
+| `unstyled.mdx` | Using Mantine as headless UI |
+| `vanilla-extract.mdx` | Using vanilla-extract |
+| `variants-sizes.mdx` | Component variants and sizes |
+
+### theming/ (6 files)
+
+| File | Description |
+|------|-------------|
+| `color-schemes.mdx` | Light/dark color scheme management |
+| `colors.mdx` | Theme colors and custom palettes |
+| `default-props.mdx` | Default props via theme.components |
+| `mantine-provider.mdx` | MantineProvider setup and options |
+| `theme-object.mdx` | Theme object properties |
+| `typography.mdx` | Fonts, headings and text styles |
 
 ### x/ (9 files)
 
 | File | Description |
 |------|-------------|
-| `extensions.mdx` | Extensions package overview |
-| `carousel.mdx` | Carousel component |
-| `code-highlight.mdx` | CodeHighlight syntax highlighter |
-| `dropzone.mdx` | Dropzone file upload |
-| `modals.mdx` | Modals manager |
-| `notifications.mdx` | Notifications system |
-| `nprogress.mdx` | NProgress loading bar |
-| `spotlight.mdx` | Spotlight command palette |
+| `carousel.mdx` | Carousel: Embla-based slider |
+| `dropzone.mdx` | Dropzone: drag-and-drop file upload |
+| `extensions.mdx` | Overview of extension packages |
+| `lightbox.mdx` | Lightbox: fullscreen image/media viewer |
+| `modals.mdx` | ModalsProvider: modals manager |
+| `notifications.mdx` | Notifications system and notifications.show |
+| `nprogress.mdx` | NavigationProgress: top loading bar |
+| `spotlight.mdx` | Spotlight: command palette search |
 | `tiptap.mdx` | Tiptap rich text editor |

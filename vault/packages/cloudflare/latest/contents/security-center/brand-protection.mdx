@@ -41,20 +41,20 @@ To start searching for new domains that might be trying to impersonate your bran
 
    <DashButton url="/?to=/:account/security-center/brand-protection" />
 
-2. In **String query**, provide a name for your query. You can add multiple brand phrases on the same query, and the results will generate matches for all of those. Once you entered the string queries, select **Search matches**.
+2. In **Strings**, enter a brand phrase, then select **Add string**. Repeat this step to add multiple phrases.
 
-3. In the **Character distance**, select from `0-3`. This defines how many characters a result can differ from your string (for example, a distance of 1 would catch `clpudflare.com`). The number of characters the results can differ from your domain.
+3. Select **Save query**. In the **Save brand protection query** dialog, enter a **Query name**, then select **Save query** again.
 
-   :::note
+   :::note[Phrase matching]
 
-   If a brand phrase or search term has less than five characters, you can only choose a max distance of `0` (zero).
+   Each string is treated as a complete brand phrase. To monitor individual terms independently, add each as a separate string.
    :::
 
-4. You can select **Save query** to monitor it in the future and perform other actions, such as delete, clone and set up alerts, according to your Paid plan limits.
+4. After you save a query, Brand Protection monitors newly observed domains and performs a background lookback for recently observed domains. Additional matches may appear while the lookback completes.
 
 5. To export all matches from a saved query, select your **Query name** > select the three dots > **Export matches**.
 
-In the section **Monitor Strings**, you can check all the string queries that you selected to monitor. You can delete, clone, or create notifications for a string query. Refer to [Brand Protection Alerts](#brand-protection-alerts) to set up notifications. You can also dismiss any domain matched in the query if you have investigated and deemed it benign or a false positive. Users can still access their previously dismissed matches by turning on the  **Show dismissed matches** toggle in the Cloudflare dashboard.
+In the section **Monitor Strings**, you can check all the string queries that you selected to monitor. You can delete, clone, or create notifications for a string query. Refer to [Brand Protection Alerts](#brand-protection-alerts) to set up notifications. You can also dismiss any domain matched in the query if you have investigated and deemed it benign or a false positive. Users can still access their previously dismissed matches by turning on the **Show dismissed matches** toggle in the Cloudflare dashboard.
 
 ### Logo search (AI-powered)
 
@@ -127,9 +127,10 @@ When reviewing a matched domain, you have two paths to action depending on where
 2. Go to **Monitor Strings** and select a query to view its matched domains.
 3. Next to the domain you want to take action on, click **Generate C&D Letter**.
 4. Choose a template. You can select from three default templates or from your own saved templates:
-   - **Exact Match**: A formal demand for identical trademark infringements.
-   - **Similar Match**: A standard notice optimized for typosquatting.
-   - **Friendly Tone**: An amicable initial outreach for potential unintentional infringements.
+   - **Registrant - Exact Match**: A cease and desist letter direct to a registrant of a domain that is an exact match to the protected trademark.
+   - **Registrant - Similar Match**: A cease and desist letter directed to a registrant of a domain that is confusingly similar to the protected trademark (1-character distance).
+   - **Registrar - Trademark Infringement**: A letter directed to a domain registrar regarding trademark infringement by their registrant.
+   - **Registrar - Trademark Infringement & Phishing**: A letter directed to a domain registrar regarding trademark infringement and phishing by their registrant.
 5. Review and edit the pre-filled letter. The system auto-populates recipient data from WHOIS records.
 6. Click **Download** to save the finalized PDF.
 
@@ -170,5 +171,5 @@ Manage your notifications in the **All notifications** tab. You can disable, edi
 
 ## Subscriptions and limitations
 
-- Self-serve users can subscribe directly to add monitoring capacity to their account.
+- Brand Protection is only available to Enterprise users while in Beta.
 - You may only use the Brand Protection search tools to search for domains that may be attempting to impersonate your brand or a brand that has authorized you to conduct such search on its behalf.

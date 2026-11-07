@@ -2,6 +2,7 @@
 title: 'Playwright Check Suites Configuration'
 description: 'Complete configuration reference for Playwright Check Suites including all available options and examples.'
 sidebarTitle: 'Configuration'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/playwright-checks/configuration/'
 ---
 
 Use the `checkly.config.ts/js` file to define your Playwright Check Suite. Each Playwright Check Suite can be connected to references in your `playwright.config.ts/js` file.
@@ -14,12 +15,13 @@ Use the `checkly.config.ts/js` file to define your Playwright Check Suite. Each 
 
 To add Playwright Check Suites to your Checkly monitoring setup, specify the path to your `playwright.config.ts/js` and add a new `playwrightChecks` property to the existing `checks` configuration in your `checkly.config.ts/js`.
 
-```typescript checkly.config.ts highlight={8-14}
+```typescript checkly.config.ts highlight={9-15}
 import { defineConfig } from 'checkly'
 import { Frequency } from 'checkly/constructs'
 
 export default defineConfig({
-  // ...
+  projectName: 'My Project',
+  logicalId: 'my-project',
 
   checks: {
     playwrightConfigPath: './playwright.config.ts',
@@ -54,8 +56,11 @@ You can combine `pwTags` and `pwProjects` to generate your check suite, too.
 
 For example:
 
-```typescript checkly.config.ts highlight={11, 20}
+{/* typecheck-wrap */}
+```typescript checkly.config.ts highlight={13, 22}
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   // ...
   checks: {
     playwrightConfigPath: './playwright.config.ts',
@@ -130,9 +135,13 @@ Checkly enforces these options for every run. User configuration does not overri
 
 Checkly supports Playwright's [`globalTimeout`](https://playwright.dev/docs/api/class-testconfig#test-config-global-timeout). Use it to control the maximum duration of the Playwright suite after `npx playwright test` starts.
 
+<Note>
+When `use.extraHTTPHeaders` is missing from the Playwright configuration, Checkly adds its trace headers automatically. See how to [add Checkly's trace headers to your custom HTTP headers](/resolve/traces/overview#add-trace-headers-to-custom-http-headers).
+</Note>
+
 Playwright Check Suites also provide specific configuration for your Playwright monitoring.
 
-* `installCommand:` Override the command to install dependencies. `npm install --dev` is used by default.
+* `installCommand:` Override the command to install dependencies. By default, Checkly uses the package manager it detects from your lockfile and installs both `dependencies` and `devDependencies` (with npm: `npm install --no-save`).
 
 * `testCommand:` Append to the command that runs tests. `npx playwright test` is used by default with the tags, projects, and config file options your check specifies.
 
@@ -142,7 +151,7 @@ Playwright Check Suites also provide specific configuration for your Playwright 
 
 ### Customize install and test commands
 
-By default, Checkly runs `npm install --dev` to install dependencies and `npx playwright test` to run tests. The `testCommand` automatically includes your `pwProjects`, `pwTags`, and Playwright config file path.
+By default, Checkly installs dependencies with the package manager it detects from your lockfile and runs `npx playwright test` to run tests. The `testCommand` automatically includes your `pwProjects`, `pwTags`, and Playwright config file path.
 
 You can override these commands to:
 
@@ -190,6 +199,8 @@ import { Frequency } from 'checkly/constructs'
 import { productionGroup } from './production-group.check'
 
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   // Shared Checkly configuration (scheduling, locations, etc.)
   // ...
   checks: {
@@ -215,17 +226,17 @@ export default defineConfig({
 
 ## Testing configuration locally
 
-Before deploying your Playwright Check Suites, validate your configuration locally:
+Before deploying your Playwright Check Suites, test your configuration:
 
 ```bash
 # Test your configuration without deploying
 npx checkly test
 
-# Test a specific check by logical ID
-npx checkly test --grep=e2e-test-suite
+# Test a specific check by name
+npx checkly test --grep "E2E test suite"
 ```
 
-The `npx checkly test` command runs your Playwright tests locally using the same configuration that Checkly will use in production. This helps catch configuration errors before deployment.
+The `npx checkly test` command runs your Playwright Check Suites on Checkly, without deploying them, using the same configuration that Checkly will use in production. This helps catch configuration errors before deployment.
 
 ## Cancelling runs
 
@@ -249,7 +260,7 @@ Cancelled runs show a **Cancelled** status in run history. See [Cancellation](/c
 #### Invalid `logicalId`
 
 ```
-Error: logicalId must be unique across all checks
+A check with logicalId "e2e-test-suite" already exists.
 ```
 
 Ensure each Playwright Check Suite has a unique `logicalId`. The `logicalId` is used as a stable reference across deployments.
@@ -257,10 +268,22 @@ Ensure each Playwright Check Suite has a unique `logicalId`. The `logicalId` is 
 #### Missing Playwright configuration
 
 ```
-Error: Cannot find playwright.config.ts at path: ./playwright.config.ts
+Playwright config "/path/to/project/playwright.config.ts" does not exist
 ```
 
 Verify that `playwrightConfigPath` points to the correct relative path from your `checkly.config.ts` file.
+
+#### `headless: false` is not supported
+
+```text
+✖ [PlaywrightCheck:e2e-test-suite] Invalid property value
+  The value provided for property "headless" is not valid.
+  Reason: headless: false is not supported.
+  Checkly runs all Playwright checks in headless mode. Please remove this
+  setting from your Playwright configuration, or set it to true.
+```
+
+The Checkly CLI rejects `headless: false` in `use` or in any project of your `playwright.config.ts`. It reads the config on your machine, so a value based on `process.env.CHECKLY` fails too. Remove the setting, and run `npx playwright test --headed` when you want to watch a test locally.
 
 ### Alert optimization
 
@@ -282,10 +305,12 @@ Specify this option in your `playwright.config` or the `testCommand` in your `ch
     ```
   </Tab>
   <Tab title="checkly.config.ts">
-    ```typescript checkly.config.ts highlight={11}
+    ```typescript checkly.config.ts highlight={13}
     import { defineConfig } from 'checkly'
 
     export default defineConfig({
+      projectName: 'My Project',
+      logicalId: 'my-project',
       checks: {
         playwrightConfigPath: './playwright.config.ts',
         playwrightChecks: [
@@ -319,10 +344,12 @@ Specify this option in your `playwright.config` or the `testCommand` in your `ch
     ```
   </Tab>
   <Tab title="checkly.config.ts">
-    ```typescript checkly.config.ts highlight={11}
+    ```typescript checkly.config.ts highlight={13}
     import { defineConfig } from 'checkly'
 
     export default defineConfig({
+      projectName: 'My Project',
+      logicalId: 'my-project',
       checks: {
         playwrightConfigPath: './playwright.config.ts',
         playwrightChecks: [
@@ -355,7 +382,7 @@ If your Playwright Check Suite times out after 30 minutes:
 If dependencies fail to install:
 
 - Check that your `package.json` and lock file (e.g., `package-lock.json`) are both included in your deployment.
-- Verify that the private registry authentication is configured correctly. See the [custom dependencies guide](/detect/synthetic-monitoring/playwright-checks/custom-dependencies/) for more details.
+- Verify that the private registry authentication is configured correctly. See [Private packages](/detect/synthetic-monitoring/playwright-checks/dependencies#private-packages) for more details.
 - Adjust the `installCommand` to match your project's expectation.
 
 #### Authentication failures in tests

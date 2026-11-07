@@ -1,0 +1,66 @@
+---
+title: "GPU Canvas"
+description: "Enable GPU Canvas when creating a Worker in the Apple runtime."
+---
+
+import SharedWorker from "/snippets/runtimes/apple/shared-worker.mdx"
+
+GPU Canvas enables 3D content in the Apple runtime. It is available through the Swift Concurrency API and is configured when creating a `Worker`. The setting applies to every `File` loaded by that worker and every `Rive` object created from those files.
+
+<Note>
+  GPU Canvas is required to render 3D content.
+</Note>
+
+## Enabling GPU Canvas
+
+Pass a configuration with `enableGPUCanvas` set to `true` when creating a worker:
+
+```swift
+let worker = try await Worker(
+    configuration: .init(enableGPUCanvas: true)
+)
+```
+
+The worker's GPU Canvas setting is fixed for its lifetime. Enable it before loading any files that require GPU Canvas or 3D support.
+
+Every `File` created with the worker uses the same setting:
+
+```swift
+let worker = try await Worker(
+    configuration: .init(enableGPUCanvas: true)
+)
+let file = try await File(
+    source: .local("my_file", Bundle.main),
+    worker: worker
+)
+let rive = try await Rive(file: file)
+```
+
+No additional configuration is required when creating a `RiveUIView`, `RiveUIViewRepresentable`, or `AsyncRiveUIViewRepresentable`. Each view inherits the GPU Canvas setting from the worker associated with its `Rive` object.
+
+## Default behavior
+
+GPU Canvas is disabled by default. Continue to create a worker without a configuration when your content does not require it:
+
+```swift
+let worker = try await Worker()
+```
+
+## Sharing a GPU Canvas worker
+
+Share a GPU Canvas worker when multiple files or views can use the same worker. An example implementation is shown below.
+
+<SharedWorker />
+
+Use `Worker.sharedGPUCanvas()` when loading files that require GPU Canvas:
+
+```swift
+let worker = try await Worker.sharedGPUCanvas()
+let file = try await File(
+    source: .local("my_file", Bundle.main),
+    worker: worker
+)
+let rive = try await Rive(file: file)
+```
+
+For a complete setup example, see the [Apple quick start](/runtimes/apple/apple#getting-started).

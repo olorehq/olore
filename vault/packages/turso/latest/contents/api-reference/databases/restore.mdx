@@ -1,0 +1,29 @@
+---
+sidebarTitle: Restore
+openapi: "POST /v3/organizations/{organizationId}/databases/{databaseId}/restore"
+---
+
+<Note>
+
+Unlike the v1 endpoints, this endpoint identifies the organization and database
+by **UUID** — use the `id` field from
+[Retrieve Organization](/api-reference/organizations/retrieve) and the `DbId`
+field from [List Deleted Databases](/api-reference/databases/list-deleted).
+
+</Note>
+
+<RequestExample>
+
+```bash cURL
+curl -L -X POST 'https://api.turso.tech/v3/organizations/{organizationId}/databases/{databaseId}/restore' \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+```bash cURL (new name)
+curl -L -X POST 'https://api.turso.tech/v3/organizations/{organizationId}/databases/{databaseId}/restore' \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "name": "my-restored-database" }'
+```
+
+</RequestExample>

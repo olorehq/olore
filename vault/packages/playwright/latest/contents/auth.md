@@ -111,6 +111,10 @@ export default defineConfig({
 
 Tests start already authenticated because we specified `storageState` in the config.
 
+:::note
+If your application stores authentication tokens in IndexedDB, such as Firebase Authentication, enable [`option: BrowserContext.storageState.indexedDB`] when saving the state: `await page.context().storageState({ path: authFile, indexedDB: true })`. IndexedDB is not included in the snapshot by default.
+:::
+
 ```js title="tests/example.spec.ts"
 import { test } from '@playwright/test';
 
@@ -271,11 +275,11 @@ existing authentication state instead.
 Playwright provides a way to reuse the signed-in state in the tests. That way you can log
 in only once and then skip the log in step for all of the tests.
 
-Web apps use cookie-based or token-based authentication, where authenticated state is stored as [cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies), in [local storage](https://developer.mozilla.org/en-US/docs/Web/API/Storage) or in [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API). Playwright provides [`method: BrowserContext.storageState`] method that can be used to retrieve storage state from authenticated contexts and then create new contexts with prepopulated state.
+Web apps use cookie-based or token-based authentication, where authenticated state is stored as [cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies), in [local storage](https://developer.mozilla.org/en-US/docs/Web/API/Storage), in [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API), or as passkeys ([WebAuthn](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API) credentials). Playwright provides [`method: BrowserContext.storageState`] method that can be used to retrieve storage state from authenticated contexts and then create new contexts with prepopulated state.
 
-Cookies, local storage and IndexedDB state can be used across different browsers. They depend on your application's authentication model which may require some combination of cookies, local storage or IndexedDB.
+Cookies, local storage, IndexedDB and virtual WebAuthn credentials (passkeys) can be used across different browsers. They depend on your application's authentication model which may require some combination of cookies, local storage, IndexedDB or passkeys.
 
-The following code snippet retrieves state from an authenticated context and creates a new context with that state.
+The following code snippet retrieves state from an authenticated context and creates a new context with that state. If your application stores authentication tokens in IndexedDB, such as Firebase Authentication, enable [`option: BrowserContext.storageState.indexedDB`] when saving the state. IndexedDB is not included in the snapshot by default.
 
 ```java
 // Save storage state into the file.
@@ -396,74 +400,6 @@ export const test = baseTest.extend<{}, { workerStorageState: string }>({
   }, { scope: 'worker' }],
 });
 ```
-
-### Passkeys (WebAuthn)
-* langs: js
-
-**When to use**
-- Your app signs users in with passkeys (WebAuthn), and you want tests to start already enrolled.
-
-**Details**
-
-[`property: BrowserContext.credentials`] is a virtual WebAuthn authenticator. Unlike cookie or local storage state, a passkey is seeded **imperatively** with [`method: Credentials.create`] and [`method: Credentials.install`], so it lives in a [`context` fixture override](./test-fixtures.md#overriding-fixtures) rather than in the `storageState` config option.
-
-If your backend already provisioned a passkey for the test user, seed it directly — no setup project required:
-
-```js title="playwright/fixtures.ts"
-import { test as baseTest } from '@playwright/test';
-export * from '@playwright/test';
-
-export const test = baseTest.extend({
-  context: async ({ context }, use) => {
-    // A passkey your backend provisioned for the test user.
-    await context.credentials.create('example.com', {
-      id: process.env.PASSKEY_ID,
-      userHandle: process.env.PASSKEY_USER_HANDLE,
-      privateKey: process.env.PASSKEY_PRIVATE_KEY,
-      publicKey: process.env.PASSKEY_PUBLIC_KEY,
-    });
-    await context.credentials.install();
-    await use(context);
-  },
-});
-```
-
-Otherwise, let the app register a passkey once in a [setup project](#basic-shared-account-in-all-tests), capture it with [`method: Credentials.get`], and save it to disk:
-
-```js title="tests/passkey.setup.ts"
-import { test as setup } from '@playwright/test';
-import fs from 'fs';
-
-setup('enroll passkey', async ({ context, page }) => {
-  await context.credentials.install();
-  await page.goto('https://example.com/register');
-  // The app calls navigator.credentials.create() to register the passkey.
-  await page.getByRole('button', { name: 'Create a passkey' }).click();
-
-  // Read back the registered passkey, including its private key, and save it.
-  const [credential] = await context.credentials.get({ rpId: 'example.com' });
-  fs.writeFileSync('playwright/.auth/passkey.json', JSON.stringify(credential));
-});
-```
-
-Then seed the captured passkey into every test's context:
-
-```js title="playwright/fixtures.ts"
-import { test as baseTest } from '@playwright/test';
-import fs from 'fs';
-export * from '@playwright/test';
-
-export const test = baseTest.extend({
-  context: async ({ context }, use) => {
-    const credential = JSON.parse(fs.readFileSync('playwright/.auth/passkey.json', 'utf8'));
-    await context.credentials.create(credential.rpId, credential);
-    await context.credentials.install();
-    await use(context);
-  },
-});
-```
-
-Declare the `setup` project as a [dependency](./test-projects.md#dependencies) of your testing projects, just like in the [basic flow](#basic-shared-account-in-all-tests). The saved `passkey.json` contains a private key, so keep it under `playwright/.auth` and out of source control (see [Core concepts](#core-concepts)).
 
 ### Multiple signed in roles
 * langs: js
@@ -656,7 +592,7 @@ test('admin and user', async ({ adminPage, userPage }) => {
 
 ### Session storage
 
-Reusing authenticated state covers [cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies), [local storage](https://developer.mozilla.org/en-US/docs/Web/API/Storage) and [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) based authentication. Rarely, [session storage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage) is used for storing information associated with the signed-in state. Session storage is specific to a particular domain and is not persisted across page loads. Playwright does not provide API to persist session storage, but the following snippet can be used to save/load session storage.
+Reusing authenticated state covers [cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies), [local storage](https://developer.mozilla.org/en-US/docs/Web/API/Storage), [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) and passkey ([WebAuthn](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API)) based authentication. Rarely, [session storage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage) is used for storing information associated with the signed-in state. Session storage is specific to a particular domain and is not persisted across page loads. Playwright does not provide API to persist session storage, but the following snippet can be used to save/load session storage.
 
 ```js
 // Get session storage and store as env variable
@@ -680,6 +616,7 @@ System.getenv().put("SESSION_STORAGE", sessionStorage);
 
 // Set session storage in a new context
 String sessionStorage = System.getenv("SESSION_STORAGE");
+String escapedSessionStorage = sessionStorage.replace("\\", "\\\\").replace("'", "\\'");
 context.addInitScript("(storage => {\n" +
   "  if (window.location.hostname === 'example.com') {\n" +
   "    const entries = JSON.parse(storage);\n" +
@@ -687,7 +624,7 @@ context.addInitScript("(storage => {\n" +
   "      window.sessionStorage.setItem(key, value);\n" +
   "    };\n" +
   "  }\n" +
-  "})('" + sessionStorage + "')");
+  "})('" + escapedSessionStorage + "')");
 ```
 
 ```python async
@@ -698,6 +635,7 @@ os.environ["SESSION_STORAGE"] = session_storage
 
 # Set session storage in a new context
 session_storage = os.environ["SESSION_STORAGE"]
+escaped_session_storage = session_storage.replace("\\", "\\\\").replace("'", "\\'")
 await context.add_init_script("""(storage => {
   if (window.location.hostname === 'example.com') {
     const entries = JSON.parse(storage)
@@ -705,7 +643,7 @@ await context.add_init_script("""(storage => {
       window.sessionStorage.setItem(key, value)
     }
   }
-})('""" + session_storage + "')")
+})('""" + escaped_session_storage + "')")
 ```
 
 ```python sync
@@ -716,6 +654,7 @@ os.environ["SESSION_STORAGE"] = session_storage
 
 # Set session storage in a new context
 session_storage = os.environ["SESSION_STORAGE"]
+escaped_session_storage = session_storage.replace("\\", "\\\\").replace("'", "\\'")
 context.add_init_script("""(storage => {
   if (window.location.hostname === 'example.com') {
     const entries = JSON.parse(storage)
@@ -723,7 +662,7 @@ context.add_init_script("""(storage => {
       window.sessionStorage.setItem(key, value)
     }
   }
-})('""" + session_storage + "')")
+})('""" + escaped_session_storage + "')")
 ```
 
 ```csharp
@@ -733,6 +672,7 @@ Environment.SetEnvironmentVariable("SESSION_STORAGE", sessionStorage);
 
 // Set session storage in a new context
 var loadedSessionStorage = Environment.GetEnvironmentVariable("SESSION_STORAGE");
+var escapedSessionStorage = loadedSessionStorage.Replace("\\", "\\\\").Replace("'", "\\'");
 await context.AddInitScriptAsync(@"(storage => {
     if (window.location.hostname === 'example.com') {
       const entries = JSON.parse(storage);
@@ -740,7 +680,7 @@ await context.AddInitScriptAsync(@"(storage => {
         window.sessionStorage.setItem(key, value);
       }
     }
-  })('" + loadedSessionStorage + "')");
+  })('" + escapedSessionStorage + "')");
 ```
 
 ### Avoid authentication in some tests

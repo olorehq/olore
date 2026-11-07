@@ -8,8 +8,6 @@ import Overview from "/snippets/runtimes/animation-playback/overview.mdx"
 import ChoosingStartingAnimations from "/snippets/runtimes/animation-playback/choosing-starting-animations.mdx"
 import ControllingPlayback from "/snippets/runtimes/animation-playback/controlling-playback.mdx"
 
-import { Apple } from "/snippets/constants.mdx"
-
 <Overview />
 
 <ChoosingStartingAnimations />
@@ -17,7 +15,7 @@ import { Apple } from "/snippets/constants.mdx"
 By default, `RiveViewModel` will automatically play the animation or state machine you've given it.
 
 <Warning>
-  This deprecated feature is only supported in the Legacy Runtime, not the {Apple.currentRuntimeName}.
+  This deprecated feature is only supported in the Legacy Runtime, not the {{runtimeCurrentNameApple}}.
 </Warning>
 
 ### SwiftUI
@@ -52,7 +50,7 @@ class AnimationViewController: UIViewController {
 
 <ControllingPlayback />
 
-#### Invoking Playback Controls
+#### Invoking playback controls
 
 After creating a `RiveViewModel`, you can invoke animation playback control methods on a reference to this view model.
 
@@ -91,7 +89,7 @@ If there are multiple animations on the active artboard you can play a specific 
 simpleVM.play(animationName: "Fancy Animation")
 ```
 
-### Pause/Stop/Reset
+### Pause/stop/reset
 
 Based on certain events in your app you may want to adjust the playback further.
 
@@ -101,7 +99,7 @@ simpleVM.stop()
 simpleVM.reset()
 ```
 
-#### Player Delegates
+#### Player delegates
 
 This runtime allows for delegates that can be set on the `RiveViewModel`. You can use delegates to define functions that hook into when certain playback events are invoked. See the below class for how you can hook into the following playback events:
   - played

@@ -1,31 +1,33 @@
 ---
-title: Authenticate Neon Postgres application users with Auth.js
-subtitle: Learn how to add passwordless authentication to your Neon Postgres database
+title: Authenticate Lakebase Postgres application users with Auth.js
+subtitle: Learn how to add passwordless authentication to your Lakebase Postgres database
   application using Auth.js and Resend
 summary: >-
-  Auth.js (NextAuth.js v5) with the Neon Postgres adapter stores users,
-  sessions, and magic-link verification tokens directly in a Neon database,
+  Auth.js (NextAuth.js v5) with the Lakebase Postgres adapter stores users,
+  sessions, and magic-link verification tokens directly in a Lakebase database,
   enabling passwordless email authentication in Next.js without a separate auth
-  service. Use this guide when you want self-hosted auth with full database
-  control, as an alternative to the managed Neon Auth option. The setup uses
-  @auth/pg-adapter, @neondatabase/serverless, and Resend as the email provider
+  service. Use this guide when you want self-managed auth with full database
+  control, as an alternative to the Managed Better Auth option. The setup uses
+  @auth/neon-adapter, @neondatabase/serverless, and Resend as the email provider
   for magic link delivery.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-28T11:11:18.780Z'
 ---
 
-<Admonition type="tip" title="Authentication on Neon">
-This guide uses the [Neon Adapter](https://authjs.dev/getting-started/adapters/neon) for Auth.js to store users and sessions in your database. If you prefer a managed option with no separate auth infrastructure, see [Neon Auth](/docs/auth/overview). Auth state branches with your database for preview and CI environments.
+<Admonition type="important" title="Start here: pick your auth setup">
+Want authentication tables in your Postgres database with no separate auth service to run? Use [Managed Better Auth](/docs/auth/overview). It stores users and sessions directly in your database under the `neon_auth` schema, and every database branch gets its own isolated auth environment for preview and CI.
+
+Choose this guide instead when you want to own and control the auth tables yourself: self-managed Auth.js with the [Neon adapter](https://authjs.dev/getting-started/adapters/neon) (`@auth/neon-adapter`), which stores users and sessions in tables you define and manage.
 </Admonition>
 
 [Auth.js](https://authjs.dev/) (formerly NextAuth.js) is a popular authentication solution that supports a wide range of authentication methods, including social logins (for example, Google, Facebook), traditional email/password, and passwordless options like magic links. For simple authentication flows, such as social logins, Auth.js can operate using only in-memory session storage (in a browser cookie). However, if you want to implement custom login flows, or persist the signed-in users' information in your database, you need to specify a database backend.
 
 For example, passwordless authentication methods like magic links require secure storage of temporary tokens. Magic link login has become increasingly popular since it eliminates the need for users to remember complex passwords, reducing the risk of credential-based attacks.
 
-In this guide, we'll walk through setting up a simple Next.js application, using Neon Postgres as the database backend for both Auth.js authentication and application data. We'll use [Resend](https://resend.com/) for sending magic link emails. We will cover how to:
+In this guide, we'll walk through setting up a simple Next.js application, using Lakebase Postgres as the database backend for both Auth.js authentication and application data. We'll use [Resend](https://resend.com/) for sending magic link emails. We will cover how to:
 
 - Set up a Next.js project with Auth.js for magic link authentication
-- Create a Neon Postgres database and configure it as the Auth.js database backend
+- Create a database on Neon and configure it as the Auth.js database backend
 - Configure Resend as an authentication provider
 - Implement a basic authenticated feature (a simple todo list)
 
@@ -51,7 +53,7 @@ Now, navigate to the project directory and install the required dependencies:
 ```bash
 cd guide-neon-next-authjs
 npm install next-auth@beta
-npm install @auth/pg-adapter @neondatabase/serverless
+npm install @auth/neon-adapter @neondatabase/serverless
 ```
 
 For authentication, we'll use the `Auth.js` library (aliased as v5 of the `next-auth` package), which provides a simple way to add authentication to Next.js applications. It comes with built-in support for Resend as an authentication provider. We use the `@neondatabase/serverless` package as the Postgres client for the `Auth.js` database adapter.
@@ -72,7 +74,7 @@ touch .env
 
 ### Retrieve your Neon database connection string
 
-You can find your database connection string by clicking the **Connect** button on your **Project Dashboard**. It should look similar to this:
+You can find your database connection string by clicking the **Connect** button in the Console nav. It should look similar to this:
 
 ```bash shouldWrap
 postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require
@@ -111,7 +113,7 @@ Create a new file `auth.ts` in the root directory of the project and add the fol
 
 import NextAuth from 'next-auth';
 import Resend from 'next-auth/providers/resend';
-import PostgresAdapter from '@auth/pg-adapter';
+import NeonAdapter from '@auth/neon-adapter';
 import { Pool } from '@neondatabase/serverless';
 
 // *DO NOT* create a `Pool` here, outside the request handler.
@@ -119,13 +121,13 @@ import { Pool } from '@neondatabase/serverless';
 export const { handlers, auth, signIn, signOut } = NextAuth(() => {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   return {
-    adapter: PostgresAdapter(pool),
+    adapter: NeonAdapter(pool),
     providers: [Resend({ from: 'Test <onboarding@resend.dev>' })],
   };
 });
 ```
 
-This file sets up Auth.js with the Neon Postgres adapter and configures the Email provider for magic link authentication.
+This file sets up Auth.js with the Lakebase Postgres adapter (`@auth/neon-adapter`) and configures the Email provider for magic link authentication.
 
 Additionally, `Auth.js` also requires setting up an `AUTH_SECRET` environment variable, which is used to encrypt cookies and magic tokens. You can use the `Auth.js` CLI to generate one:
 
@@ -217,7 +219,7 @@ CREATE TABLE IF NOT EXISTS todos (
 
 This schema defines all the tables required for the `Auth.js` library to work, and also the `todos` table that we'll use to store the todo list for each user.
 
-To apply this schema to your Neon database, you can use the [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor) in the web console or a database management tool like [psql](/docs/connect/query-with-psql-editor).
+To apply this schema to your database, you can use the [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor) in the web console or a database management tool like [psql](/docs/connect/query-with-psql-editor).
 
 ### Implement the Todo list feature
 
@@ -428,11 +430,11 @@ Note that if you are using the test email address (`onboarding@resend.dev`) to s
 
 ## Conclusion
 
-In this guide, we demonstrated how to set up a Next.js application with Auth.js for magic link authentication, using Neon Postgres as the database backend for both authentication and application data. We implemented a simple todo list feature to showcase how authenticated users can interact with the application.
+In this guide, we demonstrated how to set up a Next.js application with Auth.js for magic link authentication, using Lakebase Postgres as the database backend for both authentication and application data. We implemented a simple todo list feature to showcase how authenticated users can interact with the application.
 
 Next, we can add more routes and features to the application. The `auth` method can be used in the Next.js API routes or middleware to protect endpoints that require authentication.
 
-To view and manage the users who authenticated with your application, you can query the `users` table of your Neon project. Similarly, all the generated magic link tokens are logged in the `verification_token` table, making it easy to audit and revoke access to your application.
+To view and manage the users who authenticated with your application, you can query the `users` table of your database. Similarly, all the generated magic link tokens are logged in the `verification_token` table, making it easy to audit and revoke access to your application.
 
 ## Source code
 
@@ -446,7 +448,7 @@ You can find the source code for the application described in this guide on GitH
 
 For more information about the tools and libraries used in this guide, refer to the following documentation:
 
-- [Neon Documentation](/docs/introduction)
+- [Neon Documentation](/docs)
 - [Auth.js Documentation](https://authjs.dev/)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Resend Documentation](https://resend.com/docs)

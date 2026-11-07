@@ -6,34 +6,67 @@ This directory contains samples demonstrating the capabilities of Microsoft Agen
 
 | Folder | Description |
 |--------|-------------|
-| [`01-get-started/`](./01-get-started/) | Progressive tutorial: hello agent → hosting |
-| [`02-agents/`](./02-agents/) | Deep-dive by concept: tools, middleware, providers, orchestrations |
+| [`01-get-started/`](./01-get-started/) | Progressive tutorial: hello agent → workflows → harness → hosting |
+| [`02-agents/`](./02-agents/) | Deep-dive by concept: tools, middleware, providers, orchestrations, security |
 | [`03-workflows/`](./03-workflows/) | Workflow patterns: sequential, concurrent, state, declarative, explicit output designation |
-| [`04-hosting/`](./04-hosting/) | Deployment: Azure Functions, Durable Tasks, A2A |
-| [`05-end-to-end/`](./05-end-to-end/) | Full applications, evaluation, demos |
+| [`04-hosting/`](./04-hosting/) | Deployment: A2A, self-hosted protocol helpers, and Foundry hosted agents |
+| [`05-end-to-end/`](./05-end-to-end/) | Full applications, evaluation, demos, including the [AG-UI single-agent demo](./05-end-to-end/ag_ui_single_agent/) using `FoundryChatClient` |
+
+For published integrations maintained outside the Agent Framework team, see
+[Community projects](./community-projects.md).
 
 ## Getting Started
 
 Start with `01-get-started/` and work through the numbered files:
 
-1. **[01_hello_agent.py](./01-get-started/01_hello_agent.py)** — Create and run your first agent
-2. **[02_add_tools.py](./01-get-started/02_add_tools.py)** — Add function tools with `@tool`
-3. **[03_multi_turn.py](./01-get-started/03_multi_turn.py)** — Multi-turn conversations with `AgentSession`
-4. **[04_memory.py](./01-get-started/04_memory.py)** — Agent memory with `ContextProvider`
-5. **[05_functional_workflow_with_agents.py](./01-get-started/05_functional_workflow_with_agents.py)** — Call agents inside a functional workflow
-6. **[06_functional_workflow_basics.py](./01-get-started/06_functional_workflow_basics.py)** — Write a workflow as a plain async function
-7. **[07_first_graph_workflow.py](./01-get-started/07_first_graph_workflow.py)** — Build a workflow with executors and edges
-8. **[08_host_your_agent.py](./01-get-started/08_host_your_agent.py)** — Host your agent via Azure Functions
+| Step | Sample | What it demonstrates |
+| --- | --- | --- |
+| 1 | [01_hello_agent.py](./01-get-started/01_hello_agent.py) | Create and run your first agent |
+| 2 | [02_add_tools.py](./01-get-started/02_add_tools.py) | Add function tools with `@tool` |
+| 3 | [03_multi_turn.py](./01-get-started/03_multi_turn.py) | Multi-turn conversations with `AgentSession` |
+| 4 | [04_memory.py](./01-get-started/04_memory.py) | Agent memory with `ContextProvider` |
+| 5a | [05a_functional_workflow_basics.py](./01-get-started/05a_functional_workflow_basics.py) | Write a workflow as a plain async function |
+| 5b | [05b_functional_workflow_with_agents.py](./01-get-started/05b_functional_workflow_with_agents.py) | Call agents inside a functional workflow |
+| 5c | [05c_first_graph_workflow.py](./01-get-started/05c_first_graph_workflow.py) | Build a workflow with function executors and edges |
+| 6 | [06_agent_harness.py](./01-get-started/06_agent_harness.py) | Add planning, todo tracking, and compaction |
+| 7 | [07_hosting.py](./01-get-started/07_hosting.py) | Serve an agent with `ResponsesHostServer` |
+
+Durable Task and Azure Functions samples have moved to the [Durable Agent Framework extension](https://github.com/microsoft/agent-framework-durable-extension/tree/main/python/samples).
+
+## Production Security & Prompt Injection Defense
+
+While getting-started tutorials demonstrate core mechanics with minimal boilerplate, real-world agents processing external or untrusted data (emails, web content, user-uploaded files, external APIs) require security controls against indirect prompt injection and data exfiltration.
+
+For the official security guidance, see [Agent Safety](https://learn.microsoft.com/en-us/agent-framework/concepts/agents/safety) on Microsoft Learn. The production security patterns in [`02-agents/security/`](./02-agents/security/) implement these practices end to end:
+
+1. **Prompt Injection Defense**: [`email_security_example.py`](./02-agents/security/email_security_example.py) shows `SecureAgentConfig`, quarantined processing with `quarantined_llm`, and approval gating for privileged tools.
+2. **Data Confidentiality & Exfiltration Prevention**: [`repo_confidentiality_example.py`](./02-agents/security/repo_confidentiality_example.py) demonstrates information flow tracking and preventing sensitive data exfiltration to public destinations.
+3. **MCP Tool Protection**: [`github_mcp_example.py`](./02-agents/security/github_mcp_example.py) demonstrates `SecureMCPToolProxy` wrapping remote MCP endpoints with local policy enforcement.
+4. **Principal-Bound Identity**: [`user_identity_security_example.py`](./02-agents/security/user_identity_security_example.py) shows principal binding and tenant isolation.
+5. **Architecture Reference**: Consult the [FIDES Developer Guide](./02-agents/security/FIDES_DEVELOPER_GUIDE.md) for full details on security middleware, labels, and auto-hiding behavior.
 
 ## Prerequisites
 
 ```bash
-pip install agent-framework
+pip install agent-framework-foundry
 ```
+
+Install only the specific Agent Framework distributions required by the sample you want to run.
+Individual sample READMEs and PEP 723 metadata list any additional packages.
+
+An explicit provider option type, such as
+`Agent[FoundryChatOptions](client=client, default_options={"store": False})`,
+keeps provider-specific options type checked without relying on type-checker inference.
+See [typed options](./02-agents/typed_options.py) for OpenAI and Anthropic examples.
 
 ### Environment Variables
 
-Samples call `load_dotenv()` to automatically load environment variables from a `.env` file in the `python/` directory. This is a convenience for local development and testing.
+Environment setup varies by sample. The [getting-started samples](./01-get-started/README.md#prerequisites) pass
+example `project_endpoint` and `model` values directly to `FoundryChatClient`; replace those values before
+running them. Setting environment variables alone does not override these explicit constructor arguments.
+
+For samples that call `load_dotenv()`, a `.env` file in the `python/` directory is a convenient way to load
+environment variables for local development and testing.
 
 **For local development**, set up your environment using any of these methods:
 
@@ -73,7 +106,9 @@ precedence is:
 If you keep both OpenAI and Azure variables in your shell, the generic clients stay on OpenAI until
 you pass an explicit Azure input.
 
-For the getting-started samples, you'll need at minimum:
+To use these environment variables in the getting-started samples, first remove the explicit `project_endpoint`
+and `model` arguments from the client constructor. For the `.env` setup in Option 1, also call `load_dotenv()`
+before creating the client:
 ```bash
 FOUNDRY_PROJECT_ENDPOINT="your-foundry-project-endpoint"
 FOUNDRY_MODEL="gpt-4o"
@@ -96,6 +131,7 @@ variable.
 | `agent-framework-anthropic` | `AnthropicClient` | `ANTHROPIC_CHAT_MODEL` | `claude-sonnet-4-5-20250929` |
 | `agent-framework-foundry` | `FoundryEmbeddingClient` | `FOUNDRY_MODELS_ENDPOINT` | `https://my-endpoint.inference.ai.azure.com` |
 | `agent-framework-foundry` | `FoundryEmbeddingClient` | `FOUNDRY_MODELS_API_KEY` | `env-key` |
+| `agent-framework-foundry` | `FoundryEmbeddingClient` | `FOUNDRY_PROJECT_ENDPOINT` | `https://my-project.services.ai.azure.com/api/projects/my-project` |
 | `agent-framework-foundry` | `FoundryEmbeddingClient` | `FOUNDRY_EMBEDDING_MODEL` | `text-embedding-3-small` |
 | `agent-framework-foundry` | `FoundryEmbeddingClient` | `FOUNDRY_IMAGE_EMBEDDING_MODEL` | `Cohere-embed-v3-english` |
 | `agent-framework-azure-ai-search` | `AzureAISearchContextProvider` | `AZURE_SEARCH_ENDPOINT` | `https://my-search.search.windows.net` |
@@ -120,6 +156,8 @@ variable.
 | `agent-framework-core` | `observability` | `ENABLE_INSTRUMENTATION` | `true` |
 | `agent-framework-core` | `observability` | `ENABLE_SENSITIVE_DATA` | `false` |
 | `agent-framework-core` | `observability` | `ENABLE_CONSOLE_EXPORTERS` | `true` |
+| `agent-framework-core` | `agent_framework._telemetry` | `AGENT_FRAMEWORK_FEATURE_MASK_DISABLED` | `true` |
+| `agent-framework-core` | `agent_framework._telemetry` | `AGENT_FRAMEWORK_USER_AGENT_DISABLED` | `true` |
 | `agent-framework-core` | `observability` | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4317` |
 | `agent-framework-core` | `observability` | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | `http://localhost:4318/v1/traces` |
 | `agent-framework-core` | `observability` | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` | `http://localhost:4318/v1/metrics` |
@@ -137,11 +175,22 @@ variable.
 | `agent-framework-foundry` | `FoundryChatClient` | `FOUNDRY_MODEL` | `gpt-4o` |
 | `agent-framework-foundry` | `FoundryAgent` | `FOUNDRY_AGENT_NAME` | `travel-planner` |
 | `agent-framework-foundry` | `FoundryAgent` | `FOUNDRY_AGENT_VERSION` | `v1` |
+| `agent-framework-gemini` | `GeminiChatClient / GeminiEmbeddingClient` | `GOOGLE_API_KEY` | `your-api-key` |
+| `agent-framework-gemini` | `GeminiChatClient` | `GOOGLE_MODEL` | `gemini-2.5-flash-lite` |
+| `agent-framework-gemini` | `GeminiEmbeddingClient` | `GOOGLE_EMBEDDING_MODEL` | `gemini-embedding-2` |
+| `agent-framework-gemini` | `GeminiChatClient / GeminiEmbeddingClient` | `GOOGLE_GENAI_USE_ENTERPRISE` | `true` |
+| `agent-framework-gemini` | `GeminiChatClient / GeminiEmbeddingClient` | `GOOGLE_GENAI_USE_VERTEXAI` | `true` |
+| `agent-framework-gemini` | `GeminiChatClient / GeminiEmbeddingClient` | `GOOGLE_CLOUD_PROJECT` | `your-project-id` |
+| `agent-framework-gemini` | `GeminiChatClient / GeminiEmbeddingClient` | `GOOGLE_CLOUD_LOCATION` | `global` |
 | `agent-framework-github-copilot` | `GitHubCopilotAgent` | `GITHUB_COPILOT_CLI_PATH` | `copilot` |
 | `agent-framework-github-copilot` | `GitHubCopilotAgent` | `GITHUB_COPILOT_MODEL` | `gpt-5` |
 | `agent-framework-github-copilot` | `GitHubCopilotAgent` | `GITHUB_COPILOT_TIMEOUT` | `60` |
 | `agent-framework-github-copilot` | `GitHubCopilotAgent` | `GITHUB_COPILOT_LOG_LEVEL` | `info` |
 | `agent-framework-mem0` | `agent_framework_mem0 package import` | `MEM0_TELEMETRY` | `false` |
+| `agent-framework-mistral` | `MistralChatClient / MistralEmbeddingClient` | `MISTRAL_API_KEY` | `your-api-key` |
+| `agent-framework-mistral` | `MistralChatClient` | `MISTRAL_CHAT_MODEL` | `mistral-small-latest` |
+| `agent-framework-mistral` | `MistralEmbeddingClient` | `MISTRAL_EMBEDDING_MODEL` | `mistral-embed` |
+| `agent-framework-mistral` | `MistralChatClient / MistralEmbeddingClient` | `MISTRAL_SERVER_URL` | `https://api.mistral.ai` |
 | `agent-framework-ollama` | `OllamaChatClient` | `OLLAMA_HOST` | `http://localhost:11434` |
 | `agent-framework-ollama` | `OllamaChatClient` | `OLLAMA_MODEL` | `llama3.1:8b` |
 | `agent-framework-openai` | `OpenAIChatClient / OpenAIChatCompletionClient / OpenAIEmbeddingClient` | `OPENAI_API_KEY` | `sk-proj-...` |

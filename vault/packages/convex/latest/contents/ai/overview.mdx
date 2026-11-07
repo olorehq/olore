@@ -7,7 +7,13 @@ sidebar_position: 0
 pagination_next: ai/using-cursor
 ---
 
-import { QuickHarnessesList } from "@site/src/QuickstartsList.tsx";
+import {
+  AgentPluginsList,
+  RulesHarnessesList,
+  ClaudeCodeInlineMention,
+  CodexInlineMention,
+  CursorInlineMention,
+} from "@site/src/QuickstartsList.tsx";
 
 Convex is designed around a small set of composable abstractions with strong
 guarantees that result in code that is not only faster to write, but easier to
@@ -18,7 +24,7 @@ sure you get bug-free AI generated code:
    functions with end-to-end type safety and IDE support. This means AI can
    generate database code using the large training set of TypeScript code
    without switching to SQL.
-1. **Less Code for the Same Work** Since so much infrastructure and boiler plate
+1. **Less Code for the Same Work** Since so much infrastructure and boilerplate
    is automatically managed by Convex there is less code to write, and thus less
    code to get wrong.
 1. **Automatic Reactivity** The reactive system automatically tracks data
@@ -34,6 +40,21 @@ guarantees prevent common failure modes. For up-to-date information on which
 models work best with Convex, check out our LLM
 [leaderboard](https://convex.dev/llm-leaderboard).
 
+## Agent plugins \{#plugins}
+
+Convex publishes official plugins for coding agents that include:
+
+- **Tools** that let your agent securely interact with your dev deployment (e.g.
+  read the data/logs/insights or run functions).
+- **Hooks and monitors** that help your agent automatically identify issues in
+  your code.
+- **Skills and specialized agents** that teach your agent how to use Convex the
+  most effectively.
+
+See these documents for install instructions:
+
+<AgentPluginsList />
+
 ## Convex AI rules
 
 AI code generation is most effective when you provide it with a set of rules to
@@ -41,7 +62,12 @@ follow.
 
 See these documents for install instructions:
 
-<QuickHarnessesList />
+<RulesHarnessesList />
+
+When using <ClaudeCodeInlineMention />, <CodexInlineMention />, or
+
+<CursorInlineMention />, we recommend installing the [Convex
+plugin](/ai/overview.mdx#plugins), which automatically include these rules.
 
 For all other IDEs, add the following rules file to your project and refer to it
 when prompting for changes:
@@ -50,7 +76,7 @@ when prompting for changes:
 
 We're constantly working on improving the quality of these rules for Convex by
 using rigorous evals. You can help by
-[contributing to our evals repo](https://github.com/get-convex/convex-evals).
+[contributing to our evals repo](https://github.com/convex/convex-evals).
 
 ## Convex AI files
 
@@ -92,9 +118,9 @@ for a full list.
 
 Remote cloud-based coding agents like Jules, Devin, Codex, and Cursor background
 agents can use Convex deployments when the CLI is in
-[Agent Mode](/cli/background-agents.mdx). This limits the permissions necessary
-for these remote dev environments while letting agents run codegen, iterate on
-code, run tests, run one-off functions.
+[Agent Mode](/cli/agent-mode). This limits the permissions necessary for these
+remote dev environments while letting agents run codegen, iterate on code, run
+tests, run one-off functions.
 
 A good setup script for e.g. ChatGPT Codex might include
 

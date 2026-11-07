@@ -133,16 +133,19 @@ This guide shows how to migrate an application using Auth.js (formerly NextAuth.
 
   ```tsx {{ filename: 'app/page.tsx' }}
   import { Show } from '@clerk/nextjs'
+  import { Suspense } from 'react'
 
   export default function Home() {
     return (
       <div>
-        <Show when="signed-out">
-          <p>This content is public. Only signed out users can see this.</p>
-        </Show>
-        <Show when="signed-in">
-          <p>This content is private. Only signed in users can see this.</p>
-        </Show>
+        <Suspense>
+          <Show when="signed-out">
+            <p>This content is public. Only signed out users can see this.</p>
+          </Show>
+          <Show when="signed-in">
+            <p>This content is private. Only signed in users can see this.</p>
+          </Show>
+        </Suspense>
       </div>
     )
   }
@@ -160,8 +163,17 @@ This guide shows how to migrate an application using Auth.js (formerly NextAuth.
 
       ```tsx {{ filename: 'app/page.tsx' }}
       import { auth, currentUser } from '@clerk/nextjs/server'
+      import { Suspense } from 'react'
 
-      export default async function Page() {
+      export default function Page() {
+        return (
+          <Suspense>
+            <Home />
+          </Suspense>
+        )
+      }
+
+      async function Home() {
         const { userId } = await auth()
         console.log(userId)
 
@@ -206,12 +218,12 @@ This guide shows how to migrate an application using Auth.js (formerly NextAuth.
 
   When you migrate to Clerk, you will likely need to resolve the foreign key that you used in your database. If you used the `userId` from NextAuth.js, you could resolve this issue with one of the following two options:
 
-  - [Use Clerk's `externalId` field](#use-clerks-external-id-field)
+  - [Use Clerk's `externalId` field](#use-clerks-externalid-field)
   - [Update your Auth.js database](#update-your-database)
 
   ### Use Clerk's `externalId` field
 
-  When you migrate user data from Auth.js to Clerk, Clerk generates new user IDs for each user. If you are using existing user IDs as foreign keys in your database (e.g. in a `user_id` column), you can save those IDs as the user's `externalId` in Clerk. This `externalId` can be included in the session token by adding the following [customization](/docs/guides/sessions/customize-session-tokens). The following example will set the user's ID to be `externalId` if one is present, otherwise, it will use the Clerk's user ID.
+  When you migrate user data from Auth.js to Clerk, Clerk generates new user IDs for each user. If you are using existing user IDs as foreign keys in your database (e.g., in a `user_id` column), you can save those IDs as the user's `externalId` in Clerk. This `externalId` can be included in the [session token](!session-token) by adding the following [customization](/docs/guides/sessions/customize-session-tokens). The following example will set the user's ID to be `externalId` if one is present, otherwise, it will use the Clerk's user ID.
 
   ```json
   {
@@ -225,8 +237,17 @@ This guide shows how to migrate an application using Auth.js (formerly NextAuth.
 
       ```tsx {{ filename: 'app/page.tsx' }}
       import { auth } from '@clerk/nextjs/server'
+      import { Suspense } from 'react'
 
-      export default async function Page() {
+      export default function Page() {
+        return (
+          <Suspense>
+            <Welcome />
+          </Suspense>
+        )
+      }
+
+      async function Welcome() {
         const { sessionClaims } = await auth()
 
         if (!sessionClaims) {
@@ -323,5 +344,5 @@ This guide shows how to migrate an application using Auth.js (formerly NextAuth.
 
   ## Finding further support for migrating from Auth.js to Clerk
 
-  This guide covers the most common steps that you would take for the migration. If you have more complex integrations with Auth.js that are not covered here, don't hesitate to [contact support](https://clerk.com/contact/support) or ask other developers in the [Discord community](https://clerk.com/discord).
+  This guide covers the most common steps that you would take for the migration. If you have more complex integrations with Auth.js that are not covered here, don't hesitate to [contact support](/contact/support) or ask other developers in the [Discord community](https://clerk.com/discord).
 </Steps>

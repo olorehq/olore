@@ -1,21 +1,28 @@
 ---
 title: 'Agentic Check Construct'
-description: 'Learn how to configure Agentic Checks with the Checkly CLI.'
+description: 'Review legacy Agentic Check constructs and migrate active checks before December 1, 2026.'
 sidebarTitle: 'Agentic Check'
+canonical: 'https://www.checklyhq.com/docs/constructs/agentic-check/'
+hidden: true
 ---
+
+<Note>
+Agentic Checks are deprecated and will stop running on **December 1, 2026**. [Migrate your active Agentic Checks](../detect/synthetic-monitoring/agentic-checks/migrate) before then.
+
+This page documents the `AgenticCheck` construct in Checkly CLI version 9. Checkly CLI version 10 and later no longer include it. To keep managing existing Agentic Checks as code until December 1, 2026, stay on the version 9 release line.
+</Note>
 
 <Tip>
 Learn more about Agentic Checks in [the Agentic Checks overview](/detect/synthetic-monitoring/agentic-checks/overview).
 </Tip>
 
-Use Agentic Checks to monitor user journeys from a natural-language prompt. The agent discovers the target, creates a reusable check script, and can self-heal when the saved script starts failing.
+An existing Agentic Check monitors a user journey from a natural-language prompt. The agent discovers the target, creates a reusable check script, and can self-heal when the saved script starts failing.
 
 <Accordion title="Prerequisites">
-Before creating Agentic Checks, ensure you have:
+To review an existing Agentic Check construct, you need:
 
 - An initialized Checkly CLI project
 - Access to Agentic Checks on your Checkly account
-- Available Agentic Check active capacity if the check is active
 - Any required test credentials saved as Checkly variables or secrets
 
 For additional setup information, see [CLI overview](/cli/overview).
@@ -23,6 +30,7 @@ For additional setup information, see [CLI overview](/cli/overview).
 
 <CodeGroup>
 
+{/* typecheck-skip */}
 ```typescript Basic Example
 import { AgenticCheck, Frequency } from 'checkly/constructs'
 
@@ -34,6 +42,7 @@ new AgenticCheck('homepage-health', {
 })
 ```
 
+{/* typecheck-skip */}
 ```typescript Skills
 import { AgenticCheck, Frequency } from 'checkly/constructs'
 
@@ -84,7 +93,7 @@ The Agentic Check configuration consists of Agentic-specific options and a subse
 </Tabs>
 
 <Info>
-The Agentic Check construct intentionally does not expose `privateLocations`, `runParallel`, `retryStrategy`, `shouldFail`, `doubleCheck`, or `triggerIncident`. These options are not currently honored for Agentic Checks.
+The Agentic Check construct intentionally does not expose `privateLocations`, `runParallel`, `retryStrategy`, `doubleCheck`, or `triggerIncident`. These options are not currently honored for Agentic Checks.
 </Info>
 
 ### `prompt`
@@ -160,6 +169,7 @@ Keep prompts focused on one flow. If you want to monitor navigation, login, and 
 
 How often the Agentic Check should run. Use one of the supported `Frequency` constants or the equivalent number of minutes.
 
+{/* typecheck-skip */}
 ```typescript
 import { AgenticCheck, Frequency } from 'checkly/constructs'
 
@@ -208,9 +218,9 @@ new AgenticCheck('web-quality-check', {
 Do not paste secret values into the prompt. Store secrets in Checkly and reference them by name, for example `{{TEST_USER_PASSWORD}}`.
 </Warning>
 
-## Billing behavior
+## Active and deactivated checks
 
-Agentic Checks use active-capacity billing. Active checks consume capacity; inactive checks do not. Use `activated: false` to keep an Agentic Check as a deployed draft without consuming active capacity.
+Deactivating an Agentic Check preserves its configuration and history. Existing checks stop running on December 1, 2026; [migrate active checks](../detect/synthetic-monitoring/agentic-checks/migrate) before then.
 
 ```typescript
 new AgenticCheck('draft-agentic-check', {
@@ -219,5 +229,3 @@ new AgenticCheck('draft-agentic-check', {
   activated: false,
 })
 ```
-
-If an active Agentic Check would exceed your available capacity, deployment fails with a billing entitlement error. Deactivate an existing Agentic Check or purchase additional Agentic Check capacity before deploying.

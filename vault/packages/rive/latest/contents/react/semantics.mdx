@@ -1,0 +1,100 @@
+---
+title: "Semantics"
+description: "Make your Rive graphics accessible to screen readers by enabling semantics with useRive."
+---
+
+import OverviewIntro from "/snippets/runtimes/semantics/overview-intro.mdx"
+import DefinedInEditor from "/snippets/runtimes/semantics/defined-in-editor.mdx"
+
+<OverviewIntro />
+
+The React runtimes are thin wrappers around their JavaScript counterparts, so semantics behave identically here. This page covers only how to pass the opt-in parameters through `useRive`.
+
+See [Web (JS) Semantics](/runtimes/web/semantics) for how editor roles map to ARIA roles and DOM elements, which keyboard interactions fire which semantic actions, overlay positioning, and how to test with a screen reader. That page is the reference for everything on this one.
+
+<DefinedInEditor />
+
+## Usage
+
+Pass `semanticsMode` to `useRive` like any other [Rive parameter](/runtimes/react/parameters-and-return-values). `SemanticMode` is re-exported from your React package, so you can import both from the same place.
+
+```jsx highlight={1,9}
+import { useRive, SemanticMode } from "@rive-app/react-canvas";
+
+export default function Login() {
+  const { RiveComponent } = useRive({
+    src: "/login.riv",
+    stateMachine: "State Machine 1",
+    autoplay: true,
+    autoBind: true,
+    semanticsMode: SemanticMode.Enabled,
+  });
+
+  return <RiveComponent />;
+}
+```
+
+### Labeling the graphic
+
+Use `semanticsOptions.riveCanvasLabel` to set an `aria-label` on the semantic overlay container describing what the graphic is, so screen reader users know what they are entering.
+
+```jsx highlight={8-10}
+export default function Login() {
+  const { RiveComponent } = useRive({
+    src: "/login.riv",
+    stateMachine: "State Machine 1",
+    autoplay: true,
+    autoBind: true,
+    semanticsMode: SemanticMode.Enabled,
+    semanticsOptions: {
+      riveCanvasLabel: "Login Experience",
+    },
+  });
+
+  return <RiveComponent />;
+}
+```
+
+### Enabling semantics after load
+
+To control when semantics turn on, omit `semanticsMode` and call `enableSemantics()` on the `rive` instance returned by `useRive`.
+
+```jsx highlight={14}
+import { useEffect } from "react";
+import { useRive } from "@rive-app/react-canvas";
+
+export default function Login({ accessibilityEnabled }) {
+  const { RiveComponent, rive } = useRive({
+    src: "/login.riv",
+    stateMachine: "State Machine 1",
+    autoplay: true,
+    autoBind: true,
+  });
+
+  useEffect(() => {
+    if (rive && accessibilityEnabled) {
+      rive.enableSemantics();
+    }
+  }, [rive, accessibilityEnabled]);
+
+  return <RiveComponent />;
+}
+```
+
+## Overlay positioning
+
+`RiveComponent` renders the `<canvas>` inside a container `<div>`. As described in [overlay positioning](/runtimes/web/semantics#semantic-overlay-positioning), the overlay aligns best when the canvas has a positioned ancestor. That `<div>` container is not positioned by default.
+
+If your layout has no positioned ancestor above the component, pass a `className` that sets `position: relative`.
+
+```jsx
+<RiveComponent className="rive-container" />
+```
+
+```css
+.rive-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+```

@@ -1,0 +1,143 @@
+---
+title: make_set_if
+description: 'This page explains how to use the make_set_if aggregation function in APL.'
+---
+
+The `make_set_if` aggregation function in APL allows you to create a set of distinct values from a column based on a condition. You can use this function to aggregate values that meet specific criteria, helping you filter and reduce data to unique entries while applying a conditional filter. This is especially useful when analyzing large datasets to extract relevant, distinct information without duplicates.
+
+You can use `make_set_if` in scenarios where you need to aggregate conditional data points, such as log analysis, tracing information, or security logs, to summarize distinct occurrences based on particular conditions.
+
+## Usage
+
+### Syntax
+
+```kusto
+make_set_if(column, predicate, [max_size])
+```
+
+### Parameters
+
+- `column`: The column from which distinct values will be aggregated.
+- `predicate`: A condition that filters the values to be aggregated.
+- `[max_size]`: (Optional) Specifies the maximum number of elements in the resulting set. If omitted, the default is 1048576.
+
+### Returns
+
+The `make_set_if` function returns a dynamic array of distinct values from the specified column that satisfy the given condition.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this use case, you’re analyzing HTTP logs and want to get the distinct cities from which requests originated, but only for requests that took longer than 500 ms.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize make_set_if(['geo.city'], req_duration_ms > 500) by ['method']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20make_set_if%28%5B%27geo.city%27%5D%2C%20req_duration_ms%20%3E%20500%29%20by%20%5B%27method%27%5D%22%7D)
+
+**Output**
+
+| method   | make_set_if_geo.city |
+|----------|----------------------|
+| GET      | [‘New York’, ‘San Francisco’] |
+| POST     | [‘Berlin’, ‘Tokyo’]           |
+
+This query returns the distinct cities from which requests took more than 500 ms, grouped by HTTP request method.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Here, you’re analyzing OpenTelemetry traces and want to identify the distinct services that processed spans with a duration greater than 1 second, grouped by trace ID.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize make_set_if(['service.name'], duration > 1s) by ['trace_id']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20summarize%20make_set_if%28%5B%27service.name%27%5D%2C%20duration%20%3E%201s%29%20by%20%5B%27trace_id%27%5D%22%7D)
+
+**Output**
+
+| trace_id       | make_set_if_service.name |
+|----------------|--------------------------|
+| abc123         | [‘frontend’, ‘cartservice’] |
+| def456         | [‘checkoutservice’, ‘loadgenerator’] |
+
+This query extracts distinct services that have processed spans longer than 1 second for each trace.
+
+</Tab>
+<Tab title="Security logs">
+
+In security log analysis, you may want to find out which HTTP status codes were encountered for each city, but only for POST requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize make_set_if(status, method == 'POST') by ['geo.city']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20make_set_if%28status%2C%20method%20%3D%3D%20%27POST%27%29%20by%20%5B%27geo.city%27%5D%22%7D)
+
+**Output**
+
+| geo.city    | make_set_if_status |
+|-------------|--------------------|
+| Berlin      | [‘200’, ‘404’]     |
+| Tokyo       | [‘500’, ‘403’]     |
+
+This query identifies the distinct HTTP status codes for POST requests grouped by the originating city.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**make_list_if**](/apl/aggregation-function/make-list-if): Similar to `make_set_if`, but returns a list that can include duplicates instead of a distinct set.
+- [**make_set**](/apl/aggregation-function/make-set): Aggregates distinct values without a conditional filter.
+- [**countif**](/apl/aggregation-function/countif): Counts rows that satisfy a specific condition, useful for when you need to count rather than aggregate distinct values.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you may use `values` with a `where` condition to achieve similar functionality to `make_set_if`. However, in APL, the `make_set_if` function is explicitly designed to create a distinct set of values based on a conditional filter within the aggregation step itself.
+
+<CodeGroup>
+```sql Splunk example
+| stats values(field) by another_field where condition
+```
+
+```kusto APL equivalent
+summarize make_set_if(field, condition) by another_field
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would typically use `GROUP BY` in combination with conditional aggregation, such as using `CASE WHEN` inside aggregate functions. In APL, the `make_set_if` function directly aggregates distinct values conditionally without requiring a `CASE WHEN`.
+
+<CodeGroup>
+```sql SQL example
+SELECT DISTINCT CASE WHEN condition THEN field END
+FROM table
+GROUP BY another_field
+```
+
+```kusto APL equivalent
+summarize make_set_if(field, condition) by another_field
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

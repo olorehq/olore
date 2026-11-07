@@ -1,11 +1,13 @@
 ---
-title: Restrictions
+title: Restricting access
 description: Learn how to manage user access to your application by configuring Clerk's access restrictions.
 search:
    rank: 1
    keywords:
      - allowlist
      - blocklist
+     - access mode
+     - invite-only
      - restricted
      - restricted mode
      - waitlist
@@ -14,31 +16,39 @@ search:
 Clerk provides restriction options that give you enhanced control over who can access your application. These options enable you to limit sign-ups, sign-ins, or prevent accounts with specific identifiers, such as email addresses, phone numbers, and even entire domains, from accessing your application.
 
 <If is="llm">
-  **For AI agents:** Configure these restrictions (restricted mode, allowlist, blocklist, disposable/subaddress blocking) on the instance with `npx clerk@latest config patch` instead of the Dashboard — run `npx clerk@latest config schema` first to find the keys (e.g. `auth_access_control` for allowlist/blocklist, `sign_up_mode`, `block_email_subaddresses`, `block_disposable_email_domains`). Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+  **For AI agents:** Configure these restrictions (access mode, allowlist, blocklist, disposable/subaddress blocking) on the instance with `npx clerk@latest config patch --json '<payload>'` (or `--file <path>`) instead of the Dashboard — run `npx clerk@latest config schema` first to find the keys (e.g., `auth_access_control` for allowlist/blocklist, `sign_up_mode`, `block_email_subaddresses`, `block_disposable_email_domains`). `sign_up_mode` keeps the values `public`, `restricted`, and `waitlist`, which the Dashboard labels **Open**, **Invite-only**, and **Waitlist**. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
 </If>
 
-## Sign-up modes
+## Access mode
 
-Clerk supports multiple sign-up modes, giving you flexibility in managing user access to your application:
+**Access mode** controls how users gain access to your application. Clerk supports three modes, and an application is in exactly one of them at a time:
 
-- **[Public](#public)**
-- **[Restricted](#restricted)**
+- **[Open](#open)**
+- **[Invite-only](#invite-only)**
 - **[Waitlist](#waitlist)**
 
-### Public
+Select the mode on the [**Access mode**](https://dashboard.clerk.com/~/user-authentication/access-mode) page in the Clerk Dashboard. The Dashboard labels correspond to the following API values, which are unchanged:
 
-In **Public** mode, the sign-up process is open to anyone. This mode is the **default** and is ideal for applications that want broad user access.
+| Dashboard label | API value |
+| - | - |
+| **Open** | `public` |
+| **Invite-only** | `restricted` |
+| **Waitlist** | `waitlist` |
 
-### Restricted
+### Open
 
-In **Restricted** mode, user access is controlled by the application admin(s). Users can be added to the application through [invitations](/docs/guides/users/inviting), [enterprise connections](/docs/guides/configure/auth-strategies/enterprise-connections/overview) or [manual user creation](/docs/guides/users/managing). This mode is ideal for applications that are in private beta or internal tools.
+In **Open** mode, the sign-up process is open to anyone. This mode is the **default** and is ideal for applications that want broad user access.
+
+### Invite-only
+
+In **Invite-only** mode, user access is controlled by the application admin(s). Users can be added to the application through [invitations](/docs/guides/users/inviting), [enterprise connections](/docs/guides/configure/auth-strategies/enterprise-connections/overview) or [manual user creation](/docs/guides/users/managing). This mode is ideal for applications that are in private beta or internal tools.
 
 To enable this mode:
 
-1. In the Clerk Dashboard, navigate to the [**Restrictions**](https://dashboard.clerk.com/~/protect/restrictions) page.
-1. Toggle on **Enable restricted mode** and select **Save**.
+1. In the Clerk Dashboard, navigate to the [**Access mode**](https://dashboard.clerk.com/~/user-authentication/access-mode) page.
+1. Select **Invite-only** and select **Save**.
 
-Additional features available in **Restricted** mode:
+Additional features available in **Invite-only** mode:
 
 - The [`<SignIn />`](/docs/reference/components/authentication/sign-in) component will keep the prompt to sign up hidden by default. This is to avoid confusion for users who don't have access.
 
@@ -47,9 +57,6 @@ Additional features available in **Restricted** mode:
 ### Waitlist
 
 ![\<Waitlist /> component](/docs/images/ui-components/waitlist.svg)
-
-> [!NOTE]
-> If you're using Next.js, the [`<Waitlist />`](/docs/reference/components/authentication/waitlist) component is available in `@clerk/nextjs@6.2.0` and above.
 
 <Include src="_partials/waitlist/waitlist-explanation" />
 
@@ -92,12 +99,15 @@ After creating an account, users cannot change their identifier to bypass the al
 > [!NOTE]
 > Allowlist identifiers are case-insensitive. For example, allowing `JOHN.DOE@clerk.dev` has the same effect as allowing `john.doe@clerk.dev`, since identifiers are normalized to lowercase.
 
+> [!IMPORTANT]
+> The allowlist applies to applications in [**Open**](#open) access mode, and can only be enabled while your application is in that mode. In [**Invite-only**](#invite-only) and [**Waitlist**](#waitlist) modes, sign-ups are already restricted, so the allowlist doesn't apply.
+
 To enable this feature:
 
-1. In the Clerk Dashboard, navigate to the [**Restrictions**](https://dashboard.clerk.com/~/protect/restrictions) page.
-1. In the **Allowlist** tab, toggle on **Enable allowlist** and select **Save**.
+1. In the Clerk Dashboard, navigate to the [**Access mode**](https://dashboard.clerk.com/~/user-authentication/access-mode) page.
+1. Toggle on **Enable allowlist** and select **Save**.
 
-> [!CAUTION]
+> [!WARNING]
 > Enabling the Allowlist without adding any identifier exceptions blocks _all_ sign-ups.
 
 ## Blocklist
@@ -111,40 +121,38 @@ By adding specific identifiers to the blocklist, you can prevent users with thos
 
 You can also block email addresses from all subdomains by using `*@*.clerk.dev`. This prevents sign-ups from email addresses such as `@subdomain.clerk.dev` or `@subdomain2.clerk.dev`, and deeper subdomains like `@subdomain.subdomain2.clerk.dev`.
 
+> [!IMPORTANT]
+> A wildcard must stand in for an entire local part or an entire subdomain label. It can't match part of one.
+>
+> `*@clerk.dev` and `*@*.clerk.dev` are both supported. A partial pattern such as `john*@clerk.dev` is not — it's a syntactically valid email address, so it's stored as an exact identifier rather than a prefix pattern. It won't match `johnsmith@clerk.dev`, or any other address that merely starts with `john`.
+>
+> To block a family of related addresses that share a prefix, see [**Block email subaddresses**](#block-email-subaddresses), which handles the provider-specific separators those addresses use.
+
 To enable this feature:
 
-1. In the Clerk Dashboard, navigate to the [**Restrictions**](https://dashboard.clerk.com/~/protect/restrictions) page.
-1. In the **Blocklist** tab, toggle on **Enable blocklist** and select **Save**.
+1. In the Clerk Dashboard, navigate to the [**Blocklist**](https://dashboard.clerk.com/~/protect/blocklist) page.
+1. Toggle on **Enable blocklist** and select **Save**.
 
 > [!WARNING]
 > In the case that you have enabled the allowlist and the blocklist and have added the same identifier in both, the allowlist takes precedence.
 
-For additional security, adding an individual email address to the blocklist will also block any attempts to sign up or sign in with the email address modified to contain a subaddress. Subaddresses are identified by the presence of any of the following characters in the local part of the email address: `+`, `#`, `=`.
+> [!NOTE]
+> The allowlist and blocklist apply to **sign-ups**. Older applications may also apply them to **sign-ins**: these show an **Apply allowlist and blocklist to sign-ins** setting on the [**Blocklist**](https://dashboard.clerk.com/~/protect/blocklist) page, which you can turn off to match the current behavior. If you don't see that setting, your application applies these lists to sign-ups only.
+
+For additional security, adding an individual email address to the blocklist will also block any attempts to sign up with the email address modified to contain a subaddress. Subaddresses are identified by the provider-specific separators listed under [**Block email subaddresses**](#block-email-subaddresses).
 
 For example, if you add `john.doe@clerk.dev` as a blocked email address, it means that anybody with `john.doe@clerk.dev` email address will not be able to sign up for your application, including `john.doe+anything@clerk.dev` and any other subaddress.
 
+> [!NOTE]
+> Only the separators carry over to the blocklist. Gmail dot matching belongs to **Block email subaddresses**, so blocking `janedoe@gmail.com` won't also block `jane.doe@gmail.com`.
+
 ## Block email subaddresses
 
-**Block email subaddresses** allows you to block all email addresses that contain the characters `+`, `=` or `#` from signing up or being added to existing accounts. For example, an email address like `user+sub@clerk.com` will be blocked. It also blocks email addresses that contain dots in the local part of a Gmail address if the equivalent address without dots already has an account. For example, if `jsmith@gmail.com` already has an account, `j.smith@gmail.com` will be blocked.
+Clerk can block email addresses that differ only by a subaddress from one that already has an account, such as `user+1@example.com` when `user@example.com` is registered. See [Block email subaddresses](/docs/guides/protect/protections/block-email-subaddresses).
 
-> [!NOTE]
-> Existing accounts with email subaddresses will not be affected by this restriction, and will still be allowed to sign in.
->
-> This feature is designed to prevent malicious sign-in attempts. The first email containing a subaddress will be allowed, but any subsequent sign-ins using additional subaddresses will be blocked.
+## Block sign-ups that use disposable email addresses
 
-To enable this feature:
-
-1. In the Clerk Dashboard, navigate to the [**Restrictions**](https://dashboard.clerk.com/~/protect/restrictions) page.
-1. Toggle on **Block email subaddresses** and select **Save**.
-
-### Block sign-ups that use disposable email addresses
-
-**Block disposable email addresses** allows you to block all email addresses that are _known to be disposable_ from signing up for your application. This is useful to prevent spam accounts from signing up.
-
-To enable this feature:
-
-1. In the Clerk Dashboard, navigate to the [**Restrictions**](https://dashboard.clerk.com/~/protect/restrictions) page.
-1. Toggle on **Block sign-ups that use disposable email addresses** and select **Save**.
+Clerk can block email addresses that are known to be disposable. See [Block disposable email addresses](/docs/guides/protect/protections/block-disposable-email-addresses).
 
 > [!TIP]
 > The restrictions on this page control who can **sign up**. If you want to prevent existing users from changing their email, phone, or username **after sign-up**, see [restrict identifier changes](/docs/guides/configure/auth-strategies/sign-up-sign-in-options#restrict-changes).

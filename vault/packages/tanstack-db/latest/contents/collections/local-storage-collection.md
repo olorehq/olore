@@ -1,0 +1,402 @@
+---
+title: LocalStorage Collection
+---
+
+LocalStorage collections store small amounts of local-only state that persists
+across browser sessions and syncs between Collections in one tab and across
+browser tabs.
+
+## Overview
+
+The `localStorageCollectionOptions` allows you to create collections that:
+- Persist data to localStorage (or sessionStorage)
+- Automatically sync across browser tabs using storage events
+- Synchronize active same-tab Collections sharing one storage object and key
+- Support optimistic updates with automatic rollback on errors
+- Store all data under a single localStorage key
+- Work with any storage API that matches the localStorage interface
+
+## Installation
+
+LocalStorage collections are included in the core TanStack DB package:
+
+```bash
+npm install @tanstack/react-db
+```
+
+## Basic Usage
+
+```typescript
+import { createCollection } from '@tanstack/react-db'
+import { localStorageCollectionOptions } from '@tanstack/react-db'
+
+const userPreferencesCollection = createCollection(
+  localStorageCollectionOptions({
+    id: 'user-preferences',
+    storageKey: 'app-user-prefs',
+    getKey: (item) => item.id,
+  })
+)
+```
+
+### Direct Local Mutations
+
+**Important:** LocalStorage collections work differently than server-synced collections. With LocalStorage collections, you **directly mutate state** by calling methods like `collection.insert()`, `collection.update()`, and `collection.delete()` — that's all you need to do. The changes are immediately applied to your local data and automatically persisted to localStorage.
+
+This is different from collections that sync with a server (like Query Collection), where mutation handlers send data to a backend. With LocalStorage collections, everything stays local:
+
+```typescript
+// Just call the methods directly - automatically persisted to localStorage
+userPreferencesCollection.insert({ id: 'theme', mode: 'dark' })
+userPreferencesCollection.update('theme', (draft) => { draft.mode = 'light' })
+userPreferencesCollection.delete('theme')
+```
+
+## Configuration Options
+
+The `localStorageCollectionOptions` function accepts the following options:
+
+### Required Options
+
+- `id`: Unique identifier for the collection
+- `storageKey`: The localStorage key where all collection data is stored
+- `getKey`: Function to extract the unique key from an item
+
+### Optional Options
+
+- `schema`: [Standard Schema](https://standardschema.dev) compatible schema (e.g., Zod, Effect) for client-side validation
+- `storage`: Custom storage implementation (defaults to `localStorage`). Can be `sessionStorage` or any object with the localStorage API
+- `storageEventApi`: Event API for subscribing to storage events (defaults to `window`). Enables custom cross-tab, cross-window, or cross-process synchronization
+- `parser`: Object with `parse` and `stringify` methods for storage (defaults to `JSON`). Use a library such as superjson to store values that JSON cannot represent
+- `onInsert`: Optional handler function called when items are inserted
+- `onUpdate`: Optional handler function called when items are updated
+- `onDelete`: Optional handler function called when items are deleted
+
+## Synchronization
+
+LocalStorage collections sync across browser tabs through storage events:
+
+```typescript
+const settingsCollection = createCollection(
+  localStorageCollectionOptions({
+    id: 'settings',
+    storageKey: 'app-settings',
+    getKey: (item) => item.id,
+  })
+)
+
+// Changes in one tab are automatically reflected in all other tabs
+// This works automatically via storage events
+```
+
+Two active Collections created with fresh options also sync in the same tab
+when they use the same `storage` object and `storageKey`. A successful automatic
+write, manual acceptance, or `clearStorage()` updates both public snapshots
+without waiting for a browser event. A Collection's pending optimistic rows
+remain visible until their own mutations settle. The same-tab mechanism does
+not connect distinct custom Storage wrapper objects, even if those wrappers
+access the same underlying bytes.
+
+The default JSON parser keeps a value authored by the writer in its original
+JavaScript form until that Collection restores or another write replaces that
+row. A disjoint peer write does not change the authored value. For example, a
+writer can still hold a `Date`, while a peer and a freshly restored Collection
+see its JSON string. With a custom parser, an authored row is read back after a
+successful write so the writer also sees any value that parser normalized.
+
+With the default parser (the built-in `JSON` object), an insert or update must
+contain only values that a restore can return. The Collection rejects a row
+that contains any of these:
+
+- a function or symbol, or an enumerable property with a symbol key
+- `NaN`, `Infinity`, or `-Infinity`, including as a `Number` object
+- `undefined` or a hole as an array entry, or an array with properties other
+  than its elements
+- a `Map`, `Set`, `WeakMap`, `WeakSet`, `RegExp`, `Promise`, `ArrayBuffer`,
+  `SharedArrayBuffer`, or typed array
+
+The rejected mutation's `when('settled')` promise rejects with
+`SerializationError`. Nothing is written to storage and the optimistic row
+rolls back. An automatic write's `onInsert` or `onUpdate` handler does not run;
+a manual `acceptMutations` call rejects with the same error.
+
+Some values are accepted and normalized. A value with a `toJSON` method, such
+as `Date`, is stored as that method's result, and the checks above apply to
+that result. A property whose value (or `toJSON` result) is `undefined` is
+stored as an absent property, and `-0` is stored as `0`. Non-enumerable
+properties are not row data and are not stored. A class instance is stored as
+its own enumerable properties, so a restored row is a plain object without the
+class's methods. A custom `parser`, such as one that supports `Map`, defines
+its own value rules; only its `stringify` errors reject a write. This includes
+a parser object that wraps `JSON.stringify`.
+
+Automatic mutations in one Collection persist in mutation order, even if their
+optional handlers finish in another order. A handler that rejects does not write
+its mutation. Other tabs see accepted changes when their storage events arrive.
+Without a handler or earlier pending write, a direct mutation writes to
+localStorage before the mutation method returns. A later handler failure rejects
+its transaction promptly, even if an earlier handler is still pending.
+
+A handler can start another mutation on the same Collection, then return without
+awaiting that mutation's `when('settled')` promise. Do not await that promise or a
+later `acceptMutations()` call inside the earlier handler. Those writes wait for
+the earlier handler to return, so awaiting them would leave both pending.
+
+Each write stores a complete storage snapshot under one storage key. A
+write preserves disjoint peer rows already present in storage, even when that
+peer's event has not arrived yet. Truly simultaneous writes from separate tabs
+are not an atomic transaction; localStorage has no compare-and-swap operation.
+
+Startup requires a valid stored snapshot. Malformed JSON or a row missing its
+version information puts the Collection in an error state and leaves the stored
+bytes intact. Each stored row needs an object value, a string version token,
+and a storage key that decodes to the same identity as `getKey` for its data.
+New writes encode string and number keys with a type prefix; restore also
+accepts legacy unprefixed string keys. Two entries that decode to one identity
+are malformed. Repair or remove
+the invalid value, then restart the Collection. A Collection restoring rows can
+receive a same-tab peer write from a subscriber during that restore; the peer's
+accepted row remains visible when the Collection becomes ready.
+`utils.clearStorage()` removes the stored snapshot and immediately publishes
+removal of accepted rows to active same-tab Collections. A pending optimistic
+mutation can remain visible and later persist. Edit the Collection through its
+mutation methods;
+direct same-tab edits to its storage key do not produce browser storage events.
+Use an IndexedDB Collection when several tabs need stronger write coordination.
+
+If storage cannot be read, the mutation rejects and existing stored rows remain.
+A failed storage-event read leaves current Collection rows unchanged until a
+later event can read storage successfully.
+
+## Using SessionStorage
+
+You can use `sessionStorage` instead of `localStorage` for session-only persistence:
+
+```typescript
+const sessionCollection = createCollection(
+  localStorageCollectionOptions({
+    id: 'session-data',
+    storageKey: 'session-key',
+    storage: sessionStorage, // Use sessionStorage instead
+    getKey: (item) => item.id,
+  })
+)
+```
+
+## Custom Storage Backend
+
+Provide any storage implementation that matches the localStorage API:
+
+```typescript
+// Example: Custom storage wrapper with encryption
+const encryptedStorage = {
+  getItem(key: string) {
+    const encrypted = localStorage.getItem(key)
+    return encrypted ? decrypt(encrypted) : null
+  },
+  setItem(key: string, value: string) {
+    localStorage.setItem(key, encrypt(value))
+  },
+  removeItem(key: string) {
+    localStorage.removeItem(key)
+  },
+}
+
+const secureCollection = createCollection(
+  localStorageCollectionOptions({
+    id: 'secure-data',
+    storageKey: 'encrypted-key',
+    storage: encryptedStorage,
+    getKey: (item) => item.id,
+  })
+)
+```
+
+### Cross-Tab Sync with Custom Storage
+
+The `storageEventApi` option (defaults to `window`) allows the collection to subscribe to storage events for cross-tab synchronization. A custom storage implementation can provide this API to enable custom cross-tab, cross-window, or cross-process sync:
+
+```typescript
+// Example: Custom storage event API for cross-process sync
+const customStorageEventApi = {
+  addEventListener(event: string, handler: (e: StorageEvent) => void) {
+    // Custom event subscription logic
+    // Could be IPC, WebSocket, or any other mechanism
+    myCustomEventBus.on('storage-change', handler)
+  },
+  removeEventListener(event: string, handler: (e: StorageEvent) => void) {
+    myCustomEventBus.off('storage-change', handler)
+  },
+}
+
+const syncedCollection = createCollection(
+  localStorageCollectionOptions({
+    id: 'synced-data',
+    storageKey: 'data-key',
+    storage: customStorage,
+    storageEventApi: customStorageEventApi, // Custom event API
+    getKey: (item) => item.id,
+  })
+)
+```
+
+This enables synchronization across different contexts beyond just browser tabs, such as:
+- Cross-process communication in Electron apps
+- WebSocket-based sync across multiple browser windows
+- Custom IPC mechanisms in desktop applications
+
+## Mutation Handlers
+
+Mutation handlers are **completely optional**. Data will persist to localStorage whether or not you provide handlers:
+
+```typescript
+const preferencesCollection = createCollection(
+  localStorageCollectionOptions({
+    id: 'preferences',
+    storageKey: 'user-prefs',
+    getKey: (item) => item.id,
+    // Optional: Add custom logic when preferences are updated
+    onUpdate: async ({ transaction }) => {
+      const { modified } = transaction.mutations[0]
+      console.log('Preference updated:', modified)
+      // Maybe send analytics or trigger other side effects
+    },
+  })
+)
+```
+
+## Manual Transactions
+
+When using LocalStorage collections with manual transactions (created via `createTransaction`), call `utils.acceptMutations()` in `mutationFn`. Manual acceptance joins the same write order, and the transaction's persistence receipt waits for the storage write even if the returned Promise is not awaited. Await it when later work in `mutationFn` depends on the storage write:
+
+```typescript
+import { createTransaction } from '@tanstack/react-db'
+
+const localData = createCollection(
+  localStorageCollectionOptions({
+    id: 'form-draft',
+    storageKey: 'draft-data',
+    getKey: (item) => item.id,
+  })
+)
+
+const serverCollection = createCollection(
+  queryCollectionOptions({
+    queryKey: ['items'],
+    queryFn: async () => api.items.getAll(),
+    getKey: (item) => item.id,
+    onInsert: async ({ transaction }) => {
+      await api.items.create(transaction.mutations[0].modified)
+    },
+  })
+)
+
+const tx = createTransaction({
+  mutationFn: async ({ transaction }) => {
+    // Handle server collection mutations explicitly in mutationFn
+    await Promise.all(
+      transaction.mutations
+        .filter((m) => m.collection === serverCollection)
+        .map((m) => api.items.create(m.modified))
+    )
+
+    // After server mutations succeed, persist local collection mutations
+    await localData.utils.acceptMutations(transaction)
+  },
+})
+
+// Apply mutations to both collections in one transaction
+tx.mutate(() => {
+  localData.insert({ id: 'draft-1', data: '...' })
+  serverCollection.insert({ id: '1', name: 'Item' })
+})
+
+await tx.commit()
+```
+
+Create fresh `localStorageCollectionOptions()` for each direct
+`createCollection()` call. One options object contains state owned by one
+Collection and throws if used to create a second. The same `DbClient`
+collection descriptor can still materialize fresh options for separate clients.
+
+## Complete Example
+
+```typescript
+import { createCollection, eq } from '@tanstack/react-db'
+import { localStorageCollectionOptions } from '@tanstack/react-db'
+import { useLiveQuery } from '@tanstack/react-db'
+import { z } from 'zod'
+
+// Define schema
+const userPrefsSchema = z.object({
+  id: z.string(),
+  theme: z.enum(['light', 'dark', 'auto']),
+  language: z.string(),
+  notifications: z.boolean(),
+})
+
+type UserPrefs = z.infer<typeof userPrefsSchema>
+
+// Create collection
+export const userPreferencesCollection = createCollection(
+  localStorageCollectionOptions({
+    id: 'user-preferences',
+    storageKey: 'app-user-prefs',
+    getKey: (item) => item.id,
+    schema: userPrefsSchema,
+  })
+)
+
+// Use in component
+function SettingsPanel() {
+  const { data: prefs } = useLiveQuery({
+    query: (q) =>
+      q
+        .from({ pref: userPreferencesCollection })
+        .where(({ pref }) => eq(pref.id, 'current-user')),
+  })
+
+  const currentPrefs = prefs[0]
+
+  const updateTheme = (theme: 'light' | 'dark' | 'auto') => {
+    if (currentPrefs) {
+      userPreferencesCollection.update(currentPrefs.id, (draft) => {
+        draft.theme = theme
+      })
+    } else {
+      userPreferencesCollection.insert({
+        id: 'current-user',
+        theme,
+        language: 'en',
+        notifications: true,
+      })
+    }
+  }
+
+  return (
+    <div>
+      <h2>Theme: {currentPrefs?.theme}</h2>
+      <button onClick={() => updateTheme('dark')}>Dark Mode</button>
+      <button onClick={() => updateTheme('light')}>Light Mode</button>
+    </div>
+  )
+}
+```
+
+## Use Cases
+
+LocalStorage collections are perfect for:
+- User preferences and settings
+- UI state that should persist across sessions
+- Form drafts
+- Recently viewed items
+- User-specific configurations
+- Small amounts of cached data
+
+## Learn More
+
+- [IndexedDB Collection](./indexed-db-collection.md)
+
+- [Optimistic Mutations](../guides/mutations.md)
+- [Live Queries](../guides/live-queries.md)
+- [LocalOnly Collection](./local-only-collection.md)

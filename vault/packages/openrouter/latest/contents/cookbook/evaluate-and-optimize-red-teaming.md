@@ -1,0 +1,42 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://openrouter.ai/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Red Teaming
+
+> Policy for red teaming and adversarial testing on OpenRouter
+
+Red teaming (testing AI applications and/or models for prompt injection, jailbreaking, or other adversarial scenarios) is a valuable part of AI safety research, but may also violate model terms-of-service.
+
+## Approval Required
+
+Because most model and provider terms of service do not support red-teaming, you cannot red-team models on OpenRouter without prior approval. This includes prompt injection, jailbreaking, or any attempt to get models to behave in ways that violate their terms of service.
+
+Customers who engage in red teaming without approval may be flagged for model or provider terms of service violations. Unapproved red teaming may result in:
+
+* Provider bans
+* Model access restrictions
+* Platform-wide account bans
+
+## Legitimate Red Teaming
+
+OpenRouter supports legitimate AI safety research and red teaming with prior approval. Getting approval allows us to coordinate with providers and prevent your account from being flagged for policy violations.
+
+If you have a legitimate use case for adversarial testing, we encourage you to reach out.
+
+## Compatibility with Zero Data Retention
+
+Note that certain types of safety classifiers are run online (while the prompt is in-flight and in-memory). Prompts may therefore be flagged by classifiers even with full ZDR configured. These classifiers operate independently of data retention policies and are fully compatible with [Zero Data Retention (ZDR)](https://openrouter.ai/docs/guides/features/zdr.md).
+
+## Request Approval
+
+To request red teaming approval, email [safety@openrouter.ai](mailto:safety@openrouter.ai) with the following details:
+
+* A description of your research or use case
+* The models & providers you intend to test
+* The types of adversarial techniques you plan to use
+* Your expected timeline
+
+> [!NOTE]
+>
+> Approval generally takes **5 business days**. Approval is not guaranteed and is granted at OpenRouter's discretion based on the details of your use case.

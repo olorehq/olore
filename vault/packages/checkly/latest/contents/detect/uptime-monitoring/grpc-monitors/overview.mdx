@@ -1,0 +1,91 @@
+---
+title: 'gRPC monitors overview'
+description: 'Monitor gRPC service availability, health, and response times.'
+sidebarTitle: Overview
+canonical: 'https://www.checklyhq.com/docs/detect/uptime-monitoring/grpc-monitors/overview/'
+---
+
+<Tip>
+**Monitoring as Code**: Learn more about the [gRPC monitor construct](/constructs/grpc-monitor).
+</Tip>
+
+## What are gRPC monitors?
+
+gRPC monitors verify that your gRPC services are reachable, healthy, and responding correctly. They support two monitoring modes:
+
+* **BEHAVIOR mode** — Invoke any unary gRPC method and assert on the response. Ideal for testing specific service endpoints. The service definition is discovered via server reflection or an inline `.proto` file.
+* **HEALTH mode** — Query the standard [gRPC health check protocol](https://github.com/grpc/grpc/blob/master/doc/health-checking.md) (`grpc.health.v1.Health/Check`). Ideal for checking overall server health without needing a specific method to call.
+
+Typical use cases include:
+
+* Verifying a microservice's gRPC API responds correctly to a method call
+* Monitoring gRPC health check endpoints for backend services
+* Checking that a service starts serving requests after a deployment
+* Asserting that gRPC status codes and response payloads meet expectations
+
+## How gRPC monitors work
+
+On each run, Checkly:
+
+1. Resolves the hostname to an IP address (DNS timing is captured separately)
+2. Opens a gRPC connection — optionally with TLS — to the target host and port
+3. Attaches any configured metadata (request headers) to the outgoing call
+4. Executes the gRPC call:
+   * **BEHAVIOR mode**: Discovers the method (via reflection or `.proto`), sends the JSON request message, and captures the response
+   * **HEALTH mode**: Calls `Check` on `grpc.health.v1.Health`, optionally scoped to a specific service name
+5. Evaluates your configured assertions against the response (status code, health status, response message, metadata, or response time)
+
+## gRPC monitor results
+
+Select a specific check run to inspect its results:
+
+* **Summary**: Shows the target host and port, monitor state, gRPC status code, and total run duration
+
+* **Error details**: If the run fails, you'll see the error message and gRPC status code to help diagnose what went wrong
+
+* **Request data**: The method invoked, metadata sent, and request message (BEHAVIOR mode)
+
+* **Response data**: The gRPC status code and message, health status (HEALTH mode), response message body (BEHAVIOR mode), and response metadata returned by the server
+
+* **Timing phases**: For each run, Checkly captures:
+  * DNS: Time to resolve the hostname to an IP address
+  * Connect: Time to establish the gRPC connection and complete the call
+  * Total: Full end-to-end duration including DNS
+
+Learn more in our documentation on [Results](/concepts/results).
+
+## Troubleshooting
+
+<Accordion title="BEHAVIOR mode fails with 'failed to list services via reflection'">
+**Symptom**: The monitor fails with an error mentioning server reflection.
+
+**Root cause**: The gRPC server does not have the server reflection service enabled. Many production gRPC servers disable reflection for security reasons.
+
+**How to fix**:
+* Switch `serviceDefinition` to `PROTO_FILE` and provide the `.proto` file content inline in the monitor configuration
+* If you control the server, enable gRPC server reflection (e.g. `grpc_reflection_v1alpha` in Go or the equivalent in your framework)
+</Accordion>
+
+<Accordion title="TLS connection fails with certificate errors">
+**Symptom**: The monitor fails with a TLS handshake or certificate validation error.
+
+**How to fix**:
+* Ensure the server's TLS certificate is valid and signed by a trusted CA
+* If the server uses a self-signed certificate in a non-production environment, enable **Skip SSL verification** in the request configuration (`skipSSL: true` in the CLI construct)
+* Verify the hostname matches the certificate's Subject Alternative Names (SANs)
+</Accordion>
+
+<Accordion title="HEALTH mode returns NOT_SERVING or UNKNOWN">
+**Symptom**: The health check call succeeds but the returned status is not `SERVING`.
+
+**Root cause**: The gRPC server's health service is reporting that the requested service (or the server overall) is not ready.
+
+**How to fix**:
+* Check server logs for startup or dependency issues
+* If querying a specific service by name, verify the name matches what the server registers with `grpc_health_v1`
+* Leave the **Service** field empty to query overall server health instead of a named service
+</Accordion>
+
+<Accordion title="gRPC monitors on private locations">
+gRPC monitors are supported on private locations. Ensure the Checkly Agent can reach the gRPC server's hostname and port from within your network. No special capabilities beyond network access are required.
+</Accordion>

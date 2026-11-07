@@ -1,0 +1,172 @@
+---
+title: pack_dictionary
+description: 'This page explains how to use the pack_dictionary function in APL.'
+---
+
+Use the `pack_dictionary` function in APL to construct a dynamic property bag (dictionary) from a list of keys and values. The resulting dictionary maps each specified key to its corresponding value and allows you to store key-value pairs in a single column for downstream operations like serialization, custom grouping, or structured export.
+
+`pack_dictionary` is especially useful when you want to:
+
+- Create flexible data structures for export or transformation.
+- Group dynamic sets of key-value metrics or attributes into a single column.
+- Combine multiple scalar fields into a single dictionary for post-processing or output.
+
+## Usage
+
+### Syntax
+
+```kusto
+pack_dictionary(key1, value1, key2, value2, ...)
+```
+
+### Parameters
+
+| Name   | Type     | Description                                             |
+| ------ | -------- | ------------------------------------------------------- |
+| keyN   | `string` | A constant string that represents a dictionary key.     |
+| valueN | `scalar` | A scalar value to associate with the corresponding key. |
+
+* The number of arguments must be even.
+* Keys must be constant strings.
+* Values can be any scalar type.
+
+### Returns
+
+A dynamic object that represents a dictionary where each key maps to its associated value.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `pack_dictionary` to store request metadata in a compact format for structured inspection or export.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend request_info = pack_dictionary(
+    'method', method,
+    'uri', uri,
+    'status', status,
+    'duration', req_duration_ms
+)
+| project _time, id, request_info
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20request_info%20%3D%20pack_dictionary(%20'method'%2C%20method%2C%20'uri'%2C%20uri%2C%20'status'%2C%20status%2C%20'duration'%2C%20req_duration_ms%20)%20%7C%20project%20_time%2C%20id%2C%20request_info%22%7D)
+
+**Output**
+
+| _time               | id     | request_info                                                          |
+| -------------------- | ------ | ---------------------------------------------------------------------- |
+| 2025-06-18T14:35:00Z | user42 | `{ "method": "GET", "uri": "/home", "status": "200", "duration": 82 }` |
+
+This example creates a single `request_info` column that contains key HTTP request data as a dictionary, simplifying downstream analysis or visualization.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `pack_dictionary` to consolidate trace metadata into a structured format for export or debugging.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_metadata = pack_dictionary(
+    'trace_id', trace_id,
+    'span_id', span_id,
+    'service', ['service.name'],
+    'kind', kind,
+    'status_code', status_code
+)
+| project _time, duration, trace_metadata
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20trace_metadata%20%3D%20pack_dictionary(%20'trace_id'%2C%20trace_id%2C%20'span_id'%2C%20span_id%2C%20'service'%2C%20%5B'service.name'%5D%2C%20'kind'%2C%20kind%2C%20'status_code'%2C%20status_code%20)%20%7C%20project%20_time%2C%20duration%2C%20trace_metadata%22%7D)
+
+**Output**
+
+| _time               | duration | trace_metadata                                                                                                      |
+| -------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| 2025-06-18T14:40:00Z | 00:00:01 | `{ "trace_id": "abc123", "span_id": "def456", "service": "checkoutservice", "kind": "server", "status_code": "OK" }` |
+
+This query generates a `trace_metadata` column that organizes important trace identifiers and status into a single dynamic field.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `pack_dictionary` to package request metadata along with geographic information for audit logging or incident forensics.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend geo_info = pack_dictionary(
+    'city', ['geo.city'],
+    'country', ['geo.country']
+)
+| extend request_info = pack_dictionary(
+    'method', method,
+    'uri', uri,
+    'status', status,
+    'geo', geo_info
+)
+| project _time, id, request_info
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20geo_info%20%3D%20pack_dictionary(%20'city'%2C%20%5B'geo.city'%5D%2C%20'country'%2C%20%5B'geo.country'%5D%20)%20%7C%20extend%20request_info%20%3D%20pack_dictionary(%20'method'%2C%20method%2C%20'uri'%2C%20uri%2C%20'status'%2C%20status%2C%20'geo'%2C%20geo_info%20)%20%7C%20project%20_time%2C%20id%2C%20request_info%22%7D)
+
+**Output**
+
+| _time               | id     | request_info                                                                                          |
+| -------------------- | ------ | ------------------------------------------------------------------------------------------------------ |
+| 2025-06-18T14:20:00Z | user88 | `{ "method": "POST", "uri": "/login", "status": "403", "geo": { "city": "Berlin", "country": "DE" } }` |
+
+This example nests geographic context inside the main dictionary to create a structured log suitable for security investigations.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [pack_array](/apl/scalar-functions/array-functions/pack-array): Use this to combine scalar values into an array. Use `pack_array` when you don’t need named keys and want positional data instead.
+- [bag_keys](/apl/scalar-functions/array-functions/bag-keys): Returns the list of keys in a dynamic dictionary. Use this to inspect or filter contents created by `pack_dictionary`.
+- [bag_pack](/apl/scalar-functions/array-functions/bag-pack): Expands a dictionary into multiple columns. Use it to revert the packing performed by `pack_dictionary`.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+While SPL doesn’t have a direct equivalent of `pack_dictionary`, you can simulate similar behavior using the `eval` command and `mvzip` or `mvmap` to construct composite objects. In APL, `pack_dictionary` is a simpler and more declarative way to produce key-value structures inline.
+
+<CodeGroup>
+```sql Splunk example
+| eval dict=mvmap("key1", value1, "key2", value2)
+````
+
+```kusto APL equivalent
+| extend dict = pack_dictionary('key1', value1, 'key2', value2)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL lacks built-in support for dynamic dictionaries. You typically achieve similar functionality by manually assembling JSON strings or using vendor-specific extensions (like PostgreSQL’s `jsonb_build_object`). In contrast, APL provides a native and type-safe way to construct dictionaries using `pack_dictionary`.
+
+<CodeGroup>
+```sql SQL example
+SELECT '{"key1":' || value1 || ',"key2":' || value2 || '}' AS dict FROM my_table;
+```
+
+```kusto APL equivalent
+| extend dict = pack_dictionary('key1', value1, 'key2', value2)
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

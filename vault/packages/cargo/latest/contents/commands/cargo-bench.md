@@ -46,8 +46,8 @@ function to handle running benchmarks.
 
 By default, `cargo bench` uses the [`bench` profile], which enables
 optimizations and disables debugging information. If you need to debug a
-benchmark, you can use the `--profile=dev` command-line option to switch to
-the dev profile. You can then run the debug-enabled benchmark within a
+benchmark, you can use the `--profile=debug` command-line option to switch to
+the debug profile. You can then run the debug-enabled benchmark within a
 debugger.
 
 [`bench` profile]: ../reference/profiles.html#bench
@@ -275,8 +275,8 @@ be specified multiple times, which enables all specified features.</p>
 
 <dl>
 
-<dt class="option-term" id="option-cargo-bench---target"><a class="option-anchor" href="#option-cargo-bench---target"><code>--target</code> <em>triple</em></a></dt>
-<dd class="option-desc"><p>Benchmark for the specified target architecture. Flag may be specified multiple times. The default is the host architecture. The general format of the triple is
+<dt class="option-term" id="option-cargo-bench---target"><a class="option-anchor" href="#option-cargo-bench---target"><code>--target</code> <em>tuple</em></a></dt>
+<dd class="option-desc"><p>Benchmark for the specified target architecture. Flag may be specified multiple times. The default is the host architecture. The general format of the tuple is
 <code>&lt;arch&gt;&lt;sub&gt;-&lt;vendor&gt;-&lt;sys&gt;-&lt;abi&gt;</code>.</p>
 <p>Possible values:</p>
 <ul>

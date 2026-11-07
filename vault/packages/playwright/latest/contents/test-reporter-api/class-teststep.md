@@ -2,7 +2,7 @@
 * since: v1.10
 * langs: js
 
-Represents a step in the [TestRun].
+Represents a step in a [TestResult].
 
 ## property: TestStep.category
 * since: v1.10
@@ -41,6 +41,34 @@ Error thrown during the step execution, if any.
 
 Parent step, if any.
 
+## property: TestStep.params
+* since: v1.63
+- type: ?<[Object]<[string], [any]>>
+
+Step-dependent parameters, when available. For example, steps produced by the Playwright API calls contain the target
+`locator` and the call arguments such as `url`, while [`method: Test.step`] steps contain the parameters passed by the
+test author.
+
+```js
+// { locator: 'getByRole(\'button\')' }
+await page.getByRole('button').click();
+
+// { url: 'https://example.com' }
+await page.goto('https://example.com');
+
+// { locator: 'getByLabel(\'Password\')', value: 'secret' }
+await page.getByLabel('Password').fill('secret');
+
+// { orderId: 42 }
+await test.step('checkout', async () => {
+  // ...
+}, { params: { orderId: 42 } });
+```
+
+To keep the reports small, Playwright API calls only report a curated set of arguments per call, and long string values
+are truncated. Unbounded arguments such as the page content, evaluated expressions or request bodies are never
+reported.
+
 ## property: TestStep.startTime
 * since: v1.10
 - type: <[Date]>
@@ -76,7 +104,29 @@ The list of files or buffers attached in the step execution through [`method: Te
 * since: v1.10
 - type: <[string]>
 
-User-friendly test step title.
+User-friendly test step title, for example `Click` or `Navigate`.
+
+## property: TestStep.subtitle
+* since: v1.63
+- type: ?<[string]>
+
+User-friendly test step subtitle that complements the title, when available. For Playwright API
+calls, it is the target locator or the navigation url. For example, a `Click` step has the clicked
+locator as a subtitle. [`method: Test.step`] steps carry the subtitle passed by the test author.
+User interfaces typically render the subtitle next to the title or on a separate line.
+
+```js
+// title `Click`, subtitle `getByRole('button')`
+await page.getByRole('button').click();
+
+// title `Navigate`, subtitle `example.com/index.html`
+await page.goto('https://example.com/index.html');
+
+// title `Add to cart`, subtitle `SKU 42`
+await test.step('Add to cart', async () => {
+  // ...
+}, { subtitle: 'SKU 42' });
+```
 
 ## method: TestStep.titlePath
 * since: v1.10

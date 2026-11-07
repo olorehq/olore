@@ -1,10 +1,10 @@
 ---
-title: Localization prop (experimental)
+title: Localization prop
 description: Use the Clerk localizations package to override and provide predefined or custom localizations for your Clerk components, enabling you to offer localized content or tailor the wording to match your brand.
+tag: experimental
 ---
 
-> [!WARNING]
-> This feature is currently experimental and may not behave as expected. If you encounter any issues, [contact support](https://clerk.com/contact/support){{ target: '_blank' }} with as much detail as possible.
+> [!EXPERIMENTAL]
 
 Clerk offers the ability to override the strings for all of the elements in each of the Clerk components. This allows you to provide localization for your users or change the wording to suit your brand.
 
@@ -70,7 +70,7 @@ Clerk currently supports the following languages with English as the default:
 
 ### Usage
 
-> [!CAUTION]
+> [!WARNING]
 > The localizations will only update the text in the [Clerk components](/docs/reference/components/overview) used in your application. The hosted [Clerk Account Portal](/docs/guides/account-portal/overview) will remain in English.
 
 To get started, install the `@clerk/localizations` package.
@@ -210,6 +210,8 @@ Once the `@clerk/localizations` package is installed, you can import the localiz
     },
   })
   ```
+
+  To change the localization while your app is running, such as when a user selects a different language, use [`updateClerkOptions()`](/docs/reference/nuxt/update-clerk-options).
 </If>
 
 <If sdk="fastify">
@@ -230,6 +232,43 @@ Once the `@clerk/localizations` package is installed, you can import the localiz
   })
   ```
 </If>
+
+### Bundle size
+
+Each localization lives in its own module and the `@clerk/localizations` package is tree-shakeable, so bundlers with tree-shaking enabled — the default for modern production builds — include only the localizations you import, not every supported language.
+
+> [!NOTE]
+> Development builds typically skip tree-shaking, so a bundle analyzer or your browser's network tab may show every language while running your app locally.
+
+To guarantee that only a single language is included, regardless of bundler configuration, import the localization directly from its subpath. The subpath is the language tag, as shown in the [Languages](#languages) table.
+
+```ts
+// Imports only the fr-FR localization
+import { frFR } from '@clerk/localizations/fr-FR'
+```
+
+<If sdk="nextjs">
+  > [!NOTE]
+  > In Next.js apps, importing a localization in a Server Component, such as the root layout where `<ClerkProvider>` is typically rendered, keeps the localization strings out of your client-side JavaScript bundles entirely. The strings are sent as part of the server-rendered payload instead.
+</If>
+
+### Lazy-load localizations
+
+If your app offers multiple languages and selects one at runtime, statically importing every language includes all of them in your bundle, even though each user only needs one. Instead, use a [dynamic import](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import) with the localization's subpath so that only the selected language is loaded. In client-side code, bundlers split each language into its own chunk and the browser downloads only the selected one. In a Server Component, the import runs on the server instead, and only the selected localization is sent to the browser as part of the server-rendered payload.
+
+The following example lazy-loads the localization for the user's active locale. Call `loadLocalization()` from an async context, such as a Server Component or your app's setup code, and pass the result to the `localization` prop.
+
+```ts
+const localizations = {
+  'en-US': () => import('@clerk/localizations/en-US').then((mod) => mod.enUS),
+  'fr-FR': () => import('@clerk/localizations/fr-FR').then((mod) => mod.frFR),
+  'de-DE': () => import('@clerk/localizations/de-DE').then((mod) => mod.deDE),
+}
+
+async function loadLocalization(locale: keyof typeof localizations) {
+  return localizations[locale]()
+}
+```
 
 ## Adding or updating a localization
 

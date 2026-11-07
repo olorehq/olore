@@ -1,0 +1,87 @@
+import { GaugeChartDemos } from '@docs/demos';
+import { Layout } from '@/layout';
+import { MDX_DATA } from '@/mdx';
+
+export default Layout(MDX_DATA.GaugeChart);
+
+## Usage
+
+`GaugeChart` displays a single value on a radial arc. The arc is filled from `min`
+up to `value`, and the value is displayed in the center of the chart.
+
+<Demo data={GaugeChartDemos.usage} />
+
+## Sections
+
+Use `sections` to split the arc into threshold bands. Each section starts where
+the previous one ends and is filled up to its own `value`, the last section should end at `max`.
+
+When `sections` is set, the entire arc is colored and `value` is displayed only in the center
+label. To mark where the value falls on the arc, use the [target marker](#target-marker):
+
+<Demo data={GaugeChartDemos.sectionsProp} />
+
+## Target marker
+
+Set `target` to draw a line marker across the arc at the given value.
+Use `targetColor` and `targetSize` to change its color and thickness:
+
+<Demo data={GaugeChartDemos.target} />
+
+## Start and end angle
+
+`startAngle` and `endAngle` control the span of the arc in degrees, `-120` and `120` by
+default. `0` is the top of the chart, positive values go clockwise:
+
+<Demo data={GaugeChartDemos.angles} />
+
+A span of 360 degrees renders a full circle. Set `endAngle` lower than `startAngle`
+to draw the arc counter-clockwise:
+
+```tsx
+import { GaugeChart } from '@mantine/charts';
+
+function Demo() {
+  return (
+    <>
+      {/* Full circle */}
+      <GaugeChart value={72} startAngle={0} endAngle={360} />
+
+      {/* Counter-clockwise */}
+      <GaugeChart value={72} startAngle={120} endAngle={-120} />
+    </>
+  );
+}
+```
+
+## Thickness
+
+`thickness` controls the width of the arc in px, `size` controls both the width and the
+height of the chart:
+
+<Demo data={GaugeChartDemos.thickness} />
+
+## Custom label
+
+By default, the center label displays `value` formatted with `valueFormatter`. Use the
+`label` prop to render any React node instead:
+
+<Demo data={GaugeChartDemos.label} />
+
+## Round caps
+
+Set `roundCaps` to round the endpoints of the arc:
+
+<Demo data={GaugeChartDemos.roundCaps} />
+
+## Accessibility
+
+The chart has `role="meter"`. Set `aria-label` to give it an accessible name:
+
+```tsx
+import { GaugeChart } from '@mantine/charts';
+
+function Demo() {
+  return <GaugeChart value={72} aria-label="CPU utilization" />;
+}
+```

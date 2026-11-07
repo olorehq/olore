@@ -36,8 +36,8 @@ let options = Clerk.Options(
   logLevel: .debug,
   telemetryEnabled: true,
   keychainConfig: .init(
-    service: "com.example.myapp",
-    accessGroup: nil
+    service: "com.example.shared-auth",
+    accessGroup: "ABCDE12345.com.example.shared-auth"
   ),
   proxyUrl: "https://proxy.example.com/__clerk",
   redirectConfig: .init(
@@ -55,7 +55,8 @@ let options = Clerk.Options(
     response: [
       ResponseDiagnosticsMiddleware()
     ]
-  )
+  ),
+  updateRequiredViewEnabled: true
 )
 
 Clerk.configure(publishableKey: "{{pub_key}}", options: options)
@@ -64,45 +65,10 @@ Clerk.configure(publishableKey: "{{pub_key}}", options: options)
 ### `Clerk.Options`
 
 <Properties>
-  - `logLevel`
-  - `LogLevel`
-
-  Minimum SDK log level. Defaults to `.error`.
-
-  ---
-
-  - `telemetryEnabled`
-  - `Bool`
-
-  Enables development telemetry collection. Defaults to `true`.
-
-  ---
-
   - `keychainConfig`
-  - [`Clerk.Options.KeychainConfig`](#keychain-config)
+  - [`Clerk.Options.KeychainConfig`](#keychainconfig)
 
   Controls Keychain storage behavior.
-
-  ---
-
-  - `proxyUrl`
-  - `URL?`
-
-  Proxy URL for apps behind a reverse proxy, e.g. `https://proxy.example.com/__clerk`.
-
-  ---
-
-  - `redirectConfig`
-  - [`Clerk.Options.RedirectConfig`](#redirect-config)
-
-  OAuth redirect URLs and callback handling.
-
-  ---
-
-  - `watchConnectivityEnabled`
-  - `Bool`
-
-  Sync auth state to a watchOS companion app. Defaults to `false`.
 
   ---
 
@@ -113,42 +79,84 @@ Clerk.configure(publishableKey: "{{pub_key}}", options: options)
 
   ---
 
+  - `logLevel`
+  - `LogLevel`
+
+  Minimum SDK log level. Defaults to `.error`.
+
+  ---
+
   - `middleware`
-  - [`Clerk.Options.MiddlewareConfig`](#middleware-config)
+  - [`Clerk.Options.MiddlewareConfig`](#middlewareconfig)
 
   Configuration for request/response middleware.
+
+  ---
+
+  - `proxyUrl`
+  - `URL?`
+
+  Proxy URL for apps behind a reverse proxy, e.g., `https://proxy.example.com/__clerk`.
+
+  ---
+
+  - `redirectConfig`
+  - [`Clerk.Options.RedirectConfig`](#redirectconfig)
+
+  OAuth redirect URLs and callback handling.
+
+  ---
+
+  - `telemetryEnabled`
+  - `Bool`
+
+  Enables development telemetry collection. Defaults to `true`.
+
+  ---
+
+  - `updateRequiredViewEnabled`
+  - `Bool`
+
+  Automatically shows an update screen over your app on iOS and macOS when its version is below the minimum set in the Clerk Dashboard. Users can't dismiss the screen until they update. If your app doesn't include `ClerkKitUI`, no screen appears. To show your own screen, set this option to `false` and use `clerk.appVersionSupportStatus`. Defaults to `true`. See [Require a minimum app version](/docs/guides/development/minimum-app-version).
+
+  ---
+
+  - `watchConnectivityEnabled`
+  - `Bool`
+
+  Keeps an iOS app and its companion watchOS app signed in as the same user. Enable it in both apps. Defaults to `false`. See [Watch Connectivity](/docs/reference/ios/watch-connectivity).
 </Properties>
 
 ### `KeychainConfig`
 
 <Properties>
+  - `accessGroup`
+  - `String?`
+
+  Keychain access group for sharing the session with other apps. Apps and extensions that use the same `service` and `accessGroup` share one session. Defaults to `nil`, which keeps the session private to the app. See [Share sessions across apps](/docs/reference/native-mobile/shared-session-sync).
+
+  ---
+
   - `service`
   - `String`
 
   Keychain service name. Defaults to the app bundle identifier.
-
-  ---
-
-  - `accessGroup`
-  - `String?`
-
-  Access group for Keychain item sharing.
 </Properties>
 
 ### `RedirectConfig`
 
 <Properties>
-  - `redirectUrl`
-  - `String`
-
-  OAuth redirect URL. Defaults to `{bundleIdentifier}://callback`.
-
-  ---
-
   - `callbackUrlScheme`
   - `String`
 
   Callback URL scheme. Defaults to the app bundle identifier.
+
+  ---
+
+  - `redirectUrl`
+  - `String`
+
+  OAuth redirect URL. Defaults to `{bundleIdentifier}://callback`.
 </Properties>
 
 ### `MiddlewareConfig`

@@ -1,18 +1,34 @@
 ---
 pcx_content_type: reference
-title: McpAgent
-description: Build stateful MCP servers on Cloudflare by extending the McpAgent class with persistent storage and agent capabilities.
+title: McpAgent (deprecated)
+description: Reference the deprecated, feature-frozen McpAgent class while migrating existing stateful MCP servers to stateless handlers.
 tags:
   - MCP
 sidebar:
-  order: 25
+  order: 27
 products:
   - agents
 ---
 
-import { TypeScriptExample, LinkCard } from "~/components";
+import { TypeScriptExample, LinkCard, PackageManagers } from "~/components";
 
-When you build MCP Servers on Cloudflare, you extend the [`McpAgent` class](https://github.com/cloudflare/agents/blob/main/packages/agents/src/mcp.ts), from the Agents SDK:
+`McpAgent` creates a stateful legacy MCP server backed by a Durable Object.
+
+:::caution[Deprecated]
+
+`McpAgent` remains available only for existing legacy servers while they migrate. It is deprecated and feature-frozen. Migrate to [`createMcpHandler`](/agents/model-context-protocol/apis/handler-api/) at your earliest convenience.
+
+A server that depends on MCP session state, RPC, pushed server-to-client requests, standalone streams, or replay needs a staged migration. Design stateless equivalents, add a stateless route, and serve both lanes until clients migrate and existing sessions drain.
+
+Keep importing the legacy server `McpServer` from `@modelcontextprotocol/sdk`. An SDK v2 server from `@modelcontextprotocol/server` cannot run inside `McpAgent`.
+
+Refer to [Migrate to MCP SDK v2](/agents/model-context-protocol/guides/migrate-to-mcp-sdk-v2/) for the feature mapping and dual-era rollout.
+
+:::
+
+`McpAgent` requires `@modelcontextprotocol/sdk`, which is an optional peer dependency of `agents`. Install the exact version used by your Agents release:
+
+<PackageManagers pkg="agents @modelcontextprotocol/sdk@1.32.1 zod" />
 
 <TypeScriptExample>
 
@@ -38,9 +54,9 @@ export class MyMCP extends McpAgent {
 
 </TypeScriptExample>
 
-This means that each instance of your MCP server has its own durable state, backed by a [Durable Object](/durable-objects/), with its own [SQL database](/agents/runtime/lifecycle/state/).
+This means that each instance of your MCP server has its own durable state, backed by a [Durable Object](/durable-objects/), with its own [SQL database](/agents/agent-class/state/).
 
-Your MCP server doesn't necessarily have to be an Agent. You can build MCP servers that are stateless, and just add [tools](/agents/model-context-protocol/protocol/tools/) to your MCP server using the `@modelcontextprotocol/sdk` package.
+A stateless server can define [tools](/agents/model-context-protocol/protocol/tools/) with `@modelcontextprotocol/server` and serve them through `createMcpHandler`.
 
 But if you want your MCP server to:
 
@@ -109,6 +125,10 @@ export default new OAuthProvider({
 	tokenEndpoint: "/token",
 	clientRegistrationEndpoint: "/register",
 	defaultHandler: AuthHandler,
+	resourceMetadata: {
+		// The URL MCP clients connect to. Use http://localhost:8787/mcp with wrangler dev.
+		resource: "https://my-mcp-server.<your-subdomain>.workers.dev/mcp",
+	},
 });
 ```
 
@@ -175,31 +195,162 @@ const eventStore = new DurableObjectEventStore(this.ctx.storage);
 
 </TypeScriptExample>
 
-Refer to [MCP Transport](/agents/model-context-protocol/protocol/transport/) for transport configuration.
+## RPC transport
+
+An Agent can connect to an `McpAgent` through its Durable Object binding instead of over HTTP. The Agent side, `addMcpServer(name, binding, options)`, is documented in [RPC transport](/agents/model-context-protocol/apis/client-api/#rpc-transport) on the MCP Client page. This section covers the `McpAgent` side.
+
+Only the Worker that defines the `McpAgent` needs `@modelcontextprotocol/sdk`. The Agent that connects to it does not.
+
+:::caution[Move to Streamable HTTP]
+The RPC transport is still supported but is not being developed further. There is no RPC transport for [`createMcpHandler`](/agents/model-context-protocol/apis/handler-api/) servers. When you migrate the server, connect the Agent to it with a URL over Streamable HTTP.
+:::
+
+The RPC transport has no OAuth flow. Use Streamable HTTP for connections that need authentication.
+
+### Configure bindings
+
+Bind the `McpAgent` class in the Worker that runs the calling Agent:
+
+```jsonc
+{
+	"durable_objects": {
+		"bindings": [
+			{ "name": "Chat", "class_name": "Chat" },
+			{ "name": "MyMCP", "class_name": "MyMCP" },
+		],
+	},
+	"migrations": [
+		{
+			"new_sqlite_classes": ["MyMCP", "Chat"],
+			"tag": "v1",
+		},
+	],
+}
+```
+
+### Read props from the caller
+
+The caller passes user context with `addMcpServer("my-mcp", env.MyMCP, { props })`. Declare its shape with the third type parameter and read it from `this.props`:
+
+<TypeScriptExample>
+
+```ts
+import { McpAgent } from "agents/mcp";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+type Props = { userId?: string; role?: string };
+
+export class MyMCP extends McpAgent<Env, unknown, Props> {
+	server = new McpServer({ name: "MyMCP", version: "1.0.0" });
+
+	async init() {
+		this.server.tool("whoami", "Get current user info", {}, async () => {
+			const userId = this.props?.userId || "anonymous";
+			const role = this.props?.role || "guest";
+
+			return {
+				content: [{ type: "text", text: `User ID: ${userId}, Role: ${role}` }],
+			};
+		});
+	}
+}
+```
+
+</TypeScriptExample>
+
+Props are stored in Durable Object storage and are available before the first tool call.
+
+### Configure the RPC transport timeout
+
+The RPC transport has a configurable timeout for waiting for tool responses. By default, the server waits **60 seconds** for a tool handler to respond. You can customize this by overriding `getRpcTransportOptions()` in your `McpAgent`:
+
+<TypeScriptExample>
+
+```ts
+import { McpAgent } from "agents/mcp";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+
+export class MyMCP extends McpAgent<Env> {
+	server = new McpServer({ name: "MyMCP", version: "1.0.0" });
+
+	protected getRpcTransportOptions() {
+		return { timeout: 120000 }; // 2 minutes
+	}
+
+	async init() {
+		this.server.tool(
+			"long-running-task",
+			"A tool that takes a while",
+			{ input: z.string() },
+			async ({ input }) => {
+				await longRunningOperation(input);
+				return {
+					content: [{ type: "text", text: "Task completed" }],
+				};
+			},
+		);
+	}
+}
+```
+
+</TypeScriptExample>
 
 ## Authentication and authorization
 
-The McpAgent class provides seamless integration with the [OAuth Provider Library](https://github.com/cloudflare/workers-oauth-provider) for [authentication and authorization](/agents/model-context-protocol/protocol/authorization/).
-
-When a user authenticates to your MCP server, their identity information and tokens are made available through the `props` parameter, allowing you to:
+The McpAgent class integrates with the [OAuth Provider Library](https://github.com/cloudflare/workers-oauth-provider). When a user authenticates to your MCP server, their identity information and tokens are available through `this.props`, allowing you to:
 
 - access user-specific data
 - check user permissions before performing operations
 - customize responses based on user attributes
 - use authentication tokens to make requests to external services on behalf of the user
 
+The third type parameter defines the shape of `props`:
+
+<TypeScriptExample>
+
+```ts
+import { McpAgent } from "agents/mcp";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+type AuthContext = {
+	claims: { sub: string; name: string; email: string };
+	permissions: string[];
+};
+
+export class MyMCP extends McpAgent<Env, unknown, AuthContext> {
+	server = new McpServer({ name: "Auth Demo", version: "1.0.0" });
+
+	async init() {
+		this.server.tool("whoami", "Get the current user", {}, async () => ({
+			content: [{ type: "text", text: `Hello, ${this.props.claims.name}!` }],
+		}));
+
+		if (this.props.permissions?.includes("admin")) {
+			this.server.tool("adminTool", "Admin only", {}, async () => ({
+				content: [{ type: "text", text: "Admin action completed" }],
+			}));
+		}
+	}
+}
+```
+
+</TypeScriptExample>
+
+For a stateless server, read the same props with `getMcpAuthContext()`. Refer to [Authorization](/agents/model-context-protocol/protocol/authorization/).
+
 ## State synchronization APIs
 
-The `McpAgent` class provides full access to the [Agent state APIs](/agents/runtime/lifecycle/state/):
+The `McpAgent` class provides full access to the [Agent state APIs](/agents/agent-class/state/):
 
-- [`state`](/agents/runtime/lifecycle/state/) — Current persisted state
-- [`initialState`](/agents/runtime/lifecycle/state/#set-the-initial-state-for-an-agent) — Default state when instance starts
-- [`setState`](/agents/runtime/lifecycle/state/) — Update and persist state
-- [`onStateChanged`](/agents/runtime/lifecycle/state/#synchronizing-state) — React to state changes
-- [`sql`](/agents/runtime/agents-api/#sql-api) — Execute SQL queries on embedded database
+- [`state`](/agents/agent-class/state/) — Current persisted state
+- [`initialState`](/agents/agent-class/state/#initial-state) — Default state when instance starts
+- [`setState`](/agents/agent-class/state/) — Update and persist state
+- [`onStateChanged`](/agents/agent-class/state/#sync-with-clients) — React to state changes
+- [`sql`](/agents/agent-class/#sql-api) — Execute SQL queries on embedded database
 
 :::note[State resets after the session ends]
-Currently, each client session is backed by an instance of the `McpAgent` class. This is handled automatically for you, as shown in the [getting started guide](/agents/model-context-protocol/guides/remote-mcp-server/). This means that when the same client reconnects, they will start a new session, and the state will be reset.
+Each client session is backed by an instance of the `McpAgent` class. This means that when the same client reconnects, they will start a new session, and the state will be reset.
 :::
 
 For example, the following code implements an MCP server that remembers a counter value, and updates the counter when the `add` tool is called:
@@ -257,196 +408,131 @@ export class MyMCP extends McpAgent<Env, State, {}> {
 
 </TypeScriptExample>
 
-## Elicitation (human-in-the-loop)
+## Elicitation on legacy servers
 
-MCP servers can request additional user input during tool execution using **elicitation**. The MCP client (like Claude Desktop) renders a form based on your JSON Schema and returns the user's response.
+[MCP elicitation](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation) lets a server request user input while handling another request, such as a tool call. The legacy path defines two modes:
 
-### When to use elicitation
+- **Form mode** collects structured, non-sensitive data through the client.
+- **URL mode** sends the user to an out-of-band interaction, such as third-party authorization or payment.
 
-- Request structured input that was not part of the original tool call
-- Confirm high-stakes operations before proceeding
-- Gather additional context or preferences mid-execution
+The client must advertise support for a mode before the server sends it.
 
-### `elicitInput(options, context)`
+### Form mode
 
-Request structured input from the user during tool execution.
-
-**Parameters:**
-
-| Parameter                  | Type        | Description                                  |
-| -------------------------- | ----------- | -------------------------------------------- |
-| `options.message`          | string      | Message explaining what input is needed      |
-| `options.requestedSchema`  | JSON Schema | Schema defining the expected input structure |
-| `context.relatedRequestId` | string      | The `extra.requestId` from the tool handler  |
-
-**Returns:** `Promise<{ action: "accept" | "decline", content?: object }>`
-
-<TypeScriptExample>
-
-```ts
-import { McpAgent } from "agents/mcp";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-
-type State = { counter: number };
-
-export class CounterMCP extends McpAgent<Env, State, {}> {
-	server = new McpServer({
-		name: "counter-server",
-		version: "1.0.0",
-	});
-
-	initialState: State = { counter: 0 };
-
-	async init() {
-		this.server.tool(
-			"increase-counter",
-			"Increase the counter by a user-specified amount",
-			{ confirm: z.boolean().describe("Do you want to increase the counter?") },
-			async ({ confirm }, extra) => {
-				if (!confirm) {
-					return { content: [{ type: "text", text: "Cancelled." }] };
-				}
-
-				// Request additional input from the user
-				const userInput = await this.server.server.elicitInput(
-					{
-						message: "By how much do you want to increase the counter?",
-						requestedSchema: {
-							type: "object",
-							properties: {
-								amount: {
-									type: "number",
-									title: "Amount",
-									description: "The amount to increase the counter by",
-								},
-							},
-							required: ["amount"],
-						},
-					},
-					{ relatedRequestId: extra.requestId },
-				);
-
-				// Check if user accepted or cancelled
-				if (userInput.action !== "accept" || !userInput.content) {
-					return { content: [{ type: "text", text: "Cancelled." }] };
-				}
-
-				// Use the input
-				const amount = Number(userInput.content.amount);
-				this.setState({
-					...this.state,
-					counter: this.state.counter + amount,
-				});
-
-				return {
-					content: [
-						{
-							type: "text",
-							text: `Counter increased by ${amount}, now at ${this.state.counter}`,
-						},
-					],
-				};
-			},
-		);
-	}
-}
-```
-
-</TypeScriptExample>
-
-### JSON Schema for forms
-
-The `requestedSchema` defines the form structure shown to the user:
-
-```ts
-const schema = {
-	type: "object",
-	properties: {
-		// Text input
-		name: {
-			type: "string",
-			title: "Name",
-			description: "Enter your name",
-		},
-		// Number input
-		amount: {
-			type: "number",
-			title: "Amount",
-			minimum: 1,
-			maximum: 100,
-		},
-		// Boolean (checkbox)
-		confirm: {
-			type: "boolean",
-			title: "I confirm this action",
-		},
-		// Enum (dropdown)
-		priority: {
-			type: "string",
-			enum: ["low", "medium", "high"],
-			title: "Priority",
-		},
-	},
-	required: ["name", "amount"],
-};
-```
-
-### Handling responses
+Call `this.server.server.elicitInput()` in a tool handler. Pass `extra.requestId` as `relatedRequestId` so the response returns on the stream for the originating tool call:
 
 <TypeScriptExample>
 
 ```ts
 const result = await this.server.server.elicitInput(
-	{ message: "Confirm action", requestedSchema: schema },
+	{
+		mode: "form",
+		message: "By how much do you want to increase the counter?",
+		requestedSchema: {
+			type: "object",
+			properties: {
+				amount: {
+					type: "number",
+					title: "Amount",
+					minimum: 1,
+					maximum: 100,
+				},
+			},
+			required: ["amount"],
+		},
+	},
 	{ relatedRequestId: extra.requestId },
 );
 
+if (result.action !== "accept" || !result.content) {
+	return { content: [{ type: "text", text: "Counter unchanged." }] };
+}
+
+const amount = Number(result.content.amount);
+```
+
+</TypeScriptExample>
+
+For backwards compatibility, form requests may omit `mode: "form"`. The schema supports flat objects with primitive fields. Do not use form mode to request passwords, API keys, access tokens, payment credentials, or other secrets.
+
+### URL mode
+
+Use URL mode for interactions that must happen outside the MCP client. The request includes a message, the URL, and a unique `elicitationId`:
+
+<TypeScriptExample>
+
+```ts
+const elicitationId = crypto.randomUUID();
+const result = await this.server.server.elicitInput(
+	{
+		mode: "url",
+		message: "Connect your account to continue.",
+		url: `https://example.com/connect?elicitationId=${elicitationId}`,
+		elicitationId,
+	},
+	{ relatedRequestId: extra.requestId },
+);
+
+if (result.action !== "accept") {
+	return { content: [{ type: "text", text: "Connection cancelled." }] };
+}
+
+return {
+	content: [
+		{
+			type: "text",
+			text: "Connection page opened. Complete it in your browser.",
+		},
+	],
+};
+```
+
+</TypeScriptExample>
+
+For URL mode, `accept` means the user consented to open the URL. It does not mean the external interaction finished. The server may later send `notifications/elicitation/complete` with the same `elicitationId`.
+
+Do not put secrets, personal information, or a pre-authenticated protected-resource URL in `url`. Production servers should use HTTPS. Bind each request to the authenticated user, and verify that the same user completes the external flow.
+
+### Handle responses
+
+Both modes return one of three actions:
+
+| Action    | Meaning                                                           |
+| --------- | ----------------------------------------------------------------- |
+| `accept`  | The user submitted the form or consented to open the URL.         |
+| `decline` | The user explicitly rejected the request.                         |
+| `cancel`  | The user dismissed the request without making an explicit choice. |
+
+Accepted form responses include `content` that matches `requestedSchema`. URL responses omit `content`. Decline and cancel responses typically omit it.
+
+<TypeScriptExample>
+
+```ts
 switch (result.action) {
 	case "accept":
-		// User submitted the form
-		const { name, amount } = result.content as { name: string; amount: number };
-		// Process the input...
+		// For form mode, validate and process result.content.
 		break;
-
 	case "decline":
-		// User cancelled
-		return { content: [{ type: "text", text: "Operation cancelled." }] };
+		return { content: [{ type: "text", text: "Request declined." }] };
+	case "cancel":
+		return { content: [{ type: "text", text: "Request dismissed." }] };
 }
 ```
 
 </TypeScriptExample>
 
 :::note[MCP client support]
-Elicitation requires MCP client support. Not all MCP clients implement the elicitation capability. Check the client documentation for compatibility.
+Not all MCP clients implement legacy elicitation. Check the client before depending on it and provide a fallback when appropriate. Agents acting as MCP clients can handle both modes through [MCP client elicitation handlers](/agents/model-context-protocol/apis/client-api/#elicitation).
 :::
 
-For more human-in-the-loop patterns including workflow-based approval, refer to [Human-in-the-loop patterns](/agents/concepts/agentic-patterns/human-in-the-loop/).
+For more human-in-the-loop patterns, refer to [Human-in-the-loop patterns](/agents/concepts/agentic-patterns/human-in-the-loop/).
 
 ## Next steps
 
 <LinkCard
-	title="Build a Remote MCP server"
-	href="/agents/model-context-protocol/guides/remote-mcp-server/"
-	description="Get started with MCP servers on Cloudflare."
-/>
-
-<LinkCard
-	title="MCP Tools"
-	href="/agents/model-context-protocol/protocol/tools/"
-	description="Design and add tools to your MCP server."
-/>
-
-<LinkCard
-	title="Authorization"
-	href="/agents/model-context-protocol/protocol/authorization/"
-	description="Set up OAuth authentication."
-/>
-
-<LinkCard
-	title="Securing MCP servers"
-	href="/agents/model-context-protocol/guides/securing-mcp-server/"
-	description="Security best practices for production."
+	title="Migrate to MCP SDK v2"
+	href="/agents/model-context-protocol/guides/migrate-to-mcp-sdk-v2/"
+	description="Move an McpAgent server to createMcpHandler."
 />
 
 <LinkCard

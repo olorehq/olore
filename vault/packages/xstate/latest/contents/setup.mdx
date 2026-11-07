@@ -55,6 +55,75 @@ Machine types should be setup in the `types` property of `setup({ types })`. Thi
 - Types for `guards`, including guard `params`
 - Types for `actors`
 
+## Extending setup
+
+_Since XState version 5.24.0_
+
+Use `setup.extend(...)` to create a new setup from an existing setup. Extensions
+can add `actions`, `guards`, and `delays`; all base and extended
+implementations are available to machines created from the extended setup.
+
+```ts
+import { and, not, setup } from 'xstate';
+
+const baseSetup = setup({
+  guards: {
+    isAuthenticated: () => true,
+    hasPermission: () => false,
+  },
+});
+
+const appSetup = baseSetup.extend({
+  guards: {
+    isUnauthenticated: not('isAuthenticated'),
+    canAccess: and(['isAuthenticated', 'hasPermission']),
+  },
+  actions: {
+    trackAccess: () => {
+      console.log('Access checked');
+    },
+  },
+  delays: {
+    shortDelay: 250,
+  },
+});
+
+const machine = appSetup.createMachine({
+  initial: 'checking',
+  states: {
+    checking: {
+      after: {
+        shortDelay: {
+          guard: 'canAccess',
+          actions: 'trackAccess',
+          target: 'allowed',
+        },
+      },
+    },
+    allowed: {},
+  },
+});
+```
+
+You can chain `setup.extend(...)` calls when different modules need to add their
+own implementations:
+
+```ts
+const browserSetup = baseSetup.extend({
+  actions: {
+    readFromStorage: () => {
+      // ...
+    },
+  },
+});
+
+const authenticatedBrowserSetup = browserSetup.extend({
+  guards: {
+    canReadStorage: and(['isAuthenticated', 'hasPermission']),
+  },
+});
+```
+
 ## Migrating from `createMachine`
 
 Migrating from bare `createMachine({ ... })` to `setup({ ... }).createMachine({ ... })` to create a machine is simple.

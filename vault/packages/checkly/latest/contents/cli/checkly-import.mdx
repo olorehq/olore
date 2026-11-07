@@ -2,13 +2,16 @@
 title: checkly import
 description: 'Import existing resources into your CLI-managed project.'
 sidebarTitle: 'checkly import'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-import/'
 ---
 
-<Note>Available since CLI v5.4.0.</Note>
+<Note>Available since CLI v5.4.0. To import checks that still use the deprecated double check option, use v10.0.0 or later.</Note>
 
 <Tip>Learn more about importing existing Checkly resources in [the "Importing Existing Resources" guide](/cli/importing).</Tip>
 
-The `checkly import` command imports existing resources from your Checkly account into your CLI-managed project. This allows you to bring existing checks, alert channels, and other resources under code management using a structured three-phase workflow.
+The `checkly import plan` command imports existing resources from your Checkly account into your CLI-managed project. This allows you to bring existing checks, alert channels, and other resources under code management using a structured three-phase workflow.
+
+<Note>You can use `npx checkly import` as a shorthand for `npx checkly import plan`.</Note>
 
 <Accordion title="Prerequisites">
 Before using `checkly import`, ensure you have:
@@ -24,14 +27,14 @@ Before using `checkly import`, ensure you have:
 Import all resources from your account into the current project.
 
 ```bash Terminal
-npx checkly import [resources] [options]
+npx checkly import plan [resources] [options]
 ```
 
 **Examples:**
 
 ```bash Terminal
 # Import a specific resource by its ID
-npx checkly import check:2ce8...
+npx checkly import plan check:2ce8...
 ```
 
 **Available resource types to import**:
@@ -41,17 +44,21 @@ npx checkly import check:2ce8...
 - `alert-channel` - Notification channels
 - `maintenance-window` - Scheduled maintenance periods
 - `private-location` - Custom monitoring locations
-- `dashboard` - Public status dashboards
-- `snippet` - Reusable code snippets
+- `dashboard` - Dashboards
 - `status-page` - Status page configurations
 - `status-page-service` - Status page service definitions
+- `status-page-component` - Status page components
+- `status-page-automation-rule` - Status page automation rules
 
-`npx checkly import` starts an interactive process that generates an import plan, applies it to create Check files, and commits the changes to mark resources as managed by your CLI project.
+Prefix a resource with `!` to exclude it, for example `!check:2ce8...`.
+
+`npx checkly import plan` starts an interactive process that generates code for your resources, applies the plan to link your resources to that code, and commits the changes to mark resources as managed by your CLI project.
 
 | Option | Required | Description |
 |--------|----------|-------------|
 | `--config, -c` | - | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts|js` file in the current directory. |
-| `--root` | - | The root folder in which to write generated code files. |
+| `--root` | - | Root folder in which to write generated code files. Default: `__checks__`. |
+| `--preview` | - | Preview generated code without creating an import plan. |
 
 ## Command Options
 
@@ -62,33 +69,44 @@ Specify a particular configuration file to use instead of the default `checkly.c
 **Usage:**
 
 ```bash Terminal
-npx checkly import --config=<file-path>
-npx checkly import -c=<file-path>
+npx checkly import plan --config=<file-path>
+npx checkly import plan -c=<file-path>
 ```
 
 **Examples:**
 
 ```bash Terminal
-$ npx checkly import --config="./checkly.staging.config.ts"
+$ npx checkly import plan --config="./checkly.staging.config.ts"
 ```
 
 </ResponseField>
 
 <ResponseField name="--root" type="string">
 
-Preview generated code without creating an actual import plan.
+Set the root folder in which to write generated code files. The default is `__checks__`.
 
 **Usage:**
 
 ```bash Terminal
-npx checkly import --root=<root-folder>
-npx checkly import -r=<root-folder>
+npx checkly import plan --root=<root-folder>
 ```
 
 **Examples:**
 
 ```bash Terminal
-$ npx checkly import --root="./src/checks"
+$ npx checkly import plan --root="./src/checks"
+```
+
+</ResponseField>
+
+<ResponseField name="--preview" type="boolean" default="false">
+
+Generate a code preview without creating an import plan or linking resources to your project.
+
+**Usage:**
+
+```bash Terminal
+npx checkly import plan --preview
 ```
 
 </ResponseField>
@@ -102,7 +120,7 @@ The import process follows a three-phase workflow for safe resource migration:
 Analyze your account, generate an import plan and create code files for your resources.
 
 ```bash Terminal
-npx checkly import
+npx checkly import plan
 ```
 
 ### 2. Plan Application
@@ -123,8 +141,15 @@ npx checkly import commit
 
 ## Subcommands
 
+### `checkly import plan`
+Generate code and create an import plan for resources in your account. Use `--preview` to inspect generated code without creating a plan.
+
+```bash Terminal
+npx checkly import plan [resources] [options]
+```
+
 ### `checkly import apply`
-Apply a previously generated import plan to create the actual code files in your project structure.
+Apply a previously generated import plan to link the resources in your account to the generated code. The resources stay pending until you commit. Use `--no-commit` to skip the commit prompt, and `--plan-id` to pick a plan without the interactive selection.
 
 ```bash Terminal
 npx checkly import apply
@@ -138,7 +163,7 @@ npx checkly import commit
 ```
 
 ### `checkly import cancel`
-Cancel a generated plan that hasn't been committed to discard any pending import operations.
+Cancel a generated plan that hasn't been committed to discard any pending import operations. Use `--all` to cancel all plans.
 
 ```bash Terminal
 npx checkly import cancel

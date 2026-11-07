@@ -42,6 +42,7 @@ At the moment Vitest also doesn't support ranges:
 $ vitest basic/foo.test.ts:10, basic/foo.test.ts:25 # ✅
 $ vitest basic/foo.test.ts:10-25 # ❌
 ```
+
 :::
 
 ### `vitest run`
@@ -67,18 +68,19 @@ vitest related /src/index.ts /src/hello-world.js
 ```
 
 ::: tip
-Don't forget that Vitest runs with enabled watch mode by default. If you are using tools like `lint-staged`, you  should also pass `--run` option, so that command can exit normally.
+Don't forget that Vitest runs with enabled watch mode by default. If you are using tools like `lint-staged`, you should also pass `--run` option, so that command can exit normally.
 
 ```js [.lintstagedrc.js]
 export default {
   '*.{js,ts}': 'vitest related --run',
 }
 ```
+
 :::
 
 ### `vitest bench`
 
-Run only [benchmark](/guide/features.html#benchmarking) tests, which compare performance results.
+Run only [benchmark](/guide/features#benchmarking) tests, which compare performance results.
 
 ### `vitest init`
 
@@ -121,7 +123,51 @@ tests/test1.test.ts
 tests/test2.test.ts
 ```
 
-Since Vitest 4.1, you may pass `--static-parse` to [parse test files](/api/advanced/vitest#parsespecifications) instead of running them to collect tests. Vitest parses test files with limited concurrency, defaulting to `os.availableParallelism()`. You can change it via the `--static-parse-concurrency` option.
+Since Vitest 5, `vitest list` [parses test files](/api/advanced/vitest#parsespecifications) statically instead of running them to collect tests. Pass `--no-static-parse` to run the files instead. Vitest parses test files with limited concurrency, defaulting to `os.availableParallelism()`. You can change it via the `--static-parse-concurrency` option.
+
+### `vitest doctor`
+
+`vitest doctor` measures how much faster the test suite would run under alternative configurations by running it under each of them. The candidates are picked based on the current config:
+
+```bash
+vitest doctor
+```
+
+```
+Results (min of 3 runs each)
+
+  baseline (pool: forks · isolate: true)  4.08s
+  pool: 'threads'                         3.64s (-11%)
+  pool: 'vmThreads'                       1.33s (-67%)
+  isolate: false                          1.28s (-69%)
+
+Recommendation: pool: 'vmThreads' (-67%)
+
+  // vitest.config.ts
+  import { defineConfig } from 'vitest/config'
+
+  export default defineConfig({
+    test: {
+      pool: 'vmThreads', // measured -67% on this suite
+    },
+  })
+```
+
+The `isolate: false` candidate is additionally validated by running the suite twice with a shuffled file order: if any test depends on isolation, the candidate is reported as failed instead of recommended. When several candidates are close to the fastest, doctor prefers the one that keeps per-file isolation.
+
+Doctor also probes lower [`maxWorkers`](/config/maxworkers) values on top of the winning configuration: every worker funnels its transform requests through the single main-thread Vite server, so past a certain count more workers make the run slower, not faster. Starting from half the current worker count, doctor keeps halving while the suite gets at least 5% faster, and includes the winning value in the recommendation.
+
+Suites running a DOM or a custom environment are measured under both vm pools, `vmThreads` and `vmForks`: they amortize the environment creation cost by keeping one environment per worker while every file still gets a fresh VM context. `vmForks` uses child processes instead of worker threads: each child gets its own heap and garbage collector, so either pool can come out faster depending on the suite, and `vmForks` is the vm option for suites that cannot run in worker threads.
+
+Projects running `jsdom` are also measured under `environment: 'happy-dom'` when the package is installed. The swap is applied per project; projects on other environments keep them. happy-dom implements the DOM differently than jsdom, so tests that depend on layout or navigation should be verified before adopting the swap. When the [fs module cache](/config/fsmodulecache) is off, doctor measures `fsModuleCache: true` after an untimed priming run that populates the cache, so the reported time is what repeated runs pay.
+
+Every measurement runs the full suite, including browser projects: `isolate: false` also affects browser mode. Candidates that cannot affect browser projects (`pool`, `environment`, the fs module cache) are picked based on the node-side projects only.
+
+Failing candidates are reported with an excerpt of their errors. If the suite fails under the current configuration, doctor aborts and shows the errors: it needs a passing baseline to compare against.
+
+Short suites are measured multiple times and the best time is reported, so the comparison reflects a warm steady state. Doctor runs the full suite several times, so it takes a multiple of a normal run's time. See [Improving Performance](/guide/improving-performance) for the trade-offs behind every candidate.
+
+Doctor measures and reports the baseline even when there are no candidates to compare. Configurations on a `vm` pool are additionally compared against `pool: 'threads'` with `isolate: false`, which also reuses workers but shares module state between files; a configuration already on one vm pool is still measured under the other.
 
 ## Shell Autocompletions
 
@@ -185,22 +231,10 @@ Boolean options can be negated with `no-` prefix. Specifying the value as `false
 vitest --no-api
 vitest --api=false
 ```
+
 :::
 
 <!--@include: ./cli-generated.md-->
-
-### changed
-
-- **Type:** `boolean | string`
-- **Default:** false
-
-Run tests only against changed files. If no value is provided, it will run tests against uncommitted changes (including staged and unstaged).
-
-To run tests against changes made in the last commit, you can use `--changed HEAD~1`. You can also pass commit hash (e.g. `--changed 09a9920`) or branch name (e.g. `--changed origin/develop`).
-
-When used with code coverage the report will contain only the files that were related to the changes.
-
-If paired with the [`forceRerunTriggers`](/config/forcereruntriggers) config option it will run the whole test suite if at least one of the files listed in the `forceRerunTriggers` list changes. By default, changes to the Vitest config file and `package.json` will always rerun the whole suite.
 
 ### shard
 
@@ -237,3 +271,39 @@ Merges every blob report located in the specified folder (`.vitest/blob/` by def
 ```sh
 vitest --merge-reports --reporter=junit
 ```
+
+### since-last-run <Version type="experimental">5.1.0</Version> {#since-last-run}
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Run only the tests whose dependencies were modified since the last run of the test. A test is selected when one of the files it loaded during its last run has a newer modification time than that run, or was deleted. A test that never ran with this flag has no record and always runs. A test file that failed in its last run also runs, until it passes, because the cause of a failure can be outside the recorded files, for example an environment variable or a server that was down.
+
+```sh
+vitest run --since-last-run
+```
+
+The flag enables [`changed`](/config/changed), [`experimental.recordDependencies`](/config/experimental#experimental-recorddependencies) and the `mtime` [provider](/config/experimental#experimental-vcsprovider). Every run with this flag updates the records of the tests it ran, so the next run selects only the tests affected by changes made in between. To run every test again, run Vitest without the flag, or delete the cache with [`--clearCache`](#clearcache).
+
+The flag requires [`cache`](/config/cache). Vitest throws an error if the cache is disabled.
+
+::: warning
+The modification time comes from the file system. A `git checkout` or an unpacked archive that sets old modification times is not detected. Files that a test did not load during its last run, for example a new `.env` file or a new `__mocks__` file, are not detected either. See [`experimental.recordDependencies`](/config/experimental#experimental-recorddependencies) for the full list of recorded files.
+:::
+
+See [Running Only Affected Tests](/guide/recipes/affected-tests) for a comparison with `--changed`.
+
+### last-failed
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Run only the tests that failed in the last run. Vitest reads the failures from the [results cache](/config/cache) and skips every other test file and test:
+
+```sh
+vitest run --last-failed
+```
+
+A test file runs completely if it failed outside of a test, for example in a `beforeAll` hook or during collection. Vitest selects the tests by their full names, so a renamed test does not run until the file runs again without the flag. If no test failed in the last run, Vitest prints `No failed tests found` and exits with code 1 unless [`--passWithNoTests`](/config/passwithnotests) is set.
+
+The flag can be combined with other filters. For example, `vitest run --last-failed -t login` runs only the failed tests whose names match `login`. In watch mode, only the first run is limited to the failed tests.

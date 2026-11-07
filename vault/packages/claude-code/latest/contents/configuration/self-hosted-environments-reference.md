@@ -1,0 +1,459 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Self-hosted environments reference
+
+> Complete reference for the self-hosted runner and orchestrator: CLI flags, environment variables, and Prometheus metrics.
+
+> [!NOTE]
+>
+> Self-hosted environments are in public beta on Team and Enterprise plans; an [Owner](https://code.claude.com/docs/en/cloud-environments.md#organization-shared-environments) enables them by turning on **Allow self-hosted environments** on the [**Cloud environments** admin page](https://claude.ai/admin-settings/cloud-environments). This page is the flag and metric reference; see the [quickstart](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md) for setup and [Deploy to production](https://code.claude.com/docs/en/self-hosted-environments-deploy.md) for the fleet recipes.
+
+This page is the reference for the two processes you run in a [self-hosted environment](https://code.claude.com/docs/en/self-hosted-environments): the runner, which executes Claude Code [cloud sessions](https://code.claude.com/docs/en/claude-code-on-the-web.md) on your hosts, and the optional autoscaling orchestrator, which starts runners as sessions queue. Each has its own flag table. Both run on Linux or macOS hosts, which the defaults such as `/workspace` and `~/.claude` assume. Run `claude self-hosted-runner --help` for the authoritative list on your installed version.
+
+Metric series and a few API fields still use `pool` for what these pages call an environment; both terms name the same thing. The environment ID is the `pool_id` field, with the form `ccpool_...`: wherever these pages show a `pool` identifier, it names the environment. CLI flags and environment variables spell it `environment`, such as `--environment-secret-file`; the deprecated `pool` spellings still work, as the [`--environment-secret-file` row](#runner-cli-flags) describes.
+
+## Runner CLI flags
+
+Most flags have a corresponding environment variable. When both are set, the flag takes precedence. Duration flags take minutes or seconds on the CLI, but the paired environment variable is always in milliseconds, indicated by the `_MS` suffix, and the Default column shows the flag's unit: `--exit-if-unused-min 10` is equivalent to `SELF_HOSTED_RUNNER_IDLE_SHUTDOWN_MS=600000`, and a Helm value like `SELF_HOSTED_RUNNER_STARTUP_TIMEOUT_MS: "15"` means 15 milliseconds, not the 15-minute default.
+
+| Flag | Env var | Default | Description |
+| :- | :- | :- | :- |
+| `--api-url <url>` | none | `https://api.anthropic.com` | API base URL. Override only for testing. |
+| `--base-dir <path>` | `SELF_HOSTED_RUNNER_BASE_DIR` | `/workspace`; none on Windows | Directory for repository checkouts and per-session working directories. The runner needs write access to this path or its parent. The runner creates the directory at startup and exits with `cannot create or write to base directory` when it can't create or write to it. Before v2.1.225, the runner created the directory when the first session started, so an unusable path failed sessions rather than startup. On Windows, which isn't a supported runner host, there is no default: the runner exits at startup unless you pass the flag or set the variable. Use the same value on every runner in an environment. See [Keep the base directory and capacity identical across runners](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#keep-the-base-directory-and-capacity-identical-across-runners). |
+| `--capacity <n>` | none | `1` | Maximum concurrent sessions this runner handles. All sessions belong to the same locked [owner](https://code.claude.com/docs/en/self-hosted-environments#key-concepts). Use the same value on every runner in an environment; see [Keep the base directory and capacity identical across runners](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#keep-the-base-directory-and-capacity-identical-across-runners). |
+| `--client-label <label>` | `SELF_HOSTED_RUNNER_CLIENT_LABEL` | the host's hostname | Label the runner sends when it registers. The runner also reports it as the `client_label` label of [`claude_code_self_hosted_runner_info`](#prometheus-metrics). Requires Claude Code v2.1.248 or later. |
+| `--configure-git` | `SELF_HOSTED_RUNNER_CONFIGURE_GIT=1` | off | At startup, write global git identity, enable Anthropic commit signing, turn on git push negotiation, and install commit hooks that append a `Co-authored-by:` trailer. Push negotiation requires Claude Code v2.1.257 or later. See [Configure git](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#configure-git). |
+| `--confine-repo-settings <mode>` | `SELF_HOSTED_RUNNER_CONFINE_REPO_SETTINGS` | `warn` | Sets the mode of the guard that flags a session when a repository's committed settings try to grant write or read access outside that session's own workspace, set environment variables, or override the operator's sandbox or hooks posture, such as `sandbox.enabled: false` or `disableAllHooks`. The default `warn` logs the violation and still starts the session, `enforce` refuses the session, and `off` disables the scan. See [Harden your deployment](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#harden-your-deployment). |
+| `--debug-token-dir <path>` | `SELF_HOSTED_RUNNER_DEBUG_TOKEN_DIR` | unset | Write live tokens to disk for inspection. Debug only; don't use in production. |
+| `--defer-shutdown-max-min <n>` | `SELF_HOSTED_RUNNER_DEFER_SHUTDOWN_MAX_MS` | `0` | On the first `SIGTERM` or `SIGINT`, keep serving the sessions already attached instead of draining them, then release whatever is still attached N minutes later and exit. Raise your host's stop timeout before you set this. See [Defer the drain past the first signal](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#defer-the-drain-past-the-first-signal). `0` disables. Requires Claude Code v2.1.238 or later. |
+| `--drain-grace-sec <n>` | `SELF_HOSTED_RUNNER_DRAIN_GRACE_MS` | `0` | Until the runner receives a shutdown signal or reaches its retire time, controls when the runner exits after its active sessions finish: `0` exits immediately without polling for more, and a positive value keeps the runner alive and re-polling the locked owner's queue for that many seconds first, at the cost of the per-session container isolation described in the [hardening section](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#harden-your-deployment). After a first signal you deferred with [`--defer-shutdown-max-min`](https://code.claude.com/docs/en/self-hosted-environments-deploy#defer-the-drain-past-the-first-signal), the runner exits as soon as it holds no sessions, whatever you set here. |
+| `--drain-marker-file <path>` | `SELF_HOSTED_RUNNER_DRAIN_MARKER_FILE` | unset | Marker file that your host writes to announce a graceful drain before sending `SIGTERM`. When the file exists as the drain starts, the runner reports its exit to Anthropic as a host drain rather than a plain shutdown signal. The drain itself, including the `--drain-wait-sec` hold, runs the same as without the flag. Name a path on a local filesystem that sessions can't write to. Requires Claude Code v2.1.271 or later. |
+| `--drain-wait-sec <n>` | `SELF_HOSTED_RUNNER_DRAIN_WAIT_MS` | `0` | Once the drain starts, which is on `SIGTERM` unless you set [`--defer-shutdown-max-min`](https://code.claude.com/docs/en/self-hosted-environments-deploy#defer-the-drain-past-the-first-signal), wait up to N seconds for each session's in-flight turn and background tasks to finish before terminating the child. During this wait, the runner counts a background task that has just finished as still running until the follow-up turn that reads its result starts, for at most the [`SELF_HOSTED_RUNNER_BG_RESULT_GRACE_MS`](#environment-variable-only-settings) window. [Raise your stop timeout too](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#let-running-turns-finish-before-a-restart). |
+| `--environment-secret-file <path>` | `SELF_HOSTED_RUNNER_ENVIRONMENT_SECRET` | required | Path to a file containing the environment secret, or, for runners spawned by the [orchestrator](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners), the single-use work-order JWT. `SELF_HOSTED_RUNNER_ENVIRONMENT_SECRET` carries the secret value directly, not a file path. The older `--pool-secret-file` flag and `SELF_HOSTED_RUNNER_POOL_SECRET` variable still work and print a deprecation notice to stderr; preview-program runner builds older than 2.1.216 only recognize those older names. |
+| `--exec-path <path>` | `SELF_HOSTED_RUNNER_EXEC_PATH` | own binary | Binary or wrapper script to spawn for each session. See [Wrapper scripts](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#wrapper-scripts). |
+| `--exit-if-unused-min <n>` | `SELF_HOSTED_RUNNER_IDLE_SHUTDOWN_MS` | `0` | Exit after N minutes of polling with no work ever assigned, for autoscaler scale-down. `0` disables. |
+| `--git-host-rewrite <from>=<to>` | none | unset | Rewrite `https://<from>/...` source URLs to `https://<to>/...` before cloning, for split-horizon DNS. Repeatable; flag only. |
+| `--git-ssh-rewrite <host>` | none | unset | Rewrite `https://<host>/...` source URLs to `git@<host>:...` before cloning, for SSH-only git hosts. Repeatable; flag only. |
+| `--health-port <port>` | `SELF_HOSTED_RUNNER_HEALTH_PORT` | `8080` | Port for the `/healthz` and `/metrics` listener. Set `0` to disable. |
+| `--hold-idle-file <path>` | `SELF_HOSTED_RUNNER_HOLD_IDLE_FILE` | unset | File your host keeps changing to hold an idle session on the runner. See [Keep an idle session while its processes run](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#keep-an-idle-session-while-its-processes-run). Requires Claude Code v2.1.311 or later. |
+| `--hooks-dir <path>` | `SELF_HOSTED_RUNNER_HOOKS_DIR` | unset | Directory of lifecycle hook scripts. See [Lifecycle hooks](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#lifecycle-hooks). |
+| `--host-config-snapshot <mode>` | `SELF_HOSTED_RUNNER_HOST_CONFIG_SNAPSHOT` | `disk` | Where the runner keeps the startup snapshot of the [host config directory](#environment-variable-only-settings) that it seeds each session from. `disk` copies the snapshot into a runner-owned directory under `--base-dir` and, at each session start, verifies every file against an in-memory digest. If a file in the copy has been modified, the session fails and the runner refuses sessions until you restart it. `memory` holds the whole snapshot on the heap, capped at 64 MiB; over the cap, sessions start without host config and show a notice saying so. When the runner can't write the disk snapshot, it logs the failure and uses `memory` for that run. Requires Claude Code v2.1.271 or later. |
+| `--kill-session-after-min <n>` | `SELF_HOSTED_RUNNER_MAX_LIFETIME_MS` | `0` | Limit a session to N minutes wall-clock, as a safety limit for stuck sessions. On v2.1.260 or later, the runner releases a session that reaches the limit so it can resume on its user's next message, and terminates it only if it's still on the runner when the [`SELF_HOSTED_RUNNER_MAX_LIFETIME_GRACE_MS`](#environment-variable-only-settings) grace window ends. Before v2.1.260, the runner terminated the session at the limit. See [Some sessions don't count as idle](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#some-sessions-don’t-count-as-idle) for the details and how to choose a value. `0` disables. |
+| `--lock-to-account <id>` | `SELF_HOSTED_RUNNER_LOCK_TO_ACCOUNT` | unset | Pre-lock the runner to a specific account at startup instead of locking on first session. Accepts an email address or `user_...` ID in the environment's organization. A pre-locked runner never picks up Claude Tag channel sessions, which have no account. |
+| `--log-file <path>` | `SELF_HOSTED_RUNNER_LOG_FILE` | unset | Mirror runner logs to a file in addition to stdout and stderr, created with `0600` permissions. Required for `self-hosted-runner doctor` to tail logs locally. |
+| `--log-level <level>` | none | `info` | `info` or `debug` |
+| `--max-hold-min <n>` | `SELF_HOSTED_RUNNER_MAX_HOLD_MS` | `1440` | With `--hold-idle-file`, release a held session anyway N minutes after it went idle. A value at or below `--release-idle-session-min` holds nothing. `0` turns the hold off. Requires Claude Code v2.1.311 or later. |
+| `--post-session-hook-timeout-sec <n>` | `SELF_HOSTED_RUNNER_POST_SESSION_HOOK_TIMEOUT_MS` | `60` | Budget for the [`post-session` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#post-session) on every session end, including runner shutdown |
+| `--proxy-authorization-command <command>` | `SELF_HOSTED_RUNNER_PROXY_AUTHORIZATION_COMMAND` | unset | Shell command the runner runs for every connection to your egress proxy, using its trimmed stdout as the `Proxy-Authorization` header value. Requires `HTTPS_PROXY` or `HTTP_PROXY`, and can't be combined with `--proxy-authorization-file`. See [Authenticate to an egress proxy](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#authenticate-to-an-egress-proxy). Requires Claude Code v2.1.238 or later. |
+| `--proxy-authorization-file <path>` | `SELF_HOSTED_RUNNER_PROXY_AUTHORIZATION_FILE` | unset | File the runner reads for every connection to your egress proxy, using its trimmed contents as the `Proxy-Authorization` header value. Use this flag for a token another process rotates in place. Carries the same requirements as `--proxy-authorization-command`, and can't be combined with it. See [Authenticate to an egress proxy](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#authenticate-to-an-egress-proxy). Requires Claude Code v2.1.238 or later. |
+| `--push-outcome-on-release` | `SELF_HOSTED_RUNNER_PUSH_OUTCOME_ON_RELEASE` | off | On a runner-initiated session end such as a drain or idle release, the runner pushes primary session branches with new commits to `origin` before deleting the workspace. Best-effort; adds 30 seconds to the shutdown budget. Requires git 2.29 or later to resume from them. Restrict push access to `claude/*` refs; see [Resumed sessions lose unpushed work](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#resumed-sessions-lose-unpushed-work). A `checkout` hook's repositories aren't pushed; snapshot those from the [`post-session` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#post-session). |
+| `--release-idle-session-min <n>` | `SELF_HOSTED_RUNNER_SESSION_IDLE_MS` | `0` | Release a session slot after N minutes of inactivity once a turn finishes or the session waits for the user's action. [Some sessions don't count as idle](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#some-sessions-don’t-count-as-idle), so pair with `--kill-session-after-min`. A finished background task keeps the session busy for at most the [`SELF_HOSTED_RUNNER_BG_RESULT_GRACE_MS`](#environment-variable-only-settings) window. To delay a release, set [`--hold-idle-file`](https://code.claude.com/docs/en/self-hosted-environments-deploy#keep-an-idle-session-while-its-processes-run). `0` disables. |
+| `--remove-session-state [bool]` | `SELF_HOSTED_RUNNER_REMOVE_SESSION_STATE` | off | Remove a session's per-session directories under `<base-dir>/_sessions/` when the session ends on this runner, whatever the outcome. [Reuse a pre-warmed checkout](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#reuse-a-pre-warmed-checkout) describes what they hold and who can read them when they stay. The removal is best-effort: the per-session directories stay in place when the runner is killed or reaches its drain deadline before cleanup runs. With the flag on, a failed or interrupted session's debug log isn't kept on disk. Requires Claude Code v2.1.268 or later. |
+| `--retire-at <epoch-seconds>` | `SELF_HOSTED_RUNNER_RETIRE_AT` | unset | Retire the runner at an absolute Unix timestamp in seconds, for infrastructure that kills the runner at a known time; [Runner lifecycle](https://code.claude.com/docs/en/self-hosted-environments#runner-lifecycle) describes the release sequence and how to size the margin. Values before 2001 or after the year 5138 are rejected by the flag and ignored by the environment variable. |
+| `--server-auto-mode-lists <mode>` | `SELF_HOSTED_RUNNER_SERVER_AUTO_MODE_LISTS` | `no-allow` | Which of the [auto mode](https://code.claude.com/docs/en/permission-modes.md#eliminate-prompts-with-auto-mode) classifier rule lists that the control plane sends with a session may reach that session: `all`, `no-allow`, or `none`. See [Auto mode rule lists](#auto-mode-rule-lists) for what each value applies. An invalid value stops the runner at startup. Requires Claude Code v2.1.295 or later. |
+| `--session-stop-grace-sec <n>` | `SELF_HOSTED_RUNNER_SESSION_STOP_GRACE_MS` | `5` | How long to wait for the Claude process to exit cleanly after a session ends, before force-killing it. Raise the value if the child's own `SessionEnd` hooks need more time. |
+| `--startup-timeout-min <n>` | `SELF_HOSTED_RUNNER_STARTUP_TIMEOUT_MS` | `15` | How long to wait on a child process that hasn't initialized before releasing the session's slot. See [Session startup timeout](#session-startup-timeout) for where the count starts and which sessions it leaves running. `0` disables the timeout. |
+| `--trust-workspace [bool]` | `SELF_HOSTED_RUNNER_TRUST_WORKSPACE` | on | Seed persisted trust for each session's repository paths so repo-committed `permissions.allow` and `additionalDirectories` are honored. Set `false` to drop repo-committed permission grants and configure allow rules in the host config's `settings.json` instead; repository-committed `sandbox.*` settings still apply either way, which is why the [repo-settings guard](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#harden-your-deployment) scans them regardless of this flag. |
+| `--use-anthropic-git-proxy` | `CLAUDE_RUNNER_USE_GIT_PROXY=1` | off | Clone repositories on github.com via the [Anthropic git proxy](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#use-the-anthropic-git-proxy) instead of customer-managed git auth. Requires `--capacity 1` and git 2.32 or later; the runner refuses to start otherwise. Supersedes the rewrite flags. |
+
+Most duration flags have a maximum, chosen to keep each timeout inside the runtime's 32-bit timer ceiling of roughly 24.85 days. The `--*-min` flags cap at 10080 minutes, 7 days; `--drain-grace-sec` at 604800 seconds, also 7 days; and `--drain-wait-sec` at 86400 seconds, 24 hours. `--session-stop-grace-sec` and `--post-session-hook-timeout-sec` are uncapped. Overrunning a cap behaves differently per surface:
+
+* **Flag**: startup fails with an error.
+* **Environment variable**: the runner clamps the value to the timer ceiling rather than rejecting it.
+
+### Session startup timeout
+
+If a session lost its slot during a turn such as `/code-review`, update the runner and the child binary to v2.1.309 or later. From v2.1.299 through v2.1.308, the runner released a session, even mid-turn, once the startup timeout passed without a `user` or `assistant` message.
+
+With `--startup-timeout-min <n>`, the runner releases a session's slot when its child hasn't initialized within `<n>` minutes after cloning. During a turn that begins before the child initializes, the session keeps its slot until `<n>` minutes pass with no line on the child's [activity channel](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#keep-stdin-and-file-descriptor-3-attached). Once the child initializes, the runner clears that count and `--release-idle-session-min` governs release. To limit a session whose child is alive but stuck, set `--kill-session-after-min`.
+
+### Auto mode rule lists
+
+`--server-auto-mode-lists` lets you decide which [auto mode](https://code.claude.com/docs/en/permission-modes.md#eliminate-prompts-with-auto-mode) classifier rules from outside the runner reach the sessions on your runners. Anthropic's control plane can send rule lists with a session and ask the runner to apply them. Some entries may be rules an admin of your organization wrote. The lists are `environment`, `soft_deny`, and `allow`:
+
+* **`environment`**: an entry can make the classifier allow more as well as less.
+* **`soft_deny`**: an entry blocks an action unless the user explicitly asked for it or an `allow` exception applies.
+* **`allow`**: the exceptions to `soft_deny` entries.
+
+The flag's value picks which lists the runner applies:
+
+* **`no-allow`**: the default. Applies `environment` and `soft_deny` and withholds `allow`. An `environment` entry can still make the classifier allow more, so the default doesn't rule out every loosening.
+* **`all`**: applies all three lists.
+* **`none`**: applies none of them. Pick `none` to rule out every loosening from these lists. It also drops the `soft_deny` restrictions.
+
+No runner setting makes the control plane ask the runner to apply the lists. When it doesn't ask, sessions receive no list whatever you set. To see which happened, start the runner with `--log-level debug`. For each session the runner then logs a line containing `the server asked this runner to apply`, or one containing `the server did not ask this runner to apply the auto mode lists it sends`.
+
+## Orchestrator CLI flags
+
+The `self-hosted-runner orchestrator` subcommand, which spawns [on-demand runners](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners), accepts `--api-url`, `--environment-secret-file`, `--hooks-dir`, `--health-port`, and `--log-level` with the same defaults as the runner and, where the runner's flag has one, the same environment variable, except that `--hooks-dir` is required and must contain a `spawn-runner` hook. It also takes its own flags:
+
+| Flag | Default | Description |
+| :- | :- | :- |
+| `--hook-concurrency <n>` | `4` | Maximum `spawn-runner` hooks running in parallel. Also caps how many spawn requests are claimed per poll. The orchestrator checks for new spawn requests only after every hook it started has finished, so one slow hook delays that orchestrator's next hooks. |
+| `--hook-timeout <sec>` | `60` | Terminate the hook's process tree after this many seconds. The timeout plus its 5-second kill grace must stay below `--expected-spawn-seconds`; the orchestrator enforces this at startup. |
+| `--expected-spawn-seconds <sec>` | `120` | Expected p99 time from when the orchestrator receives a spawn request to when the runner registers, including any wait for capacity on your platform. The server enforces a range of 10 to 3600. Sent on every poll as the server-side lease: if no runner registers before it elapses, the session is re-offered with a fresh order ID. All replicas must share this value. |
+| `--min-idle <n>` | `0` | Keep at least N idle session slots free by spawning standby runners proactively. `0` disables pre-warming. Pair with the runner's `--exit-if-unused-min` so surplus standby runners reclaim themselves. |
+| `--shutdown-drain-sec <n>` | `0` | On `SIGTERM`, stop polling for spawn requests and give running `spawn-runner` hooks and any unanswered poll up to this many seconds to finish before stopping what's left. At `0`, stop immediately. Maximum `3600`, which the orchestrator enforces at startup. To choose a value, see [Size `--shutdown-drain-sec` and the orchestrator's stop timeout](https://code.claude.com/docs/en/self-hosted-environments-configuration#size-shutdown-drain-sec-and-the-supervisors-stop-timeout-for-the-orchestrator). Requires Claude Code v2.1.299 or later. |
+| `--debug-dir <path>` | unset | Write each spawn request's work order and hook stderr to disk. Debug only; never set in production. |
+
+### SCM connector flags
+
+The SCM connector isn't available, so leave the flags in this section unset. If you set `--scm-connector-host`, the connection doesn't open, and the orchestrator keeps retrying it. Runners still start as sessions queue.
+
+The connector is a standing WebSocket connection from the orchestrator to Anthropic's control plane. It's designed to let hosted pre-session flows, such as the repository picker and the branch or ref resolver, reach a GitHub Enterprise Server host that's only routable from inside your network. See [Network requirements](https://code.claude.com/docs/en/github-enterprise-server.md#network-requirements) on the GitHub Enterprise Server page for what those flows need.
+
+| Flag | Default | Description |
+| :- | :- | :- |
+| `--scm-connector-host <host[:port]>` | unset | GitHub Enterprise Server hostname to forward requests to. Port defaults to `443`. |
+| `--scm-connector-id <n>` | required with `--scm-connector-host` | The numeric ID of your organization's GitHub Enterprise Server connection. |
+| `--scm-connector-provider <slug>` | `ghe` | Path segment identifying the provider, matching `^[a-z0-9-]{1,32}$`. |
+| `--scm-connector-ca-file <path>` | unset | Extra CA bundle, in PEM format, for TLS connections to the GitHub Enterprise Server host. |
+| `--scm-connector-host-rewrite <from>=<to_host:to_port>` | unset | For end-to-end testing only: redirects the TCP connection while keeping the Host header and TLS SNI as `--scm-connector-host`. |
+
+On each connection attempt the orchestrator sends its existing environment secret, and it retries automatically with exponential backoff, capped at 30 seconds plus jitter.
+
+## Environment-variable-only settings
+
+These runner settings are read from the environment only and cover behavior most deployments leave at the default:
+
+| Env var | Default | Description |
+| :- | :- | :- |
+| `SELF_HOSTED_RUNNER_BG_RESULT_GRACE_MS` | `30000` | How long the runner considers a session busy after a background task finishes while the follow-up turn that reads the result hasn't started. The [`--drain-wait-sec` and `--release-idle-session-min` rows](#runner-cli-flags) describe where the hold applies on drain and idle release, and [Runner lifecycle](https://code.claude.com/docs/en/self-hosted-environments#runner-lifecycle) describes where it applies on `--retire-at` retirement. `0` or an unusable value falls back to the default, so the hold can't be turned off. Requires Claude Code v2.1.228 or later. |
+| `SELF_HOSTED_RUNNER_HOST_CONFIG_DIR` | `~/.claude` | Directory captured into the runner's startup snapshot and seeded into each session's `CLAUDE_CONFIG_DIR`; changes on disk apply after a runner restart. Setting the variable also moves where the runner reads `.claude.json` for [MCP seeding](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#mcp-servers), so setting it, including to its own default, relocates that lookup; point at an empty directory to disable seeding entirely. |
+| `SELF_HOSTED_RUNNER_MAX_LIFETIME_GRACE_MS` | `900000` | How long the runner waits after a session reaches its `--kill-session-after-min` limit, for a running turn to finish or the release to complete, before it terminates the session |
+| `SELF_HOSTED_RUNNER_POST_TURN_SETTLE_MS` | `7000` | Cap on how long the runner counts a session as busy for the `--drain-wait-sec` drain after a turn finishes, while the session's process reports the turn's end to Anthropic. `0` or an unusable value falls back to the default, so the hold can't be turned off. Requires Claude Code v2.1.275 or later. |
+| `SELF_HOSTED_RUNNER_SIGKILL_GRACE_MS` | `30000` | How long the runner waits for the OS to deliver `SIGKILL` to a child stuck in uninterruptible I/O before exiting itself. Floored at `--post-session-hook-timeout-sec` plus 15 seconds, and 30 more when `--push-outcome-on-release` is set, so the effective minimum is 75 seconds at defaults. |
+| `CLAUDE_RUNNER_FETCH_DEPTH` | `50` | Git fetch depth for fresh clones. Set a positive integer, or `full` or `0` for a complete fetch. For a clone that's already in the workspace, see [Reuse a pre-warmed checkout](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#reuse-a-pre-warmed-checkout). |
+| `CLAUDE_RUNNER_FETCH_SERVER_PROGRESS_CAP_MS` | `600000` | How long in milliseconds, per attempt, a git fetch may wait for its first data while the git server's own progress numbers keep rising, as when the server prepares the pack for a large repository. `0` or `off` turns the wait off: such a fetch is then cut off after two minutes without data. Any other whole number is clamped to between `120000` and `1800000`, 2 to 30 minutes. Requires Claude Code v2.1.295 or later. |
+| `CLAUDE_RUNNER_SKIP_GIT_VERIFY` | unset | When `1`, skip the `.git` presence check after a `checkout` hook runs. Set this when your hook materializes a non-git source. |
+| `FORCE_AUTOUPDATE_PLUGINS` | unset | When `1`, let plugin marketplaces auto-update even though the binary is pinned |
+| `CLAUDE_CODE_DISABLE_ARTIFACT` | unset | When `1`, disable the Artifact tool in sessions regardless of the organization's admin setting, and drop the `*.frame.claudeusercontent.com` egress requirement |
+
+## Telemetry
+
+Session children send operational telemetry to Anthropic unless you turn it off. No code or repository content is sent. Set telemetry variables on the runner process; the runner re-asserts them after applying server-provided environment variables, so the operator's setting always takes precedence.
+
+One control is specific to self-hosted environments: `CLAUDE_CODE_BYOC_ENABLE_DATADOG=1` opts in to Datadog operational metrics, which are off by default in self-hosted environments. The general Claude Code telemetry controls, `DISABLE_TELEMETRY`, `DO_NOT_TRACK`, `DISABLE_ERROR_REPORTING`, and `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`, apply to session children as documented in the [environment variable reference](https://code.claude.com/docs/en/env-vars.md). `DISABLE_GROWTHBOOK` is related but different: setting `DISABLE_GROWTHBOOK=1` disables feature-flag fetching, and telemetry stays on unless `DISABLE_TELEMETRY` is also set.
+
+`CLAUDE_CODE_ENABLE_TELEMETRY` is unrelated: it enables OpenTelemetry export to your own collector, as described in [Monitoring](https://code.claude.com/docs/en/monitoring-usage.md), and doesn't control Anthropic's analytics.
+
+## Health endpoint
+
+The runner serves `GET /healthz` on the configured health port. The response is `200 OK` whenever the process is alive, whatever state the poll loop is in, so an HTTP probe on this endpoint detects a dead process only. The JSON body describes current state:
+
+```json theme={null}
+{
+  "status": "ok",
+  "runner_id": "ccrunner_...",
+  "active_sessions": 2,
+  "last_poll_at": "2026-03-31T18:04:11.220Z",
+  "last_poll_age_ms": 842
+}
+```
+
+Alert on `last_poll_age_ms`, but don't use it in a liveness probe; keep that probe on the HTTP status code. The value is the time since the last successful poll, so it also rises while the runner can't reach Anthropic. Both `last_poll_at` and `last_poll_age_ms` are `null` until the first poll succeeds. To catch polls that fail from the start, also alert on `claude_code_self_hosted_runner_poll_errors_total`, listed under [Prometheus metrics](#prometheus-metrics).
+
+The orchestrator's own `/healthz`, on its health port, always returns `200`. The body carries a `connected` field reporting whether the most recent poll succeeded, plus per-state spawn-queue counts in `queue_counts`. To see why `connected` is `false`, read the top-level `last_error` field, which each successful poll resets to `null`. Gate readiness and alerting on `connected` rather than the status code.
+
+When the [SCM connector](#scm-connector-flags) is configured, the orchestrator's `/healthz` body also carries `scm_connector_connected` and a `scm_connector` object with `connected`, `last_connected_at`, `last_error`, `reconnects`, and `requests_forwarded`. Both fields are `null` when `--scm-connector-host` isn't set.
+
+## Prometheus metrics
+
+Each runner serves Prometheus metrics at `GET /metrics` on the same port as `/healthz`. Key series:
+
+| Series | Notes |
+| :- | :- |
+| `claude_code_self_hosted_runner_info{runner_id,version,client_label}` | Always `1`; useful for fleet inventory and version-drift detection |
+| `claude_code_self_hosted_runner_capacity` | Configured `--capacity` |
+| `claude_code_self_hosted_runner_active_sessions` | Sessions currently running |
+| `claude_code_self_hosted_runner_locked_account{email}` | Present once the runner has locked to a user and a session token carrying an `act.email` claim has been issued. The series is absent on a runner locked to a Claude Tag agent, whose session tokens carry no `act.email`. The label value is the account email; if your metrics store is broadly readable, drop or hash the label at scrape time, for example with Prometheus `metric_relabel_configs`. |
+| `claude_code_self_hosted_runner_last_poll_age_seconds` | Seconds since the last successful poll. Alert if over 60. |
+| `claude_code_self_hosted_runner_poll_errors_total{error_kind}` | Cumulative PollWork failures by kind: `transport`, `timeout`, `5xx`, `429`, or `4xx`. All five series are present from process start; alert on `rate(...[5m]) > 0`. |
+| `claude_code_self_hosted_runner_sessions_started_total{client_platform}` | Session child processes spawned over the runner's lifetime, one series per session origin such as `web_claude_ai`, `ios`, `android`, `desktop_app`, or `claude_code_cli`, or `unknown` when the server didn't send one. Slack sessions carry either `claude_in_slack` or `claude-in-slack` depending on which Slack integration created them, so match both with a regex selector such as `{client_platform=~"claude[-_]in[-_]slack"}`. Use `sum()` for the fleet total. |
+| `claude_code_self_hosted_runner_sessions_completed_total{client_platform}` | Sessions that ended cleanly, labeled the same way. Broader than a plain clean exit: see [session lifecycle counter semantics](#session-lifecycle-counter-semantics) for what counts. |
+| `claude_code_self_hosted_runner_sessions_failed_total{client_platform}` | Sessions that ended in failure, labeled the same way. Same caveat: see [session lifecycle counter semantics](#session-lifecycle-counter-semantics). |
+| `claude_code_self_hosted_runner_sessions_interrupted_total{client_platform}` | Sessions the runner terminated for an operational reason rather than a session outcome, labeled the same way. See [session lifecycle counter semantics](#session-lifecycle-counter-semantics). |
+| `claude_code_self_hosted_runner_initializing_sessions` | Sessions currently in the init phase, from assignment until the child's init event |
+| `claude_code_self_hosted_runner_session_init_duration_seconds` | Histogram of session init durations |
+| `claude_code_self_hosted_runner_session_init_errors_total` | Sessions that failed before reaching init: a checkout hook failure, git prep, token issue, or a pre-init child crash |
+| `claude_code_self_hosted_runner_session_start_hook_errors_total` | `SessionStart` hooks that reported an error outcome, one per failing hook execution |
+| `claude_code_self_hosted_runner_session_idle_seconds{session_id,client_platform}` | Per-session gauge of seconds since the session went idle. Useful for terminating sessions stuck on an unanswered permission prompt. |
+
+The orchestrator serves its own series at `GET /metrics` on the same port as its `/healthz`:
+
+| Series | Notes |
+| :- | :- |
+| `claude_code_self_hosted_orchestrator_info{version,pool_id,orchestrator_uuid,hostname}` | Always `1` |
+| `claude_code_self_hosted_orchestrator_connected` | `1` when the most recent poll succeeded; drops to `0` after any failed poll, whatever the failure kind |
+| `claude_code_self_hosted_orchestrator_last_poll_age_seconds` | Seconds since the last poll attempt, success or failure, unlike the runner's identically-named metric, which measures since the last success; pair with `connected` to catch failing polls. The orchestrator's poll loop waits on hook execution, so alert above `--hook-timeout` plus a margin, around 90 seconds at defaults, rather than a flat 60. |
+| `claude_code_self_hosted_orchestrator_poll_errors_total{error_kind}` | Cumulative PollSpawnHints failures by kind: `transport`, `timeout`, `5xx`, `429`, or `4xx`. All five series are present from process start; alert on `rate(...[5m]) > 0`. |
+| `claude_code_self_hosted_orchestrator_queue_pending_sessions` | Spawn requests claimable right now |
+| `claude_code_self_hosted_orchestrator_queue_backing_off_sessions` | Spawn requests in retry backoff after a retryable hook failure |
+| `claude_code_self_hosted_orchestrator_queue_circuit_broken_sessions` | Sessions blocked from spawning. Each stays blocked until a user sends it a new message or an Owner retries it from the environment's **Activity** tab. The count can stay above zero after you fix the cause. Alert if above zero. |
+| `claude_code_self_hosted_orchestrator_pool_pending_sessions` | Total sessions waiting on a runner for this environment. Environment-wide aggregate, identical on every orchestrator instance: use `MAX` rather than `SUM` across instances. |
+| `claude_code_self_hosted_orchestrator_pool_active_sessions` | Sessions currently assigned to an alive runner in this environment. Environment-wide aggregate, identical on every orchestrator instance: use `MAX` rather than `SUM` across instances. |
+| `claude_code_self_hosted_orchestrator_spawn_hooks_total{result}` | Cumulative `spawn-runner` hook outcomes: `ok`, `retryable`, `non_retryable`. Counts orchestrator hook invocations, not session children the runners spawn: not comparable to `sessions_started_total`, since capacity above one, warm pools, and runners spawned again for the same session all diverge the two. |
+| `claude_code_self_hosted_orchestrator_spawn_hook_duration_seconds` | Histogram of hook durations |
+| `claude_code_self_hosted_orchestrator_warm_hints_dispatched_total` | Standby spawn requests dispatched since process start |
+| `claude_code_self_hosted_orchestrator_session_queue_wait_seconds` | Histogram of seconds each session waited in the queue before the orchestrator claimed it for spawn, recorded from the queue-wait timestamp the control plane sends with each session's spawn request. Use for p50/p99 queue-time alerting. Pre-warming spawns aren't sampled. |
+| `claude_code_self_hosted_orchestrator_clock_skew_seconds` | Local-minus-server clock skew; diagnostic, present once measured |
+| `claude_code_self_hosted_orchestrator_scm_connector_connected` | `1` when the [SCM connector](#scm-connector-flags)'s WebSocket is open; `0` while dialing or backing off. Absent when `--scm-connector-host` isn't set. |
+| `claude_code_self_hosted_orchestrator_scm_connector_requests_forwarded_total` | Cumulative HTTP requests proxied to the configured SCM host since process start. Absent when `--scm-connector-host` isn't set. |
+
+For autoscaling, pick the series that matches your scaling style and gate it before it feeds the scaler:
+
+* **Queue-depth scaling**: feed `claude_code_self_hosted_orchestrator_pool_pending_sessions` into your HPA or KEDA scaler, not `queue_pending_sessions`.
+* **Capacity scaling**: scale on the ratio of the runner's `active_sessions` to `capacity`.
+* **Gate on `connected`**: filter the query with `claude_code_self_hosted_orchestrator_connected == 1` per instance, so a disconnected replica's stale value doesn't feed the scaler.
+
+During a full poll outage, every replica disconnected, the gated query returns no data. HPA holds the current replica count on a missing metric, but KEDA's Prometheus scaler at its default `ignoreNullValues: "true"` reads the empty result as zero and scales in; set `ignoreNullValues: "false"` on the ScaledObject, optionally with a `fallback` replica floor.
+
+The following Prometheus Operator `PodMonitor` covers both processes. It selects pods by the `app.kubernetes.io/part-of: claude-code-self-hosted-runner` label and the named `health` port that the [Kubernetes recipe](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#kubernetes) sets; adjust the namespaces to match your deployment:
+
+```yaml theme={null}
+# Example Prometheus Operator PodMonitor for the Claude Code self-hosted
+# runner + orchestrator. Adjust the namespace and label selectors to match
+# your deployment. Both the runner and the orchestrator serve /metrics on
+# their --health-port (default 8080).
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: claude-code-self-hosted-runner
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - claude-runners
+  selector:
+    matchExpressions:
+      # Matches the runner Deployment from the Kubernetes recipe, plus any
+      # on-demand runner Jobs and orchestrator pods you label the same way
+      # and give a named 'health' containerPort.
+      - key: app.kubernetes.io/part-of
+        operator: In
+        values: [claude-code-self-hosted-runner]
+  podMetricsEndpoints:
+    - port: health
+      path: /metrics
+      interval: 30s
+```
+
+### Sample alert rules
+
+These sample alert rules are a starting point; tune the thresholds for your fleet size:
+
+```yaml theme={null}
+# Example Prometheus alert rules for the Claude Code self-hosted runner
+# + orchestrator. Tune thresholds for your fleet size and SLOs.
+groups:
+  - name: claude-code-self-hosted-runner
+    rules:
+      - alert: ClaudeRunnerPollStale
+        expr: claude_code_self_hosted_runner_last_poll_age_seconds > 60
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: "Runner {{ $labels.pod }} has not polled in >60s"
+      - alert: ClaudeRunnerVersionDrift
+        expr: count(count by (version) (claude_code_self_hosted_runner_info)) > 1
+        for: 30m
+        labels: {severity: info}
+        annotations:
+          summary: "Runners are running mixed versions"
+      - alert: ClaudeRunnerInitErrorsHigh
+        expr: sum by (namespace) (increase(claude_code_self_hosted_runner_session_init_errors_total[10m])) > 3
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Sessions are failing before init (checkout hook / git / token / pre-init crash)"
+      - alert: ClaudeRunnerPollErrors
+        expr: sum by (pod) (rate(claude_code_self_hosted_runner_poll_errors_total[5m])) > 0
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: "Runner {{ $labels.pod }}: PollWork failing ({{ $value | humanize }}/s over 5m)"
+      - alert: ClaudeRunnerSessionStartHookErrors
+        expr: sum by (namespace) (increase(claude_code_self_hosted_runner_session_start_hook_errors_total[10m])) > 3
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "SessionStart hooks are failing"
+
+  - name: claude-code-self-hosted-orchestrator
+    rules:
+      - alert: ClaudeOrchestratorDisconnected
+        expr: claude_code_self_hosted_orchestrator_connected == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "Orchestrator {{ $labels.pod }} cannot reach the Anthropic control plane"
+      - alert: ClaudeOrchestratorPollStale
+        expr: claude_code_self_hosted_orchestrator_last_poll_age_seconds > 90
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: "Orchestrator {{ $labels.pod }} has not polled in >90s (poll loop waits on hook execution)"
+      - alert: ClaudeOrchestratorCircuitBroken
+        expr: max by (namespace) (claude_code_self_hosted_orchestrator_queue_circuit_broken_sessions and on (instance) max_over_time(claude_code_self_hosted_orchestrator_connected[2m]) == 1) > 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: "Sessions blocked from spawning: {{ $value }}. Read each one's error in the Activity tab, fix the cause, then select Retry"
+      - alert: ClaudeOrchestratorPollErrors
+        expr: sum by (pod) (rate(claude_code_self_hosted_orchestrator_poll_errors_total[5m])) > 0
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: "Orchestrator {{ $labels.pod }}: PollSpawnHints failing ({{ $value | humanize }}/s over 5m)"
+      - alert: ClaudeOrchestratorSpawnHookFailing
+        expr: sum by (pod) (increase(claude_code_self_hosted_orchestrator_spawn_hooks_total{result!="ok"}[5m])) > 3
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Orchestrator {{ $labels.pod }}: >3 spawn-runner hook failures in 5m"
+```
+
+### Alert on lost runners and waiting sessions
+
+To be alerted when runners are lost, sessions wait, or the orchestrator is down, load these Prometheus alert rules beside the [sample alert rules](#sample-alert-rules):
+
+* **[Fixed fleet](https://code.claude.com/docs/en/self-hosted-environments-deploy.md#scale-the-fleet)**: `ClaudeRunnersBelowFloor`
+* **[On-demand runners](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners)**: `ClaudeOrchestratorSessionsWaiting`, `ClaudeOrchestratorQueueWaitHigh`, and `ClaudeOrchestratorAbsent`
+
+#### Alert when a fixed fleet loses runners
+
+`ClaudeRunnersBelowFloor` fires when fewer registered, scraped runners than the floor are left for 10 minutes:
+
+```yaml theme={null}
+groups:
+  # Fixed fleets only. With on-demand runners the count follows demand,
+  # so ClaudeRunnersBelowFloor would fire whenever demand is low.
+  - name: claude-code-self-hosted-fixed-fleet-capacity
+    rules:
+      - alert: ClaudeRunnersBelowFloor
+        expr: (count(claude_code_self_hosted_runner_info{namespace="claude-runners"}) or vector(0)) < 2
+        for: 10m
+        labels: {severity: critical, namespace: claude-runners}
+        annotations:
+          summary: "Runners registered and scraped: {{ $value }}, below the floor. Check the runner workloads first, then the scrape targets if all are running."
+```
+
+* **Floor**: set the `2` in `expr` to about half your replica count, rounded up. With three replicas keep `2`, and the alert fires when one runner or none is left.
+* **Namespace**: replace `claude-runners` in the matcher and in `labels`, and copy the alert for each further namespace. If your targets have no `namespace` label, remove the matcher and the label, or the alert reads 0 and fires.
+* **`ClaudeRunnerPollStale` and `ClaudeRunnerPollErrors`**: keep them loaded from the [sample alert rules](#sample-alert-rules), because `ClaudeRunnersBelowFloor` still counts a runner that can't poll
+
+#### Alert when sessions wait for on-demand runners
+
+`ClaudeOrchestratorSessionsWaiting` fires when the number of sessions waiting for a runner stays above 0 for 10 minutes. `ClaudeOrchestratorQueueWaitHigh` fires when over 1% of queue waits in the last 10 minutes exceeded 160 seconds, and that holds for 5 minutes:
+
+```yaml theme={null}
+groups:
+  # On-demand runners only. Needs no edit for the namespace.
+  - name: claude-code-self-hosted-on-demand-capacity
+    rules:
+      - alert: ClaudeOrchestratorSessionsWaiting
+        expr: |
+          max by (namespace) (
+            claude_code_self_hosted_orchestrator_pool_pending_sessions
+            and on (instance)
+            max_over_time(claude_code_self_hosted_orchestrator_connected[2m]) == 1
+          ) > 0
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "Sessions waiting for a runner: {{ $value }}, above the threshold for 10 minutes. Check claude_code_self_hosted_orchestrator_spawn_hooks_total by result, then runner workloads that don't start."
+      - alert: ClaudeOrchestratorQueueWaitHigh
+        expr: |
+          histogram_quantile(0.99, sum by (namespace, le) (
+            rate(claude_code_self_hosted_orchestrator_session_queue_wait_seconds_bucket[10m])
+          )) > 160
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Over 1% of queue waits in the last 10 minutes exceeded 160 seconds. Check whether ClaudeOrchestratorDisconnected is firing, then claude_code_self_hosted_orchestrator_spawn_hooks_total by result and claude_code_self_hosted_orchestrator_spawn_hook_duration_seconds."
+```
+
+* **Threshold**: if some session is always waiting, raise the `> 0` in `ClaudeOrchestratorSessionsWaiting` above the number you usually see
+* **`ClaudeOrchestratorDisconnected`**: keep it loaded from the [sample alert rules](#sample-alert-rules), because `ClaudeOrchestratorSessionsWaiting` stops firing about 2 minutes after the last orchestrator in the namespace disconnects
+
+#### Alert when the orchestrator is down
+
+To learn that the [orchestrator](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners) itself is down, load `ClaudeOrchestratorAbsent`. It fires when no orchestrator in the namespace has been scraped for 5 minutes:
+
+```yaml theme={null}
+groups:
+  # On-demand runners only. Replace claude-runners with the orchestrator's namespace.
+  - name: claude-code-self-hosted-on-demand-orchestrator
+    rules:
+      - alert: ClaudeOrchestratorAbsent
+        expr: absent(claude_code_self_hosted_orchestrator_connected{namespace="claude-runners"})
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "No orchestrator has been scraped for 5 minutes. If it's down, no on-demand runner starts, and sessions wait. Check the orchestrator workload first, then its scrape target if it's running."
+```
+
+* **Namespace**: replace `claude-runners` with the orchestrator's namespace, and copy the alert for each further namespace that runs an orchestrator. If your targets have no `namespace` label, remove the matcher, or the alert fires after 5 minutes and stays on.
+* **Prometheus servers that don't scrape the orchestrator**: leave the alert out of their rule files, because on such a server it fires after 5 minutes and stays on
+* **Don't rely on the orchestrator's other alerts**: they read metrics that the orchestrator itself serves. `ClaudeOrchestratorSessionsWaiting`, `ClaudeOrchestratorQueueWaitHigh`, and the orchestrator's [sample alert rules](#sample-alert-rules) all stop firing within about 10 minutes of the orchestrator going down.
+
+### Pass through session-child metrics
+
+Each session runs in its own child process with its own OpenTelemetry metrics; at `--capacity` above one, the runner rewrites how those child metrics are exposed. Setting `OTEL_METRICS_EXPORTER=prometheus` on the runner host and `CLAUDE_CODE_ENABLE_TELEMETRY=1` in the session's environment, for example from your [wrapper script](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#wrapper-scripts) or the runner's own environment, which sessions inherit, re-exposes each child's counter and gauge instruments on the runner's own `/metrics` endpoint, alongside the runner's series. The runner rewrites the child's exporter to push over OTLP to a loopback-only receiver on the health port, tags each series with `session_id` and `client_platform` labels, and evicts a session's series when that session ends. Histograms don't pass through, and a child metric whose name would collide with the runner's own prefix is dropped.
+
+At the default `--capacity 1`, the rewrite doesn't apply: the session's child binds its own Prometheus endpoint on port 9464 as usual.
+
+#### Join a session's metrics to the runner's
+
+To see what idle sessions have cost, join the runner's `claude_code_self_hosted_runner_session_idle_seconds` to Claude Code's cost metric on `ccr_session_id`. The runner's metric doesn't carry that label, so give it one with `label_replace`, as in this query:
+
+```text theme={null}
+sum by (ccr_session_id) (claude_code_cost_usage_total)
+and on (ccr_session_id)
+label_replace(
+  claude_code_self_hosted_runner_session_idle_seconds > 600,
+  "ccr_session_id", "cse_$1", "session_id", "session_(.*)"
+)
+```
+
+The query returns one result per session idle for over ten minutes: the cost in US dollars its Claude Code process has counted so far. To join another Claude Code metric, replace `claude_code_cost_usage_total` in the query. The query works at any `--capacity`.
+
+* **`session_id`**: on port 9464, that label on Claude Code metrics holds Claude Code's own [`session.id`](https://code.claude.com/docs/en/monitoring-usage#standard-attributes), which matches no runner series. A join on it returns nothing, so join on `ccr_session_id`.
+* **Claude Code metrics have no `ccr_session_id`**: check that [`OTEL_METRICS_INCLUDE_SESSION_ID`](https://code.claude.com/docs/en/monitoring-usage#metrics-cardinality-control) isn't set to `false`
+
+### Session lifecycle counter semantics
+
+The `sessions_started_total`, `sessions_completed_total`, `sessions_failed_total`, and `sessions_interrupted_total` counters classify each session by how it ended. Every spawned session child increments `sessions_started_total` at spawn time, and exactly one of the other three increments at exit, so `sessions_started_total` minus the sum of the other three equals the number of session children currently running.
+
+* `completed`: the session ended cleanly. This covers the child exiting on its own with code `0`, the session being archived or deleted while the child was still connected, and the runner handing the slot back cleanly: releasing the session at the idle timeout, the retire time, or the `--kill-session-after-min` limit; a startup timeout; or a server-side deassign the poll loop noticed before the child exited. Increments `sessions_completed_total`.
+* `failed`: the child exited on its own with a non-zero code, either a crash or a setup failure after spawn. Increments `sessions_failed_total`.
+* `interrupted`: the runner terminated the child for an operational reason that's neither a session success nor a runner fault, such as a drain, or terminating a session that was still on the runner when the [`SELF_HOSTED_RUNNER_MAX_LIFETIME_GRACE_MS`](#environment-variable-only-settings) grace window after its `--kill-session-after-min` limit ended. A Kubernetes rolling restart sending `SIGTERM` is one example of a drain. Increments `sessions_interrupted_total`.
+
+Before v2.1.260, the runner terminated every session that reached its `--kill-session-after-min` limit and counted it in `sessions_interrupted_total`.
+
+The [`post-session` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#post-session)'s `CLAUDE_RUNNER_EXIT_REASON` classifies clean handoffs differently. The hook reports these as `interrupted`, because the runner stopped the child: a release, a startup timeout, a server deassign, and an archive or delete that the poll noticed first. These counters record the same events as `completed`, because the slot was handed back cleanly.
+
+If you reconcile hook receipts against `sessions_completed_total` directly, you undercount completions. Use the hook for per-session guarantees and the counters for aggregate rates.
+
+On a one-shot environment, `--capacity 1` with the default `--drain-grace-sec 0`, each runner process exits moments after its one session ends. `sessions_completed_total`, `sessions_failed_total`, and `sessions_interrupted_total` increment only at session end, right before that exit, so a Prometheus scrape every 15 to 60 seconds rarely catches the increment before the runner's series disappears; these three end-of-session counters are the terminal counters the rest of this section refers to. `sessions_started_total` increments at spawn and stays visible for the life of the session, so it reliably shows up, but on a one-shot environment it reads closer to "sessions currently running" than a cumulative count.
+
+Use the series in this table for the corresponding goal instead of the terminal counters:
+
+| Goal | Use |
+| :- | :- |
+| Throughput | `claude_code_self_hosted_orchestrator_spawn_hooks_total{result="ok"}`, a counter on the long-lived orchestrator that increments once per successful `spawn-runner` hook and stays meaningful under `rate()`. It counts hook invocations rather than sessions, so pre-warming and repeated spawns for the same session diverge it from session counts. |
+| Utilization | `sum(claude_code_self_hosted_runner_active_sessions)` against `sum(claude_code_self_hosted_runner_capacity)`, both gauges valid at every scrape regardless of runner lifetime |
+| Backlog | `claude_code_self_hosted_orchestrator_pool_pending_sessions` for queue depth, and `claude_code_self_hosted_orchestrator_queue_circuit_broken_sessions`, alerting if above zero |
+| Failures | `claude_code_self_hosted_runner_sessions_failed_total`, best effort: real crashes after spawn do increment it, and `rate()` is meaningful on runners that outlive their sessions with `--drain-grace-sec` above `0`. A one-shot environment has the same scrape-window problem as the other terminal counters, so treat any non-zero value you do see as worth investigating. Failures before spawn, such as a checkout hook failure, git preparation, or a token issue, appear only in `session_init_errors_total`. |
+
+The `orchestrator_*` rows exist only on environments running the [on-demand orchestrator](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners). On a fixed fleet whose runners outlive their sessions, with `--drain-grace-sec` above `0`, use `sum(rate(claude_code_self_hosted_runner_sessions_started_total[5m]))` for throughput; on a one-shot fleet that series has the same scrape-window problem as the terminal counters, so rely on the queued-sessions count instead. Check backlog on the environment's **Activity** tab, on the [**Cloud environments** admin page](https://claude.ai/admin-settings/cloud-environments): the runners don't export a queue-depth series.
+
+For per-session outcome reporting, use the [`post-session` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#post-session) instead: it fires at every session end where a child process was spawned, apart from abrupt runner termination such as a VM preemption, per the [hook's own contract](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#post-session).
+
+## What's next
+
+* [Self-hosted environments](https://code.claude.com/docs/en/self-hosted-environments): the environment, runner, and session model; the [quickstart](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md) and [Deploy to production](https://code.claude.com/docs/en/self-hosted-environments-deploy.md) hold setup and operations
+* [Customize sessions](https://code.claude.com/docs/en/self-hosted-environments-configuration.md): wrapper scripts, lifecycle hooks, and on-demand runners
+* [Verify session identity](https://code.claude.com/docs/en/self-hosted-environments-identity.md): the session token, its claims, and how to verify it

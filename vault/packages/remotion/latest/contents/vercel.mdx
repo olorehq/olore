@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-vercel.png
+image: https://remotion.media/docs/generated/articles-docs-vercel.png
 sidebar_label: Vercel
 title: Remotion on Vercel
 crumb: 'Deployment'
@@ -30,15 +30,7 @@ You can deploy any Remotion project on Vercel by connecting the repository and s
 
 ## Client-side rendering
 
-Enable [experimental client-side rendering](/docs/client-side-rendering) in your `remotion.config.ts` file:
-
-```ts twoslash title="remotion.config.ts"
-import {Config} from '@remotion/cli/config';
-// ---cut---
-Config.setExperimentalClientSideRenderingEnabled(true);
-```
-
-This will make it possible to render videos client-side on your Vercel deployment.
+[Client-side rendering](/docs/client-side-rendering) is enabled on Studio deployments, allowing you to render videos in the browser.
 
 Note that this will use your computer's browser and compute resources, making your computer slower while the render is running. If you are waiting on long renders, you may want to [render in the cloud](#rendering-using-vercel-sandbox) to free up your computer's resources.
 
@@ -96,10 +88,8 @@ export const POST = async (req: Request, res: NextResponse) => {
 
 See also:
 
-- [App router - Example Render endpoint](https://github.com/remotion-dev/remotion/blob/main/packages/template-next-app-tailwind/src/app/api/lambda/render/route.ts)
-- [App router - Example Progress endpoint](https://github.com/remotion-dev/remotion/blob/main/packages/template-next-app-tailwind/src/app/api/lambda/progress/route.ts)
-- [Pages router - Example Render endpoint](https://github.com/remotion-dev/remotion/blob/main/packages/template-next-pages/src/pages/api/lambda/render.ts)
-- [Pages router - Example Progress endpoint](https://github.com/remotion-dev/remotion/blob/main/packages/template-next-pages/src/pages/api/lambda/progress.ts)
+- [Next.js - Example Render endpoint](https://github.com/remotion-dev/remotion/blob/main/packages/template-next-app-tailwind/src/app/api/lambda/render/route.ts)
+- [Next.js - Example Progress endpoint](https://github.com/remotion-dev/remotion/blob/main/packages/template-next-app-tailwind/src/app/api/lambda/progress/route.ts)
 
 ## Rendering from a Vercel deployment
 
@@ -125,10 +115,8 @@ The template does not include rate limiting or caching. Implement these before m
 
 ## Templates
 
-- [Next.js (App dir)](/templates/next)
-- [Next.js (App dir, no TailwindCSS)](/templates/next-no-tailwind)
-- [Next.js (Pages dir)](/templates/next-pages-dir)
-- [Next.js (App dir, Rendering in Vercel Sandbox)](/templates/vercel)
+- [Next.js](/templates/next)
+- [Next.js (Vercel Sandbox)](/templates/vercel)
 - [React Router 7 (Remix)](/templates/react-router)
 
 These templates are recommended for building applications that can generate videos.

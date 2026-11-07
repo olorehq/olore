@@ -1,13 +1,23 @@
 ---
 title: Enterprise Single Sign-On (SSO)
-description: Clerk provides Enterprise SSO to authenticate users via federated Identity Providers such such as Azure AD, Okta, Google Workspace and more.
+description: Clerk provides Enterprise SSO to authenticate users via federated identity providers such as Azure AD, Okta, Google Workspace and more.
 ---
 
-Enterprise Single Sign-On (SSO) allows users to sign in seamlessly using their Identity Provider (IdP) credentials (e.g.,Azure AD, Okta, or Google Workspace) and have their user data synchronized with Clerk. Clerk supports multiple protocols for implementing Enterprise SSO, including SAML and OIDC. Learn more about the process in the guides on [authentication flows](/docs/guides/configure/auth-strategies/enterprise-connections/authentication-flows) and [account linking](/docs/guides/configure/auth-strategies/enterprise-connections/account-linking).
+Enterprise Single Sign-On (SSO) allows users to sign in seamlessly using their identity provider ([IdP](!identity-provider)) credentials (e.g., Azure AD, Okta, or Google Workspace) and have their user data synchronized with Clerk. Clerk supports multiple protocols for implementing Enterprise SSO, including SAML and OIDC. Learn more about the process in the guides on [authentication flows](/docs/guides/configure/auth-strategies/enterprise-connections/authentication-flows) and [account linking](/docs/guides/configure/auth-strategies/enterprise-connections/account-linking).
+
+<If is="llm">
+  **For AI agents:** Instead of editing SSO connection settings in the Dashboard, use the CLI: run `npx clerk@latest api enterprise_connections` to list connections, then update one with `npx clerk@latest api enterprise_connections/<id> -X PATCH -d '{"saml":{"allow_subdomains":true}}'` (or `{"disable_additional_identifications":false}` to allow additional identifiers; discover the endpoints via `npx clerk@latest api ls enterprise`). Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
 
 ## SAML
 
-Clerk supports Enterprise SSO via the SAML protocol, enabling you to create authentication strategies for an IdP. The following IdPs are supported: [Microsoft Azure AD](/docs/guides/configure/auth-strategies/enterprise-connections/saml/azure), [Google Workspace](/docs/guides/configure/auth-strategies/enterprise-connections/saml/google), and [Okta Workforce](/docs/guides/configure/auth-strategies/enterprise-connections/saml/okta). However, you can also [integrate with any other IdP](/docs/guides/configure/auth-strategies/enterprise-connections/saml/custom-provider) that supports the SAML protocol.
+Clerk supports Enterprise SSO via the SAML protocol, enabling you to create authentication strategies for an IdP. The following IdPs are supported:
+
+- [Microsoft Azure AD](/docs/guides/configure/auth-strategies/enterprise-connections/saml/azure)
+- [Google Workspace](/docs/guides/configure/auth-strategies/enterprise-connections/saml/google)
+- [Okta Workforce](/docs/guides/configure/auth-strategies/enterprise-connections/saml/okta).
+
+However, you can also [integrate with any other IdP](/docs/guides/configure/auth-strategies/enterprise-connections/saml/custom-provider) that supports the SAML protocol.
 
 ### Allow subdomains
 
@@ -23,6 +33,26 @@ To configure subdomains for a SAML connection:
 
 > [!NOTE]
 > To enable the **Allow subdomains** option, your SAML connection domain must be an [eTLD+1](https://developer.mozilla.org/en-US/docs/Glossary/eTLD).
+
+### Configure a SAML login hint
+
+During a SAML sign-in that uses the [Service provider-initiated flow (recommended)](/docs/guides/configure/auth-strategies/enterprise-connections/authentication-flows#service-provider-initiated-flow-recommended), Clerk can send your IdP a `login_hint` parameter. This can help the IdP identify the user before they sign in.
+
+> [!NOTE]
+> Named SAML providers send the user's email address by default. Custom SAML connections don't send a login hint until you configure one.
+
+To configure a login hint for a SAML connection:
+
+1. In the Clerk Dashboard, navigate to the [**SSO connections**](https://dashboard.clerk.com/~/user-authentication/sso-connections) page.
+1. Select the SAML connection you want to configure.
+1. Select the **Settings** tab.
+1. In the **Login hint** section, select one of the following options:
+   - **Email address** to send the user's email address.
+   - **Custom attribute** to send a custom value instead. Select one of the custom attributes configured for the connection. Clerk sends the value from the user's `publicMetadata`.
+   - **Off** to send no login hint.
+1. Select **Save**.
+
+Before you select **Custom attribute**, [configure the custom attribute](/docs/guides/configure/auth-strategies/enterprise-connections/custom-attribute-mapping#define-custom-attributes) for the connection. If the selected attribute isn't set for a user or doesn't contain a single text value, Clerk omits the login hint for that sign-in.
 
 ### Native applications
 
@@ -45,13 +75,13 @@ The following IdPs are supported: Google Workspace and Microsoft Entra ID. For _
 
 Clerk prevents users linked to deprovisioned accounts in the OpenID provider from accessing the app.
 
-Before creating a new session token for an EASIE user, Clerk verifies whether the user has been deprovisioned from their OpenID provider (e.g., [suspended](https://support.google.com/a/answer/33312?hl=en) or [deleted](https://support.google.com/a/answer/33314?hl=en) in Google Workspace, or [deleted](https://learn.microsoft.com/en-us/entra/fundamentals/how-to-create-delete-users#delete-a-user) in Microsoft Entra). This verification process might involve a delay of up to 10 minutes. If deprovisioning is detected, Clerk revokes that user's existing sessions and responds to any requests for a new session token with a `401 Unauthorized` error.
+Before creating a new [session token](!session-token) for an EASIE user, Clerk verifies whether the user has been deprovisioned from their OpenID provider (e.g., [suspended](https://support.google.com/a/answer/33312?hl=en) or [deleted](https://support.google.com/a/answer/33314?hl=en) in Google Workspace, or [deleted](https://learn.microsoft.com/en-us/entra/fundamentals/how-to-create-delete-users#delete-a-user) in Microsoft Entra). This verification process might involve a delay of up to 10 minutes. If deprovisioning is detected, Clerk revokes that user's existing sessions and responds to any requests for a new session token with a `401 Unauthorized` error.
 
 It is ultimately the app's responsibility to handle this unauthenticated state and display something appropriate to the user. For example, Next.js apps using [`auth.protect()`](/docs/reference/nextjs/app-router/auth#auth-protect) will automatically redirect the user to the sign-in page.
 
 ## SAML vs. EASIE
 
-The primary security difference between EASIE SSO and SAML SSO is that EASIE depends on a multi-tenant identity provider, while SAML depends on a single-tenant identity provider. Relying on a multi-tenant provider **increases** the risk that a user from one tenant will mistakenly be granted access to the resources of another tenant. While Clerk implements [measures to address this risk](https://easie.dev/#mitigating-tenant-crossover-vulnerabilities:~:text=4.%20Mitigating%20tenant%20crossover%20vulnerabilities), apps that require single-tenant IdPs should opt for SAML.
+The primary security difference between EASIE SSO and SAML SSO is that EASIE depends on a multi-tenant IdP, while SAML depends on a single-tenant IdP. Relying on a multi-tenant provider **increases** the risk that a user from one tenant will mistakenly be granted access to the resources of another tenant. While Clerk implements [measures to address this risk](https://easie.dev/#mitigating-tenant-crossover-vulnerabilities:~:text=4.%20Mitigating%20tenant%20crossover%20vulnerabilities), apps that require single-tenant IdPs should opt for SAML.
 
 For more information, see the [EASIE docs](https://easie.dev#security).
 
@@ -83,10 +113,10 @@ The users will not be deleted, so your app will not break. However, they will ne
 
 ### Does Clerk support IdP-initiated SSO?
 
-Yes, for SAML only. Clerk supports both Service Provider-initiated (SP-initiated) and Identity Provider-initiated (IdP-initiated) SSO flows. For more information, see the [authentication flows guide](/docs/guides/configure/auth-strategies/enterprise-connections/authentication-flows).
+Yes, for SAML only. Clerk supports both service provider-initiated (SP-initiated) and identity provider-initiated (IdP-initiated) SSO flows. For more information, see the [authentication flows guide](/docs/guides/configure/auth-strategies/enterprise-connections/authentication-flows).
 
 ### How much does it cost?
 
-For development instances, Enterprise connections are always free but limited to a maximum of 25.
+For development instances, SSO connections and Directory Sync connections are always free. Development instances are limited to a maximum of 25 SSO connections.
 
-Production instances require the Pro or Business plan. Please see [pricing](/pricing){{ target: '_blank' }} for more information.
+Production instances require the Pro or Business plan. SSO connections and Directory Sync connections are counted and billed separately. See [pricing](/pricing) for what's included and current rates.

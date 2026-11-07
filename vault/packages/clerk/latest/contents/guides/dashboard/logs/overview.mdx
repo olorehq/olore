@@ -1,0 +1,93 @@
+---
+title: Dashboard Logs
+description: Learn how to view and filter logs in the Clerk Dashboard.
+---
+
+The Clerk Dashboard offers three types of logs, each covering a different kind of activity:
+
+| Log | Use it to investigate | Example events |
+| - | - | - |
+| [**Application Logs**](/docs/guides/dashboard/logs/application-logs) | Authentication and user activity within an instance | Sign-ins, sign-ups, sessions, user updates, and Organization changes |
+| [**Email Logs**](/docs/guides/dashboard/logs/email-logs) | Delivery of transactional emails sent through Clerk | Accepted, delivered, deferred, bounced, and dropped emails |
+| [**Admin Logs**](/docs/guides/dashboard/logs/admin-logs) | Configuration and administrative changes made from the Clerk Dashboard, [Backend API](/docs/reference/backend-api){{ target: '_blank' }}, or [Platform API](/docs/reference/platform-api){{ target: '_blank' }} | Instance settings, domains, secrets, Roles, Permissions, and integrations |
+
+You can also [access Application Logs through the Backend API](/docs/guides/dashboard/logs/application-logs#access-application-logs-with-the-backend-api).
+
+## Viewing and filtering logs
+
+Each log page shows the newest entries first. Application Logs open on the **Group** view, which sorts [log groups](/docs/guides/dashboard/logs/application-logs#log-groups) by when they started and events outside any group by when they happened. A group that started earlier stays below a newer one, even if its latest event is more recent. The **List** view sorts every event by when it happened. The available filters differ by log type.
+
+<Tabs items={["Application Logs", "Email Logs", "Admin Logs"]}>
+  <Tab>
+    You can filter Application Logs by:
+
+    - **Event type**: The type of event (e.g., `user.created`, `sign_in.completed`). Supports trailing wildcards (e.g., `sign_in.*`).
+    - **User ID**: The ID of a user (e.g., `user_123`). Includes events the user triggered and events in which they were acted upon.
+    - **Identifier**: An email address, phone number, username, or Web3 wallet. The value must match the stored identifier exactly. If multiple users have it, events involving all of them are included.
+    - **Actor**: The user or API key that triggered the event.
+    - **Subject**: The ID of the resource being acted upon (e.g., a user ID or Organization ID).
+    - **IP address**: The IP address the event originated from.
+    - **Trace ID**: The distributed trace ID, for correlating events across systems.
+    - **Device**: The device ID.
+    - **Session ID**: The ID of a session (e.g., `sess_123`). Includes events triggered by requests made with that session, but excludes events triggered outside it, such as the sign-in that created it.
+    - **Group**: In the Group view, the type of flow (sign-in or sign-up).
+    - **Status**: In the Group view, whether the flow completed or failed.
+    - **Date range**: The time window to search.
+
+    > [!NOTE]
+    > **User ID** and **Identifier** each find events where a user was the actor or the subject. You can use only one of these filters at a time, and neither can be combined with **Actor** or **Subject**. Selecting a filter hides the incompatible options. **Actor** and **Subject** can be used together.
+
+    For a complete list of event types, see [Supported events](/docs/guides/dashboard/logs/application-logs#supported-events).
+  </Tab>
+
+  <Tab>
+    You can filter Email Logs by:
+
+    - **Event Type**: The delivery outcome or interaction (e.g., `bounced`, `delivered`).
+    - **Recipient**: The recipient's email address.
+    - **IP Address**: The IP address associated with the event.
+    - **Message ID**: A specific message, to follow every event for it.
+    - **Date Range**: The time window to search.
+
+    **Recipient**, **IP Address**, and **Message ID** match the full value, including case.
+
+    For a complete list of event types, see [Supported events](/docs/guides/dashboard/logs/email-logs#supported-events).
+  </Tab>
+
+  <Tab>
+    You can filter Admin Logs by:
+
+    - **Event type**: The type of event (e.g., `oauth_application.updated`, `domain.created`). Supports trailing wildcards (e.g., `oauth_application.*`).
+    - **Instance**: The instance the action targeted.
+    - **Application**: The application the action targeted.
+    - **Actor**: The actor that triggered the event — a Dashboard user, an instance [Secret Key](!secret-key), or a Platform API access token.
+    - **IP address**: The IP address the action originated from.
+    - **Date range**: The time window to search.
+
+    For a complete list of event types, see [Supported events](/docs/guides/dashboard/logs/admin-logs#supported-events).
+  </Tab>
+</Tabs>
+
+## Log detail view
+
+Select any log entry to view its full details, including:
+
+- **Event metadata**: Fields such as event type and timestamp. Other fields vary by log type; for example, Email Logs include the recipient, message ID, and delivery status.
+- **Payload**: Additional event data as a JSON object, when available.
+
+## Plans and retention
+
+Availability and log retention depend on your [plan](/pricing):
+
+| Plan | Application Logs | Email Logs | Admin Logs |
+| - | - | - | - |
+| **Hobby** | 1 day | 1 day | Not available |
+| **Pro** | 7 days | 7 days | Not available |
+| **Business** | 30 days | 30 days | 30 days |
+| **Enterprise** | Custom | Custom | Custom |
+
+These retention periods apply to both **production** and **development** instances.
+
+> [!IMPORTANT]
+>
+> Admin Logs record events starting August 24, 2026. Actions taken before this date are not available, regardless of your plan's retention period.

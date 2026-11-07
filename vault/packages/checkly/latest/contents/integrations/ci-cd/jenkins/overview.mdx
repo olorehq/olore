@@ -1,6 +1,8 @@
 ---
 title: Integrating Checkly in Jenkins
+description: "Run the Checkly CLI from a Jenkins pipeline, setting API credentials, choosing a reporter, and deploying checks as monitors after they pass against production."
 sidebarTitle: Jenkins
+canonical: 'https://www.checklyhq.com/docs/integrations/ci-cd/jenkins/overview/'
 ---
 
 import CliEnvVars from "/snippets/cli-env-vars.mdx"
@@ -34,7 +36,7 @@ As the Checkly CLI is a Node.js project, the main step you need to take is insta
 ![Jenkins Nodejs  config](/images/docs/images/cicd/cicd_jenkins_node.png)
 
 
-We recommend using any Node.js stable version higher than 16.x.
+The Checkly CLI requires Node.js 22.13 or later.
 
 ## Set your Checkly credentials
 
@@ -63,7 +65,7 @@ should look as follows:
 pipeline {
     agent any
 
-    tools {nodejs "Node 20"}
+    tools {nodejs "Node 22"}
     environment {
         CHECKLY_API_KEY = credentials('checkly-api-key')
         CHECKLY_ACCOUNT_ID = credentials('checkly-account-id')

@@ -9,15 +9,16 @@ og_image: /og-images/pricing.png
   This pricing applies to organizations on Sentry’s **latest** pricing plan. For
   information on older plans that include transactions or performance units
   based billing, go to your
-  [**Settings**](https://sentry.io/orgredirect/organizations/:orgslug/settings/)
-  page and click on "Subscription" (under the "Usage & Billing" heading.)
+  [**Settings > Subscription**](https://sentry.io/orgredirect/organizations/:orgslug/settings/billing/overview/)
+  page.
 </Alert>
 
 This page gives you an in-depth understanding of our pricing and billing structure, including:
 
 - [How our pricing works](#pricing-how-it-works) and [per-category pricing](#pricing-by-product-and-data-category)
-- [Billing cycles](#billing-cycles)
+- [Billing cycles](#billing-cycles) 
 - [Taxes](#taxes) and [exemptions](#tax-exemptions)
+- [Plans and Free Trials](#plans-and-free-trials)
 
 ## Terminology
 
@@ -26,6 +27,12 @@ This page gives you an in-depth understanding of our pricing and billing structu
 - **Reserved volume:** A predetermined amount of data you pay for in advance at a discount, on a monthly or annual basis. Your base plan includes a set amount of volume for each data category.
 
 - **Pay-as-you-go (PAYG) budget:** A PAYG budget is shared among all categories on a first-come, first-served basis and covers any overages above your reserved volume. You will only be charged for what you use up to your PAYG budget.
+
+## Plan and Pricing Summary
+
+Sentry offers a 14 day free trial with unlimited event data on the Business plan. You can upgrade or return to the features and quotas included with your existing plan. Without a paid plan, you will be automatically assigned a free Developer plan at the end of your trial.
+
+Every paid plan includes a [preset volume](#pricing-how-it-works) of event data, with a PAYG bugdet that you control. The free Developer plan has similar presets. See Sentry's [plan page](https://sentry.io/pricing/) for more details.
 
 ## Pricing: How It Works
 
@@ -109,7 +116,7 @@ Tracing is enabled by and will be billed for in spans.
 
 Profile Hours are determined by the length of the profile in milliseconds and are billed in hours. Partial hours are prorated and rounded down to the nearest cent. Profile Hours can only be purchased with your PAYG budget.
 <Alert>
-  [Transaction-Based profiling](/product/explore/profiling/transaction-vs-continuous-profiling/) is billed under either UI or Continuous Profile Hours, by extracting the duration from the samples that make up the profile.
+  [Transaction-Based profiling](/product/profiling/transaction-vs-continuous-profiling/) is billed under either UI or Continuous Profile Hours, by extracting the duration from the samples that make up the profile.
 </Alert>
 **Continuous Profile Hours**
 
@@ -167,7 +174,9 @@ Access Seer by adding it to your existing subscription for $40 per active contri
 | $40/active contributor | $40/active contributor |
 
 <Alert level="warning">
-All members of your repositories, *except* GitHub bots marked as `[bot]`, are counted as active contributors.
+For Github, all members of your repositories, *except* GitHub bots marked as `[bot]`, are counted as active contributors.
+
+For Gitlab, all accounts (group members) are counted as active contributors, even when using Autofix or bots for fixes.
 </Alert>
 
 #### Legacy Seer Pricing 
@@ -178,7 +187,7 @@ All members of your repositories, *except* GitHub bots marked as `[bot]`, are co
 
 If you were subscribed to Seer before January 2026, you are likely on legacy Seer pricing, which is $20/month per Sentry subscription, plus $25 worth of Seer event credits. This can be used for any combination of **Issue Scans** or **Issue Fixes** (see pricing tables below). Any usage beyond this $25 credit will draw from your PAYG budget. Any usage beyond the $25 credit will draw from your [PAYG budget](/pricing/#terminology).
 
-You can see how you're using Seer and manage your usage by going to the [stats page](https://sentry.io/orgredirect/organizations/:orgslug/stats/) and selecting the **Issue Fixes** or **Issue Scans** categories, and updating the automation settings for when to run Seer in your project settings.
+You can see how you're using Seer and manage your usage by going to the [stats page](https://sentry.io/orgredirect/organizations/:orgslug/stats/) and selecting the **Issue Fixes** or **Issue Scans** categories, and updating the automation settings for when to run Seer in [project settings](https://sentry.io/orgredirect/organizations/:orgslug/settings/projects/:projectId/seer/).
 
 ##### Issue Scans
 
@@ -217,7 +226,7 @@ Your billing cycle will be either monthly or annually, depending on the contract
 
 - **Monthly Subscriptions:** You will be billed monthly at the beginning of your billing cycle for your paid plan and reserved volume. If you use PAYG, the bill you receive will also include any PAYG usage from the previous billing cycle.
 
-Users with [Billing or Owner-level](/organization/membership/) permissions can find their receipts by going to the [**Settings**](https://sentry.io/orgredirect/organizations/:orgslug/settings/) page and clicking "Subscription" (under the "Usage & Billing" heading.)
+Users with [Billing or Owner-level](/organization/membership/) permissions can find their receipts in [**Settings > Subscription > Receipts**](https://sentry.io/orgredirect/organizations/:orgslug/settings/billing/receipts/).
 
 ### Changing Plans Mid-cycle
 
@@ -239,7 +248,7 @@ Sentry has one free Developer plan and three paid plans: Team, Business, and Ent
 
 Plan upgrades take effect immediately. Plan downgrades and cancellations are processed at the end of the current contract cycle and cannot be refunded. If you no longer want to be on a paid plan, you'll revert to the base Developer plan at the end of your current contract.
 
-All new Sentry accounts come with a 14-day free trial period. You'll have the option to upgrade and continue to use Sentry's paid features at any time before your trial ends. Upgrades will be effective immediately. Users who haven't upgraded by the end of their free trial will remain on the free Developer plan with limited features.
+All new Sentry accounts come with a 14-day free trial period. You'll have the option to upgrade and continue to use Sentry's paid features at any time before your trial ends. Upgrades will be effective immediately. Users who haven't upgraded by the end of their free trial will return to the features and quotas included with their existing plan.
 
 ## Product Trials
 
@@ -259,7 +268,7 @@ During your 14-day product trial, you'll be able to send us an unlimited number 
 Seer does not use your application data, error information, or source code to train AI models. All generated output is shown only to members of your organization.
 </Alert>
 
-Go to [**Organization Settings > Subscription**](https://sentry.io/orgredirect/organizations/:orgslug/settings/billing/overview/), then click "Start Trial" for Seer. Alternatively, you can find a similar flow on the **Issue** details page from the Seer panel or in the **Seer settings** page.
+Go to [**Organization Settings > Subscription**](https://sentry.io/orgredirect/organizations/:orgslug/settings/billing/overview/), then click "Start Trial" for Seer. Alternatively, you can find a similar flow on the **Issue** details page from the Seer panel or on the [**Seer settings**](https://sentry.io/orgredirect/organizations/:orgslug/settings/seer/) page.
 
 ![Seer trial in subscription settings](./img/seer_trial.jpg)
 

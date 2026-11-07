@@ -3,7 +3,7 @@ title: Built-in Search
 description: Built-in document search of Fumadocs
 ---
 
-Fumadocs supports document search with Orama, It is the default but also the recommended option since it can be self-hosted and totally free.
+Fumadocs supports document search with [ZBSearch](https://www.zbsearch.dev), It is the default but also the recommended option since it can be self-hosted and totally free.
 
 ## Setup
 
@@ -21,13 +21,26 @@ Create the server from source object.
   ../../examples/react-router-min/app/routes/search.ts
 </include>
 
-<include cwd meta='tab="Tanstack Start" title="src/routes/api/search.ts"'>
+<include cwd meta='tab="TanStack Start" title="src/routes/api/search.ts"'>
   ../../examples/tanstack-start-min/src/routes/api/search.ts
 </include>
 
 <include cwd meta='tab="Waku" title="src/pages/_api/api/search.ts"'>
   ../../examples/waku/src/pages/_api/api/search.ts
 </include>
+
+```ts tab="Astro" title="src/pages/api/search.ts"
+import type { APIRoute } from 'astro';
+import { createFromSource } from 'fumadocs-core/search/server';
+import { source } from '@/lib/source';
+
+// render per request, needs an adapter
+export const prerender = false;
+
+const server = createFromSource(source);
+
+export const GET: APIRoute = ({ request }) => server.GET(request);
+```
 
 ### From Search Indexes
 
@@ -40,7 +53,6 @@ import { source } from '@/lib/source';
 import { createSearchAPI } from 'fumadocs-core/search/server';
 
 export const { GET } = createSearchAPI('advanced', {
-  language: 'english',
   indexes: source.getPages().map((page) => ({
     title: page.data.title,
     description: page.data.description,
@@ -57,7 +69,6 @@ import { createSearchAPI } from 'fumadocs-core/search/server';
 import { source } from '@/lib/source';
 
 const server = createSearchAPI('advanced', {
-  language: 'english',
   indexes: source.getPages().map((page) => ({
     title: page.data.title,
     description: page.data.description,
@@ -72,13 +83,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 ```
 
-```ts tab="Tanstack Start" title="src/routes/api/search.ts"
+```ts tab="TanStack Start" title="src/routes/api/search.ts"
 import { createFileRoute } from '@tanstack/react-router';
 import { source } from '@/lib/source';
 import { createSearchAPI } from 'fumadocs-core/search/server';
 
 const server = createSearchAPI('advanced', {
-  language: 'english',
   indexes: source.getPages().map((page) => ({
     title: page.data.title,
     description: page.data.description,
@@ -102,7 +112,6 @@ import { source } from '@/lib/source';
 import { createSearchAPI } from 'fumadocs-core/search/server';
 
 export const { GET } = createSearchAPI('advanced', {
-  language: 'english',
   indexes: source.getPages().map((page) => ({
     title: page.data.title,
     description: page.data.description,
@@ -113,6 +122,31 @@ export const { GET } = createSearchAPI('advanced', {
 });
 ```
 
+```ts tab="Astro" title="src/pages/api/search.ts"
+import type { APIRoute } from 'astro';
+import { createSearchAPI } from 'fumadocs-core/search/server';
+import { source } from '@/lib/source';
+
+const server = createSearchAPI('advanced', {
+  // `structuredData` is loaded on demand
+  indexes: () =>
+    Promise.all(
+      source.getPages().map(async (page) => ({
+        title: page.data.title,
+        description: page.data.description,
+        url: page.url,
+        id: page.url,
+        structuredData: await page.data.structuredData(),
+      })),
+    ),
+});
+
+// render per request, needs an adapter
+export const prerender = false;
+
+export const GET: APIRoute = ({ request }) => server.GET(request);
+```
+
 ### Searching Documents
 
 You can search documents using:
@@ -121,12 +155,9 @@ You can search documents using:
 - **Search Client**:
 
 ```ts twoslash
-import { useDocsSearch } from 'fumadocs-core/search/client';
-import { fetchClient } from 'fumadocs-core/search/client/fetch';
+import { useFetchSearch } from 'fumadocs-core/search/client';
 
-const client = useDocsSearch({
-  client: fetchClient(),
-});
+const { search, onSearchChange, isLoading, data } = useFetchSearch();
 ```
 
 <auto-type-table type='import("fumadocs-core/search/client/fetch").FetchOptions' />
@@ -149,7 +180,7 @@ const server = createFromSource(source, {
       url: page.url,
       id: page.url,
       structuredData: page.data.structuredData,
-      // use your desired value, like page.slugs[0] [!code ++]
+      // use your desired value, like page.slugs[0] [!code ++:2]
       tag: '<value>',
     };
   },
@@ -159,16 +190,13 @@ const server = createFromSource(source, {
 and update your search client:
 
 - **Fumadocs UI**: Configure [Tag Filter](/docs/search/orama#tag-filter) on Search UI.
-- **Search Client**: pass a tag to `fetchClient`.
+- **Search Client**: pass a tag to `useFetchSearch()`.
 
 ```ts
-import { useDocsSearch } from 'fumadocs-core/search/client';
-import { fetchClient } from 'fumadocs-core/search/client/fetch';
+import { useFetchSearch } from 'fumadocs-core/search/client';
 
-const client = useDocsSearch({
-  client: fetchClient({
-    tag: '<value>', // [!code ++]
-  }),
+const { search, onSearchChange, isLoading, data } = useFetchSearch({
+  tag: '<value>', // [!code ++]
 });
 ```
 
@@ -180,7 +208,7 @@ To support usage with static site, use `staticGET` from search server and make t
 import { source } from '@/lib/source';
 import { createFromSource } from 'fumadocs-core/search/server';
 
-// statically cached [!code highlight:2]
+// statically cached [!code highlight:3]
 export const revalidate = false;
 export const { staticGET: GET } = createFromSource(source);
 ```
@@ -193,7 +221,7 @@ export async function loader() {
 }
 ```
 
-```ts tab="Tanstack Start" title="src/routes/api/search.ts"
+```ts tab="TanStack Start" title="src/routes/api/search.ts"
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/api/search')({
@@ -206,7 +234,7 @@ export const Route = createFileRoute('/api/search')({
 });
 ```
 
-```ts tab="Tanstack Start" title="vite.config.ts"
+```ts tab="TanStack Start" title="vite.config.ts"
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { defineConfig } from 'vite';
 
@@ -216,7 +244,7 @@ export default defineConfig({
       prerender: {
         enabled: true,
       },
-      // [!code ++] pre-render the index file
+      // [!code ++:2] pre-render the index file
       pages: [{ path: '/api/search' }],
     }),
   ],
@@ -230,10 +258,21 @@ import { createFromSource } from 'fumadocs-core/search/server';
 // [!code highlight]
 export const { staticGET: GET } = createFromSource(source);
 
-// statically cached [!code highlight:3]
+// statically cached [!code highlight:4]
 export const getConfig = async () => ({
   render: 'static',
 });
+```
+
+```ts tab="Astro" title="src/pages/api/search.ts"
+import type { APIRoute } from 'astro';
+import { createFromSource } from 'fumadocs-core/search/server';
+import { source } from '@/lib/source';
+
+const server = createFromSource(source);
+
+// prerendered by default [!code highlight]
+export const GET: APIRoute = () => server.staticGET();
 ```
 
 > `staticGET` is also available on `createSearchAPI`.
@@ -242,15 +281,12 @@ and update your search clients:
 
 - **Fumadocs UI**: use [static client](/docs/search/orama#static) on Search UI.
 
-- **Search Client**: use `oramaStaticClient` instead of `fetchClient`.
+- **Search Client**: use `useStaticSearch()` instead of `useFetchSearch()`.
 
   ```ts
-  import { useDocsSearch } from 'fumadocs-core/search/client';
-  import { oramaStaticClient } from 'fumadocs-core/search/client/orama-static';
+  import { useStaticSearch } from 'fumadocs-core/search/client';
 
-  const client = useDocsSearch({
-    client: oramaStaticClient(),
-  });
+  const { search, onSearchChange, isLoading, data } = useStaticSearch();
   ```
 
   <auto-type-table type='import("fumadocs-core/search/client/orama-static").StaticOptions' />
@@ -266,19 +302,14 @@ and update your search clients:
 
 ## Internationalization
 
-Make sure your language is on the Orama [Supported Languages](https://docs.orama.com/docs/orama-js/supported-languages) list.
+Search works with every language out of the box - the default `multilingual` mode uses Unicode word segmentation, so all locales (including Chinese and Japanese) share a single search database with zero config.
 
 ```ts title="app/api/search/route.ts" tab="From Source"
 import { source } from '@/lib/source';
 import { createFromSource } from 'fumadocs-core/search/server';
 
-const server = createFromSource(source, {
-  localeMap: {
-    // [locale]: Orama options [!code ++:2]
-    ru: { language: 'russian' },
-    en: { language: 'english' },
-  },
-});
+// no extra configuration needed for i18n
+const server = createFromSource(source);
 ```
 
 ```ts tab="From Search Indexes"
@@ -295,74 +326,10 @@ const server = createI18nSearchAPI('advanced', {
       structuredData: page.data.structuredData,
       id: page.url,
       url: page.url,
-      locale: language === 'ru' ? 'russian' : 'english', // [!code ++]
+      locale: language, // [!code ++]
     })),
   ),
 });
-```
-
-For **Static Mode**, you should configure from client-side instead:
-
-```tsx title="components/search.tsx"
-import { useDocsSearch } from 'fumadocs-core/search/client';
-import { oramaStaticClient } from 'fumadocs-core/search/client/orama-static';
-import { create } from '@orama/orama';
-
-function initOrama(locale?: string) {
-  return create({
-    schema: { _: 'string' },
-    // [!code ++]
-    language: locale === 'ru' ? 'russian' : 'english',
-  });
-}
-
-function Search() {
-  const client = useDocsSearch({
-    client: oramaStaticClient({
-      initOrama,
-    }),
-  });
-
-  // ...
-}
-```
-
-### Special Languages
-
-Chinese and Japanese require additional configurations:
-
-```npm
-npm i @orama/tokenizers
-```
-
-<include cwd meta='title="app/api/search/route.ts" tab="createFromSource"'>
-  ../../examples/i18n/app/api/search/route.ts
-</include>
-
-```tsx tab="Static mode" title="components/search.tsx"
-import { useDocsSearch } from 'fumadocs-core/search/client';
-import { oramaStaticClient } from 'fumadocs-core/search/client/orama-static';
-import { createTokenizer } from '@orama/tokenizers/mandarin';
-import { create } from '@orama/orama';
-
-// [!code focus:8]
-function initOrama(locale?: string) {
-  return create({
-    schema: { _: 'string' },
-    components: {
-      tokenizer: locale === 'cn' ? createTokenizer() : undefined,
-    },
-  });
-}
-
-function Search() {
-  const client = useDocsSearch({
-    client: oramaStaticClient({
-      initOrama,
-    }),
-  });
-  // ...
-}
 ```
 
 and update your search clients:
@@ -372,15 +339,55 @@ and update your search clients:
   Add `locale` to the search client, this will only allow pages with specified locale to be searchable by the user.
 
 ```ts
-import { useDocsSearch } from 'fumadocs-core/search/client';
-import { fetchClient } from 'fumadocs-core/search/client/fetch';
+import { useFetchSearch } from 'fumadocs-core/search/client';
 
-const { search, setSearch, query } = useDocsSearch({
-  client: fetchClient({
-    locale: 'cn',
-  }),
+const { search, onSearchChange, isLoading, data } = useFetchSearch({
+  locale: 'cn',
 });
 ```
+
+This also applies to **Static Mode**, pass `locale` to `useStaticSearch()` instead.
+
+<Callout title="Language-specific Tokenization">
+
+    The `multilingual` mode doesn't apply language-specific stemming or stop-words.
+    Without stemming, a plural query like `recordings` won't match a page containing `recording`.
+
+    To attach a stemmer while keeping multilingual segmentation and a single database, pass a `tokenizer`:
+
+    ```ts
+    import { source } from '@/lib/source';
+    import { createFromSource } from 'fumadocs-core/search/server';
+    import { stemmer } from '@zbsearch/stemmers/english';
+
+    const server = createFromSource(source, {
+      tokenizer: { language: 'multilingual', stemming: true, stemmer }, // [!code ++]
+    });
+    ```
+
+    Alternatively, use a language on the [supported languages](https://www.zbsearch.dev/docs/zbsearch/supported-languages) list per locale with `localeMap`:
+
+    ```ts
+    import { source } from '@/lib/source';
+    import { createFromSource } from 'fumadocs-core/search/server';
+
+    const server = createFromSource(source, {
+      localeMap: {
+        // [locale]: search options [!code ++:3]
+        ru: { language: 'russian' },
+        en: { language: 'english' },
+      },
+    });
+    ```
+
+    Note that a separate search database is created for each locale when `localeMap` is enabled.
+
+    <Callout type="warn" title="Static Mode">
+      A custom `tokenizer` must also be given to the client, since it needs to tokenize the query the same way.
+      Pass it via `initDB` on `useStaticSearch()`.
+    </Callout>
+
+</Callout>
 
 ## Headless
 

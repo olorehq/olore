@@ -135,6 +135,7 @@ export default class Runner {
   }
 }
 ```
+
 :::
 
 ::: warning
@@ -260,15 +261,44 @@ export interface TaskResult {
    */
   hooks?: Partial<Record<'afterAll' | 'beforeAll' | 'beforeEach' | 'afterEach', TaskState>>
   /**
-   * The amount of times the task was retried. The task is retried only if it
-   * failed and `retry` option is set.
+   * The number of times the task has been retried across all repeats.
    */
   retryCount?: number
   /**
-   * The amount of times the task was repeated. The task is repeated only if
-   * `repeats` option is set. This number also contains `retryCount`.
+   * The zero-based index of the current repeat.
    */
   repeatCount?: number
+  /**
+   * Individual results for every retry and repeat attempt.
+   */
+  attempts?: TaskResultAttempt[]
+}
+
+export interface TaskResultAttempt {
+  /**
+   * The state after applying the test's expected failure option.
+   */
+  state: 'pass' | 'fail' | 'skip'
+  /**
+   * Errors produced by this attempt.
+   */
+  errors?: TestError[]
+  /**
+   * How long in milliseconds the attempt took to run.
+   */
+  duration: number
+  /**
+   * Time in milliseconds when the attempt started running.
+   */
+  startTime: number
+  /**
+   * The zero-based retry index within the repeat.
+   */
+  retryIndex: number
+  /**
+   * The zero-based repeat index.
+   */
+  repeatIndex: number
 }
 ```
 

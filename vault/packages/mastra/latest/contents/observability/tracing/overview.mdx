@@ -1,15 +1,19 @@
 ---
-title: "Tracing | Observability"
-description: "Record and inspect hierarchical execution for agents, workflows, tools, and model calls."
+title: "Usage | Traces"
+description: "Trace Mastra agents, workflows, tools, and model calls with hierarchical spans, sampling, metadata, tags, filtering, serialization, and external context."
 packages:
   - "@mastra/observability"
 ---
 
-# Tracing
+# Usage
 
 Tracing is the observability signal that records how a request moves through agents, workflows, tools, and model calls. Mastra represents each operation as a span and groups related spans into a trace so you can inspect the full execution path.
 
-This page focuses on trace-specific concepts: span hierarchy, sampling, metadata, filtering, trace IDs, and third-party trace context.
+This page focuses on trace-specific concepts: execution outcomes, span hierarchy, sampling, metadata, filtering, trace IDs, and third-party trace context.
+
+<Inject>
+  **For AI agents:** Run `npx mastra api trace list '{"page":0,"perPage":20}'` to inspect recent traces directly instead of opening Studio or writing a temporary script. The command requires a running Mastra server with observability configured; start the local server with `npx mastra dev`, or pass the reachable server's base URL with `--url`. Run `npx mastra api trace list --schema` before constructing different filters. Install Mastra's skill with `npx skills add mastra-ai/skills --skill mastra` for complete API CLI discovery, targeting, schema, authentication, and error-handling guidance.
+</Inject>
 
 ## When to use tracing
 
@@ -22,17 +26,61 @@ This page focuses on trace-specific concepts: span hierarchy, sampling, metadata
 
 To get started with tracing, configure observability in your Mastra instance and run an agent or workflow. You can configure behavior through the following features:
 
-- [Configuration](/docs/observability/config): Base observability config, multiple configs, and serverless flushing
-- [Storage](/docs/observability/storage): Storage routing for traces, logs, and metrics
-- [Integrations overview](/docs/observability/integrations/overview): Exporters, bridges, and processors
+- [Configuration](/docs/observability/overview#configuration): Base observability config and multiple configs, plus serverless flushing
+- [Storage](/docs/observability/overview#storage): Storage routing for traces, logs, and metrics
+
+## Execution outcomes
+
+Spans report the meaning of an individual execution through three native fields:
+
+- `outcome`: The execution result, such as `success`, `error`, `abort`, `interrupted`, `suspend`, `limit`, `blocked`, or `unknown`.
+- `stopReason`: An optional machine-readable cause, such as `max_steps`, `guardrail`, or `observer_failed`.
+- `stopReasonContext`: Optional compact facts about that cause, such as a provider error code, processor ID, signal ID, or related span ID.
+
+A `null` or absent outcome means no outcome has been recorded. Use `endTime` to determine whether a span has finished. Older observability versions can retain a `null` outcome on finished spans. Completing on the last allowed step is `success`. Needing another step after exhausting the allowance is `limit / max_steps`.
+
+Configured completion through `stopWhen` or an iteration hook records `success` with `stop_condition` or `iteration_hook`. A successful delegation followed by a supervisor's `bail()` records `success / delegation_bail`. If the delegated worker fails and the hook bails, the worker retains its failure and the supervisor records `interrupted / delegation_bail` with `causeOutcome` and, when known, `causeStopReason` in `stopReasonContext`.
+
+Caller cancellation records `abort / caller_cancelled` on the targeted run. Unfinished descendants stopped by that cancellation record `interrupted / caller_cancelled`. A run deadline records `limit / timeout` on the run; work interrupted by that deadline records `interrupted / timeout`. Completed spans retain their outcomes. Generic cleanup ends otherwise unclassified spans as `unknown`.
+
+A [guardrail](/docs/agents/guardrails) that stops execution by firing a tripwire reports `blocked / guardrail`. Its context identifies the processor:
+
+```json
+{
+  "outcome": "blocked",
+  "stopReason": "guardrail",
+  "stopReasonContext": { "processorId": "moderation" }
+}
+```
+
+For Mastra-generated outcomes, `stopReasonContext` is a flat tooltip summary with at most three scalar fields. It excludes raw error messages, signal contents, tripwire metadata, and nested causes. Strings are limited to 128 characters. Oversized values are omitted. Missing facts are omitted, and a context with no available facts is `null`.
+
+Custom producers can supply their own outcome strings, stop reasons, and context objects. These values are preserved through span updates, exports, and rebuilds, with the same serialization limits used for span metadata. The framework allowlist applies to Mastra-generated context.
+
+Model chunk spans capture content after output processors have accepted or redacted it. Provider timing and completion are recorded separately without capturing raw chunk content. A workflow waiting intentionally records `suspend`; a stopped executor handing off unfinished work records `interrupted`, even when the persisted workflow status is `waiting`.
+
+When an observer fails and stops the main execution, the observer span records its own result and the main span reports `interrupted / observer_failed`. The context links to the observer memory operation through `observerSpanId` and summarizes its result with `causeOutcome` and `causeStopReason`. For example, context-window exhaustion remains `limit / context_window_exceeded` on the observer. Read that span for its diagnostics. Signal interruptions retain only `signalId` and `signalType`.
+
+If the configured failure policy lets the main execution continue, it can still succeed. A guardrail retry that recovers also preserves the successful final outcome and the rejected attempt's separate result.
+
+`MastraStorageExporter` and `MastraPlatformExporter` carry these fields in exported span records. Persisting them requires a storage implementation that supports the fields.
+
+Model inference spans (`MODEL_INFERENCE`) measure provider execution and record usage. Model chunk spans (`MODEL_CHUNK`) capture content after output processors have accepted or transformed it. Chunks belong to the logical step (`MODEL_STEP`), so buffered output can arrive after provider execution ends without outliving its parent. In the agent streaming paths, inference spans no longer capture response output; use the processed chunk spans or the generation output instead.
 
 ## Sampling strategies
 
-Sampling allows you to control which traces are collected, helping you balance between observability needs and resource costs. In production environments with high traffic, collecting every trace can be expensive and unnecessary. Sampling strategies let you capture a representative subset of traces while ensuring you don't miss critical information about errors or important operations.
+Sampling allows you to control which traces are collected, helping you balance between observability needs and resource costs.
+
+In production environments with high traffic, collecting every trace can be expensive and unnecessary.
+
+Sampling strategies let you capture a representative subset of traces while ensuring you don't miss critical information about errors or important operations.
 
 You can configure sampling at the observability config level:
 
 ```ts title="src/mastra/index.ts"
+import { Mastra } from '@mastra/core'
+import { Observability } from '@mastra/observability'
+
 export const mastra = new Mastra({
   observability: new Observability({
     configs: {
@@ -70,7 +118,7 @@ The `sampling` option allows you to control which traces are collected, helping 
 
 1. **Ratio-Based Sampling**: Randomly samples a percentage of traces. Ideal for production environments where you want statistical insights without the cost of full tracing. The probability value ranges from 0 (no traces) to 1 (all traces).
 
-   ```ts prettier:false
+   ```ts oxfmt:false
    sampling: {
      type: 'ratio',
      probability: 0.1  // Sample 10% of traces
@@ -79,7 +127,7 @@ The `sampling` option allows you to control which traces are collected, helping 
 
 1. **Custom Sampling**: Implements your own sampling logic based on request context, metadata, or business rules. Perfect for complex scenarios like sampling based on user tier, request type, or error conditions.
 
-   ```ts prettier:false
+   ```ts oxfmt:false
    sampling: {
      type: 'custom',
      sampler: (options) => {
@@ -96,7 +144,9 @@ The `sampling` option allows you to control which traces are collected, helping 
 
 ## Adding custom metadata
 
-Custom metadata allows you to attach additional context to your traces, making it easier to debug issues and understand system behavior in production. Metadata can include business logic details, performance metrics, user context, or any information that helps you understand what happened during execution.
+Add custom metadata to record application-specific context in your traces for debugging production issues.
+
+Metadata can include business logic and performance metrics. It can also carry user context or any other information that explains what happened during execution.
 
 You can add metadata to any span using the tracing context:
 
@@ -127,6 +177,9 @@ Metadata set here will be shown in all configured exporters.
 Set the top-level `environment` field on Mastra to automatically attach the deployment environment to all observability signals without passing `tracingOptions.metadata.environment` on each call.
 
 ```ts title="src/mastra/index.ts"
+import { Mastra } from '@mastra/core'
+import { Observability } from '@mastra/observability'
+
 export const mastra = new Mastra({
   environment: 'production',
   observability: new Observability({
@@ -140,19 +193,22 @@ export const mastra = new Mastra({
 })
 ```
 
-If `environment` isn't set, Mastra falls back to `process.env.NODE_ENV`. If neither is set, the field is left undefined rather than guessed.
+If `environment` isn't set, runs started through `mastra dev` resolve to `development` (even though the dev server itself runs with `NODE_ENV=production`); otherwise Mastra falls back to `process.env.NODE_ENV`. If none of these are set, the field is left undefined rather than guessed.
 
 Per-call `tracingOptions.metadata.environment` always takes precedence, so individual calls can override the value when needed.
 
 ### Automatic metadata from `RequestContext`
 
-Instead of manually adding metadata to each span, you can configure Mastra to automatically extract values from RequestContext and attach them as metadata to all spans in a trace. This is useful for consistently tracking user identifiers, environment information, feature flags, or any request-scoped data across your entire trace.
+Instead of manually adding metadata to each span, you can configure Mastra to automatically extract values from RequestContext and attach them as metadata to all spans in a trace. This is useful for consistently tracking user identifiers and environment information, along with feature flags or other request-scoped data across your entire trace.
 
 #### Configuration-level extraction
 
 Define which RequestContext keys to extract in your tracing configuration. These keys will be automatically included as metadata for all spans created with this configuration:
 
 ```ts title="src/mastra/index.ts"
+import { Mastra } from '@mastra/core'
+import { Observability } from '@mastra/observability'
+
 export const mastra = new Mastra({
   observability: new Observability({
     configs: {
@@ -282,6 +338,25 @@ const result = await agent.generate([{ role: 'user', content: 'Analyze this' }],
 - **Priority levels**: `"priority-high"`, `"priority-low"`
 - **Experiments**: `"experiment-v1"`, `"control-group"`, `"treatment-a"`
 
+### Naming a trace
+
+Every run of the same agent or workflow gets the same root span name by default, for example `workflow run: 'skill-analyze'`. When one workflow runs over many subjects, set `rootSpanName` in `tracingOptions` to label each run. The name replaces the root span name in Studio's trace list and in exporters that display span names.
+
+```ts
+const run = await mastra.getWorkflow('skillAnalyze').createRun()
+
+await run.start({
+  inputData: { skillId: 'typescript' },
+  tracingOptions: {
+    rootSpanName: 'skill-analyze: typescript',
+  },
+})
+```
+
+The name applies to the root span only. Child spans keep their default names. Entity filters keep working because the workflow or agent id is stored separately as `entityId` and `entityName`.
+
+OpenTelemetry-based exporters and the Langfuse exporter build their span and trace names from the entity id, so they're not affected. To name a Langfuse trace, set `metadata.traceName` as described in the [Langfuse integration](/integrations/observability/langfuse).
+
 ### Hiding sensitive input/output
 
 When processing sensitive data, you may want to prevent input and output values from being logged to your observability platforms. Use `hideInput` and `hideOutput` in `tracingOptions` to exclude this data from all spans in a trace:
@@ -312,7 +387,7 @@ const result = await agent.generate([{ role: 'user', content: 'Handle confidenti
 
 #### How it works
 
-- **Trace-wide effect**: When set on the root span, these options apply to all child spans in the trace (tool calls, model generations, etc.)
+- **Trace-wide effect**: When set on the root span and these options apply to all child spans in the trace (tool calls, plus model generations, etc.)
 - **Export-time filtering**: The data remains available internally during execution but is excluded when spans are exported to observability platforms
 - **Combinable with other options**: You can use `hideInput`/`hideOutput` alongside `tags`, `metadata`, and other `tracingOptions`
 
@@ -327,11 +402,7 @@ const result = await agent.generate([{ role: 'user', content: 'Sensitive operati
 })
 ```
 
-:::tip
-
-For more granular control over sensitive data, consider using the [Sensitive Data Filter](/docs/observability/integrations/processors/sensitive-data-filter) processor, which can redact specific fields (like passwords, tokens, and keys) while preserving the rest of the input/output.
-
-:::
+For more fine-grained control over sensitive data, consider using the [Sensitive Data Filter](/reference/observability/tracing/processors/sensitive-data-filter) processor, which can redact specific fields (like passwords, tokens, and keys) while preserving the rest of the input/output.
 
 #### Child spans and metadata extraction
 
@@ -360,11 +431,11 @@ execute: async (inputData, context) => {
 }
 ```
 
-This gives you fine-grained control over which child spans include RequestContext metadata. Root spans (agent/workflow executions) always extract metadata automatically, while child spans only extract when you explicitly pass `requestContext`.
+You get fine-grained control over which child spans include RequestContext metadata. Root spans (agent/workflow executions) always extract metadata automatically, while child spans only extract when you explicitly pass `requestContext`.
 
 ## Creating child spans
 
-Child spans allow you to track fine-grained operations within your workflow steps or tools. They provide visibility into sub-operations like database queries, API calls, file operations, or complex calculations. This hierarchical structure helps you identify performance bottlenecks and understand the exact sequence of operations.
+Child spans allow you to track fine-grained operations within your workflow steps or tools. They provide visibility into sub-operations like database queries and API calls, as well as file operations or complex calculations. This hierarchical structure helps you identify performance bottlenecks and understand the exact sequence of operations.
 
 Create child spans inside a tool call or workflow step to track specific operations:
 
@@ -421,14 +492,16 @@ Span processors transform, filter, or enrich trace data before it's exported. Th
 
 #### Built-in processors
 
-- [Sensitive Data Filter](/docs/observability/integrations/processors/sensitive-data-filter) redacts sensitive information. It's enabled in the default observability config.
+- [Sensitive Data Filter](/reference/observability/tracing/processors/sensitive-data-filter) redacts sensitive information. It's enabled in the default observability config.
 
 #### Creating custom processors
 
 You can create custom span processors by implementing the `SpanOutputProcessor` interface. Here's a basic example that converts all input text in spans to lowercase:
 
 ```ts title="src/processors/lowercase-input-processor.ts"
-import type { SpanOutputProcessor, AnySpan } from '@mastra/observability'
+import type { SpanOutputProcessor, AnySpan } from '@mastra/core/observability'
+import { Mastra } from '@mastra/core'
+import { Observability } from '@mastra/observability'
 
 export class LowercaseInputProcessor implements SpanOutputProcessor {
   name = 'lowercase-processor'
@@ -456,6 +529,8 @@ export const mastra = new Mastra({
 })
 ```
 
+`process()` must mutate the span it receives and return the same instance, or return `undefined` to drop the span. Don't return a copy (for example `{ ...span, input: '...' }`): `exportSpan()` and `isValid` are instance members of the live span, so a copy can't be exported. Mastra logs a processor error and drops the span in that case.
+
 Processors are executed in the order they're defined, allowing you to chain multiple transformations. Common use cases include:
 
 - Redacting sensitive data (passwords, tokens, API keys)
@@ -463,8 +538,6 @@ Processors are executed in the order they're defined, allowing you to chain mult
 - Filtering out spans based on criteria
 - Normalizing data formats
 - Enriching spans with business context
-
-For the broader exporter, bridge, and processor model, see [Integrations overview](/docs/observability/integrations/overview).
 
 ## Span filtering
 
@@ -530,6 +603,8 @@ import { BraintrustExporter } from '@mastra/braintrust'
 import { LangfuseExporter } from '@mastra/langfuse'
 import { SpanType } from '@mastra/core/observability'
 import type { CustomSpanFormatter } from '@mastra/core/observability'
+import { Mastra } from '@mastra/core'
+import { Observability } from '@mastra/observability'
 
 // Formatter that extracts plain text from AI messages
 const plainTextFormatter: CustomSpanFormatter = span => {
@@ -655,14 +730,17 @@ Serialization options control how span data (input, output, and attributes) is t
 Add `serializationOptions` to your observability configuration:
 
 ```ts title="src/mastra/index.ts"
+import { Mastra } from '@mastra/core'
+import { Observability } from '@mastra/observability'
+
 export const mastra = new Mastra({
   observability: new Observability({
     configs: {
       default: {
         serviceName: 'my-service',
         serializationOptions: {
-          maxStringLength: 2048, // Maximum length for string values (default: 1024)
-          maxDepth: 10, // Maximum depth for nested objects (default: 6)
+          maxStringLength: 2048, // Maximum length for string values (default: 131072)
+          maxDepth: 10, // Maximum depth for nested objects (default: 8)
           maxArrayLength: 100, // Maximum number of items in arrays (default: 50)
           maxObjectKeys: 75, // Maximum number of keys in objects (default: 50)
         },
@@ -677,26 +755,26 @@ export const mastra = new Mastra({
 
 | Option | Default | Description |
 | - | - | - |
-| `maxStringLength` | 1024 | Maximum length for string values. Longer strings are truncated. |
-| `maxDepth` | 6 | Maximum depth for nested objects. Deeper levels are omitted. |
+| `maxStringLength` | 131072 (128 KB) | Maximum length for string values. Longer strings are truncated. |
+| `maxDepth` | 8 | Maximum depth for nested objects. Deeper levels are omitted. |
 | `maxArrayLength` | 50 | Maximum number of items in arrays. Additional items are omitted. |
 | `maxObjectKeys` | 50 | Maximum number of keys in objects. Additional keys are omitted. |
 
 ### Use cases
 
-**Increasing limits for debugging**: If your agents or tools work with large documents, API responses, or data structures, increase these limits to capture more context in your traces:
+**Increasing limits for debugging**: Increase these limits to capture more context for large documents and API responses, as well as other data structures:
 
-```ts prettier:false
+```ts oxfmt:false
 serializationOptions: {
-  maxStringLength: 8192,  // Capture longer text content
-  maxDepth: 12,           // Handle deeply nested JSON responses
-  maxArrayLength: 200,    // Keep more items from large lists
+  maxStringLength: 262144, // Capture longer text content (256 KB)
+  maxDepth: 12,            // Handle deeply nested JSON responses
+  maxArrayLength: 200,     // Keep more items from large lists
 }
 ```
 
 **Reducing trace size for production**: Lower these values to reduce storage costs and improve performance when you don't need full payload visibility:
 
-```ts prettier:false
+```ts oxfmt:false
 serializationOptions: {
   maxStringLength: 256,   // Truncate strings aggressively
   maxDepth: 3,            // Shallow object representation
@@ -705,11 +783,11 @@ serializationOptions: {
 }
 ```
 
-All options are optional — if not specified, they fall back to the defaults shown above.
+All options are optional, if not specified, they fall back to the defaults shown above.
 
 ## Retrieving trace IDs
 
-When you execute agents or workflows with tracing enabled, the response includes a `traceId` that you can use to look up the full trace in your observability platform. This is useful for debugging, customer support, or correlating traces with other events in your system.
+When you execute agents or workflows with tracing enabled, the response includes a `traceId` that you can use to look up the full trace in your observability platform. This is useful for debugging or customer support, or alternatively correlating traces with other events in your system.
 
 ### Agent trace IDs
 
@@ -765,7 +843,7 @@ The trace ID is only available when tracing is enabled. If tracing is disabled o
 
 ## Integrating with external tracing systems
 
-When running Mastra agents or workflows within applications that have existing distributed tracing (OpenTelemetry, Datadog, etc.), you can connect Mastra traces to your parent trace context. This creates a unified view of your entire request flow, making it easier to understand how Mastra operations fit into the broader system.
+If your application already uses distributed tracing, such as OpenTelemetry or Datadog, you can connect Mastra traces to the parent trace context. This lets you follow a request through your application and its Mastra agent or workflow calls.
 
 ### Passing external trace IDs
 
@@ -789,7 +867,7 @@ const result = await agent.generate('Analyze this data', {
 
 ### OpenTelemetry integration
 
-Integration with OpenTelemetry allows Mastra traces to appear seamlessly in your existing observability platform:
+Integration with OpenTelemetry allows Mastra traces to appear directly in your existing observability platform:
 
 ```ts
 import { trace } from '@opentelemetry/api'
@@ -825,6 +903,36 @@ const result = await run.start({
 })
 ```
 
+### Nesting a run under an earlier Mastra run
+
+A `parentSpanId` can point at two kinds of spans. The span can belong to your own tracing system, as in the examples above. Mastra then treats the run as the top of the trace it exports, and the run sets the trace's name, input, output, and tags.
+
+The span can also be an earlier Mastra run in the same trace, such as an LLM judge that scores a finished turn. Set `nestUnderParent: true` for this case. The new run becomes a child of that span, and the trace keeps the name, input, output, tags, user, and session of the run that started it.
+
+```ts
+const turn = await assistant.generate('When does my order ship?')
+
+await judge.generate(`Grade this answer: ${turn.text}`, {
+  tracingOptions: {
+    traceId: turn.traceId,
+    parentSpanId: turn.spanId,
+    nestUnderParent: true,
+  },
+})
+```
+
+The `nestUnderRun()` helper builds the same options from the earlier run's result:
+
+```ts
+import { nestUnderRun } from '@mastra/core/observability'
+
+await judge.generate(`Grade this answer: ${turn.text}`, {
+  tracingOptions: nestUnderRun(turn),
+})
+```
+
+Both runs can be in different processes. Mastra ignores `nestUnderParent` when `traceId` or `parentSpanId` is missing or not valid. It also ignores the option when a tracing bridge starts the run in a different trace. The [Langfuse](/integrations/observability/langfuse) and [Braintrust](/integrations/observability/braintrust) exporters use this option. In other exporters, only the tags rule applies.
+
 ### ID format requirements
 
 Mastra validates trace and span IDs to ensure compatibility:
@@ -832,12 +940,12 @@ Mastra validates trace and span IDs to ensure compatibility:
 - **Trace IDs**: 1-32 hexadecimal characters (OpenTelemetry uses 32)
 - **Span IDs**: 1-16 hexadecimal characters (OpenTelemetry uses 16)
 
-Invalid IDs are handled gracefully — Mastra logs an error and continues:
+Invalid IDs are handled gracefully, Mastra logs an error and continues:
 
 - Invalid trace ID → generates a new trace ID
 - Invalid parent span ID → ignores the parent relationship
 
-This ensures tracing never crashes your application, even with malformed input.
+As a result, tracing never crashes your application, even with malformed input.
 
 ### Example: Express middleware
 
@@ -869,6 +977,12 @@ app.post('/api/analyze', async (req, res) => {
 
 This creates a single distributed trace that includes both the HTTP request handling and the Mastra agent execution, viewable in your observability platform of choice.
 
+### MCP calls
+
+Model Context Protocol (MCP) calls link the caller's trace and the server's trace without any setup. When an agent or workflow calls a tool through `MCPClient`, the `MCPServer` that handles it keeps its own trace and records a link to the tool call span, and the tool call span links back to the server's span. Each side keeps its own trace, root span, and trace summary. When the server uses a tracing bridge and its HTTP instrumentation continues the caller's trace, the request joins that trace instead. Mastra storage saves the links with the spans, and exporters with span link support send them too.
+
+This also works with non-Mastra software on either side. See the [`MCPServer` reference](/reference/tools/mcp-server#linking-to-the-callers-trace) for details, and the [`MCPClient` reference](/reference/tools/mcp-client) to send your own trace context.
+
 ## What gets traced
 
 Mastra automatically creates spans for:
@@ -876,6 +990,7 @@ Mastra automatically creates spans for:
 ### Agent operations
 
 - **Agent runs**: Complete execution with instructions and tools
+- **Signal-triggered runs**: The `AGENT_RUN` span records a starting signal's `id`, `type`, `tagName`, and `attributes` under `attributes.signal`
 - **LLM calls**: Model interactions with tokens and parameters
 - **Tool executions**: Function calls with inputs and outputs
 - **Memory operations**: Thread and semantic recall
@@ -895,4 +1010,4 @@ Mastra automatically creates spans for:
 - [Tracing Classes](/reference/observability/tracing/instances): Core classes and methods
 - [Span Interfaces](/reference/observability/tracing/spans): Span types and lifecycle
 - [Type Definitions](/reference/observability/tracing/interfaces): Complete interface reference
-- [Span filtering](/reference/observability/tracing/span-filtering): Filtering behavior, span types, and examples
+- [Span filtering](/reference/observability/tracing/span-filtering): Filtering behavior and span types, plus examples

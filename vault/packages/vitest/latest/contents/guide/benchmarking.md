@@ -4,17 +4,17 @@ title: Benchmarking | Guide
 
 # Benchmarking
 
-Vitest lets you write benchmarks alongside your tests using the `bench` fixture from the [test context](/guide/test-context). Benchmarks are powered by [Tinybench](https://github.com/tinylibs/tinybench) and are defined inside regular `test()` calls, giving you access to the full power of Vitest's test runner: retries, lifecycle hooks, filtering, and assertions.
+Vitest lets you write benchmarks alongside your tests using the `bench` fixture from the [test context](/guide/test-context). The built-in benchmark provider is powered by [Tinybench](https://github.com/tinylibs/tinybench), and benchmarks are defined inside regular `test()` calls, giving you access to the full power of Vitest's test runner: retries, lifecycle hooks, filtering, and assertions.
 
 ## Defining a Benchmark
 
 Use the `bench` fixture to define a benchmark. Call `.run()` to execute it:
 
 ```ts
-import { expect, test } from 'vitest'
+import { test } from 'vitest'
 
 test('parsing performance', async ({ bench }) => {
-  const result = await bench('parse', () => {
+  await bench('parse', () => {
     JSON.parse('{"key":"value"}')
   }).run()
 })
@@ -23,18 +23,18 @@ test('parsing performance', async ({ bench }) => {
 The `bench()` function registers a benchmark without executing it. Calling `.run()` runs the benchmark and returns the result. After the test completes, Vitest prints a single-row version of the [comparison table](#comparing-benchmarks) (ops/sec, mean time, percentiles, etc.), so you get the same output for a one-off benchmark as you do for `bench.compare()`.
 
 ::: warning
-The `bench` fixture is only available in files matched by [`benchmark.include`](/config/#benchmark-include) (default: `**/*.{bench,benchmark}.?(c|m)[jt]s?(x)`). Using `{ bench }` inside a regular test file will throw an error.
+The `bench` fixture is only available in files matched by [`benchmark.include`](/config/benchmark#benchmark-include) (default: `**/*.{bench,benchmark}.?(c|m)[jt]s?(x)`). Using `{ bench }` inside a regular test file will throw an error.
 
 Whether a file participates in the benchmark run is decided by the filename, not by whether the test uses the `bench` fixture. Renaming `parser.test.ts` to `parser.bench.ts` (or adjusting `benchmark.include`) is what moves it into the benchmark project.
 :::
 
 ## Running Benchmarks
 
-Benchmark files are matched by [`benchmark.include`](/config/#benchmark-include) (default: `**/*.{bench,benchmark}.?(c|m)[jt]s?(x)`) and run in their own project, separate from your regular tests. There are three ways to run them, depending on whether you want to skip them, run them alongside tests, or run them on their own.
+Benchmark files are matched by [`benchmark.include`](/config/benchmark#benchmark-include) (default: `**/*.{bench,benchmark}.?(c|m)[jt]s?(x)`) and run in their own project, separate from your regular tests. There are three ways to run them, depending on whether you want to skip them, run them alongside tests, or run them on their own.
 
 ### `vitest` (default)
 
-Without [`benchmark.enabled`](/config/#benchmark-enabled), the `vitest` command only runs regular tests. Benchmark files are ignored entirely. This is the default and the right choice for day-to-day development, since benchmarks are slow and noisy and shouldn't run on every save.
+Without [`benchmark.enabled`](/config/benchmark#benchmark-enabled), the `vitest` command only runs regular tests. Benchmark files are ignored entirely. This is the default and the right choice for day-to-day development, since benchmarks are slow and noisy and shouldn't run on every save.
 
 ### `vitest` with `benchmark.enabled`
 
@@ -72,17 +72,19 @@ vitest bench parser
 vitest bench -t JSON
 ```
 
+To execute benchmarks with another benchmarking engine or execution strategy, see the [Custom Benchmark Provider](/guide/advanced/benchmark-provider) guide.
+
 ## Comparing Benchmarks
 
 Use `bench.compare()` to compare multiple benchmarks against each other:
 
 ```ts
-import { expect, test } from 'vitest'
+import { test } from 'vitest'
 
 test('compare JSON libraries', async ({ bench }) => {
   const input = '{"key":"value","nested":{"a":1}}'
 
-  const result = await bench.compare(
+  await bench.compare(
     bench('JSON.parse', () => {
       JSON.parse(input)
     }),
@@ -103,7 +105,7 @@ You can pass [options](https://tinylibs.github.io/tinybench/interfaces/BenchOpti
 
 ```ts
 test('compare with options', async ({ bench }) => {
-  const result = await bench.compare(
+  await bench.compare(
     bench('lib1', () => { lib1() }),
     bench('lib2', () => { lib2() }),
     {
@@ -118,7 +120,7 @@ You can also pass per-benchmark [options](https://tinylibs.github.io/tinybench/i
 
 ```ts
 test('benchmarks with setup', async ({ bench }) => {
-  const result = await bench.compare(
+  await bench.compare(
     bench('with-cache', () => {
       readFromCache()
     }),
@@ -317,7 +319,6 @@ In a multi-project workspace (different browsers, different runtimes), share one
 test('cross-project baseline', async ({ bench }) => {
   await bench(
     'parse',
-    // eslint-disable-next-line no-template-curly-in-string
     { perProject: true, writeResult: './benchmarks/parse.${projectName}.json' },
     () => parse(largeInput),
   ).run()
@@ -330,7 +331,7 @@ Use the same template in `bench.from()` so each project reads its own artifact.
 
 Benchmarks are inherently flaky: CPU load, thermal throttling, GC pressure, and background processes all affect results. Vitest takes several steps to minimize this noise:
 
-- **Separate project**: Benchmark files are grouped into their own project based on the [`benchmark.include`](/config/#benchmark-include) pattern. The `bench` fixture is only exposed in files matched by that pattern. Using it inside a regular test file will throw an error.
+- **Separate project**: Benchmark files are grouped into their own project based on the [`benchmark.include`](/config/benchmark#benchmark-include) pattern. The `bench` fixture is only exposed in files matched by that pattern. Using it inside a regular test file will throw an error.
 - **No concurrency**: Tests within a benchmark file always run sequentially. Benchmark files themselves also run one at a time, never in parallel. This prevents benchmarks from interfering with each other.
 
 To further improve stability:
@@ -477,4 +478,5 @@ This only affects Node.js mode. Browser mode uses native ESM imports and does no
     )
   })
   ```
+
 - **Cross-browser differences**: V8 (Chrome), SpiderMonkey (Firefox), and JSC (Safari) optimize different patterns differently. A benchmark that shows one library winning in Chrome may show the opposite in Firefox.

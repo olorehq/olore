@@ -2,14 +2,15 @@
 title: 'Subscriber Notifications'
 description: 'Configure subscriber notifications.'
 sidebarTitle: 'Subscriber Notifications'
+canonical: 'https://www.checklyhq.com/docs/communicate/status-pages/subscriber-notifications/'
 ---
 
 ## Subscribing to incident updates
-Users can choose to be notified about any incident impacting your services by subscribing through your Status Page.
+Users can choose to be notified about any incident impacting your components by subscribing through your status page.
 
 <Steps>
 <Step title="Subscribing to incident updates">
-To subscribe to notifications, users click the "Get updates" button at the top of the Status Page, and then fill out a form to enter their email address.
+To subscribe to notifications, users click the "Get updates" button at the top of the status page, and then fill out a form to enter their email address.
 </Step>
 
 <Step title="Verify email">
@@ -21,31 +22,14 @@ From that moment on, users with a confirmed subscription will receive emails for
 </Step>
 </Steps>
 
-### Notifications content structure
-Here is an example of a Status Page notifications email:
+## Following updates via RSS, Atom, or Slack
 
-```text
-Subject: [INCIDENT] Payment Processing - Service Disruption
+Status page updates are also published as feeds, so users can follow incidents without subscribing by email. Click **Get updates** on any status page and pick a tab:
 
-Hello,
+- **RSS**: copy the RSS feed URL (`https://your-status-page-domain/feed.rss`) or the Atom feed URL (`https://your-status-page-domain/feed.atom`) into any feed reader. Both feeds cover recent incidents and maintenance windows.
+- **Slack**: run the command shown in the Slack tab — `/feed subscribe https://your-status-page-domain/slack.rss` — in any Slack channel to get updates whenever an incident is created, updated, or resolved.
 
-We are currently experiencing issues with our Payment Processing service.
-
-Incident Details:
-- Service: Payment Processing
-- Status: Investigating
-- Started: January 15, 2024 at 14:30 UTC
-- Impact: Users may experience payment failures
-
-We are actively working to resolve this issue and will provide updates
-as more information becomes available.
-
-View Status Page: https://status.yourcompany.com
-Unsubscribe: [unsubscribe link]
-
-Best regards,
-Your Company Team
-```
+Feed subscriptions are anonymous and don't count toward your subscriber limits. Feeds are not available on private status pages, as feed readers cannot authenticate.
 
 ## How Checkly deals with subscribers limits based on your plan
 

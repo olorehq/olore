@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-lambda-approuterwebhook.png
+image: https://remotion.media/docs/generated/articles-docs-lambda-approuterwebhook.png
 id: approuterwebhook
 title: appRouterWebhook()
 slug: /lambda/approuterwebhook
@@ -51,7 +51,7 @@ export const POST = appRouterWebhook({
   },
   onSuccess: () => console.log('Rendering Completed Successfully'),
   onError: () => console.log('Something went wrong while rendering'),
-  onTimeout: () => console.log('Timeout occured while rendering'),
+  onTimeout: () => console.log('Timeout occurred while rendering'),
 });
 
 export const OPTIONS = POST;
@@ -59,7 +59,13 @@ export const OPTIONS = POST;
 
 See [Webhooks](/docs/lambda/webhooks) for an Express example.
 
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions="Node.js runtime" clientSideRendering="" serverSideRendering="" player="" studio="" hideBrowsers />
+
+For serverless functions, use the [light client](/docs/lambda/light-client).
+
 ## See also
 
 - [Webhooks](/docs/lambda/webhooks)
-- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda/src/api/app-router-webhook.ts)
+- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda-client/src/app-router-webhook.ts)

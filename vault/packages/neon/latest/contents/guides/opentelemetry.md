@@ -12,7 +12,7 @@ summary: >-
   signal-specific paths (/v1/metrics, /v1/logs) and collects data from all
   computes in a project.
 enableTableOfContents: true
-updatedOn: '2026-06-12T12:32:37.482Z'
+updatedOn: '2026-10-23T12:11:49.591Z'
 ---
 
 <FeatureBetaProps feature_name="OpenTelemetry integration" />
@@ -32,7 +32,7 @@ updatedOn: '2026-06-12T12:32:37.482Z'
 </DocsList>
 </InfoBlock>
 
-Available for Scale plan users, the Neon OpenTelemetry integration lets you export metrics and Postgres logs to any OpenTelemetry Protocol (OTLP) compatible observability platform. This gives you the flexibility to send your Neon data to your preferred monitoring solution, whether that's New Relic, Grafana Cloud, PostHog, Honeycomb, or any other OTEL-compatible service.
+Available for Scale plan users, the Neon OpenTelemetry integration lets you export metrics and Postgres logs to any OpenTelemetry Protocol (OTLP) compatible observability platform. This gives you the flexibility to send your Neon data to your preferred monitoring solution, whether that's New Relic, Grafana Cloud, Honeycomb, or any other OTEL-compatible service.
 
 ## How it works
 
@@ -162,10 +162,6 @@ You can enable either or both options based on your monitoring needs.
    - Europe: `https://otlp.eu01.nr-data.net`
    - See [New Relic's endpoint documentation](https://docs.newrelic.com/docs/opentelemetry/best-practices/opentelemetry-otlp/#configure-endpoint-port-protocol) for other regions
 
-   **For PostHog**:
-   - US: `https://us.i.posthog.com`
-   - EU: `https://eu.i.posthog.com`
-
    <Admonition type="note">
    When you configure an OTLP endpoint URL in Neon, you should provide only the **base URL** of your collector or observability platform. The OpenTelemetry Collector automatically appends the correct signal-specific paths:
    - `/v1/metrics` for metrics
@@ -205,9 +201,6 @@ You can enable either or both options based on your monitoring needs.
    **For New Relic**:
    - Use **Bearer** or **API Key** with your New Relic license key
 
-   **For PostHog**:
-   - Use **API Key** with your PostHog project API key
-
    **For other platforms**: Choose the appropriate method:
    - **Bearer**: Enter your bearer token or API key
    - **Basic**: Provide your username and password credentials
@@ -215,18 +208,26 @@ You can enable either or both options based on your monitoring needs.
 
 ## Configure resource attributes
 
-Neon automatically organizes your data into separate service entities: your configured service name will receive Postgres logs, while metrics are split into `compute-host-metrics` (infrastructure metrics) and `sql-metrics` (database metrics).
+In the **Resource** section, set the `service.name` attribute to the name your Postgres logs should appear under in your observability platform, such as `neon-postgres-production`.
 
-1. In the **Resource** section, configure the `service.name` attribute to identify your Neon project in your observability platform. For example, you might use "neon-postgres-test" or your actual project name.
+Logs are event messages; metrics are numeric values sampled over time. This name labels your logs only. Metrics are not tagged with it; they arrive under fixed, Neon-assigned service names. Your data appears as follows:
 
-2. Optionally, you can add additional resource attributes by providing a value in the second field to further categorize or filter your data in your observability platform.
+| Data             | Service name                   | Includes                                                            |
+| ---------------- | ------------------------------ | ------------------------------------------------------------------- |
+| Postgres logs    | Your configured `service.name` | Errors, warnings, connection events, and other Postgres activity    |
+| Database metrics | `sql-metrics`                  | Connections, database size, replication delay, and other statistics |
+| Compute metrics  | `compute-host-metrics`         | CPU, memory, and load                                               |
+
+The metric service names are also exposed as the `job` label on each metric.
+
+`service.name` is the only resource attribute Neon exports. Custom resource attributes and custom request headers are not currently supported.
 
 ## Complete the setup
 
 Click **Add** to save your configuration and start the data export.
 
 <Admonition type="tip">
-You can edit your integration settings at any time from the **Integrations** page in the Neon Console. This allows you to update your endpoint URL, change authentication credentials, or modify resource attributes without having to delete and recreate the integration.
+You can edit your integration settings at any time from the **Integrations** page in the Neon Console. This allows you to update your endpoint URL, change authentication credentials, or modify resource attributes without having to delete and recreate the integration. If you change the endpoint URL, protocol, or an endpoint override, enter your authentication credentials again. Neon doesn't reuse stored credentials for a new destination.
 </Admonition>
 
 ## Verify your integration is working
@@ -265,8 +266,8 @@ _Postgres logs flowing into New Relic_
 **Find your data under APM & Services**
 ![Multiple Neon services in New Relic APM & Services](/docs/guides/new_relic_services.png)
 
-- **Logs**: Check your configured service name in APM & Services (for example, `neon-postgres-test`)
-- **Metrics**: Look for the auto-created `compute-host-metrics` and `sql-metrics` services
+- **Logs**: Check your configured service name in APM & Services (for example, `neon-postgres-production`)
+- **Metrics**: Look for the auto-created `compute-host-metrics` and `sql-metrics` services. Metrics are not tagged with your configured `service.name`; see [Configure resource attributes](#configure-resource-attributes).
 
 </Steps>
 

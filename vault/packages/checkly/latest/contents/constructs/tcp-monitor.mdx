@@ -1,19 +1,23 @@
 ---
 title: 'TcpMonitor Construct'
 description: 'Learn how to configure TCP monitors with the Checkly CLI.'
-sidebarTitle: 'TCP Monitor'
+sidebarTitle: 'TCP monitor'
+canonical: 'https://www.checklyhq.com/docs/constructs/tcp-monitor/'
+mode: "wide"
 ---
+
+import CheckIntent from '/snippets/check-intent.mdx';
 
 import GeneralMonitorOptionsTable from '/snippets/general-monitor-options-table.mdx';
 
 <Tip>
-Learn more about TCP Monitors in [the TCP monitor overview](/detect/uptime-monitoring/tcp-monitors/overview).
+Learn more about TCP monitors in [the TCP monitor overview](/detect/uptime-monitoring/tcp-monitors/overview).
 </Tip>
 
-Use TCP Monitors to verify connectivity and response times of your TCP services. The examples below show how to configure monitoring for different types of services.
+Use TCP monitors to verify connectivity and response times of your TCP services. The examples below show how to configure monitoring for different types of services.
 
 <Accordion title="Prerequisites">
-Before creating TCP Monitors, ensure you have:
+Before creating TCP monitors, ensure you have:
 
 - An initialized Checkly CLI project
 - Network access to the TCP services you want to monitor
@@ -75,13 +79,15 @@ new TcpMonitor("redis-tcp-1", {
 The TCP Monitoring configuration consists of specific TCP monitoring options and inherited general monitoring options.
 
 <Tabs>
-<Tab title="TCP Monitor">
+<Tab title="TCP monitor">
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `request` | `object` | ✅ | - | TCP connection configuration object |
-| `degradedResponseTime` | `number` | ❌ | `4000` | Response time threshold in milliseconds for degraded status |
-| `maxResponseTime` | `number` | ❌ | `5000` | Maximum response time in milliseconds before marking as failed |
+| `intent` | `CheckIntent` | ❌ | - | Structured guidance for root cause analysis and check repair. See [General Monitor Options](#general-monitor-options). |
+| `degradedResponseTime` | `number` | ❌ | `4000` | Response time threshold in milliseconds for degraded status (max `5000`) |
+| `maxResponseTime` | `number` | ❌ | `5000` | Maximum response time in milliseconds before marking as failed (max `5000`) |
+| `shouldFail` | `boolean` | ❌ | `false` | Treat connection failures (e.g. timeouts or refused ports) as passed. Successful connections still pass. Only failed assertions will cause the check to fail. |
 
 </Tab>
 <Tab title="General Monitor">
@@ -98,6 +104,7 @@ TCP connection configuration that defines the hostname, port, and optional data 
 
 **Usage:**
 
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 new TcpMonitor("tcp-monitor", {
   name: "Database TCP Check",
@@ -124,6 +131,7 @@ new TcpMonitor("tcp-monitor", {
 <Tabs>
 <Tab title="Database Connection">
 
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 new TcpMonitor("database-check", {
   name: "Database Connectivity",
@@ -139,6 +147,7 @@ new TcpMonitor("database-check", {
 </Tab>
 <Tab title="Redis with Commands">
 
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 new TcpMonitor("redis-ping", {
   name: "Redis PING Test",
@@ -157,6 +166,7 @@ new TcpMonitor("redis-ping", {
 </Tab>
 <Tab title="IPv6 Connection">
 
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 new TcpMonitor("ipv6-service", {
   name: "IPv6 Service Check",
@@ -179,6 +189,7 @@ new TcpMonitor("ipv6-service", {
 Response time threshold in milliseconds for marking the monitor as degraded (warning state).
 
 Usage:
+{/* typecheck-wrap: TcpMonitor */}
 ```ts highlight={3}
 new TcpMonitor("tiered-monitoring", {
   name: "Tiered Monitoring",
@@ -192,6 +203,7 @@ new TcpMonitor("tiered-monitoring", {
 ```
 
 Examples:
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 // Progressive performance alerts
 new TcpMonitor("mysql-performance", {
@@ -213,6 +225,7 @@ new TcpMonitor("mysql-performance", {
 Maximum response time in milliseconds before the monitor is marked as failed.
 
 Usage:
+{/* typecheck-wrap: TcpMonitor */}
 ```ts highlight={3}
 new TcpMonitor("fast-db", {
   name: "Fast DB Connection",
@@ -225,6 +238,7 @@ new TcpMonitor("fast-db", {
 ```
 
 Examples:
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 // Low-latency database requirement
 new TcpMonitor("performance-db", {
@@ -237,10 +251,10 @@ new TcpMonitor("performance-db", {
   },
 })
 
-// Service with higher tolerance
+// Service with the highest tolerance
 new TcpMonitor("batch-service", {
   name: "Batch Processing Service",
-  maxResponseTime: 10000, // 10 seconds
+  maxResponseTime: 5000, // 5 seconds, the default maximum for TCP monitors
   request: {
     hostname: "batch.example.com",
     port: 8080,
@@ -263,7 +277,7 @@ Here are some examples:
 - Assert the total response time of the TCP request
 
 ```ts
-TcpAssertionBuilder.responseTime().lessThan(1000),
+TcpAssertionBuilder.responseTime().lessThan(1000)
 // Equivalent to:
 { source: 'RESPONSE_TIME', comparison: 'LESS_THAN', target: '1000' }
 ```
@@ -284,6 +298,7 @@ Learn more in our docs on [Assertions](/detect/assertions).
 Friendly name for your TCP monitor that will be displayed in the Checkly dashboard and used in notifications.
 
 Usage:
+{/* typecheck-wrap: TcpMonitor */}
 ```ts highlight={2}
 new TcpMonitor('my-tcp-monitor', {
   name: 'Database Connection Monitor'
@@ -297,7 +312,7 @@ How often the TCP monitor should run. Use the `Frequency` enum to set the check 
 
 Usage:
 ```ts highlight={4}
-import { Frequency } from 'checkly/constructs'
+import { Frequency, TcpMonitor } from 'checkly/constructs'
 
 new TcpMonitor("my-monitor", {
   frequency: Frequency.EVERY_2M,
@@ -310,6 +325,7 @@ Examples:
 <Tabs>
 <Tab title="Critical Services">
 
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 // Database connectivity (high frequency)
 new TcpMonitor("critical-db", {
@@ -322,6 +338,7 @@ new TcpMonitor("critical-db", {
 </Tab>
 <Tab title="Standard Services">
 
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 // Application service (standard frequency)
 new TcpMonitor("app-service", {
@@ -334,6 +351,7 @@ new TcpMonitor("app-service", {
 </Tab>
 <Tab title="Background Services">
 
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 // Background service (low frequency)
 new TcpMonitor("background-service", {
@@ -353,9 +371,11 @@ new TcpMonitor("background-service", {
 Array of public location codes where the TCP monitor should run from. Multiple locations provide geographic coverage.
 
 Usage:
+{/* typecheck-wrap: TcpMonitor */}
 ```ts highlight={2}
 new TcpMonitor('global-monitor', {
-  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1']
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+  /* More options... */
 })
 ```
 
@@ -364,6 +384,7 @@ Examples:
 <Tabs>
 <Tab title="Multi-Region Database">
 
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 // Database replication monitoring
 new TcpMonitor("global-db", {
@@ -384,6 +405,7 @@ new TcpMonitor("global-db", {
 </Tab>
 <Tab title="Regional Service">
 
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 // Regional service monitoring
 new TcpMonitor("eu-service", {
@@ -407,13 +429,16 @@ new TcpMonitor("eu-service", {
 Whether the TCP monitor is enabled and will run according to its schedule.
 
 Usage:
+{/* typecheck-wrap: TcpMonitor */}
 ```ts highlight={2}
 new TcpMonitor('my-monitor', {
-  activated: false // Disabled monitor
+  activated: false, // Disabled monitor
+  /* More options... */
 })
 ```
 
 Examples:
+{/* typecheck-wrap: TcpMonitor */}
 ```ts
 // Temporarily disable a monitor
 new TcpMonitor("maintenance-db", {
@@ -427,10 +452,13 @@ new TcpMonitor("maintenance-db", {
 ```
 </ResponseField>
 
+<CheckIntent />
+
 ## Examples
 
 <Tabs>
   <Tab title="Database (PostgreSQL)">
+    {/* typecheck-wrap: TcpMonitor */}
     ```ts
     new TcpMonitor("postgres-check", {
       name: "PostgreSQL Connection",
@@ -448,6 +476,7 @@ new TcpMonitor("maintenance-db", {
   </Tab>
 
   <Tab title="Redis Cache">
+    {/* typecheck-wrap: TcpMonitor */}
     ```ts
     new TcpMonitor("redis-check", {
       name: "Redis Connectivity",
@@ -469,16 +498,18 @@ new TcpMonitor("maintenance-db", {
   </Tab>
 
   <Tab title="SMTP Server">
+    {/* typecheck-wrap: TcpMonitor */}
     ```ts
     new TcpMonitor("smtp-check", {
       name: "SMTP Server Check",
       frequency: Frequency.EVERY_10M,
-      maxResponseTime: 10000,
-      degradedResponseTime: 5000,
+      maxResponseTime: 5000,
+      degradedResponseTime: 4000,
       tags: ["email", "smtp"],
       request: {
         hostname: "mail.example.com",
         port: 587,
+        data: "EHLO example.com\r\n", // the monitor only reads a response after sending data
         assertions: [
           TcpAssertionBuilder.responseTime().lessThan(3000),
           TcpAssertionBuilder.responseData().contains("220"),
@@ -489,6 +520,7 @@ new TcpMonitor("maintenance-db", {
   </Tab>
 
   <Tab title="SSH Server">
+    {/* typecheck-wrap: TcpMonitor */}
     ```ts
     new TcpMonitor("ssh-check", {
       name: "SSH Connectivity",
@@ -501,7 +533,6 @@ new TcpMonitor("maintenance-db", {
         port: 22,
         assertions: [
           TcpAssertionBuilder.responseTime().lessThan(1000),
-          TcpAssertionBuilder.responseData().contains("SSH"),
         ],
       },
     })
@@ -509,6 +540,7 @@ new TcpMonitor("maintenance-db", {
   </Tab>
 
   <Tab title="Custom Application Port">
+    {/* typecheck-wrap: TcpMonitor */}
     ```ts
     new TcpMonitor("app-port-check", {
       name: "Custom Application Port",
@@ -524,23 +556,6 @@ new TcpMonitor("maintenance-db", {
           TcpAssertionBuilder.responseTime().lessThan(1000),
           TcpAssertionBuilder.responseData().contains("OK"),
         ],
-      },
-    })
-    ```
-  </Tab>
-
-  <Tab title="Connection Failure Test">
-    ```ts
-    new TcpMonitor("blocked-port-check", {
-      name: "Verify Port is Blocked",
-      frequency: Frequency.EVERY_30M,
-      maxResponseTime: 5000,
-      degradedResponseTime: 2000,
-      tags: ["security", "firewall"],
-      request: {
-        hostname: "secure.example.com",
-        port: 23, // Telnet port that should be blocked
-        assertions: [TcpAssertionBuilder.responseTime().lessThan(5000)],
       },
     })
     ```

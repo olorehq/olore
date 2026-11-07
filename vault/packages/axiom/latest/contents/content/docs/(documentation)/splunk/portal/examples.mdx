@@ -1,0 +1,95 @@
+---
+title: 'Axiom Portal for Splunk examples'
+description: 'Copy-paste SPL examples for searching Axiom data from Splunk through the Axiom Portal for Splunk, from first searches to lookups and data models.'
+sidebarTitle: Examples
+keywords: ['splunk', 'splunk portal', 'axiom portal for splunk', 'federated search examples', 'spl examples', 'stats', 'timechart', 'lookup', 'tstats']
+---
+
+These examples use standard mode syntax, `index=federated:<name>`, against a dataset of OpenTelemetry trace data. In transparent mode, drop the `federated:` prefix and use the dataset name directly. Adjust index and field names to your setup.
+
+## First searches
+
+Raw events, newest first. Click any event to see the full record, and use the field sidebar to explore:
+
+```spl
+index=federated:otel-traces | head 20
+```
+
+Filters push down, so only matching events leave Axiom:
+
+```spl
+index=federated:otel-traces "service.name"=frontend kind=server | head 50
+```
+
+Note that dotted field names take double quotes in SPL, as on any Splunk index.
+
+## Count at any scale
+
+Exact counts per service over millions of events, computed inside Axiom:
+
+```spl
+index=federated:otel-traces | stats count by "service.name" | sort - count
+```
+
+The classic top-N and rare patterns push down too:
+
+```spl
+index=federated:otel-traces | top 10 "service.name"
+index=federated:otel-traces | rare kind
+```
+
+## Aggregations
+
+Any mix of aggregation functions in one `stats` command:
+
+```spl
+index=federated:otel-traces | stats dc("service.name") as services
+index=federated:otel-traces | stats count avg(duration_ms) median(duration_ms) by kind
+index=federated:otel-traces | stats first("service.name") last("service.name")
+```
+
+## Time series and dashboards
+
+`timechart` is computed Axiom-side, including the time bins, so dashboard panels backed by federated searches stay fast at any data volume:
+
+```spl
+index=federated:otel-traces | timechart count
+index=federated:otel-traces | timechart span=1h count by kind
+index=federated:otel-traces kind=server | timechart count
+```
+
+## Shape results on the search head
+
+Streaming commands run on the search head over the events Axiom returns, so familiar SPL shaping works unchanged:
+
+```spl
+index=federated:otel-traces | head 100 | eval svc='service.name' | stats count by svc
+index=federated:otel-traces | head 100 | rex field=name "(?<verb>^\w+)" | top verb
+index=federated:otel-traces | head 200 | dedup "service.name" | table "service.name"
+```
+
+## Use lookups against Axiom data
+
+In transparent mode, CSV lookups that live on your Splunk search head are replicated to Axiom and joined there:
+
+```spl
+index=otel-traces | lookup kind_names kind OUTPUT kind_label | stats count by kind_label
+```
+
+This is the pattern that makes existing Splunk content work: the lookup table stays in Splunk, the events stay in Axiom, and the Portal joins them where the data is.
+
+## Query data models with tstats
+
+In transparent mode, data models queried with `tstats`, the pattern security content uses, are answered exactly from Axiom:
+
+```spl
+| tstats summariesonly=false count from datamodel=Web by Web.status
+```
+
+## Search OCSF security data
+
+To search OCSF security events stored in Axiom, including arrays such as `observables`, see [Search OCSF data from Splunk](/splunk/portal/ocsf).
+
+## Inspect what happened
+
+On any federated search, click **Job**, and then select **Inspect Job**. The `axiom.*` entries in Execution costs show what happened on the Axiom side: events scanned, query time, and rows in and out. For pushed-down aggregations, the events-scanned count reflects the full scan Axiom performed, even though only a handful of result rows crossed the wire. For details, see [Monitor and troubleshoot](/splunk/portal/troubleshoot).

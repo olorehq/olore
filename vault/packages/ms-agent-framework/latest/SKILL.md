@@ -1,44 +1,37 @@
 ---
 name: olore-ms-agent-framework-latest
-description: Local Microsoft Agent Framework documentation reference (latest). Microsoft Agent Framework is a comprehensive multi-language (.NET/C# and Python) framework for building, orchestrating, and deploying AI agents and multi-agent workflows with support for MCP servers/clients, durable agents, agent-to-agent communication, and dozens of LLM providers.
+description: Local ms-agent-framework documentation reference (latest). Microsoft Agent Framework documentation. Use for building AI agents in .NET or Python, MCP servers/clients, durable agents, and agent-to-agent communication.
 ---
 
-# Microsoft Agent Framework Documentation
+# ms-agent-framework Documentation
 
-Microsoft Agent Framework is a comprehensive multi-language (.NET/C# and Python) framework for building, orchestrating, and deploying AI agents and multi-agent workflows. It supports MCP servers/clients, durable agents, agent-to-agent (A2A) communication, and dozens of LLM providers including OpenAI, Azure OpenAI, Azure AI Foundry, Anthropic, Gemini, Mistral, Ollama, and more.
+Microsoft Agent Framework documentation. Use for building AI agents in .NET or Python, MCP servers/clients, durable agents, and agent-to-agent communication.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| Project overview | `contents/README.md` |
-| .NET getting started | `contents/dotnet/README.md` |
-| Python getting started | `contents/python/README.md` |
-| Python first agent | `contents/python/samples/01-get-started/README.md` |
-| .NET agent samples | `contents/dotnet/samples/02-agents/Agents/README.md` |
-| MCP integration | `contents/dotnet/samples/02-agents/ModelContextProtocol/README.md` |
-| Durable agents | `contents/docs/features/durable-agents/README.md` |
-| Azure AI Foundry agents | `contents/dotnet/samples/02-agents/AgentsWithFoundry/README.md` |
-| Agent skills | `contents/dotnet/samples/02-agents/AgentSkills/README.md` |
-| Python package list | `contents/python/PACKAGE_STATUS.md` |
+| Overview | `contents/README.md` |
+| Python getting started | `contents/python/samples/01-get-started/README.md` |
+| .NET getting started | `contents/dotnet/samples/01-get-started/` |
+| Python package docs | `contents/python/packages/` |
+| Agent providers | `contents/python/samples/02-agents/providers/README.md` |
+| Workflows | `contents/python/samples/03-workflows/README.md` |
+| Hosting / durable agents | `contents/python/samples/04-hosting/README.md` |
+| FAQ | `contents/docs/FAQS.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Building AI agents in .NET (C#) or Python using Microsoft Agent Framework
-- MCP (Model Context Protocol) server and client implementation
-- Agent-to-agent (A2A) communication and multi-agent orchestration
-- Durable agents and workflows with Azure Durable Functions or Durable Task
-- Azure AI Foundry, Azure OpenAI, or other LLM provider integrations
-- Agent skills, context providers, middleware, and observability
-- Declarative workflow definitions (YAML-based)
-- Hosting agents on Azure Functions or as Foundry-hosted agents
-- Migrating from AutoGen or Semantic Kernel to Agent Framework
+- Building AI agents or multi-agent workflows with Microsoft Agent Framework in .NET or Python
+- MCP servers/clients, tools, middleware, memory, RAG, and agent skills
+- Hosting, durable agents, A2A, AG-UI, DevUI, observability, and evaluation
+- Migrating from AutoGen or Semantic Kernel
 
 ## How to find information
 
-1. **First**, read `TOC.md` for the complete file listing organized by directory
-2. Identify the relevant section (.NET vs Python, samples vs packages vs docs)
-3. Read the relevant README.md or feature doc for details
+1. **First**, read `TOC.md` for complete file listing organized by directory
+2. Identify relevant section based on user's question
+3. Read specific files for details
 
-**TOC.md contains all 385 files organized by directory - always check it first.**
+**TOC.md contains all files organized by directory - always check it first.**

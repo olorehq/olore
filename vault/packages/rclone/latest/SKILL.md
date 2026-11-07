@@ -11,40 +11,28 @@ Rclone documentation. Use for syncing, copying, and managing files across cloud 
 
 | Task | Entry Point |
 |------|-------------|
-| Install rclone | `contents/install.md` |
-| Basic usage and CLI syntax | `contents/docs.md` |
+| Install and basic usage | `contents/install.md`, `contents/docs.md` |
 | Backend feature comparison | `contents/overview.md` |
-| Configure a remote | `contents/remote_setup.md` |
-| CLI command index | `contents/commands/rclone.md` |
-| Copy / sync / move files | `contents/commands/rclone_copy.md`, `rclone_sync.md`, `rclone_move.md` |
-| Mount as filesystem | `contents/commands/rclone_mount.md` |
-| Serve files (HTTP/S3/SFTP/WebDAV) | `contents/commands/rclone_serve.md` |
-| Filtering rules | `contents/filtering.md` |
-| Global flags | `contents/flags.md` |
+| Include/exclude filters | `contents/filtering.md` |
 | Bidirectional sync | `contents/bisync.md` |
+| Global flags | `contents/flags.md` |
 | Remote control API | `contents/rc.md` |
+| Command reference (sync, copy, mount, serve...) | `contents/commands/` |
+| Backend setup (S3, Drive, Dropbox, ...) | `contents/s3.md`, `contents/drive.md`, `contents/dropbox.md` |
+| Troubleshooting | `contents/faq.md`, `contents/bugs.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Syncing, copying, or moving files between cloud storage providers
-- Specific cloud storage backends (S3, Google Drive, Dropbox, Azure, B2, SFTP, etc.)
-- rclone CLI commands and their flags
-- Mounting cloud storage as a local filesystem
-- Serving cloud storage over HTTP, S3, SFTP, WebDAV, FTP, or DLNA
-- Bidirectional sync (bisync) configuration and usage
-- Filtering files with include/exclude rules
-- Configuring and managing remotes
-- Encryption, chunking, compression, or caching remotes
-- Troubleshooting rclone operations
+- Syncing, copying, moving or checking files between local and cloud storage
+- Configuring a remote for a specific backend (S3, GCS, Azure, Drive, OneDrive, SFTP, WebDAV, crypt, etc.)
+- Mounting remotes or serving them over HTTP, WebDAV, FTP, SFTP, S3, NFS or DLNA
+- Filtering, bisync, the rc API, or global flags and performance tuning
 
 ## How to find information
 
 1. **First**, read `TOC.md` for complete file listing organized by directory
-2. Identify the relevant section based on the user's question:
-   - Cloud backend questions: root-level `{backend}.md` files
-   - CLI command questions: `commands/rclone_{command}.md`
-   - Core behavior: `docs.md`, `filtering.md`, `flags.md`, `overview.md`
-3. Read the specific file(s) for details
+2. Identify relevant section based on user's question
+3. Read specific files for details
 
-**TOC.md contains all 180 files organized by directory - always check it first.**
+**TOC.md contains all files organized by directory - always check it first.**

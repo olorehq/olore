@@ -1,0 +1,41 @@
+import { Warning } from "@/components/mdx-components"
+
+**General settings**
+
+| Setting | Value |
+| --- | --- |
+| Webhook URL | `https://AXIOM_DOMAIN/v1/ingest/DATASET_NAME`, where `AXIOM_DOMAIN` is the base domain of your organization’s [edge deployment](/reference/edge-deployments), for example `us-east-1.aws.edge.axiom.co` or `eu-central-1.aws.edge.axiom.co`, and `DATASET_NAME` is the target dataset |
+| Method | `POST` |
+| Format | `NDJSON` |
+| Backpressure behavior | `Persistent Queue`, so Cribl buffers events to disk while Axiom is unreachable or rate-limiting |
+
+**Authentication**
+
+| Setting | Value |
+| --- | --- |
+| Authentication type | `Auth token` |
+| Token | An Axiom API token with permission to ingest into the dataset |
+
+**Advanced settings**
+
+| Setting | Value |
+| --- | --- |
+| Compress | On (the default). Cribl sends gzip, which Axiom accepts. |
+| Body size limit (KB) | `4096` (the default) |
+| Events-per-request limit | `10000`. Axiom accepts at most 10,000 events per request. The default, `0`, is unlimited. |
+| Flush period (sec) | `1` (the default) |
+| Request concurrency | `5` (the default) |
+
+**Retries**
+
+Turn on **Honor Retry-After header** (the default). In **Settings for failed HTTP requests**, keep the default rows, which retry `408`, `429`, `500`, `502`, `503`, `504`, and `509`, and add a row for `430`:
+
+| HTTP status code | Pre-backoff interval (ms) | Backoff multiplier | Backoff limit (ms) |
+| --- | --- | --- | --- |
+| `430` | `10000` | `2` | `180000` |
+
+<Warning>
+Axiom returns `430` when an ingest limit is reached. `430` isn’t in Cribl’s default retry list, and Cribl drops any batch whose status code isn’t in the list. Without the `430` row, Cribl drops the whole batch instead of retrying it. Don’t remove the `429` row either: Axiom returns `429` when you exceed the request rate.
+</Warning>
+
+A Persistent Queue holds events only up to its **Queue size limit**, measured on uncompressed data. On Cribl-managed Cribl.Cloud Workers, the size is fixed at 1 GB per destination per Worker Process. When the queue is full, the destination blocks or drops events according to **Queue-full behavior**. Delivery is at-least-once: a retried or replayed batch can arrive twice. For more information, see [Persistent Queue settings](https://docs.cribl.io/stream/destinations-webhook/#persistent-queue-settings) in the Cribl documentation.

@@ -1,0 +1,22 @@
+---
+sidebarTitle: Restore
+openapi: "POST /v3/organizations/{organizationId}/groups/{groupId}/restore"
+---
+
+<Note>
+
+Unlike the v1 endpoints, this endpoint identifies the organization and group by
+**UUID** — use the `id` field from
+[Retrieve Organization](/api-reference/organizations/retrieve) and the `uuid`
+field from [List Deleted Groups](/api-reference/groups/list-deleted).
+
+</Note>
+
+<RequestExample>
+
+```bash cURL
+curl -L -X POST 'https://api.turso.tech/v3/organizations/{organizationId}/groups/{groupId}/restore' \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+</RequestExample>

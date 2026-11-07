@@ -1,11 +1,12 @@
 ---
-title: 'DNS Monitor Configuration'
+title: 'DNS monitor configuration'
 description: 'Configure your DNS monitor to verify record resolution.'
 sidebarTitle: 'Configuration'
+canonical: 'https://www.checklyhq.com/docs/detect/uptime-monitoring/dns-monitors/configuration/'
 ---
 
 {/* <Tip>
-To configure a DNS monitor using code, learn more about the [DNS Monitor Construct](/constructs/dns-monitor).
+To configure a DNS monitor using code, learn more about the [DNS monitor construct](/constructs/dns-monitor).
 </Tip> */}
 
 ### Basic Setup
@@ -19,7 +20,7 @@ Specify the domain and record type you want to check:
 
 * **Domain:** The domain you want to monitor (e.g. `checklyhq.com`)
 * **Record type:** The DNS record to query. See [supported record types](/detect/uptime-monitoring/dns-monitors/overview#supported-dns-record-types) for the full list
-* **DNS server:** Queries use 8.8.8.8 (Google DNS) by default with automatic failover to 1.1.1.1 (Cloudflare) and an internal AWS resolver on errors. You can specify a custom nameserver and port (e.g., `1.1.1.1:53` or `dns.google:53`) to test resolver-specific behavior
+* **DNS resolver and Port:** Queries use 8.8.8.8 (Google DNS) by default with automatic failover to 1.1.1.1 (Cloudflare) and an internal AWS resolver when a resolver can't be reached or times out. You can set a custom resolver (e.g., `1.1.1.1` or `dns.google`) and its port (e.g., `53`) to test resolver-specific behavior
 * **Protocol:** You can pin DNS queries to UDP-only or TCP-only
 
 ### Assertions
@@ -50,7 +51,7 @@ The raw and JSON responses are shown on the results page of a DNS monitor run an
 
   Learn more about JSON path assertions: [JSON responses with JSON path](/detect/assertions/#json-responses-with-json-path).
 
-### JSON Response Schema
+### JSON Response Schemas
 
 The DNS response is parsed into a structured JSON format. All responses share a common structure:
 
@@ -61,14 +62,12 @@ The DNS response is parsed into a structured JSON format. All responses share a 
   ],
   "Question": [
     {
-      "name": "example.com.",
-      "type": "A"
+      "Name": "example.com.",
+      "Type": "A"
     }
   ],
   "Status": "NOERROR",
   "TC": false,
-  "RD": true,
-  "RA": true,
   "AD": false,
   "CD": false
 }
@@ -79,8 +78,6 @@ The DNS response is parsed into a structured JSON format. All responses share a 
 - `Question` - The DNS query that was made
 - `Status` - Response status (NOERROR, NXDOMAIN, SERVFAIL, etc.)
 - `TC` - Truncated flag
-- `RD` - Recursion desired flag
-- `RA` - Recursion available flag
 - `AD` - Authenticated data flag
 - `CD` - Checking disabled flag
 
@@ -103,14 +100,12 @@ The DNS response is parsed into a structured JSON format. All responses share a 
   ],
   "Question": [
     {
-      "name": "checklyhq.com.",
-      "type": "A"
+      "Name": "checklyhq.com.",
+      "Type": "A"
     }
   ],
   "Status": "NOERROR",
   "TC": false,
-  "RD": true,
-  "RA": true,
   "AD": false,
   "CD": false
 }
@@ -134,8 +129,8 @@ Common assertions:
   ],
   "Question": [
     {
-      "name": "example.com.",
-      "type": "AAAA"
+      "Name": "example.com.",
+      "Type": "AAAA"
     }
   ],
   "Status": "NOERROR"
@@ -160,8 +155,8 @@ Common assertions:
   ],
   "Question": [
     {
-      "name": "www.example.com.",
-      "type": "CNAME"
+      "Name": "www.example.com.",
+      "Type": "CNAME"
     }
   ],
   "Status": "NOERROR"
@@ -191,8 +186,8 @@ Common assertions:
   ],
   "Question": [
     {
-      "name": "example.com.",
-      "type": "MX"
+      "Name": "example.com.",
+      "Type": "MX"
     }
   ],
   "Status": "NOERROR"
@@ -216,8 +211,8 @@ Common assertions:
   ],
   "Question": [
     {
-      "name": "example.com.",
-      "type": "TXT"
+      "Name": "example.com.",
+      "Type": "TXT"
     }
   ],
   "Status": "NOERROR"
@@ -248,8 +243,8 @@ Common assertions:
   ],
   "Question": [
     {
-      "name": "example.com.",
-      "type": "NS"
+      "Name": "example.com.",
+      "Type": "NS"
     }
   ],
   "Status": "NOERROR"
@@ -273,8 +268,8 @@ Common assertions:
   ],
   "Question": [
     {
-      "name": "example.com.",
-      "type": "SOA"
+      "Name": "example.com.",
+      "Type": "SOA"
     }
   ],
   "Status": "NOERROR"
@@ -288,8 +283,48 @@ Common assertions:
 - Text response contains expected serial number
 </Accordion>
 
+<Accordion title="HTTPS Record (RFC 9460)">
+HTTPS records carry [SvcParams](https://www.rfc-editor.org/rfc/rfc9460) — the
+parameters a browser uses to connect over HTTP/3 on its first request (`alpn`,
+`ipv4hint`/`ipv6hint`, `ech`, …). The whole record is rendered into the `data`
+field in DNS presentation format.
+
+```json
+{
+  "Answer": [
+    {
+      "name": "is.checkly.online.",
+      "type": "HTTPS",
+      "TTL": 300,
+      "data": "1 . alpn=\"h3,h2\" ipv4hint=\"188.114.96.0,188.114.97.0\" ipv6hint=\"2a06:98c1:3120::,2a06:98c1:3121::\""
+    }
+  ],
+  "Question": [
+    {
+      "Name": "is.checkly.online.",
+      "Type": "HTTPS"
+    }
+  ],
+  "Status": "NOERROR"
+}
+```
+
+Common assertions:
+- Text answer with the regex `alpn="([^"]*)"` contains `h3` - verify HTTP/3 is advertised (the capture group scopes the match to the `alpn` value)
+- Text answer with the regex `alpn="([^"]*)"` contains `h2` - verify HTTP/2 is advertised
+- `$.Answer[0].data` contains `ipv4hint` - verify IPv4 address hints are published
+- `$.Answer[0].data` contains `ipv6hint` - verify IPv6 address hints are published
+
+<Tip>
+Use a text-answer **capture group** (`alpn="([^"]*)"`) rather than a bare
+`contains('h3')` over the whole record. A bare substring check can false-match
+unrelated bytes such as an `ipv4hint` octet or the `ech` blob; the capture group
+scopes the match to the advertised protocols.
+</Tip>
+</Accordion>
+
 <Note>
-**Record type support**: DNS monitors currently support A, AAAA, CNAME, MX, NS, SOA, and TXT record types. Additional record types (SRV, CAA, PTR, etc.) may be added in future updates.
+**Record type support**: DNS monitors currently support A, AAAA, CNAME, MX, NS, SOA, TXT, and HTTPS record types. Additional record types (SRV, CAA, PTR, etc.) may be added in future updates.
 </Note>
 
 ### Response Time Limits
@@ -378,8 +413,20 @@ For DMARC:
 - **Domain**: `example.com`
 - **Record type**: NS
 - Create separate monitors for each nameserver:
-  - Monitor 1: DNS server `ns1.example.com:53`
-  - Monitor 2: DNS server `ns2.example.com:53`
+  - Monitor 1: DNS resolver `ns1.example.com`, port `53`
+  - Monitor 2: DNS resolver `ns2.example.com`, port `53`
 - **Assertions**:
   - `$.Answer[0].data` equals `ns1.example.com.` or `ns2.example.com.`
+</Accordion>
+
+<Accordion title="Verify a domain advertises HTTP/3 (HTTPS record)">
+**Scenario**: Publishing an HTTPS DNS record lets browsers connect over HTTP/3 (QUIC) on the first request, saving a round trip. Monitor that the record stays published and keeps advertising `h3`.
+
+**Configuration**:
+- **Domain**: `example.com`
+- **Record type**: HTTPS
+- **Assertions**:
+  - Response code equals `NOERROR` (the record resolves)
+  - Text answer with regex `alpn="([^"]*)"` contains `h3` (HTTP/3 advertised)
+  - `$.Answer[0].data` contains `ipv4hint` (IPv4 address hints published)
 </Accordion>

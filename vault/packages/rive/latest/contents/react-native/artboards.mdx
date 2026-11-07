@@ -10,14 +10,51 @@ import ChoosingAnArtboard from "/snippets/runtimes/artboards/choosing-an-artboar
 
 <ChoosingAnArtboard />
 
-{/* TODO: This is using the legacy api */}
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    ### Listing artboards
 
-```javascript
-export default function App() {
-  return (
-    <View>
-      <Rive resourceName="my_rive_file" artboardName="My Artboard" autoplay />
-    </View>
-  );
-}
-```
+    Once you have loaded a `RiveFile`, you can get the artboards it contains:
+
+    ```tsx
+    const { riveFile } = useRiveFile(require('./assets/my_file.riv'));
+
+    // Inside an effect or event handler
+    const artboardNames = await riveFile.getArtboardNamesAsync();
+    const artboardCount = await riveFile.getArtboardCountAsync();
+    ```
+
+    ### Displaying an artboard
+
+    Set the `artboardName` prop on `RiveView`. If you omit it, the default artboard is used.
+
+    ```tsx highlight={7}
+    export default function App() {
+      const { riveFile } = useRiveFile(require('./assets/my_file.riv'));
+
+      return riveFile ? (
+        <RiveView
+          file={riveFile}
+          artboardName="My Artboard"
+          style={{ width: 400, height: 400 }}
+        />
+      ) : null;
+    }
+    ```
+
+    If no artboard has that name, `RiveView` reports an error through `onError`. See [Error Handling](/runtimes/react-native/error-handling).
+
+    To render an artboard inside another artboard at runtime, use an [artboard property](/runtimes/react-native/data-binding#artboards) in data binding.
+  </Tab>
+  <Tab title="Legacy Runtime">
+    ```javascript
+    export default function App() {
+      return (
+        <View>
+          <Rive resourceName="my_rive_file" artboardName="My Artboard" autoplay />
+        </View>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>

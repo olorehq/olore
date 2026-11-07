@@ -1,0 +1,254 @@
+---
+title: 'Checkly MCP tools'
+description: 'Reference for the tools exposed by the Checkly MCP Server, grouped by workflow.'
+sidebarTitle: 'Tools'
+canonical: 'https://www.checklyhq.com/docs/ai/mcp-server/tools/'
+---
+
+This reference reflects the current MCP Server v1 tool surface. It is not a roadmap or a commitment to future tools.
+
+Each tool is shown only when the MCP session has the required permission. Your [account role and permissions](/admin/team-management/permissions) must also allow the action. See [security and permissions](/ai/mcp-server/security-and-permissions#role-checks).
+
+## Account tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `whoami` | Read | Return the authenticated user and account memberships visible to the MCP session. |
+| `get-account-entitlements` | Read | Return the resolved account plan and feature entitlement state. |
+| `list-account-members` | Read | List account members and pending invites. |
+| `invite-account-member` | Write | Invite a user to the resolved account. OAuth-only. Requires [`members:create`](/admin/team-management/permissions) and all permissions of the built-in role you give. Owner and [custom role](/admin/team-management/custom-roles) (beta) invitations are unsupported. Sends an invite email and is not idempotent. |
+
+Example prompts:
+
+```text title="Prompt" wrap
+Use Checkly to show which accounts I can access.
+```
+
+## Check tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `list-check-stats` | Read | Return a paginated, filterable list of checks with current pass, fail, and degraded status. Set `includeReliability` to also return availability, response-time percentiles, and ICMP latency or packet loss over a quick range. |
+| `get-check` | Read | Return the full configuration of one check: schedule, locations, alert settings, and the type-specific configuration such as `request`, `script`, or `heartbeat`. |
+| `get-check-type-schema` | Read | Return the JSON Schema of the `check` payload for one check type, for either the create or the update operation. |
+| `create-check` | Write | Create a check of any supported type from a JSON configuration. The check is created standalone, outside any Checkly CLI project. |
+| `update-check` | Write | Update shared check properties such as name, tags, activation, or mute state, or pass a partial type-specific configuration. Does not trigger a check run. |
+| `delete-check` | Write | Permanently delete a check, including its configuration and result history. Cannot be undone and requires confirmation. |
+| `list-check-results` | Read | List recent compact results for one check, including HTTP response status and assertion counts when available. Raw logs, traces, screenshots, videos, and download URLs are omitted. |
+| `get-check-result` | Read | Return compact detail for one check result. |
+| `get-check-performance-summary` | Read | Return average, P50, P95, and P99 response-time metrics for one check over a date range when data is available. |
+| `trigger-checks` | Write | Run existing deployed checks on demand and record the run as a test session. Consumes check-run execution quota. |
+
+### List and filter checks
+
+For large accounts, start with `list-check-stats` filters instead of asking for every check at once. The default response is status-only. The tool supports:
+
+- `tag`: filter by one or more tags.
+- `type` or `checkType`: filter by check type.
+- `search`: filter by check name.
+- `status`: filter by `passing`, `failing`, or `degraded`.
+- `limit` and `page`: page through matching checks. The default page size is 25 and the maximum is 100.
+- `includeReliability`: set to `true` to include availability, response-time percentiles, and ICMP latency or packet-loss metrics.
+- `range`: set the analytics range when `includeReliability` is `true`. The default is `last24Hours`.
+
+The response includes pagination metadata (`length`, `total`, `page`, `limit`, and `totalPages`) plus the applied `filters`, so your client can continue with the next page only when needed.
+
+`list-check-results` stays compact for fast triage. Result rows include `responseStatusCode`, `responseStatusText`, `totalAssertions`, and `failingAssertions` when available, so your client can inspect common URL and API failure signals before fetching full result details or assets.
+
+### Create, update, and delete checks
+
+The check write tools manage checks from a JSON configuration, without a local project or a CLI deploy. They support these check types:
+
+- API checks
+- Browser checks and Multistep checks with a single inline script
+- Heartbeat monitors
+- URL, TCP, DNS, ICMP, traceroute, gRPC, and SSL monitors
+
+A typical create flow:
+
+1. Call `get-check-type-schema` with the `checkType` to learn the `check` payload. Every check type takes different configuration, for example `request` for API checks and uptime monitors, `script` for Browser checks, and `heartbeat` for Heartbeat monitors.
+2. Optionally call `list-alert-channels` to pick specific alert channels, and `list-check-groups` to find a `groupId`.
+3. Call `create-check` with `checkType` and the `check` payload. By default the new check is subscribed to all of the account's alert channels. Set `autoAssignAlerts` to `false` or pass `check.alertChannelSubscriptions` to change this.
+
+When updating, `update-check` accepts either shared top-level properties (`name`, `activated`, `muted`, `tags`, `useGlobalAlertSettings`, `runParallel`, `description`, `intent`, `aiAutoRepairEnabled`) or a partial `check` object validated against the update schema for the check's type. The two cannot be combined in one call. Array fields such as `locations` and `tags` replace the check's current values.
+
+<Warning>
+`delete-check` permanently removes the check and its result history. The tool first returns a confirmation handle, and the deletion only proceeds when your client passes that handle back after you explicitly agree. To stop a check from running while keeping it, use `update-check` with `activated: false` instead.
+</Warning>
+
+Playwright Check Suites are managed as Monitoring as Code with the Checkly CLI. Changes made through MCP to a check that a CLI project manages are overwritten by that project's next deploy.
+
+Example prompts:
+
+```text title="Prompt" wrap
+Show me the first page of failing API checks tagged production, then summarize what changed in their latest results.
+```
+
+```text title="Prompt" wrap
+Create a URL monitor for https://www.example.com that runs every 5 minutes from eu-west-1 and us-east-1, tagged production.
+```
+
+```text title="Prompt" wrap
+Update the "Checkout API" check to run every 10 minutes and add the tag critical. Keep all other settings.
+```
+
+```text title="Prompt" wrap
+Trigger the checks tagged production-smoke, then poll the test session until results are available.
+```
+
+## Interactive view tools
+
+These read-only tools display [interactive views](/ai/mcp-server/interactive-views) in clients that support MCP Apps. They require the `checkly:checks:read` session permission and `checks:read` account permission.
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `show-check-status` | Read | Display one check's status card, with last-24-hour availability, P95, and P99 response times when available. |
+| `show-check-list` | Read | Display a filtered check list with current status and up to 20 checks per page. Supports pagination without historical metrics. |
+| `show-check-response-time` | Read | Display a response-time chart for one check. Defaults to the last 24 hours; custom past windows span at most seven days and must fall within your plan's data retention. |
+
+Use these tools when you want a visual view in your conversation. For structured results, use `list-check-stats` or `get-check-performance-summary`.
+
+## Check group tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `list-check-groups` | Read | List check groups with their check counts. Supports `search`, `tag`, `limit`, and `page` filters. |
+| `get-check-group` | Read | Return the full configuration of one check group and the checks in it. |
+| `create-check-group` | Write | Create a check group. Only `name` is required. By default the group is subscribed to all of the account's alert channels. |
+| `update-check-group` | Write | Change the settings of a check group. Fields left out keep their current values. List fields such as `tags`, `locations`, `alertChannelSubscriptions`, and `environmentVariables` are replaced as a whole. |
+| `delete-check-group` | Write | Permanently delete a check group and every check in it. Cannot be undone and requires confirmation. |
+
+Group settings such as locations, alerting, retries, API check defaults, and environment variables apply to every check in the group. To put a check in a group, set `groupId` on the check with `create-check` or `update-check`.
+
+
+Example prompts:
+
+```text title="Prompt" wrap
+Create a check group named "Payments API" that runs from eu-central-1 and us-west-2 with a base URL of https://api.example.com, then move all checks tagged payments into it.
+```
+
+## Alert channel tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `list-alert-channels` | Read | List the account's alert channels with the non-secret details that identify each one. Supports a `type` filter for `EMAIL`, `SLACK`, `SLACK_APP`, `WEBHOOK`, `SMS`, `PAGERDUTY`, `OPSGENIE`, and `CALL`. |
+
+Use the returned IDs to set `alertChannelSubscriptions` when creating or updating a check or check group.
+
+Example prompt:
+
+```text title="Prompt" wrap
+List my Slack alert channels, then subscribe the "Checkout API" check to the #incidents channel only.
+```
+
+## Test session tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `list-test-sessions` | Read | List recent test sessions with filters and cursor ordering. |
+| `get-test-session` | Read | Return one test session and compact result rows. |
+| `list-test-session-results` | Read | List compact result rows for one test session with bounded pagination and optional result filters. |
+| `get-test-session-result` | Read | Return compact detail for one test-session result, including useful run metadata and small summaries. |
+
+Example prompt:
+
+```text title="Prompt" wrap
+Find the latest failed test session and show me the failed result IDs.
+```
+
+## Result asset tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `list-check-result-assets` | Read | Return a normalized asset manifest for a check result. |
+| `fetch-check-result-asset` | Read | Fetch one selected check-result asset. Text assets may be returned inline with a byte limit; binary or large assets return a download link. |
+| `list-test-session-result-assets` | Read | Return a normalized asset manifest for a test-session result. |
+| `fetch-test-session-result-asset` | Read | Fetch one selected test-session-result asset. Text assets may be returned inline with a byte limit; binary or large assets return a download link. |
+
+Example prompt:
+
+```text title="Prompt" wrap
+For the failed check result, list available assets and fetch the text log if one exists.
+```
+
+## Root cause analysis tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `get-error-group-root-cause-analyses` | Read | Return a check or test-session error group and any existing root cause analyses. |
+| `get-root-cause-analysis` | Read | Return one root cause analysis by RCA ID. Pending analyses return compact polling status. |
+| `trigger-root-cause-analysis` | Write | Trigger a new RCA for a check or test-session error group. Requires run access and consumes RCA invocation quota. |
+
+Call `get-error-group-root-cause-analyses` before triggering a new RCA so your agent can reuse existing analysis when available.
+
+Example prompt:
+
+```text title="Prompt" wrap
+Check whether this error group already has an RCA. If it does not, ask me before triggering a new one.
+```
+
+## Environment variable tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `list-account-environment-variables` | Read | List account-level variables and secrets. Secret values are returned as `null`. |
+| `get-account-environment-variable` | Read | Get one account-level variable by key. Secret values are returned as `null`. |
+| `create-account-environment-variable` | Write | Create an account-level variable or secret. Secret values are encrypted and not echoed back. |
+| `update-account-environment-variable` | Write | Update an account-level variable or secret by key. To update a secret, pass `secret: true`. |
+
+Example prompt:
+
+```text title="Prompt" wrap
+List account environment variables and tell me whether API_TOKEN is stored as a secret.
+```
+
+## Status page tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `list-status-pages` | Read | List status pages, including the cards and services (v2) or components (v3) needed for incident targeting. |
+| `get-status-page` | Read | Get one status page with its cards and services (v2) or components (v3). |
+
+Example prompt:
+
+```text title="Prompt" wrap
+List my status pages and show the service IDs for the production page.
+```
+
+## Incident tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `list-status-page-incidents` | Read | List status page incidents, optionally filtered by page and incident status. |
+| `get-status-page-incident` | Read | Get one status page incident with services and incident updates. |
+| `create-status-page-incident` | Write | Create a new status page incident and optionally notify subscribers. Not idempotent. |
+| `update-status-page-incident` | Write | Post a progress update to an existing incident and optionally notify subscribers. Not idempotent. |
+| `resolve-status-page-incident` | Write | Resolve an incident by posting a final resolved update and optionally notifying subscribers. Not idempotent. |
+
+Example prompts:
+
+```text title="Prompt" wrap
+Show open status page incidents and summarize their latest updates.
+```
+
+```text title="Prompt" wrap
+Draft a major status page incident for the API outage and wait for confirmation before notifying subscribers.
+```
+
+## Usage tools
+
+| Tool | Type | Description |
+| --- | --- | --- |
+| `get-usage-terms` | Read | List organization usage terms with dates, budgets, pricing rules, and covered accounts. Supports date filters and cursor pagination. Use returned term IDs in summary and series filters or projection requests. |
+| `get-usage-summary` | Read | Return credits, pricing-rule breakdowns, and coverage gaps across usage terms. Optionally request a whole-term forecast with `projection: { usageTermsId, asOf? }`. |
+| `list-usage-series` | Read | Return cursor-paginated v2 usage for `day`, `week`, `month`, or `total` intervals. Optionally group by account, usage term, pricing rule, and check type. Include calculations, physical run counts, or observed monitor days. |
+
+Usage tools use the [v2 Usage API](../../api-reference/usage/overview) and report on the whole organization the selected account belongs to. They require the [`usage:read`](../../admin/team-management/permissions) account permission, which Owner and Admin have by default. Use `usageTermsIds`, `accountIds`, and `pricingRuleKeys` arrays to narrow summary or series. V2 has no `checkTypes` filter. Series defaults to ungrouped daily buckets; pass `groupBy` and `include` as arrays.
+
+`get-usage-terms` returns a `data` collection and `nextId`, including future terms when you omit dates. Summary returns `totals.creditsUsed`, `breakdown`, and `coverage`, rather than v1 meters. To include a forecast, supply one term ID in `projection.usageTermsId`. Its optional `asOf` defaults to yesterday UTC. The forecast covers the term's whole account scope and budget, independently of the report filters. The optional `projection` result contains either `data` or `error`, so an unavailable forecast does not discard a successful summary.
+
+Example prompt:
+
+```text title="Prompt" wrap
+Show my organization's credit usage this month, broken down by check type, and how it projects against the budget.
+```

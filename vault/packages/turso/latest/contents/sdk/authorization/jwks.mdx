@@ -55,11 +55,11 @@ You can also add JWKS endpoints in the [Turso Dashboard](https://turso.tech/app)
 Get the JWT from your auth provider and pass it as the `authToken`:
 
 ```javascript
-import { createClient } from "@tursodatabase/serverless";
+import { connect } from "@tursodatabase/serverless";
 
 const authToken = await getAuthToken(); // e.g., from Clerk, Auth0
 
-const db = createClient({
+const db = connect({
   url: "<your-database-url>",
   authToken,
 });

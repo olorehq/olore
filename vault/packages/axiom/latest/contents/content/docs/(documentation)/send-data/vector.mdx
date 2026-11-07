@@ -1,0 +1,383 @@
+---
+title: 'Send data from Vector to Axiom'
+description: 'This page explains how to configure Vector to read and collect metrics from your sources using the Axiom sink.'
+overview: 'High-performance observability data pipeline'
+sidebarTitle: Vector
+keywords: ['vector', 'axiom documentation', 'documentation', 'axiom', 'guide', 'vector sink', 'docker logs', 'kubernetes logs', 'aws s3 logs', 'kafka logs']
+logoId: 'vector'
+isPopular: true
+popularityOrder: 3
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+
+Vector is a lightweight and ultra-fast tool for building observability pipelines. It has a built-in support for shipping logs to Axiom through the [`axiom` sink](https://vector.dev/docs/reference/configuration/sinks/axiom/).
+
+<Prerequisites />
+
+## Installation
+
+Follow the [quickstart guide in the Vector documentation](https://vector.dev/docs/setup/quickstart/) to install Vector, and to configure sources and sinks.
+
+<Warning>
+If you use Vector version v0.41.1 (released on September 11, 2024) or earlier, use the `@timestamp` field instead of `_time` to specify the timestamp of the events. For more information, see [Timestamp in legacy Vector versions](#timestamp-in-legacy-vector-versions).
+
+If you upgrade from Vector version v0.41.1 or earlier to a newer version, update your configuration. For more information, see [Upgrade from legacy Vector version](#upgrade-from-legacy-vector-version).
+</Warning>
+
+## Configuration
+
+Send data to Axiom with Vector using the [`file` method](https://vector.dev/docs/reference/configuration/sources/file/) and the [`axiom` sink](https://vector.dev/docs/reference/configuration/sinks/axiom/).
+
+The example below configures Vector to read and collect logs from files and send them to Axiom.
+
+1. Create a vector configuration file `vector.toml` with the following content:
+
+    ```toml
+    [sources.VECTOR_SOURCE_ID]
+    type = "file"
+    include = ["PATH_TO_LOGS"]
+
+    [sinks.SINK_ID]
+    type = "axiom"
+    inputs = ["VECTOR_SOURCE_ID"]
+    token = "API_TOKEN"
+    dataset = "DATASET_NAME"
+    region = "AXIOM_DOMAIN"
+    ```
+
+    <Info>
+    Replace `VECTOR_SOURCE_ID` with the Vector source ID.
+
+    Replace `PATH_TO_LOGS` with the path to the log files. For example, `/var/log/**/*.log`.
+    
+    Replace `SINK_ID` with the sink ID.
+    
+    <ReplaceDatasetToken />
+    <ReplaceDomain />
+    </Info>
+
+1. Run Vector to send logs to Axiom.
+
+### Example with data transformation
+
+The example below deletes a field before sending the data to Axiom:
+
+```toml
+[sources.VECTOR_SOURCE_ID]
+type = "file"
+include = ["PATH_TO_LOGS"]
+
+[transforms.filter_json_fields]
+type = "remap"
+inputs = ["VECTOR_SOURCE_ID"]
+source = '''
+  . = del(.FIELD_TO_REMOVE)
+'''
+
+[sinks.SINK_ID]
+type = "axiom"
+inputs = ["filter_json_fields"]
+token = "API_TOKEN"
+dataset = "DATASET_NAME"
+region = "AXIOM_DOMAIN"
+```
+
+<Info>
+Replace `VECTOR_SOURCE_ID` with the Vector source ID.
+
+Replace `PATH_TO_LOGS` with the path to the log files. For example, `/var/log/**/*.log`.
+
+Replace `FIELD_TO_REMOVE` with the field you want to remove.
+
+Replace `SINK_ID` with the sink ID.
+
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+<Note>
+Any changes to Vector’s `file` method can make the code example above outdated. If this happens, please refer to the [official Vector documentation on the `file` method](https://vector.dev/docs/reference/configuration/sources/file/), and we kindly ask you to inform us of the issue using the feedback tool at the bottom of this page.
+</Note>
+
+## Send Kubernetes logs to Axiom
+
+Send Kubernetes logs to Axiom using the Kubernetes source.
+
+```toml
+[sources.my_source_id]
+type = "kubernetes_logs"
+auto_partial_merge = true
+ignore_older_secs = 600
+read_from = "beginning"
+self_node_name = "${VECTOR_SELF_NODE_NAME}"
+exclude_paths_glob_patterns = [ "**/exclude/**" ]
+extra_field_selector = "metadata.name!=pod-name-to-exclude"
+extra_label_selector = "my_custom_label!=my_value"
+extra_namespace_label_selector = "my_custom_label!=my_value"
+max_read_bytes = 2_048
+max_line_bytes = 32_768
+fingerprint_lines = 1
+glob_minimum_cooldown_ms = 60_000
+delay_deletion_ms = 60_000
+data_dir = "/var/lib/vector"
+timezone = "local"
+
+[sinks.axiom]
+type = "axiom"
+inputs = ["my_source_id"]
+token = "API_TOKEN"
+dataset = "DATASET_NAME"
+region = "AXIOM_DOMAIN"
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+## Send Docker logs to Axiom
+
+To send Docker logs using the Axiom sink, you need to create a configuration file, for example, `vector.toml`, with the following content:
+
+```toml
+# Define the Docker logs source
+[sources.docker_logs]
+type = "docker_logs"
+docker_host = "unix:///var/run/docker.sock"
+
+# Define the Axiom sink
+[sinks.axiom]
+type = "axiom"
+inputs = ["docker_logs"]
+dataset = "DATASET_NAME"
+token = "API_TOKEN"
+region = "AXIOM_DOMAIN"
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+Run Vector: Start Vector with the configuration file you just created:
+
+```bash
+vector --config /path/to/vector.toml
+```
+
+Vector collects logs from Docker and forward them to Axiom using the Axiom sink. You can view and analyze your logs in your dataset.
+
+## Send AWS S3 logs to Axiom
+
+To send AWS S3 logs using the Axiom sink, create a configuration file, for example, `vector.toml`, with the following content:
+
+```toml
+[sources.my_s3_source]
+type = "aws_s3"
+bucket = "my-bucket"  # replace with your bucket name
+region = "us-west-2"  # replace with the AWS region of your bucket
+
+[sinks.axiom]
+type = "axiom"
+inputs = ["my_s3_source"]
+dataset = "DATASET_NAME"
+token = "API_TOKEN"
+region = "AXIOM_DOMAIN"
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+Finally, run Vector with the configuration file using `vector --config ./vector.toml`. This starts Vector and begins reading logs from the specified S3 bucket and sending them to the specified Axiom dataset.
+
+## Send Kafka logs to Axiom
+
+To send Kafka logs using the Axiom sink, you need to create a configuration file, for example, `vector.toml`, with the following code:
+
+```toml
+[sources.my_kafka_source]
+type = "kafka" # must be: kafka
+bootstrap_servers = "10.14.22.123:9092" # your Kafka bootstrap servers
+group_id = "my_group_id" # your Kafka consumer group ID
+topics = ["my_topic"] # the Kafka topics to consume from
+auto_offset_reset = "earliest" # start reading from the beginning
+
+[sinks.axiom]
+type = "axiom"
+inputs = ["my_kafka_source"]  # connect the Axiom sink to your Kafka source
+dataset = "DATASET_NAME"  # replace with the name of your Axiom dataset
+token = "API_TOKEN"  # replace with your Axiom API token
+region = "AXIOM_DOMAIN"
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+Finally, you can start Vector with your configuration file: `vector --config /path/to/your/vector.toml`
+
+## Send NGINX metrics to Axiom
+
+To send NGINX metrics using Vector to the Axiom sink, first enable NGINX to emit metrics, then use Vector to capture and forward those metrics. Here is a step-by-step guide:
+
+### Step 1: Enable NGINX Metrics
+
+Configure NGINX to expose metrics. This typically involves enabling the `ngx_http_stub_status_module` module in your NGINX configuration.
+
+1. Open your NGINX configuration file (often located at `/etc/nginx/nginx.conf`) and in your `server` block, add:
+
+```bash
+location /metrics {
+  stub_status;
+  allow 127.0.0.1; # only allow requests from localhost
+  deny all; # deny all other hosts
+}
+```
+
+2. Restart or reload NGINX to apply the changes:
+
+```bash
+sudo systemctl restart nginx
+```
+
+This exposes basic NGINX metrics at the `/metrics` endpoint on your server.
+
+### Step 2: Configure Vector
+
+Configure Vector to scrape the NGINX metrics and send them to Axiom. Create a new configuration file (`vector.toml`), and add the following:
+
+```toml
+[sources.nginx_metrics]
+type = "nginx_metrics" # must be: nginx_metrics
+endpoints = ["http://localhost/metrics"] # the endpoint where NGINX metrics are exposed
+
+[sinks.axiom]
+type = "axiom" # must be: axiom
+inputs = ["nginx_metrics"] # use the metrics from the NGINX source
+dataset = "DATASET_NAME"  # replace with the name of your Axiom dataset
+token = "API_TOKEN"  # replace with your Axiom API token
+region = "AXIOM_DOMAIN"
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+Finally, you can start Vector with your configuration file: `vector --config /path/to/your/vector.toml`
+
+## Send Syslog logs to Axiom
+
+To send Syslog logs using the Axiom sink, you need to create a configuration file, for example, `vector.toml`, with the following code:
+
+```toml
+[sources.my_source_id]
+type="syslog"
+address="0.0.0.0:6514"
+max_length=102_400
+mode="tcp"
+
+[sinks.axiom]
+type="axiom"
+inputs = [ "my_source_id" ] # required
+dataset="DATASET_NAME" # replace with the name of your Axiom dataset
+token="API_TOKEN" # replace with your Axiom API token
+region = "AXIOM_DOMAIN"
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+## Send Prometheus metrics to Axiom
+
+To send Prometheus scrape metrics using the Axiom sink, you need to create a configuration file, for example, `vector.toml`, with the following code:
+
+```toml
+# Define the Prometheus source that scrapes metrics
+[sources.my_prometheus_source]
+type = "prometheus_scrape"  # scrape metrics from a Prometheus endpoint
+endpoints = ["http://localhost:9090/metrics"]  # replace with your Prometheus endpoint
+
+# Define Axiom sink where logs will be sent
+[sinks.axiom]
+type = "axiom"  # Axiom type
+inputs = ["my_prometheus_source"]  # connect the Axiom sink to your Prometheus source
+dataset = "DATASET_NAME"  # replace with the name of your Axiom dataset
+token = "API_TOKEN"  # replace with your Axiom API token
+region = "AXIOM_DOMAIN"
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+Check out the [advanced configuration on Batch, Buffer configuration, and Encoding on Vector Documentation](https://vector.dev/docs/reference/configuration/sinks/axiom/)
+
+## Timestamp in legacy Vector versions
+
+If you use Vector version v0.41.1 (released on September 11, 2024) or earlier, use the `@timestamp` field instead of `_time` to specify the timestamp in the event data you send to Axiom. For example: `{"@timestamp":"2022-04-14T21:30:30.658Z..."}`. For more information, see [Requirements of the timestamp field](/reference/limits#requirements-of-the-timestamp-field). In the case of Vector version v0.41.1 or earlier, the requirements explained on the page apply to the `@timestamp` field, not to `_time`.
+
+If you use Vector version v0.42.0 (released on October 21, 2024) or newer, use the `_time` field as usual for other collectors.
+
+### Upgrade from legacy Vector version
+
+If you upgrade from Vector version v0.41.1 or earlier to a newer version, change all references from the `timestamp` field to the `_time` field and remap the logic.
+
+Example `vrl` file:
+
+```text example.vrl
+# Set time explicitly rather than allowing Axiom to default to the current time
+. = set!(value: ., path: ["_time"],  data: .timestamp)
+
+# Remove the original value as it’s effectively a duplicate
+del(.timestamp)
+```
+
+Example Vector configuration file:
+
+```toml
+# ...
+
+[transforms.migrate]
+type = "remap"
+inputs = [ "k8s"]
+file= 'example.vrl' # See above
+
+[sinks.debug]
+type = "axiom"
+inputs = [ "migrate" ]
+dataset = "DATASET_NAME" # No change
+token = "API_TOKEN" # No change
+region = "AXIOM_DOMAIN"
+
+[sinks.debug.encoding]
+codec = "json"
+```
+
+### Set compression algorithm
+
+Upgrading to Vector version v0.42.0 or newer automatically enables the `zstd` compression algorithm by default.
+
+To set another compression algorithm, use the example below:
+
+```toml
+# ...
+
+[transforms.migrate]
+type = "remap"
+inputs = [ "k8s"]
+file= 'example.vrl' # See above
+
+[sinks.debug]
+type = "axiom"
+compression = "gzip" # Set the compression algorithm
+inputs = [ "migrate" ]
+dataset = "DATASET_NAME" # No change
+token = "API_TOKEN" # No change
+region = "AXIOM_DOMAIN"
+
+[sinks.debug.encoding]
+codec = "json"
+```

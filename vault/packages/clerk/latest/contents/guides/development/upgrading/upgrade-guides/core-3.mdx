@@ -1,10 +1,17 @@
 ---
 title: "Upgrading to Clerk Core 3"
 description: "Learn how to upgrade to Clerk Core 3 across all SDKs."
-llm:
-  displayText: Use this pre-built prompt to upgrade your project with AI assistance.
-  src: prompts/core-3-upgrade.md
 ---
+
+{/* Cursor refuses this prompt from a deeplink: it's over Cursor's length limit and mentions `process.env`. */}
+
+<Prompt
+  variant="banner"
+  src="prompts/core-3-upgrade.md"
+  title="Use this prebuilt prompt to upgrade your project with AI assistance."
+  output="replace"
+  deeplink={false}
+/>
 
 > [!NOTE]
 > If you need to reference the previous documentation while upgrading, the [Core 2 docs](/docs/core-2) are still available.
@@ -20,13 +27,13 @@ Here's a summary of what changed:
   - `@clerk/clerk-react` becomes `@clerk/react`.
   - `@clerk/clerk-expo` becomes `@clerk/expo`.
   - `createTheme` moves to `@clerk/ui/themes/experimental`.
-  - Types consolidate under `@clerk/shared/types`.
+  - Types are exposed from each Clerk SDK's public `/types` entry point for framework-specific code, or from `@clerk/shared/types` for framework-agnostic code.
 - **Appearance updates:** `appearance.layout` is now `appearance.options`, `showOptionalFields` defaults to `false`, and color variables apply at full opacity.
 - **Behavior alignment:** Legacy redirect props and billing flags are removed in favor of the newer patterns.
 - **Token handling:** `getToken()` now throws `ClerkOfflineError` when offline and uses proactive background refresh for better performance.
 - **Platform requirements:**
   - For all packages: Node.js 20.9.0+ is required.
-  - For `@clerk/nextjs`: Next.js 15.2.3+ is required.
+  - For `@clerk/nextjs`: Next.js 15.2.8+ is required, or 16.0.10+ on Next.js 16.
 - **Satellite apps:** Satellite apps no longer perform automatic redirects on first visit.
 
 In addition to the cross-SDK changes listed above, each SDK has its own specific changes. See the [SDK-specific changes](#sdk-specific-changes) section for details on your framework.
@@ -79,53 +86,7 @@ The following breaking changes apply to all Clerk SDKs.
   <AccordionPanel>
     The authorization control components `<Protect>`, `<SignedIn>`, and `<SignedOut>` have been removed in favor of a single component: [`<Show>`](/docs/reference/components/control/show).
 
-    ### Signed in / signed out {{ toc: false }}
-
-    ```tsx {{ del: [1, 4, 7, 10, 13], ins: [2, 5, 8, 11, 14], prettier: false }}
-    import { SignedIn, SignedOut } from '@clerk/nextjs';
-    import { Show } from '@clerk/nextjs';
-
-    <SignedIn>
-    <Show when="signed-in">
-        <Dashboard />
-    </SignedIn>
-    </Show>
-
-    <SignedOut>
-    <Show when="signed-out">
-        <SignInPage />
-    </SignedOut>
-    </Show>
-    ```
-
-    ### Authorization checks (roles/permissions/features/plans) {{ toc: false }}
-
-    ```tsx {{ del: [1, 4, 7, 10, 13], ins: [2, 5, 8, 11, 14], prettier: false }}
-    import { Protect } from '@clerk/nextjs';
-    import { Show } from '@clerk/nextjs';
-
-    <Protect role="admin" fallback={<p>Unauthorized</p>}>
-    <Show when={{ role: 'admin' }} fallback={<p>Unauthorized</p>}>
-        <AdminPanel />
-    </Protect>
-    </Show>
-
-    <Protect permission="org:billing:manage">
-    <Show when={{ permission: 'org:billing:manage' }}>
-        <BillingSettings />
-    </Protect>
-    </Show>
-    ```
-
-    If you were using `condition={(has) => ...}` on `Protect`, pass that callback to `when`:
-
-    ```tsx {{ del: [1, 4], ins: [2, 5], prettier: false }}
-    <Protect condition={(has) => has({ role: 'admin' }) && isAllowed}>
-    <Show when={(has) => has({ role: 'admin' }) && isAllowed}>
-        <AdminPanel />
-    </Protect>
-    </Show>
-    ```
+    <Include src="_partials/components/upgrade-guide-for-show" />
   </AccordionPanel>
 
   <AccordionPanel>
@@ -290,7 +251,7 @@ The following breaking changes apply to all Clerk SDKs.
   </AccordionPanel>
 
   <AccordionPanel>
-    A new sign-in status of `needs_client_trust` has been added. If your application has passwords and [Client Trust](/docs/guides/secure/client-trust) enabled, you'll need to handle this new status in your sign-in flow:
+    A new sign-in status of `needs_client_trust` has been added. If your application has passwords and [Device Trust](/docs/guides/protect/device-trust) enabled, you'll need to handle this new status in your sign-in flow:
 
     ```js {{ del: [[3, 5]], ins: [[6, 10]] }}
     const { signIn } = useSignIn()
@@ -305,7 +266,7 @@ The following breaking changes apply to all Clerk SDKs.
     }
     ```
 
-    This status is returned when passwords and Client Trust are enabled, the `needs_client_trust` update is opted-in, and email/phone identifiers are enabled without email/SMS sign-in verification.
+    This status is returned when passwords and Device Trust are enabled, the `needs_client_trust` update is opted-in, and email/phone identifiers are enabled without email/SMS sign-in verification.
   </AccordionPanel>
 
   <AccordionPanel>
@@ -413,7 +374,7 @@ The following deprecated APIs have been removed from all Clerk SDKs.
     />
     ```
 
-    To hide organization slugs, navigate to the [**Organizations Settings**](https://dashboard.clerk.com/~/organizations) page in the Clerk Dashboard, and ensure that the **Enable organization slugs** option is disabled.
+    To hide Organization slugs, navigate to the [**Organization settings**](https://dashboard.clerk.com/~/organizations-settings) page in the Clerk Dashboard, and ensure that the **Enable organization slugs** option is disabled.
   </AccordionPanel>
 
   <AccordionPanel>
@@ -517,7 +478,7 @@ The following deprecated APIs have been removed from all Clerk SDKs.
   </AccordionPanel>
 
   <AccordionPanel>
-    The following unstable properties have been removed. If you were relying on these, please reach out to the [support team](https://clerk.com/contact/support).
+    The following unstable properties have been removed. If you were relying on these, please reach out to the [support team](/contact/support).
 
     - `__unstable_manageBillingUrl`
     - `__unstable_manageBillingLabel`
@@ -531,8 +492,8 @@ The following deprecated APIs have been removed from all Clerk SDKs.
     await clerkClient.apiKeys.verifySecret(secret)
     await clerkClient.apiKeys.verify(secret)
 
-    await clerkClient.idpOAuthAccessToken.verifyAccessToken(accessToken)
-    await clerkClient.idpOAuthAccessToken.verify(accessToken)
+    await clerkClient.idPOAuthAccessToken.verifyAccessToken(accessToken)
+    await clerkClient.idPOAuthAccessToken.verify(accessToken)
 
     await clerkClient.m2m.verifyToken(params)
     await clerkClient.m2m.verify(params)
@@ -544,20 +505,71 @@ The following deprecated APIs have been removed from all Clerk SDKs.
 
 <Accordion
   titles={[
-    "<code>@clerk/types</code> deprecated in favor of <code>@clerk/shared/types</code>",
+    "<code>@clerk/types</code> deprecated in favor of SDK and shared type exports",
+    "Metadata params on <code>user.update()</code>, <code>updateUser()</code>, and <code>updateOrganization()</code> deprecated",
   ]}
 >
   <AccordionPanel>
-    The `@clerk/types` package is deprecated. All type definitions have been consolidated into `@clerk/shared/types`.
+    The `@clerk/types` package is deprecated. In framework-specific code, import application types from the public `/types` entry point exposed by your Clerk SDK. In framework-agnostic code, import types from `@clerk/shared/types`.
 
-    Update your imports:
+    For example, update a Next.js import as follows:
 
     ```ts {{ del: [1], ins: [2] }}
     import type { ClerkResource, UserResource } from '@clerk/types'
-    import type { ClerkResource, UserResource } from '@clerk/shared/types'
+    import type { ClerkResource, UserResource } from '@clerk/nextjs/types'
     ```
 
-    The `@clerk/types` package will continue to re-export types from `@clerk/shared/types` for backward compatibility, but new types will only be added to `@clerk/shared/types`.
+    Replace `@clerk/nextjs` with the Clerk SDK installed in your application, such as `@clerk/react` or `@clerk/expo`. When no framework-specific entry point applies, import from `@clerk/shared/types`. The `@clerk/types` package remains available for backward compatibility.
+  </AccordionPanel>
+
+  <AccordionPanel>
+    Metadata parameters on user and Organization update methods are deprecated. The `unsafeMetadata` parameter on the frontend `user.update()` method, the `publicMetadata`, `privateMetadata`, and `unsafeMetadata` parameters on `clerkClient.users.updateUser()`, and the `publicMetadata` and `privateMetadata` parameters on `clerkClient.organizations.updateOrganization()` are all deprecated. The SDKs continue to accept them for backward compatibility and route to the dedicated metadata endpoints internally, but they will be removed in a future major version.
+
+    Use the dedicated metadata methods instead. On the frontend, [`user.updateMetadata()`](/docs/reference/objects/user#updatemetadata) deep-merges with the existing metadata, and any key set to `null` is removed. On the backend, [`updateUserMetadata()`](/docs/reference/backend/user/update-user-metadata) and [`updateOrganizationMetadata()`](/docs/reference/backend/organization/update-organization-metadata) provide the same deep-merge behavior. If you need to fully replace metadata, use [`replaceUserMetadata()`](/docs/reference/backend/user/replace-user-metadata) or [`replaceOrganizationMetadata()`](/docs/reference/backend/organization/replace-organization-metadata).
+
+    ### Frontend (users) {{ toc: false }}
+
+    ```ts {{ del: [[1, 6]], ins: [[7, 9]] }}
+    await user.update({
+      unsafeMetadata: {
+        ...user.unsafeMetadata,
+        theme: 'dark',
+      },
+    })
+    await user.updateMetadata({
+      unsafeMetadata: { theme: 'dark' },
+    })
+    ```
+
+    ### Backend (users) {{ toc: false }}
+
+    ```ts {{ del: [[1, 5]], ins: [[6, 10]] }}
+    await clerkClient.users.updateUser(userId, {
+      publicMetadata: {
+        role: 'admin',
+      },
+    })
+    await clerkClient.users.updateUserMetadata(userId, {
+      publicMetadata: {
+        role: 'admin',
+      },
+    })
+    ```
+
+    ### Backend (Organizations) {{ toc: false }}
+
+    ```ts {{ del: [[1, 5]], ins: [[6, 10]] }}
+    await clerkClient.organizations.updateOrganization(organizationId, {
+      publicMetadata: {
+        tier: 'enterprise',
+      },
+    })
+    await clerkClient.organizations.updateOrganizationMetadata(organizationId, {
+      publicMetadata: {
+        tier: 'enterprise',
+      },
+    })
+    ```
   </AccordionPanel>
 </Accordion>
 
@@ -735,9 +747,9 @@ The following changes only apply to specific SDKs. Select your SDK below for add
 
     See the [clerkMiddleware documentation](/docs/reference/nextjs/clerk-middleware#dynamic-keys).
 
-    ### ClerkProvider should be inside `<body>` for Next.js 16 cache components {{ toc: false }}
+    ### ClerkProvider should be inside `<body>` for Next.js 16 Cache Components {{ toc: false }}
 
-    For Next.js 16 cache components support (`cacheComponents: true`), `ClerkProvider` must be positioned inside `<body>` rather than wrapping `<html>`. This prevents "Uncached data was accessed outside of `<Suspense>`" errors.
+    For Next.js 16 Cache Components support (`cacheComponents: true`), `ClerkProvider` must be positioned inside `<body>` rather than wrapping `<html>`. This prevents "Uncached data was accessed outside of `<Suspense>`" errors.
 
     ```tsx {{ del: [[1, 5]], ins: [[6, 12]], prettier: false }}
     <ClerkProvider>
@@ -754,17 +766,17 @@ The following changes only apply to specific SDKs. Select your SDK below for add
     </html>
     ```
 
-    If you're using Next.js 16 with `cacheComponents: true`, you may also need to wrap `ClerkProvider` in a `<Suspense>` boundary.
+    Without the `dynamic` prop, `ClerkProvider` doesn't need a [`<Suspense>`](https://react.dev/reference/react/Suspense) boundary, but with `cacheComponents: true`, the code under it that reads the request does. That includes [`<Show>`](/docs/reference/components/control/show), [`auth()`](/docs/reference/nextjs/app-router/auth), [`currentUser()`](/docs/reference/nextjs/app-router/current-user), and [`<SignIn />`](/docs/reference/components/authentication/sign-in), [`<SignUp />`](/docs/reference/components/authentication/sign-up), [`<UserProfile />`](/docs/reference/components/user/user-profile), and [`<OrganizationProfile />`](/docs/reference/components/organization/organization-profile) on catch-all routes. With the `dynamic` prop, wrap `ClerkProvider` in `<Suspense>` too. See [Cache Components](/docs/guides/development/rendering-modes#cache-components) for where to add the boundaries.
 
-    ### Minimum Next.js version increased to 15.2.3 {{ toc: false }}
+    ### Minimum Next.js version increased to 15.2.8 {{ toc: false }}
 
-    Support for Next.js 13 and 14 has been dropped. `@clerk/nextjs` now requires `next@>=15.2.3`.
+    Support for Next.js 13 and 14 has been dropped. `@clerk/nextjs` now requires Next.js 15.2.8 or later. On Next.js 16, it requires 16.0.10 or later.
 
     ```json {{ del: [3], ins: [4] }}
     {
       "dependencies": {
         "next": "^14.0.0",
-        "next": "^15.2.3"
+        "next": "^15.2.8"
       }
     }
     ```
@@ -814,30 +826,18 @@ The following changes only apply to specific SDKs. Select your SDK below for add
   <Tab>
     {/* React Router */}
 
-    ### `@clerk/react-router/api.server` export removed {{ toc: false }}
+    ### `@clerk/react-router/api.server` export deprecated {{ toc: false }}
 
-    The `@clerk/react-router/api.server` export has been removed. Use `@clerk/react-router/server` instead:
+    The `@clerk/react-router/api.server` export is deprecated and will be removed in a future major version. Use `@clerk/react-router/server` instead:
 
     ```js {{ del: [1], ins: [2] }}
-    import { getAuth } from '@clerk/react-router/api.server'
-    import { getAuth } from '@clerk/react-router/server'
+    import { createClerkClient } from '@clerk/react-router/api.server'
+    import { createClerkClient } from '@clerk/react-router/server'
     ```
 
     ### `rootAuthLoader` requires `clerkMiddleware()` {{ toc: false }}
 
-    `rootAuthLoader` now requires `clerkMiddleware()` to be installed. Using `rootAuthLoader` without middleware will throw a runtime error.
-
-    1. Enable the `v8_middleware` future flag:
-
-    ```ts {{ filename: 'react-router.config.ts' }}
-    export default {
-      future: {
-        v8_middleware: true,
-      },
-    } satisfies Config
-    ```
-
-    2. Use `clerkMiddleware()` alongside `rootAuthLoader`:
+    `rootAuthLoader` now requires `clerkMiddleware()` to be installed. Using `rootAuthLoader` without middleware will throw a runtime error:
 
     ```tsx
     import { clerkMiddleware, rootAuthLoader } from '@clerk/react-router/server'
@@ -846,6 +846,8 @@ The following changes only apply to specific SDKs. Select your SDK below for add
 
     export const loader = (args: Route.LoaderArgs) => rootAuthLoader(args)
     ```
+
+    <Include src="_partials/react/react-router-v8-middleware-callout" />
   </Tab>
 
   <Tab>
@@ -983,6 +985,25 @@ The following changes only apply to specific SDKs. Select your SDK below for add
     import { useSignInWithGoogle } from '@clerk/expo'
     import { useSignInWithGoogle } from '@clerk/expo/google'
     ```
+
+    ### Native Google Sign-In moved to `@clerk/expo-google-signin` {{ toc: false }}
+
+    The native Google Sign-In module has been moved out of `@clerk/expo` into a separate, optional package. This keeps the native iOS and Android Google Sign-In dependencies opt-in, so apps that don't use them avoid the extra native modules.
+
+    If your app uses the [`useSignInWithGoogle()`](/docs/reference/expo/native-hooks/use-sign-in-with-google) hook, install the new package:
+
+    ```bash {{ filename: 'terminal' }}
+    npx expo install @clerk/expo-google-signin
+    ```
+
+    Then add its [config plugin](https://docs.expo.dev/config-plugins/introduction/) to your app config, alongside the `@clerk/expo` plugin, and rebuild your app:
+
+    ```json {{ del: [1], ins: [2], prettier: false }}
+    "plugins": ["@clerk/expo"],
+    "plugins": ["@clerk/expo", "@clerk/expo-google-signin"],
+    ```
+
+    The `@clerk/expo/google` import path continues to work, so no import changes are needed.
 
     ### `publishableKey` prop required in `ClerkProvider` {{ toc: false }}
 

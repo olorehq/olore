@@ -1,0 +1,155 @@
+---
+title: spotlight
+description: 'This page explains how to use the spotlight function in APL to compare a selected set of events against a baseline and surface the most significant differences.'
+---
+
+Spotlight lets you set up an analysis inside a query. You define a comparison set of events and compare it to the implicit baseline (the rest of the events in scope). Spotlight evaluates every field you pass in, scores differences, and returns the most informative contrasts. You use it when you want fast root-cause analysis, anomaly investigation, or pattern discovery without hand-rolling many ad-hoc aggregations.
+
+Spotlight is useful when you:
+
+- Investigate spikes or dips in a time series and want to know what changed
+- Explain why a subset of traces is slow or error-prone
+- Find which attributes distinguish suspicious requests from normal traffic
+
+This page explains the Spotlight APL function. For more information about how Spotlight works in the Axiom Console, see [Spotlight](/console/intelligence/spotlight).
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize spotlight(SelectionPredicate, Field1, Field2, ..., FieldN)
+```
+
+You use `spotlight` inside `summarize`. The first argument defines the comparison set. The remaining arguments list the fields to analyze.
+
+### Parameters
+
+| Name                  | Type               | Description |
+| --------------------- | ------------------ | --- |
+| `SelectionPredicate` | Boolean expression | Defines the comparison set (selected cohort). Spotlight compares events where the predicate evaluates to `true` against the baseline (events where it evaluates to `false`) within the current query scope. |
+| `Field1 ... FieldN` | field references   | One or more fields to analyze. Include string or categorical fields (for proportions) and numeric or timespan fields (for distributional differences). Use `*` as a wildcard to analyze all fields. |
+
+<Note>
+The wildcard `*` is useful to analyze all fields in the current row, but it increases query complexity and decreases performance. Specify only relevant fields when possible.
+</Note>
+
+### Returns
+
+- Bar charts for categorical fields (strings, Booleans)
+- Boxplots for numeric fields (integers, floats, timespans) with many distinct values
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Find what distinguishes error responses from normal traffic in the last 15 minutes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where _time >= now(-15m)
+| summarize spotlight(status startswith "5", ['geo.country'], ['geo.city'], method, uri, req_duration_ms)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20spotlight(status%20startswith%20'5'%2C%20%5B'geo.country'%5D%2C%20%5B'geo.city'%5D%2C%20method%2C%20uri%2C%20req_duration_ms)%22%7D)
+
+This query keeps the last 15 minutes of traffic in scope and compares error responses to everything else. Spotlight ranks the strongest differences, pointing to endpoints, regions, and latency ranges associated with the errors.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Explain why some spans are slow or erroring in the last 30 minutes.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where _time >= now(-30m)
+| summarize spotlight(duration > 500ms, ['service.name'], kind, status_code, duration)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20_time%20%3E%3D%20now(-30m)%20%7C%20summarize%20spotlight(duration%20%3E%20500ms%2C%20%5B'service.name'%5D%2C%20kind%2C%20status_code%2C%20duration)%22%7D)
+
+The query compares spans that ran longer than 500 ms to all other spans in the time window. Spotlight highlights the service, kind, and duration range that most distinguish the selected spans.
+
+</Tab>
+</Tabs>
+
+## Best practices
+
+- Keep the `where` scope broad enough that the baseline remains meaningful. Over-filtering reduces contrast.
+- Pass only fields that carry signal. Very high-cardinality identifiers can drown out more actionable attributes.
+- Include numeric fields like `req_duration_ms` or `duration` to let Spotlight detect distribution shifts, not just categorical skews.
+
+## List of related functions
+
+- [where](/apl/tabular-operators/where-operator): Filters events before Spotlight runs. Use it to scope the time window or dataset; use `spotlight` to compare selected vs baseline inside that scope.
+- [summarize](/apl/tabular-operators/summarize-operator): Runs aggregations over events. `spotlight` is an aggregation you call within `summarize`.
+- [top](/apl/tabular-operators/top-operator): Returns the most frequent values. Use `top` for simple frequency counts; use `spotlight` to contrast a cohort against its baseline with lift and significance.
+- [lookup](/apl/tabular-operators/lookup-operator): Enriches events with reference attributes. Use `lookup` to add context before running `spotlight` across enriched fields.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk, there is no one operator that compares a selected cohort to the baseline across many fields at once. You often create a flag with `eval`, run separate `stats`/`eventstats` for each field, and then `appendpipe` or `join` to compare rates. In APL, `spotlight` is an aggregation you call once inside `summarize`. You pass a Boolean predicate to define the cohort and a list of fields to inspect, and APL returns a scored table of differences.
+
+<CodeGroup>
+```sql Splunk example
+index=web earliest=-15m
+| eval is_error = if(status IN ("500","502","503"), 1, 0)
+| stats count by method uri status geo_country geo_city
+| eventstats sum(eval(is_error)) AS sel, sum(eval(1-is_error)) AS base
+| ... (manual rate/lift calculations and sorting) ...
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where _time >= now(-15m)
+| summarize spotlight(status in ('500','502','503'),
+                      ['geo.country'], ['geo.city'], method, uri, status)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not include a built-in cohort-vs-baseline comparator. You typically `CASE` a selection flag, aggregate twice (selected vs baseline), compute proportions, deltas, and significance, then union and sort. In APL, you express the selection as a predicate and let `spotlight` compute proportions, lift, and scores for each field/value.
+
+<CodeGroup>
+```sql SQL example
+WITH scoped AS (
+  SELECT *,
+         CASE WHEN status IN ('500','502','503') THEN 1 ELSE 0 END AS is_sel
+  FROM sample_http_logs
+  WHERE _time >= NOW() - INTERVAL '15' MINUTE
+),
+per_field AS (
+  SELECT 'status' AS field, status AS value,
+         AVG(is_sel)              AS sel_rate,
+         AVG(1 - is_sel)          AS base_rate
+  FROM scoped
+  GROUP BY status
+)
+SELECT field, value, sel_rate, base_rate,
+       sel_rate / NULLIF(base_rate,0) AS lift
+FROM per_field
+ORDER BY lift DESC
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where _time >= now(-15m)
+| summarize spotlight(status in ('500','502','503'),
+                      status, method, uri, ['geo.country'], ['geo.city'])
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

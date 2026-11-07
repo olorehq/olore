@@ -1,39 +1,43 @@
 ---
 title: 'How It Works'
 description: 'Understand how Checkly traces work with OpenTelemetry to provide comprehensive observability.'
+canonical: 'https://www.checklyhq.com/docs/resolve/traces/how-it-works/'
 ---
 
 Checkly Traces use OpenTelemetry to correlate synthetic check results with your application's backend traces. The diagram below shows how the dataflows connect to Checkly's monitoring and alerting pipeline.
 
 ![Checkly OpenTelemetry diagram](/images/docs/images/otel/checkly_otel_diagram.png)
 
-## The Flow
+{/*
+Vendor-neutral Mermaid version of the diagram above, kept for reference. To swap it in, delete the PNG line and this comment wrapper.
+```mermaid
+flowchart LR
+    run["Check run"] -->|"Step 1: trace headers"| app["Your app"]
+    run -->|"Step 2: check run span"| backend["Your OpenTelemetry backend"]
+    app -->|"Your app spans"| backend
+    app -->|"Step 3: spans with checkly=true"| checkly["Checkly"]
+    checkly -->|"Step 4: alert"| result["Check result with the full trace"]
+```
+*/}
+
+## The flow
 
 <Steps>
 <Step title="Automatic Instrumentation">
-When enabling the integration, Checkly automatically instruments all HTTP requests made by your checks with `traceparent` and `tracestate` headers. These HTTP requests hit your web application and/or API when running checks.
+When trace export or the Coralogix integration is enabled, Checkly automatically instruments the HTTP requests made by your checks with `traceparent` and `tracestate` headers. These HTTP requests hit your web application or API when running checks.
 
-All synthetic check types, including API, Browser and Multistep checks, include these headers:
+API checks, URL monitors, Browser checks and Multistep checks include these headers:
 
-- **traceparent**: W3C compliant trace ID generated for each HTTP request that is part of a check. For Browser checks and Multistep checks, there can be multiple requests instrumented.
-- **tracestate**: Set to `checkly=true` to identify Checkly as the vendor that generated the trace
+- **traceparent**: W3C compliant trace context. Each check run is one trace, and every request in that run carries the same `traceparent`.
+- **tracestate**: Carries `checkly=true` to identify Checkly as the vendor that generated the trace, plus the members documented on the [OTLP page](/integrations/observability/traces/otlp#trace-headers).
 
 Together, these headers propagate the trace context along the request chain. This is the most basic way of tying a synthetic check to your backend traces, though it won't provide much context about the check run itself, like the check name or location.
 </Step>
 
 <Step title="Check Result Export">
-You can configure your 3rd party backend in the Checkly UI so we can export every check result as a span to your backend. This correlates all backend spans with the check run that triggered them, together with full context of the check run.
+You can configure your OpenTelemetry backend on [Settings > Traces](https://app.checklyhq.com/settings/account/traces) so Checkly exports every API check, URL monitor, Browser check and Multistep check run as a span to your backend. This correlates all backend spans with the check run that triggered them when your application honors `traceparent`, together with full context of the check run.
 
-Check details are stored in the `checkly` namespace as attributes on the span:
-
-```yaml
-checkly.check.name: "ACME homepage"
-checkly.check.id: "438481ea-0eab-43d6-8932-ab51bd0d49d6"
-checkly.check.type: "browser"
-checkly.check.location: "eu-west-1"
-```
-
-This provides rich context about the run location, check name, check type, and more.
+Check details are stored in the `checkly` namespace as attributes on the span, such as the check name, check type, run location and tags. See [What is sent](/integrations/observability/traces/otlp#what-is-sent) for the span schema and the tag rules.
 </Step>
 
 <Step title="Direct Trace Ingestion">

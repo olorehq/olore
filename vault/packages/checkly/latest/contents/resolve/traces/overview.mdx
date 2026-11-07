@@ -2,6 +2,7 @@
 title: "Traces"
 description: "Trace and debug requests and data flowing through your application and identify performance bottlenecks and failures."
 sidebarTitle: "Overview"
+canonical: 'https://www.checklyhq.com/docs/resolve/traces/overview/'
 ---
 
 <img
@@ -37,7 +38,7 @@ To get started with Checkly Traces using OpenTelemetry, pick the scenario that b
     Send your infrastructure traces to Checkly to get contextualized check failure analysis.
   </Card>
 
-  <Card title="I want to export Check results to my OpenTelemetry setup" href="/resolve/traces/export/grafana-tempo">
+  <Card title="I want to export check results to my OpenTelemetry setup" href="/integrations/observability/traces/otlp">
     Export check results as traces to your 3rd party OTel tooling
   </Card>
 </Columns>
@@ -48,11 +49,29 @@ See this in action in the video below:
   <iframe src="https://www.loom.com/embed/30c143388ba54e9ba6b665dfbfe0d295?sid=8ad8d273-b0bb-48ca-b456-1b137384b9de" title="Embedded content" className="w-full aspect-video rounded-xl" frameBorder="0" allowfullscreen />
 </Frame>
 
+## Add trace headers to custom HTTP headers
+
+When `use.extraHTTPHeaders` is not set, Checkly uses default headers that include `traceparent` and `tracestate`. To add these trace headers to custom headers:
+
+```javascript
+test.use({
+  extraHTTPHeaders: {
+    ...existingHeaders,
+    traceparent: process.env.CHECKLY_TRACEPARENT,
+    tracestate: process.env.CHECKLY_TRACESTATE
+  },
+})
+```
+
+`CHECKLY_TRACEPARENT` is empty when the run carries no trace context. Check that it is set before relying on it.
+
+See the built-in variables for [Browser checks](/detect/synthetic-monitoring/browser-checks/mac-structure#built-in-runtime-variables) and [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/environment-variables#built-in-variables-in-playwright-check-suites).
+
 ## Works hand-in-hand with Rocky AI
 
-Checkly Traces automatically integrates with Rocky AI, helping you automatically analyze root causes of check failures. [Rocky AI Root Cause Analysis](/resolve/ai-root-cause-analysis/overview) can search, fetch and interpret Open Telemetry (OTeL) traces ingested by Checkly Traces and use it as a piece of "evidence" in determining why and where a check failed.\
+Checkly Traces automatically integrates with Rocky AI, helping you automatically analyze root causes of check failures. [Rocky AI Root Cause Analysis](/resolve/ai-root-cause-analysis/overview) can search, fetch and interpret OpenTelemetry (OTeL) traces ingested by Checkly Traces and use it as a piece of "evidence" in determining why and where a check failed.\
 \
-A simple example. Your API or Playwright check fails with a 500 error. Luckily your backend is instrumented with Open Telemetry and sends a trace indicating an issue with a downstream database, 3rd party service, proxy etc. Now, Rocky AI automatically pulls these OTeL traces into its context window and correlates it with your failing check. \
+A simple example. Your API or Playwright check fails with a 500 error. Luckily your backend is instrumented with OpenTelemetry and sends a trace indicating an issue with a downstream database, 3rd party service, proxy etc. Now, Rocky AI automatically pulls these OTeL traces into its context window and correlates it with your failing check. \
 \
 Here's an actual example from Checkly's own backend.
 

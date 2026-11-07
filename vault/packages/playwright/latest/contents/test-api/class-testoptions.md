@@ -64,7 +64,7 @@ export default defineConfig({
 
 ## property: TestOptions.browserName
 * since: v1.10
-- type: <[BrowserName]<"chromium"|"firefox"|"webkit">>
+- type: "BrowserName" <"chromium"|"firefox"|"webkit">
 
 Name of the browser that runs tests. Defaults to `'chromium'`. Most of the time you should set `browserName` in your [TestConfig]:
 
@@ -140,7 +140,7 @@ export default defineConfig({
 ```
 
 ## property: TestOptions.clientCertificates = %%-context-option-clientCertificates-%%
-* since: 1.46
+* since: v1.46
 
 **Usage**
 
@@ -197,7 +197,7 @@ export default defineConfig({
 });
 ```
 
-When connect options are specified, default [`property: Fixtures.browser`], [`property: Fixtures.context`] and [`property: Fixtures.page`] use the remote browser instead of launching a browser locally, and any launch options like [`property: TestOptions.headless`] or [`property: TestOptions.channel`] are ignored.
+When connect options are specified, default [`property: Fixtures.browser`], [`property: Fixtures.context`] and [`property: Fixtures.page`] use the remote browser instead of launching a browser locally.
 
 ## property: TestOptions.contextOptions
 * since: v1.10
@@ -215,6 +215,21 @@ export default defineConfig({
     contextOptions: {
       reducedMotion: 'reduce',
     },
+  },
+});
+```
+
+## property: TestOptions.contrast = %%-context-option-contrast-%%
+* since: v1.50
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    contrast: 'more',
   },
 });
 ```
@@ -248,6 +263,21 @@ export default defineConfig({
     extraHTTPHeaders: {
       'X-My-Header': 'value',
     },
+  },
+});
+```
+
+## property: TestOptions.forcedColors = %%-context-option-forcedColors-%%
+* since: v1.50
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    forcedColors: 'active',
   },
 });
 ```
@@ -313,6 +343,17 @@ export default defineConfig({
       password: 'pass',
     },
   },
+});
+```
+
+When passing an array of credentials to [`method: Test.use`], wrap it into an extra array, see [fixture options](../test-fixtures.md#fixtures-options).
+
+```js title="example.spec.ts"
+test.use({
+  httpCredentials: [[
+    { username: 'alice', password: 'alice-pass', origin: 'https://a.example.com' },
+    { username: 'bob', password: 'bob-pass', origin: 'https://b.example.com' },
+  ], { scope: 'test' }],
 });
 ```
 
@@ -410,6 +451,21 @@ export default defineConfig({
 });
 ```
 
+## property: TestOptions.locateOnlyVisible = %%-context-option-locate-only-visible-%%
+* since: v1.66
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    locateOnlyVisible: true,
+  },
+});
+```
+
 ## property: TestOptions.navigationTimeout
 * since: v1.10
 - type: <[int]>
@@ -480,10 +536,82 @@ export default defineConfig({
 });
 ```
 
+## property: TestOptions.reducedMotion = %%-context-option-reducedMotion-%%
+* since: v1.50
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    reducedMotion: 'reduce',
+  },
+});
+```
+
+## property: TestOptions.reuseContext
+* since: v1.62
+* discouraged: This option trades test isolation for speed and is intended for component tests that drive a story gallery. Leave it unset for end-to-end tests - a fresh browser context per test is one of the core guarantees of Playwright Test.
+- type: <[boolean]>
+
+**Experimental.** When set to `true`, all tests in a worker process run in a single browser context that is reused between tests, instead of getting a brand new context per test. Defaults to `false`.
+
+Between tests, Playwright resets the state that component tests typically touch: it clears cookies, cache, local storage and IndexedDB of visited origins, unregisters service workers, closes extra pages, removes routes, bindings and init scripts, and re-applies the configured storage state, viewport and emulation options.
+
+This reset is best-effort, not a guarantee of isolation. State that is **not** reset includes:
+* Permissions granted with [`method: BrowserContext.grantPermissions`] during a test.
+* Runtime changes made through [`method: BrowserContext.setGeolocation`], [`method: BrowserContext.setOffline`] and [`method: BrowserContext.setExtraHTTPHeaders`].
+* Browsing history, `window.name` and any browser-process-wide state.
+
+Additional restrictions:
+* The option is ignored when [`property: TestOptions.video`] recording is enabled.
+* Only a few context options may differ between consecutive tests: `colorScheme`, `forcedColors`, `reducedMotion`, `contrast`, `screen`, `userAgent`, `viewport` and `testIdAttribute`. Changing any other option in [`method: Test.use`], for example `locale` or `storageState`, silently forces a fresh context and negates the speedup.
+* Do not combine with [`property: TestOptions.connectOptions`] pointing multiple workers at a shared browser - workers would compete for the single reusable context.
+* `recordHar` in [`property: TestOptions.contextOptions`] is not supported and produces no HAR file.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  projects: [
+    {
+      name: 'components',
+      testDir: './tests/components',
+      use: { reuseContext: true },
+    },
+  ],
+});
+```
+
+## property: TestOptions.screen
+* since: v1.64
+- type: ?<[Object]>
+  - `width` <[int]> page width in pixels.
+  - `height` <[int]> page height in pixels.
+
+Emulates consistent window screen size available inside web page via `window.screen`. Is only used when the [`property: TestOptions.viewport`] is set.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    viewport: { width: 390, height: 664 },
+    screen: { width: 390, height: 844 },
+  },
+});
+```
+
 ## property: TestOptions.screenshot
 * since: v1.10
-- type: <[Object]|[ScreenshotMode]<"off"|"on"|"only-on-failure"|"on-first-failure">>
-  - `mode` <[ScreenshotMode]<"off"|"on"|"only-on-failure"|"on-first-failure">> Automatic screenshot mode.
+- type: "ScreenshotMode" <[Object]|"off"|"on"|"only-on-failure"|"on-first-failure">
+  - `mode` "ScreenshotMode" <"off"|"on"|"only-on-failure"|"on-first-failure"> Automatic screenshot mode.
   - `fullPage` ?<[boolean]> When true, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to `false`.
   - `omitBackground` ?<[boolean]> Hides default white background and allows capturing screenshots with transparency. Not applicable to `jpeg` images. Defaults to `false`.
 
@@ -584,11 +712,14 @@ export default defineConfig({
 
 ## property: TestOptions.trace
 * since: v1.10
-- type: <[Object]|[TraceMode]<"off"|"on"|"retain-on-failure"|"on-first-retry"|"retain-on-first-failure"|"retain-on-failure-and-retries">>
-  - `mode` <[TraceMode]<"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries"|"retain-on-first-failure"|"retain-on-failure-and-retries">> Trace recording mode.
+- type: "TraceMode" <[Object]|"off"|"on"|"on-first-retry"|"on-all-retries"|"retain-on-failure"|"retain-on-first-failure"|"retain-on-failure-and-retries">
+  - `mode` "TraceMode" <"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries"|"retain-on-first-failure"|"retain-on-failure-and-retries"> Trace recording mode.
   - `attachments` ?<[boolean]> Whether to include test attachments. Defaults to true. Optional.
   - `screenshots` ?<[boolean]> Whether to capture screenshots during tracing. Screenshots are used to build a timeline preview. Defaults to true. Optional.
-  - `snapshots` ?<[boolean]> Whether to capture DOM snapshot on every action. Defaults to true. Optional.
+  - `snapshots` ?<[boolean]|[Object]> Which snapshots to capture on every action. Passing `true` is a shortcut for `{ dom: true }`. Defaults to true. Optional.
+    - `dom` ?<[boolean]> Capture DOM snapshot on every action and record network activity. Optional.
+    - `aria` ?<[boolean]> Capture aria snapshot of the page on every action. Optional.
+    - `screen` ?<[boolean]> Capture a screenshot of the page on every action. Optional.
   - `sources` ?<[boolean]> Whether to include source files for trace actions. Defaults to true. Optional.
 
 Whether to record trace for each test. Defaults to `'off'`. The initial run of a test is the "first run"; subsequent runs caused by [retries](../test-retries.md) are "retries".
@@ -635,19 +766,25 @@ export default defineConfig({
 
 ## property: TestOptions.video
 * since: v1.10
-- type: <[Object]|[VideoMode]<"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries"|"retain-on-first-failure"|"retain-on-failure-and-retries">>
-  - `mode` <[VideoMode]<"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries"|"retain-on-first-failure"|"retain-on-failure-and-retries">> Video recording mode.
+- type: "VideoMode" <[Object]|"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries"|"retain-on-first-failure"|"retain-on-failure-and-retries">
+  - `mode` "VideoMode" <"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries"|"retain-on-first-failure"|"retain-on-failure-and-retries"> Video recording mode.
   - `size` ?<[Object]> Size of the recorded video. Optional.
     - `width` <[int]>
     - `height` <[int]>
+  - `fps` ?<[int]> Frame rate of the recorded video in frames per second. Defaults to `25`.
   - `show` ?<[Object]> If specified, visually annotates the video with test information and action highlights.
     - `actions` ?<[Object]> Controls visual annotations on interacted elements.
       - `duration` ?<[float]> How long each annotation is displayed in milliseconds. Defaults to `500`.
-      - `position` ?<[AnnotatePosition]<"top-left"|"top"|"top-right"|"bottom-left"|"bottom"|"bottom-right">> Position of the action title overlay. Defaults to `"top-right"`.
-      - `fontSize` ?<[int]> Font size of the action title in pixels. Defaults to `24`.
+      - `position` "AnnotatePosition" ?<"top-left"|"top"|"top-right"|"bottom-left"|"bottom"|"bottom-right"> Position of the action title overlay. Defaults to `"top-right"`.
+      - `fontSize` ?<[int]> Font size of the action title in pixels. Defaults to `24`. Deprecated, use `style.title` instead.
+      - `cursor` "ScreencastCursor" ?<"none"|"pointer"> Cursor decoration shown for pointer actions. `"pointer"` (the default) renders a mouse pointer that animates from the previous action point to the next one. `"none"` disables the cursor decoration.
+      - `style` ?<[Object]> Styles of the action decorations.
+        - `point` ?<[string]> CSS declarations for the zero-sized marker centered on the action point. Not shown when omitted.
+        - `highlight` ?<[string]> CSS declarations for the box that covers the target element. Not shown when omitted.
+        - `title` ?<[string]> CSS declarations for the action title.
     - `test` ?<[Object]> Controls test information displayed as a status overlay in the video.
-      - `level` ?<[TestAnnotationLevel]<"file"|"test"|"step">> Level of the detail to include about the current test.
-      - `position` ?<[AnnotatePosition]<"top-left"|"top"|"top-right"|"bottom-left"|"bottom"|"bottom-right">> Position of the test information overlay. Defaults to `"top-left"`.
+      - `level` "TestAnnotationLevel" ?<"file"|"title"|"step"> Level of the detail to include about the current test.
+      - `position` "AnnotatePosition" ?<"top-left"|"top"|"top-right"|"bottom-left"|"bottom"|"bottom-right"> Position of the test information overlay. Defaults to `"top-left"`.
       - `fontSize` ?<[int]> Font size of the test information in pixels. Defaults to `14`.
 
 Whether to record video for each test. Defaults to `'off'`. The initial run of a test is the "first run"; subsequent runs caused by [retries](../test-retries.md) are "retries".
@@ -663,7 +800,9 @@ See [video modes](../test-use-options.md#video-modes) for a side-by-side compari
 
 To control video size, pass an object with `mode` and `size` properties. If video size is not specified, it will be equal to [`property: TestOptions.viewport`] scaled down to fit into 800x800. If `viewport` is not configured explicitly the video size defaults to 800x450. Actual picture of each page will be scaled down if necessary to fit the specified size.
 
-To annotate actions in the video, pass `show` with `action` and/or `test` sub-options. The `action` option controls visual highlights on interacted elements with an optional `delay` in milliseconds (defaults to `500`). The `test` option controls which test information is displayed as a status overlay.
+To record smoother video of animations and scrolling, pass `fps`, for example `{ mode: 'on', size: { width: 1920, height: 1080 }, fps: 60 }`. Higher frame rates and sizes use more CPU for encoding. Firefox and WebKit currently capture up to 25 frames per second.
+
+To annotate actions in the video, pass `show` with `actions` and/or `test` sub-options. The `actions` option controls visual highlights on interacted elements, each shown for an optional `duration` in milliseconds (defaults to `500`). The `test` option controls which test information is displayed as a status overlay.
 
 **Usage**
 

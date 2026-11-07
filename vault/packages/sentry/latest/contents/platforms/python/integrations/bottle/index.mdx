@@ -4,8 +4,8 @@ description: "Learn about using Sentry with Bottle."
 ---
 
 The Bottle integration adds support for the [Bottle web framework](https://bottlepy.org/).
-Currently it works well with the stable version of Bottle (0.12).
-However the integration with the development version (0.13) doesn't work properly.
+
+<Include name="python-stream-mode-general-callout.mdx" />
 
 ## Install
 
@@ -14,6 +14,7 @@ Install `sentry-sdk` from PyPI:
 ```bash {tabTitle:pip}
 pip install sentry-sdk
 ```
+
 ```bash {tabTitle:uv}
 uv add sentry-sdk
 ```
@@ -53,11 +54,13 @@ It takes a couple of moments for the data to appear in [sentry.io](https://sentr
 
 - All exceptions leading to an Internal Server Error are reported.
 
-- Request data is attached to all events: **HTTP method, URL, headers, form data, JSON payloads**. Sentry excludes raw bodies and multipart file uploads. Sentry also excludes personally identifiable information (such as user ids, usernames, cookies, authorization headers, IP addresses) unless you set `send_default_pii` to `True`.
+- Request data is attached to all events: **HTTP method, URL, headers, form data, JSON payloads**. Sentry excludes raw bodies and multipart file uploads. Sentry also excludes personally identifiable information (such as user ids, usernames, cookies, authorization headers, IP addresses) unless you configure which categories to collect with the <PlatformLink to="/configuration/options/#data_collection">`data_collection` option</PlatformLink> or set `send_default_pii` to `True`. `send_default_pii` will be removed in version 3.0 of the SDK.
 
 - Each request has a separate scope. Changes to the scope within a view, for example setting a tag, will only apply to events sent as part of the request being handled.
 
 ## Options
+
+<Include name="python-stream-mode-integration-option-callout.mdx" />
 
 If you add `BottleIntegration` explicitly to your `sentry_sdk.init()` call you can set options for `BottleIntegration` to change its behavior:
 
@@ -94,7 +97,6 @@ def myendpoint():
 - If you set `transaction_style="endpoint"`, the transaction name will be `"myendpoint"`, since that is the route handler function's name.
 - If you set `transaction_style="url"`, the transaction name will be `"/myurl/<foo>"`, since that is the URL path.
 
-
 ### `failed_request_status_codes`
 
 A `set` of integers that will determine when an [`HTTPResponse`](https://bottlepy.org/docs/dev/api.html#bottle.HTTPResponse), which is raised or returned by the request handler, should be reported to Sentry. The `HTTPResponse` is reported to Sentry if its status code is contained in the `failed_request_status_codes` set.
@@ -109,10 +111,11 @@ The default is `{*range(500, 600)}`, meaning that any `HTTPResponse` with a stat
 
 Regardless of how `failed_request_status_codes` is configured, any non-`HTTPResponse` exceptions raised by the handler are reported to Sentry. For example, if your request handler raises an unhandled `AttributeError`, the `AttributeError` gets reported to Sentry, even if you have set `failed_request_status_codes=set()`.
 
-
 ## Supported Versions
 
-- Bottle: 0.12.13+
-- Python: 3.6+
+- Bottle: 0.12+
+- Python:
+  - 3.6+ (SDK &lt;3.0)
+  - 3.7+ (SDK 3.0+)
 
 <Include name="python-use-older-sdk-for-legacy-support.mdx" />

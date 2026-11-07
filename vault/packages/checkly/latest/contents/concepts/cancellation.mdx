@@ -1,10 +1,11 @@
 ---
 title: 'Cancellation'
-description: 'Stop in-flight Playwright Check Suite runs from the UI, API, or CLI. Other check types cannot be cancelled.'
+description: 'Stop Playwright Check Suite runs and the queued runs of a test session from the UI, API, or CLI.'
 sidebarTitle: 'Cancellation'
+canonical: 'https://www.checklyhq.com/docs/concepts/cancellation/'
 ---
 
-Cancellation lets you stop an in-progress [Playwright Check Suite](/detect/synthetic-monitoring/playwright-checks/overview) run. Cancelled results are flagged with `isCancelled: true`, do not trigger alerts, and are excluded from availability and performance metrics. A session that contains at least one cancelled run ends in a terminal `CANCELLED` status.
+Cancellation lets you stop an in-progress [Playwright Check Suite](/detect/synthetic-monitoring/playwright-checks/overview) run, and the queued runs of other check types in a test session. Cancelled results are flagged with `isCancelled: true`, do not trigger alerts, and are excluded from availability and performance metrics. A session that contains at least one cancelled run ends in a terminal `CANCELLED` status.
 
 ## What you can cancel
 
@@ -12,10 +13,10 @@ You can cancel two kinds of sessions, and the behaviour differs:
 
 **Check sessions** — created by the UI "Schedule now" button and `checkly deploy`. A check session is one execution of a single Playwright Check Suite, fanned out across the locations you configured. Cancelling the session stops every in-progress run; cancelling a single run leaves the rest of the session going.
 
-**Test sessions** — created by `checkly test`, `checkly trigger`, and `checkly pw-test`, which all record by default. A test session can contain multiple checks of different types. Cancelling the test session stops only the Playwright Check Suite runs inside it; any URL, API, Browser, Multistep, Heartbeat, TCP, DNS, or ICMP runs in the same session continue until they finish normally. You can also cancel a single Playwright run within the session.
+**Test sessions** — created by `checkly test`, `checkly trigger`, and `checkly pw-test`, which all record by default. A test session can contain multiple checks of different types. Cancelling the test session stops the Playwright Check Suite runs inside it and skips its API, URL, TCP, DNS, ICMP, gRPC, SSL, and Traceroute runs that are still queued; each skipped run gets a result with status `CANCELLED`. A run of one of those types that has already started is not interrupted and finishes normally. Browser and Multistep runs in the same session continue until they finish normally. You can also cancel a single Playwright run within the session.
 
 <Warning>
-**Only Playwright Check Suite runs are cancellable.** Other check types cannot be cancelled, even when they appear inside a test session alongside Playwright runs. Scheduled runs are also excluded; cancellation is for user-initiated runs only.
+**Only Playwright Check Suite runs are interrupted while they are running.** For the other check types, cancelling a test session skips the runs that have not started yet; a run that is already running finishes and keeps its result. Scheduled runs are also excluded; cancellation is for user-initiated runs only.
 </Warning>
 
 ## How to cancel
@@ -48,7 +49,7 @@ curl -X POST https://api.checklyhq.com/v1/test-sessions/a1b2c3d4-e5f6-7890-abcd-
 <Tab title="CLI">
 <Note>CLI cancellation is available in CLI v8.0.0+.</Note>
 
-Press <kbd>Ctrl</kbd>+<kbd>C</kbd> during a recorded test session run — `checkly test`, `checkly trigger`, and `checkly pw-test` all record by default — to cancel the session. The CLI keeps running to report the cancelled results; press <kbd>Ctrl</kbd>+<kbd>C</kbd> again to exit immediately.
+Press <kbd>Ctrl</kbd>+<kbd>C</kbd> during a recorded test session run — `checkly test`, `checkly trigger`, and `checkly pw-test` all record by default — to cancel the session. The CLI keeps running to report the cancelled results; press <kbd>Ctrl</kbd>+<kbd>C</kbd> again to exit immediately. Runs started with `--no-record` have no test session and cannot be cancelled.
 
 See the [CLI reference](/cli/overview) for command-specific behavior.
 </Tab>
@@ -58,11 +59,11 @@ See the [CLI reference](/cli/overview) for command-specific behavior.
 
 <Steps>
 <Step title="The runner stops execution">
-The runner receives the cancellation signal, aborts the in-flight Playwright run, and reports the result back to Checkly.
+The runner receives the cancellation signal, aborts the in-flight Playwright run, and reports the result back to Checkly. For the other check types, the runner skips the runs of a cancelled test session that have not started yet and reports each of them as cancelled; a run that has already started finishes normally.
 </Step>
 
 <Step title="The result is marked cancelled">
-Each cancelled run's result has `isCancelled: true`. Once the session has stopped (any remaining non-Playwright checks finish normally), the session's status becomes `CANCELLED` because at least one of its runs was cancelled.
+Each cancelled run's result has `isCancelled: true`. Once the session has stopped (runs that were already in progress finish normally), the session's status becomes `CANCELLED` because at least one of its runs was cancelled.
 </Step>
 
 <Step title="No alert is sent">

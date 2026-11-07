@@ -2,6 +2,7 @@
 title: checkly incidents
 description: 'Create, update, and resolve incidents on your status pages from the CLI.'
 sidebarTitle: 'checkly incidents'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-incidents/'
 ---
 
 <Note>Available since CLI v7.5.0.</Note>
@@ -32,6 +33,10 @@ npx checkly incidents <subcommand> [arguments] [options]
 | `create` | Declare a new incident on a status page. |
 | `update` | Post a progress update to an incident. |
 | `resolve` | Resolve an incident. |
+
+<Note>
+`create`, `update` and `resolve` show the planned change and ask for confirmation before they run. In CI or when an AI agent runs them, they don't prompt: they print a `confirmation_required` summary and exit with code `3` without changing anything. Add `--force` to run them non-interactively.
+</Note>
 
 ## `checkly incidents list`
 
@@ -143,6 +148,8 @@ npx checkly incidents create [options]
 | `--message` | - | Initial incident update message. |
 | `--notify-subscribers` | - | Notify status page subscribers. Default: `true`. Use `--no-notify-subscribers` to disable. |
 | `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+| `--force, -f` | - | Skip the confirmation prompt. |
+| `--dry-run` | - | Preview what would happen without executing. |
 
 ### Create Options
 
@@ -268,6 +275,8 @@ npx checkly incidents update <id> [options]
 | `--severity` | - | Update the overall incident severity: `minor`, `medium`, `major`, or `critical`. |
 | `--notify-subscribers` | - | Notify status page subscribers. Default: `true`. Use `--no-notify-subscribers` to disable. |
 | `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+| `--force, -f` | - | Skip the confirmation prompt. |
+| `--dry-run` | - | Preview what would happen without executing. |
 
 ### Update Options
 
@@ -371,6 +380,8 @@ npx checkly incidents resolve <id> [options]
 | `--message` | - | Optional closing note. If omitted, a default message is used. |
 | `--notify-subscribers` | - | Notify status page subscribers. Default: `true`. Use `--no-notify-subscribers` to disable. |
 | `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+| `--force, -f` | - | Skip the confirmation prompt. |
+| `--dry-run` | - | Preview what would happen without executing. |
 
 ### Resolve Options
 

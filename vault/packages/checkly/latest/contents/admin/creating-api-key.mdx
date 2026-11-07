@@ -2,13 +2,14 @@
 title: "Creating an API key in Checkly"
 description: "Learn how to create and manage user and service API keys for the Checkly API and CLI"
 sidebarTitle: "Creating an API Key"
+canonical: 'https://www.checklyhq.com/docs/admin/creating-api-key/'
 ---
 
 The Checkly public API and CLI use API keys to authenticate requests. API keys come in two flavors: **user API keys** and **service API keys**.
 
 ## User API keys
 
-User API keys are tied to one specific user in your account and inherit the access level of that user, i.e. "read only" or "admin".
+User API keys are tied to one specific user in your account and inherit that user's [account role and permissions](/admin/team-management/permissions), including [custom roles](/admin/team-management/custom-roles) (beta) when enabled for your account.
 When a user is removed from your account, that user's API keys are no longer able to access your account through the API.
 
 **Steps to create an user API key:** 
@@ -38,7 +39,7 @@ If you wish to revoke access of a user to an account, remove the user from the t
 Service API keys are specific to one account and are not tied to a user. This means that service API keys can be used to access your account even if the user that created the API key is removed from your account.
 
 <Note>
-Service API keys are available on the [Enterprise plan](https://www.checklyhq.com/pricing/) only
+Service API keys are available on the Starter, Team, and Enterprise [plans](https://www.checklyhq.com/pricing/), including Team trials.
 </Note>
 
 Service API keys allow you to set a role access level on the key itself. Available roles are:
@@ -48,15 +49,21 @@ Service API keys allow you to set a role access level on the key itself. Availab
 - **Read & Run** - Can view all resources and trigger checks and tests, but cannot create, edit, or delete. Ideal for CI/CD pipelines that only need to run tests.
 - **Read Only** - View-only access to all resources.
 
+If your account has [custom roles](/admin/team-management/custom-roles) (beta) enabled, you can also select one for a service API key.
+
 Prime use cases for service API keys are:
 
 - Background services like CI pipelines invoke the [Checkly CLI](/cli/overview).
 - Any custom integrations that needs to create, update or delete resources through our public API.
 - Replacing user API keys for customers using our SSO integration and cannot create "service users" in their user directories due to compliance reasons.
 
-**Steps to create a service API key:**
+<Accordion title="Prerequisites">
+You need [**Create API keys** (`api-keys:create`)](/admin/team-management/permissions) permission and a plan that includes service API keys. Owner and Admin have this permission by default. If access is missing, ask your account Owner or Admin to assign a suitable role.
 
-Only users with the Admin and Owner role can create service API keys.
+You can only give a key a role whose permissions you hold yourself. The role picker disables roles you cannot give.
+</Accordion>
+
+**Steps to create a service API key:**
 
 1. Go to the API keys section in the [Account Settings](https://app.checklyhq.com/settings/account/api-keys).
 2. Click **Create service API key**.
@@ -73,4 +80,4 @@ curl -H "Authorization: Bearer my_service_api_key" -H "X-Checkly-Account: my_acc
 
 ### Deleting a service API key
 
-Only Admin and Owner users can delete an API key. To delete an API key click on the **Delete** icon in the Service Api Keys section of the [Account Settings](https://app.checklyhq.com/settings/account/api-keys).
+You need [**Delete API keys** (`api-keys:delete`)](/admin/team-management/permissions) permission to delete a service API key. Owner and Admin have it by default; a [custom role](/admin/team-management/custom-roles) (beta) can grant it when enabled for your account. Click the **Delete** icon in the Service API Keys section of [Account Settings](https://app.checklyhq.com/settings/account/api-keys). You can revoke an existing key even if your plan no longer includes service API keys.

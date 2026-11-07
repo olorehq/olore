@@ -1,0 +1,93 @@
+---
+title: Query histogram and summary metrics
+description: This page explains how to query OpenTelemetry histogram and summary metrics using MPL.
+sidebarTitle: Histograms and summaries
+keywords: ["metrics", "opentelemetry", "otel", "mpl", "metricsdb", "histogram", "summary", "quantile", "percentile"]
+---
+
+Unlike other OpenTelemetry (OTel) metric types, a histogram or summary metric doesn't hold a single measurement. Each one carries several components that mean different things, such as an observation count alongside a distribution. Query these metric types with a function that's aware of that shape, or by selecting the component you want.
+
+## Histogram metrics
+
+Query histogram metrics with `bucket` and an `interpolate_` function: `interpolate_cumulative_histogram` for cumulative temporality, `interpolate_delta_histogram` for delta temporality. Use them when you want the observation count, the average, or an estimated quantile such as the 90th percentile. For the syntax, see [Bucket](/mpl/introduction#bucket). For examples, see [Sample MPL queries](/mpl/sample-queries#histogram).
+
+<Warning>
+Unless you want to sketch which series a metric contains, don't run a plain `align` or `group` over a histogram metric. Its components mean different things, so aggregating them together produces a meaningless result. Use a `bucket` function instead.
+</Warning>
+
+## Summary metrics
+
+<Warning>
+The [OTel data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/#summary-legacy) marks summary as a legacy type. It isn't recommended for new applications and exists for compatibility with other formats. If you can choose the instrumentation, a histogram is the better option.
+</Warning>
+
+MPL has no `interpolate_` function for summaries because the producer already computed the quantiles. Instead, select the component you want with the reserved `axiom.summary` and `axiom.quantile` tags, and derive anything else with [compute](/mpl/introduction#compute).
+
+### Count and sum
+
+Filter to the component you want.
+
+```mpl
+`my-metrics`:`service.request.duration`
+| where `service.name` == "checkout"
+| where `axiom.summary` == "count"
+| align to 5m using sum
+```
+
+```mpl
+`my-dataset`:`service.request.duration`
+| where `service.name` == "checkout"
+| where `axiom.summary` == "sum"
+| align to 5m using sum
+```
+
+### Average
+
+Divide the `sum` component by the `count` component with `compute`.
+
+```mpl
+(
+  `my-dataset`:`service.request.duration`
+  | where `service.name` == "checkout"
+  | where `axiom.summary` == "sum"
+  | group using sum,
+  `my-dataset`:`service.request.duration`
+  | where `service.name` == "checkout"
+  | where `axiom.summary` == "count"
+  | group using sum
+)
+| compute average using /
+```
+
+### Minimum and maximum
+
+If the producer emits the `0.0` and `1.0` quantiles, use them as the minimum and the maximum.
+
+```mpl
+// Minimum
+`my-dataset`:`service.request.duration`
+| where `service.name` == "checkout"
+| where `axiom.summary` == "bucket" and `axiom.quantile` == 0.0
+```
+
+```mpl
+// Maximum
+`my-dataset`:`service.request.duration`
+| where `service.name` == "checkout"
+| where `axiom.summary` == "bucket" and `axiom.quantile` == 1.0
+```
+
+### Quantiles
+
+A summary only contains the quantiles the producer computed. You can select one of them, but you can't derive a quantile that isn't there.
+
+```mpl
+// Median, if the producer emits the 0.5 quantile
+`my-dataset`:`service.request.duration`
+| where `service.name` == "checkout"
+| where `axiom.summary` == "bucket" and `axiom.quantile` == 0.5
+```
+
+<Warning>
+As with histograms, avoid a plain `align` or `group` over a summary metric unless you want to sketch which series it contains.
+</Warning>

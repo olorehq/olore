@@ -1,16 +1,11 @@
 ---
-image: /generated/articles-docs-web-renderer-render-media-on-web.png
+image: https://remotion.media/docs/generated/articles-docs-web-renderer-render-media-on-web.png
 id: render-media-on-web
 title: renderMediaOnWeb()
 crumb: '@remotion/web-renderer'
 ---
 
 # renderMediaOnWeb()<AvailableFrom v="4.0.397" />
-
-:::warning
-Experimental feature - expect bugs and breaking changes at any time.  
-[Track progress on GitHub](https://github.com/remotion-dev/remotion/issues/5913) and discuss in the [`#web-renderer`](https://remotion.dev/discord) channel on Discord.
-:::
 
 _Part of the `@remotion/web-renderer` package._
 
@@ -95,6 +90,8 @@ _number_
 
 <Options id="scale" />
 
+Pass the same `scale` to [`canRenderMediaOnWeb()`](/docs/web-renderer/can-render-media-on-web) when checking support.
+
 ### `onProgress?`
 
 _function_ <TsType type="RenderMediaOnWebProgressCallback" source="@remotion/web-renderer" href="/docs/web-renderer/types#rendermediaonwebprogresscallback" />
@@ -120,9 +117,27 @@ const onProgress: RenderMediaOnWebProgressCallback = ({
 };
 ```
 
+### `pageResponsiveness?`<AvailableFrom v="4.0.487" />
+
+_string | number_ <TsType type="WebRendererPageResponsiveness" source="@remotion/web-renderer" href="/docs/web-renderer/types#webrendererpageresponsiveness" />
+
+Controls whether rendering tries to free the event loop between expensive render phases so the page stays responsive.
+See [Page responsiveness](/docs/client-side-rendering/page-responsiveness) for guidance.
+
+Default is `"medium"`.
+
+- `"disabled"`: Do not pause rendering for page responsiveness. This prioritizes render speed but can make the page less responsive.
+- `"low"`: Every `100ms` of rendering work, try to free the event loop.
+- `"medium"`: Every `33ms` of rendering work, try to free the event loop.
+- `"high"`: Every `16ms` of rendering work, try to free the event loop.
+
+Pass a positive number to customize the interval in milliseconds.
+
+This option is best effort. Long synchronous browser or graphics operations may still block the page until they complete.
+
 ### `videoBitrate?`
 
-_number | string_ <TsType type="WebRendererQuality" source="@remotion/web-renderer" href="/docs/web-renderer/types#webrendererquality" />
+_number | string | Quality_ <TsType type="WebRendererQuality" source="@remotion/web-renderer" href="/docs/web-renderer/types#webrendererquality" />
 
 Controls the quality and file size of the output video. Can be either a number representing the bitrate in bits per second, or one of the preset quality levels:
 
@@ -131,6 +146,36 @@ Controls the quality and file size of the output video. Can be either a number r
 - `"medium"`: Balanced file size and quality (default)
 - `"high"`: Larger file size, higher quality
 - `"very-high"`: Largest file size, highest quality
+
+#### Mediabunny `Quality`<AvailableFrom v="4.0.535" />
+
+You can also pass a Mediabunny [`Quality`](https://mediabunny.dev/guide/media-sources#encoding-quality) instance directly.
+Remotion's string presets use bitrate encoding.
+Passing `new Quality('high')` lets Mediabunny choose how to encode the video. You don't need to set `preferBitrate: false`:
+
+```tsx twoslash title="Use Mediabunny quality selection"
+const Component: React.FC = () => null;
+
+// ---cut---
+import {renderMediaOnWeb} from '@remotion/web-renderer';
+import {Quality} from 'mediabunny';
+
+await renderMediaOnWeb({
+  composition: {
+    component: Component,
+    durationInFrames: 100,
+    fps: 30,
+    width: 1920,
+    height: 1080,
+    id: 'my-composition',
+  },
+  videoBitrate: new Quality('high'),
+});
+```
+
+A browser may accept the configuration but still fail during encoding or introduce a large startup delay. See [known WebCodecs issues](/docs/mediabunny/webcodecs-bugs).
+
+Pass the same `Quality` instance to [`canRenderMediaOnWeb()`](/docs/web-renderer/can-render-media-on-web) or [`getEncodableVideoCodecs()`](/docs/web-renderer/get-encodable-video-codecs) when checking support.
 
 ### `hardwareAcceleration?`
 
@@ -196,6 +241,37 @@ _number_
 The [audio sample rate](/docs/sample-rate) in Hz.  
 Default is `48000`.
 
+### `metadata?`<AvailableFrom v="4.0.517" />
+
+_object_ <TsType type="MetadataTags" source="mediabunny" href="https://mediabunny.dev/api/MetadataTags" />
+
+Metadata to embed in the output media. See [Mediabunny's metadata documentation](https://mediabunny.dev/guide/reading-media-files#reading-metadata-tags) for the available fields.
+
+```tsx twoslash title="Set output metadata"
+const Component: React.FC = () => null;
+
+// ---cut---
+import {renderMediaOnWeb} from '@remotion/web-renderer';
+
+await renderMediaOnWeb({
+  composition: {
+    component: Component,
+    durationInFrames: 100,
+    fps: 30,
+    width: 1920,
+    height: 1080,
+    id: 'my-composition',
+  },
+  metadata: {
+    title: 'My video',
+    artist: 'Remotion user',
+    comment: 'My comment',
+  },
+});
+```
+
+Remotion adds `Made with Remotion <version>` to the comment. If you pass a comment, it is appended after this text.
+
 ### `delayRenderTimeoutInMilliseconds?`
 
 _number_
@@ -250,6 +326,10 @@ _number | null_
 
 <Options id="media-cache-size-in-bytes" />
 
+### `preferredEffectBackend?`<AvailableFrom v="4.0.540" />
+
+<Options id="preferred-effect-backend" />
+
 ### `onArtifact?`
 
 _function_ <TsType type="WebRendererOnArtifact" source="@remotion/web-renderer" href="/docs/web-renderer/types#webrendereronartifact" />
@@ -282,6 +362,57 @@ Controls how the output is stored:
 
 By default, Remotion will automatically choose `"web-fs"` if available, otherwise `"arraybuffer"`.
 
+### `outputWritable?`<AvailableFrom v="4.0.508" />
+
+_WritableStream&lt;StreamTargetChunk&gt;_
+
+Writes rendered media progressively to a `WritableStream` as data becomes available, instead of buffering the complete output in memory or the Origin Private File System.
+This is useful for large renders and for streaming the output to a file, server, or native application.
+
+The stream receives [Mediabunny `StreamTargetChunk`](https://mediabunny.dev/api/StreamTargetChunk) objects containing the data and its byte position.
+[`FileSystemWritableFileStream`](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemWritableFileStream) is compatible with this format.
+
+For example, you can render directly to a file selected by the user without keeping the finished video in memory:
+
+```tsx title="RenderButton.tsx"
+import {renderMediaOnWeb} from '@remotion/web-renderer';
+
+const Component: React.FC = () => null;
+
+const renderToFile = async () => {
+  const fileHandle = await window.showSaveFilePicker({
+    suggestedName: 'video.mp4',
+    types: [
+      {
+        description: 'MP4 video',
+        accept: {'video/mp4': ['.mp4']},
+      },
+    ],
+  });
+  const outputWritable = await fileHandle.createWritable();
+
+  await renderMediaOnWeb({
+    composition: {
+      component: Component,
+      durationInFrames: 100,
+      fps: 30,
+      width: 1920,
+      height: 1080,
+      id: 'my-composition',
+    },
+    outputWritable,
+  });
+};
+
+export const RenderButton: React.FC = () => (
+  <button onClick={renderToFile}>Render video</button>
+);
+```
+
+`renderMediaOnWeb()` writes chunks at their correct byte positions and closes the stream when the render finishes. Do not call `getBlob()` when using `outputWritable`.
+
+If both `outputWritable` and `outputTarget` are specified, `outputWritable` takes precedence.
+
 ### `schema?`
 
 _Zod v4 schema_ <TsType type="$ZodObject" source="zod/v4/core" />
@@ -294,7 +425,7 @@ See [Schemas](/docs/schemas) for more information.
 _string_
 
 A [license key](/docs/licensing) to use for this render.  
-See [Telemetry in client-side rendering](/docs/client-side-rendering/telemetry) for more information.
+See [Telemetry](/docs/telemetry) for more information.
 
 ### `isProduction?`<AvailableFrom v="4.0.409"/>
 
@@ -304,7 +435,7 @@ _default `true`_
 
 ### `allowHtmlInCanvas?`<AvailableFrom v="4.0.447" />
 
-_boolean_
+_boolean — default `false`_
 
 <Options id="allow-html-in-canvas" />
 
@@ -315,6 +446,8 @@ Returns a promise resolving to an object with the following properties:
 ### `getBlob()`
 
 A function that returns a `Promise<Blob>` containing the rendered video. Call this function to retrieve the final video file.
+
+If `outputWritable` was specified, the rendered media has already been written to the stream and `getBlob()` rejects.
 
 ```tsx twoslash title="Download the video"
 const Component: React.FC = () => null;

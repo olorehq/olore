@@ -1,16 +1,16 @@
 ---
 title: Monitor Neon with PgHero
-subtitle: Monitor your Neon Postgres database with PgHero
+subtitle: Monitor your Lakebase Postgres database with PgHero
 summary: >-
   PgHero is an open-source Postgres performance dashboard that surfaces
   long-running queries, tables needing vacuuming, duplicate or missing indexes,
-  and per-user connection counts through a browser UI. Connect PgHero to a Neon
+  and per-user connection counts through a browser UI. Connect PgHero to a Lakebase Postgres
   database via Docker and a Neon connection string, with pg_stat_statements
   enabled as a prerequisite. Agent-based monitoring tools that require
   host-level installation are not supported by Neon. PgHero runs externally
   and connects over the standard Postgres protocol.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-04T20:10:08.844Z'
 ---
 
 [PgHero](https://github.com/pghero/pghero) is an open-source performance tool for Postgres that can help you find and fix data issues, using a dashboard interface.
@@ -48,14 +48,14 @@ docker pull ankane/pghero
 
 ## How to connect to your database from PgHero
 
-Find the connection string for your database by clicking the **Connect** button on your **Project Dashboard**.
+Find the connection string for your database by clicking the **Connect** button in the Console nav.
 
-![Connection details modal](/docs/connect/connection_details.png)
+![Connection details modal](/docs/connect/connect_to_branch_modal.png)
 
 Finally, run this command, replacing `$NEON_DB` with your Neon database connection string.
 
 ```
-docker run -ti -e DATABASE_URL='$NEON_DB' -p 8080:8080 ankane/pghero
+docker run -ti -e DATABASE_URL="$NEON_DB" -p 8080:8080 ankane/pghero
 ```
 
 Then visit http://localhost:8080 in your browser to open the PgHero Dashboard.

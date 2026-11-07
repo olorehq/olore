@@ -2,12 +2,13 @@
 title: 'Send Alerts via Rootly'
 description: 'Configure Rootly integration to receive real-time alerts from Checkly monitors'
 sidebarTitle: 'Rootly'
+canonical: 'https://www.checklyhq.com/docs/integrations/incident-management/rootly/'
 ---
 
 Checkly integrates with [Rootly](https://rootly.com/) and can deliver failure, degradation, and recovery messages to any Rootly service. More specifically, Checkly will:
 
-- Open new incidents when a check fails.
-- Close incidents automatically when a failing check recovers.
+- Send an alert to Rootly when a check fails.
+- Resolve the alert when a failing check recovers.
 - Alert when SSL certificates are about to expire.
 
 
@@ -15,13 +16,13 @@ Checkly integrates with [Rootly](https://rootly.com/) and can deliver failure, d
 
 2. Take note of the following:
    - The **Secret** that Rootly.io provides you with.
-   - The **type** you want to target: either **Service**, **Group** or **Escalation Policy**.
+   - The **type** you want to target: either **Service**, **Team** or **Escalation Policy**.
    - The **ID** of the target.
   Now head over to [Checkly > Alerts](https://app.checklyhq.com/alerts/settings), click **Add more channels** and select **Rootly**.
 
-3. Copy and paste in the API key, select the type and paste in the ID.
-4. Hit **Test Rootly alert** to verify the connection. On the Incident.io side, you should now see a test alert pop up!
-5. Now you are all set up! When an alert is triggered, an incident will be created in Rootly.
+3. Copy and paste in the Secret, select the type and paste in the ID.
+4. Hit **Test alert channel** to verify the connection. In Rootly, you should now see a test alert pop up!
+5. Now you are all set up! When an alert is triggered, it's sent to Rootly, where your alert routing decides whether an incident is created.
 
 
 You now have successfully integrated Checkly with Rootly.

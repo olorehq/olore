@@ -1,9 +1,11 @@
 ---
 title: Sign-up components
 description: Reference documentation for Clerk Elements sign-up components.
+tag: deprecated
 ---
 
-<Include src="_partials/elements-callout" />
+> [!DEPRECATED]
+> This feature is deprecated. With the release of [Clerk Core 3](/changelog/2026-03-03-core-3), the redesigned [hooks](/docs/reference/hooks/overview) are the recommended replacement for building custom flows. They expose stateful objects, step methods that map directly to the flow, and structured field-level errors out of the box, so you no longer need to manage attempt status, loading states, or error parsing yourself.
 
 The following components are used when creating sign-up flows. They are imported from `@clerk/elements/sign-up`. It is recommended to import them all under the `SignUp` namespace to make discovery easier and reduce naming conflicts with other components throughout your application. The code snippets on this page assume you have imported the components this way.
 
@@ -28,13 +30,6 @@ The root sign-up component. Sets up providers and state management for the sign-
 ### Properties {{ toc: false }}
 
 <Properties>
-  - `path?`
-  - `string`
-
-  The root path the sign-up flow is mounted at. If not provided, will be automatically inferred (either through the current pathname or [environment variables](/docs/guides/development/clerk-environment-variables#sign-in-and-sign-up-redirects)). Fallback: `/sign-up`
-
-  ---
-
   - `fallback?`
   - `React.ReactNode`
 
@@ -42,15 +37,22 @@ The root sign-up component. Sets up providers and state management for the sign-
 
   ---
 
+  - `path?`
+  - `string`
+
+  The root path the sign-up flow is mounted at. If not provided, will be automatically inferred (either through the current pathname or [environment variables](/docs/guides/development/clerk-environment-variables#sign-in-and-sign-up-redirects)). Fallback: `/sign-up`
+
+  ---
+
   - `routing?`
   - `'path' | 'virtual'`
 
-  If you want to render Clerk Elements in e.g. a modal, use the `'virtual'` routing mode. Default: `'path'`
+  For example, if you want to render Clerk Elements in a modal, use the `'virtual'` routing mode. Default: `'path'`
 </Properties>
 
 The following data attributes are also added to the underlying element:
 
-- `data-global-error` - Refers to the [`<GlobalError>`](/docs/guides/customizing-clerk/elements/reference/common#global-error) status
+- `data-global-error` - Refers to the [`<GlobalError>`](/docs/guides/customizing-clerk/elements/reference/common#globalerror) status
 
 ## `<Step>`
 
@@ -88,7 +90,7 @@ Renders the beginning sign-up form. Once a sign up attempt has been created from
 
 ### `<Step name="continue">`
 
-Collects additional required fields from the user during a sign up attempt. This step will be rendered if a user initiates a sign up, but does not provide all required fields (e.g. through social connection).
+Collects additional required fields from the user during a sign up attempt. This step will be rendered if a user initiates a sign up, but does not provide all required fields (e.g., through social connection).
 
 #### Usage
 
@@ -158,10 +160,10 @@ Exposes various flow-related actions. It can be used to submit forms, navigate b
 ### Properties {{ toc: false }}
 
 <Properties>
-  - `submit?`
-  - `boolean`
+  - `fallback?`
+  - `({ resendableAfter: number }) => React.ReactNode`
 
-  If `true`, the action will submit the form. Default: `false`
+  Only used when `resend` is `true`. If provided, the fallback markup will be rendered before the resend delay has expired. Default: `null`
 
   ---
 
@@ -179,10 +181,10 @@ Exposes various flow-related actions. It can be used to submit forms, navigate b
 
   ---
 
-  - `fallback?`
-  - `({ resendableAfter: number }) => React.ReactNode`
+  - `submit?`
+  - `boolean`
 
-  Only used when `resend` is `true`. If provided, the fallback markup will be rendered before the resend delay has expired. Default: `null`
+  If `true`, the action will submit the form. Default: `false`
 </Properties>
 
 ### Usage {{ toc: false }}

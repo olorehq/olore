@@ -1,7 +1,7 @@
 ---
 title: "`<SubscriptionDetailsButton />` component"
 description: "Clerk's <SubscriptionDetailsButton /> component renders a button that opens the Subscription details drawer."
-sdk: react, nextjs, vue
+sdk: react, nextjs, tanstack-react-start, vue
 ---
 
 ![The \<SubscriptionDetailsButton /> component renders a button that opens the Subscription details drawer.](/docs/images/ui-components/subscription.svg)
@@ -36,7 +36,7 @@ The `<SubscriptionDetailsButton />` component renders a button that opens the Su
 </>
 ```
 
-### Examples
+### Example
 
 <If sdk="nextjs">
   ```tsx {{ filename: 'app/billing/page.tsx' }}
@@ -108,6 +108,44 @@ The `<SubscriptionDetailsButton />` component renders a button that opens the Su
   ```
 </If>
 
+<If sdk="tanstack-react-start">
+  ```tsx {{ filename: 'src/routes/billing.tsx' }}
+  import { Show } from '@clerk/tanstack-react-start'
+  import { SubscriptionDetailsButton } from '@clerk/tanstack-react-start/experimental'
+  import { createFileRoute } from '@tanstack/react-router'
+
+  export const Route = createFileRoute('/billing')({
+    component: BillingPage,
+  })
+
+  function BillingPage() {
+    return (
+      <Show when="signed-in">
+        {/* Basic usage */}
+        <SubscriptionDetailsButton />
+
+        {/* Customizes the appearance of the Subscription details drawer */}
+        <SubscriptionDetailsButton
+          subscriptionDetailsProps={{
+            appearance: {
+              /* custom theme */
+            },
+          }}
+        />
+
+        {/* Custom button */}
+        <SubscriptionDetailsButton onSubscriptionCancel={() => console.log('Subscription canceled')}>
+          <button className="custom-button">
+            <Icon name="subscription" />
+            Manage Subscription
+          </button>
+        </SubscriptionDetailsButton>
+      </Show>
+    )
+  }
+  ```
+</If>
+
 <If sdk="vue">
   ```vue {{ filename: 'billing.vue' }}
   <script setup lang="ts">
@@ -143,13 +181,6 @@ The `<SubscriptionDetailsButton />` component renders a button that opens the Su
 All props are optional.
 
 <Properties>
-  - `for?`
-  - `'user' | 'organization'`
-
-  Determines whether to show Subscription details for the current user or Organization. Defaults to `'user'`.
-
-  ---
-
   - `children?`
   - `React.ReactNode`
 
@@ -157,17 +188,26 @@ All props are optional.
 
   ---
 
+  - `for?`
+  - `'user' | 'organization'`
+
+  Determines whether to show Subscription details for the current user or Organization. Defaults to `'user'`.
+
+  ---
+
   - `onSubscriptionCancel?`
   - `() => void`
 
-  A callback function that is called when a Subscription is cancelled.
+  A callback function that is called when a Subscription is canceled.
 
   ---
 
   - `subscriptionDetailsProps?`
-  - `{ appearance: Appearance }`
+  - `{ appearance?: Appearance; portalId?: string; portalRoot?: HTMLElement | null }`
 
   Options for the Subscription details drawer. Accepts the following properties:
 
   - [`appearance`](/docs/guides/customizing-clerk/appearance-prop/overview): an object used to style your components. For example: `<SubscriptionDetailsButton subscriptionDetailsProps={{ appearance: { ... } }} />`.
+  - `portalId`: the ID of the portal element used to render the Subscription details drawer.
+  - `portalRoot`: the HTML element in which to render the Subscription details drawer.
 </Properties>

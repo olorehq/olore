@@ -1,0 +1,37 @@
+---
+id: GroupByCallback
+title: GroupByCallback
+---
+
+```ts
+type GroupByCallback<TContext, TKeys> = (refs) => TKeys;
+```
+
+Defined in: [packages/db/src/query/builder/types.ts:643](https://github.com/TanStack/db/blob/main/packages/db/src/query/builder/types.ts#L643)
+
+GroupByCallback - Type for groupBy clause callback functions
+
+These callbacks receive refs for all available tables and should return
+expressions that will be used for grouping query results.
+
+Example: `(refs) => refs.orders.status`
+
+## Type Parameters
+
+### TContext
+
+`TContext` *extends* [`Context`](../interfaces/Context.md)
+
+### TKeys
+
+`TKeys` = `any`
+
+## Parameters
+
+### refs
+
+[`RefsForContext`](RefsForContext.md)\<`TContext`\>
+
+## Returns
+
+`TKeys`

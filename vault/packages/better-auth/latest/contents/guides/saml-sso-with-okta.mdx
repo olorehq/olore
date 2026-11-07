@@ -1,9 +1,10 @@
 ---
+icon: guidesSAMLSSOWithOkta
 title: SAML SSO with Okta
 description: A guide to integrating SAML Single Sign-On (SSO) with Better Auth, featuring Okta
 ---
 
-This guide walks you through setting up SAML Single Sign-On (SSO) with your Identity Provider (IdP), using Okta as an example. For advanced configuration details and the full API reference, check out the [SSO Plugin Documentation](/docs/plugins/sso).
+This guide walks you through setting up SAML Single Sign-On (SSO) with your Identity Provider (IdP), using Okta as an example. For every SAML option, see [SAML providers](/docs/plugins/sso/saml) and the [SSO reference](/docs/plugins/sso/reference).
 
 ## What is SAML?
 
@@ -26,14 +27,14 @@ In this setup:
 
 5. Configure the following settings:
 
-   * **Single Sign-on URL**: Your Better Auth callback endpoint (e.g., `http://localhost:3000/api/auth/sso/saml2/callback/sso`). Note: `sso` is your `providerId`
+   * **Single Sign-on URL**: Your Better Auth callback endpoint (e.g., `http://localhost:3000/api/auth/sso/saml2/sp/acs/sso`). Note: `sso` is your `providerId`
    * **Audience URI (SP Entity ID)**: Your Better Auth metadata URL (e.g., `http://localhost:3000/api/auth/sso/saml2/sp/metadata`)
    * **Name ID format**: Email Address or any of your choice.
 
 6. Download the IdP metadata XML file and certificate
 
-<Callout type="info">
-  **IdP-Initiated SSO**: If you want users to access your app from the Okta dashboard, make sure the **Single Sign-on URL** points to the callback endpoint (`/api/auth/sso/saml2/callback/{providerId}`). Better Auth automatically handles both SP-initiated and IdP-initiated flows.
+<Callout type="warn">
+  **IdP-initiated SSO**: To let users start from the IdP dashboard, point the **Single Sign-on URL** at `/api/auth/sso/saml2/sp/acs/{providerId}` and set `saml: { allowIdpInitiated: true }` in the `sso()` options. It is off by default, because anyone with an account at the IdP could then sign a victim into the attacker's account. The setting applies to every SAML provider. Enable it only when the IdP requires it; see [IdP-initiated SSO](/docs/plugins/sso/saml#idp-initiated-sso).
 </Callout>
 
 ### Step 2: Configure Better Auth
@@ -49,7 +50,6 @@ const ssoConfig = {
       // SP Configuration
       issuer: "http://localhost:3000/api/auth/sso/saml2/sp/metadata",
       entryPoint: "https://trial-1076874.okta.com/app/trial-1076874_samltest_1/exktofb0a62hqLAUL697/sso/saml",
-      callbackUrl: "http://localhost:3000/api/auth/sso/saml2/sp/acs/sso",
       // IdP Configuration
       idpMetadata: {
         entityID: "https://trial-1076874.okta.com/app/exktofb0a62hqLAUL697/sso/saml/metadata",
@@ -64,16 +64,8 @@ MIIDqjCCApKgAwIBAgIGAZhVGMeUMA0GCSqGSIb3DQEBCwUAMIGVMQswCQYDVQQGEwJVUzETMBEG
 [Your Okta Certificate]
 ...
 -----END CERTIFICATE-----`,
-      
-      // SP Metadata
-      spMetadata: {
-        metadata: `<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" 
-          entityID="http://localhost:3000/api/sso/saml2/sp/metadata">
-          ...
-          [Your SP Metadata XML]
-          ...
-        </md:EntityDescriptor>`
-      }
+      // Better Auth generates the SP metadata from `issuer` and the ACS URL.
+      // If you supply your own `spMetadata.metadata`, its entityID becomes the SP entity ID and the default audience.
     }
   }]
 }
@@ -152,15 +144,13 @@ await authClient.signIn.sso({
 
 **Important Notes**:
 
-* DummyIDP should ONLY be used for development and testing
-* Never use these certificates in production
 * The example uses `localhost:3000` - adjust URLs for your environment
 * For production, always use proper IdP providers like Okta, Azure AD, or OneLogin
-* `callbackUrl` is the SAML ACS endpoint URL. If omitted, it defaults to `{baseURL}/sso/saml2/sp/acs/{providerId}`. The post-login destination is controlled by `callbackURL` in `signIn.sso()`
+* The ACS URL is derived automatically from `{baseURL}/sso/saml2/sp/acs/{providerId}`. The post-login destination is controlled by `callbackURL` in `signIn.sso()`
 
 ### Step 5: Dynamically Registering SAML Providers
 
-For dynamic registration, you should register SAML providers using the API. See the [SSO Plugin Documentation](/docs/plugins/sso#register-a-saml-provider) for detailed registration instructions.
+For dynamic registration, you should register SAML providers using the API. See the [SSO Plugin Documentation](/docs/plugins/sso/saml#register-a-saml-provider) for detailed registration instructions.
 
 Example registration:
 
@@ -178,5 +168,7 @@ await authClient.sso.register({
 ## Additional Resources
 
 * [SSO Plugin Documentation](/docs/plugins/sso)
+* [SAML providers](/docs/plugins/sso/saml)
+* [SSO reference](/docs/plugins/sso/reference)
 * [Okta SAML Documentation](https://developer.okta.com/docs/concepts/saml/)
 * [SAML 2.0 Specification](https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf)

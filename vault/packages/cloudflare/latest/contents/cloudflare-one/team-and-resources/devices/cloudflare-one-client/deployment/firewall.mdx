@@ -78,7 +78,7 @@ To deploy WARP in FedRAMP High environments, you will need to allow different do
 
 </Details>
 
-## WARP ingress IP
+## Cloudflare One Client ingress IP {/* warp-ingress-ip */}
 
 The Cloudflare One Client connects to the following IP addresses, depending on which [tunnel protocol](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/configure/settings/#device-tunnel-protocol) is configured for your device (WireGuard or MASQUE). All network traffic from your device to Cloudflare goes through these IPs and ports over UDP.
 
@@ -143,7 +143,7 @@ The client connects to the following destinations to verify general Internet con
 
 - `162.159.197.3`
 - `2606:4700:102::3`
-- `engage.cloudflareclient.com`: The client will always send requests directly to an IP in the [WARP ingress IPv4 or IPv6 range](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/firewall/#warp-ingress-ip) (or to your [`override_warp_endpoint`](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/mdm-deployment/parameters/#override_warp_endpoint) if set). Requests will not use a proxy server, even if one is configured for the system.
+- `engage.cloudflareclient.com`: The client will always send requests directly to an IP in the [ingress IPv4 or IPv6 range](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/firewall/#warp-ingress-ip) (or to your [`override_warp_endpoint`](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/mdm-deployment/parameters/#override_warp_endpoint) if set). Requests will not use a proxy server, even if one is configured for the system.
 
 Even though `engage.cloudflareclient.com` may resolve to different IP addresses, the Cloudflare One Client overrides the resolved IPs with the IPs listed above. To avoid connectivity issues, ensure that the above IPs are permitted through your firewall.
 
@@ -163,7 +163,7 @@ The Cloudflare One Client reports connectivity issues to the Network Error Loggi
 
 ## Latency statistics (optional)
 
-The Cloudflare One Client generates ICMP traffic to the [WARP ingress IPs](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/firewall/#warp-ingress-ip) when running tunnel latency tests. This is not technically required to operate but will result in errors in our logs if not excluded properly.
+The Cloudflare One Client generates ICMP traffic to the [ingress IPs](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/firewall/#warp-ingress-ip) when running tunnel latency tests. This is not technically required to operate but will result in errors in our logs if not excluded properly.
 
 ## Time synchronization (optional)
 
@@ -175,13 +175,15 @@ The Cloudflare One Client attempts to synchronize the exact time by NTP (`UDP 12
 
 If your organization does not currently allow inbound/outbound communication over the IP addresses, ports, and domains described above, you must manually add an exception. The rule at a minimum needs to be scoped to the following process based on your platform:
 
-- Windows: `C:\Program Files\Cloudflare\Cloudflare WARP\warp-svc.exe`
-- macOS: You must explicitly allow both the core networking daemon and GUI component as shown in the following instructions.
+- Windows: `C:\Program Files\Cloudflare\Cloudflare WARP\warp-svc.exe`, `C:\Program Files\Cloudflare\Cloudflare WARP\warp-updater.exe`, and `C:\Program Files\Cloudflare\Cloudflare WARP\warp-updater-armed.exe`
+- macOS: You must explicitly allow the core networking daemon, updater, and GUI component as shown in the following instructions.
   1.  Core networking daemon: `/Applications/Cloudflare WARP.app/Contents/Resources/CloudflareWARP`
 
       This binary does not have a Bundle ID and must be allowed via full path.
 
-  2.  GUI component, choose one of the following three identifiers depending on your MDM or firewall vendor's preferred format:
+  2.  Updater: `/Applications/Cloudflare WARP.app/Contents/Resources/warp-updater`
+
+  3.  GUI component, choose one of the following three identifiers depending on your MDM or firewall vendor's preferred format:
 
       `/Applications/Cloudflare WARP.app` (Path)
 
@@ -199,7 +201,7 @@ If your organization does not currently allow inbound/outbound communication ove
       	- **Block all incoming connections**
       	- **Automatically allow built-in software to receive incoming connections**
       	- **Automatically allow downloaded signed software to receive incoming connections**
-      2. Add the [WARP daemon and GUI processes](#required-scopes) to the firewall exceptions list and set them to _Allow incoming connections_.
+      2. Add the [WARP daemon, updater, and GUI processes](#required-scopes) to the firewall exceptions list and set them to _Allow incoming connections_.
       3. Restrict the other allow exceptions to only the processes you want receiving traffic.
       4. (Optional) Do not grant users administrative privileges, otherwise they will be able to modify firewall settings and exceptions.
 

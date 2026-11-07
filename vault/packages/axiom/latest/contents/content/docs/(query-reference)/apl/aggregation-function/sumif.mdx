@@ -1,0 +1,137 @@
+---
+title: sumif
+description: 'This page explains how to use the sumif aggregation function in APL.'
+---
+
+The `sumif` aggregation function in Axiom Processing Language (APL) computes the sum of a numeric expression for records that meet a specified condition. This function is useful when you want to filter data based on specific criteria and aggregate the numeric values that match the condition. Use `sumif` when you need to apply conditional logic to sums, such as calculating the total request duration for successful HTTP requests or summing the span durations in OpenTelemetry traces for a specific service.
+
+## Usage
+
+### Syntax
+
+```kusto
+sumif(numeric_expression, condition)
+```
+
+### Parameters
+
+- `numeric_expression`: The numeric field or expression you want to sum.
+- `condition`: A boolean expression that determines which records contribute to the sum. Only the records that satisfy the condition are considered.
+
+### Returns
+
+`sumif` returns the sum of the values in `numeric_expression` for records where the `condition` is true. If no records meet the condition, the result is 0.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this use case, we calculate the total request duration for HTTP requests that returned a `200` status code.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize total_req_duration = sumif(req_duration_ms, status == '200')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20total_req_duration%20%3D%20sumif%28req_duration_ms%2C%20status%20%3D%3D%20%27200%27%29%22%7D)
+
+**Output**
+
+| total_req_duration |
+|--------------------|
+| 145000             |
+
+This query computes the total request duration (in milliseconds) for all successful HTTP requests (those with a status code of `200`).
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In this example, we sum the span durations for the `frontend` service in OpenTelemetry traces.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize total_duration = sumif(duration, ['service.name'] == 'frontend')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20summarize%20total_duration%20%3D%20sumif%28duration%2C%20%5B%27service.name%27%5D%20%3D%3D%20%27frontend%27%29%22%7D)
+
+**Output**
+
+| total_duration |
+|----------------|
+| 32000          |
+
+This query sums the span durations for traces related to the `frontend` service, providing insight into how long this service has been running over time.
+
+</Tab>
+<Tab title="Security logs">
+
+Here, we calculate the total request duration for failed HTTP requests (those with status codes other than `200`).
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize total_req_duration_failed = sumif(req_duration_ms, status != '200')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20total_req_duration_failed%20%3D%20sumif%28req_duration_ms%2C%20status%20%21%3D%20%27200%27%29%22%7D)
+
+**Output**
+
+| total_req_duration_failed |
+|---------------------------|
+| 64000                     |
+
+This query computes the total request duration for all failed HTTP requests (where the status code isn’t `200`), which can be useful for security log analysis.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**avgif**](/apl/aggregation-function/avgif): Computes the average of a numeric expression for records that meet a specified condition. Use `avgif` when you’re interested in the average value, not the total sum.
+- [**countif**](/apl/aggregation-function/countif): Counts the number of records that satisfy a condition. Use `countif` when you need to know how many records match a specific criterion.
+- [**minif**](/apl/aggregation-function/minif): Returns the minimum value of a numeric expression for records that meet a condition. Useful when you need the smallest value under certain criteria.
+- [**maxif**](/apl/aggregation-function/maxif): Returns the maximum value of a numeric expression for records that meet a condition. Use `maxif` to identify the highest values under certain conditions.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `sumif` equivalent functionality requires using a `stats` command with a `where` clause to filter the data. In APL, you can use `sumif` to simplify this operation by combining both the condition and the summing logic into one function.
+
+<CodeGroup>
+```sql Splunk example
+| stats sum(duration) as total_duration where status="200"
+```
+
+```kusto APL equivalent
+summarize total_duration = sumif(duration, status == '200')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, achieving a similar result typically involves using a `CASE` statement inside the `SUM` function to conditionally sum values based on a specified condition. In APL, `sumif` provides a more concise approach by allowing you to filter and sum in a single function.
+
+<CodeGroup>
+```sql SQL example
+SELECT SUM(CASE WHEN status = '200' THEN duration ELSE 0 END) AS total_duration
+FROM http_logs
+```
+
+```kusto APL equivalent
+summarize total_duration = sumif(duration, status == '200')
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

@@ -1,0 +1,376 @@
+---
+title: parse
+description: 'This page explains how to use the parse operator function in APL.'
+---
+
+The `parse` operator in APL enables you to extract and structure information from unstructured or semi-structured text data, such as log files or strings. You can use the operator to specify a pattern for parsing the data and define the fields to extract. This is useful when analyzing logs, tracing information from text fields, or extracting key-value pairs from message formats.
+
+You can find the `parse` operator helpful when you need to process raw text fields and convert them into a structured format for further analysis. It’s particularly effective when working with data that doesn’t conform to a fixed schema, such as log entries or custom messages.
+
+## Importance of the parse operator
+
+- **Data extraction:** It allows you to extract structured data from unstructured or semi-structured string fields, enabling you to transform raw data into a more usable format.
+- **Flexibility:** The parse operator supports different parsing modes (simple, relaxed, regex) and provides various options to define parsing patterns, making it adaptable to different data formats and requirements.
+- **Performance:** By extracting only the necessary information from string fields, the parse operator helps optimize query performance by reducing the amount of data processed and enabling more efficient filtering and aggregation.
+- **Readability:** The parse operator provides a clear and concise way to define parsing patterns, making the query code more readable and maintainable.
+
+## Usage
+
+### Syntax
+
+```kusto
+| parse [kind=simple|regex|relaxed] Expression with [*] StringConstant FieldName [: FieldType] [*] ...
+```
+
+### Parameters
+
+- `kind`: Optional parameter to specify the parsing mode. Its value can be `simple` for exact matches, `regex` for regular expressions, or `relaxed` for relaxed parsing. The default is `simple`.
+- `Expression`: The string expression to parse.
+- `StringConstant`: A string literal or regular expression pattern to match against.
+- `FieldName`: The name of the field to assign the extracted value.
+- `FieldType`: Optional parameter to specify the data type of the extracted field. The default is `string`.
+- `*`: Wildcard to match any characters before or after the `StringConstant`.
+- `...`: You can specify additional `StringConstant` and `FieldName` pairs to extract multiple values.
+
+### Returns
+
+The parse operator returns the input dataset with new fields added based on the specified parsing pattern. The new fields contain the extracted values from the parsed string expression. If the parsing fails for a particular row, the corresponding fields have null values.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+For log analysis, you can extract the HTTP request duration from the `uri` field using the `parse` operator.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| parse uri with * 'duration=' req_duration_ms:int
+| project _time, req_duration_ms, uri
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20parse%20uri%20with%20%2A%20'duration%3D'%20req_duration_ms%3Aint%20%7C%20project%20_time%2C%20req_duration_ms%2C%20uri%22%7D)
+
+**Output**
+
+| _time              | req_duration_ms | uri                        |
+|--------------------|-----------------|----------------------------|
+| 2024-10-18T12:00:00| 200             | /api/v1/resource?duration=200|
+| 2024-10-18T12:00:05| 300             | /api/v1/resource?duration=300|
+
+This query extracts the `req_duration_ms` from the `uri` field and projects the time and duration for each HTTP request.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, the `parse` operator is useful for extracting components of trace data, such as the service name or status code.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| parse trace_id with * '-' ['service.name']
+| project _time, ['service.name'], trace_id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20parse%20trace_id%20with%20%2A%20'-'%20%5B'service.name'%5D%20%7C%20project%20_time%2C%20%5B'service.name'%5D%2C%20trace_id%22%7D)
+
+**Output**
+
+| _time              | service.name       | trace_id                          |
+|--------------------|--------------------|-----------------------------------|
+| 2024-10-18T12:00:00| frontend            | a1b2c3d4-frontend                 |
+| 2024-10-18T12:01:00| cartservice         | e5f6g7h8-cartservice              |
+
+This query extracts the `service.name` from the `trace_id` and projects the time and service name for each trace.
+
+</Tab>
+<Tab title="Security logs">
+
+For security logs, you can use the `parse` operator to extract status codes and the method of HTTP requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| parse method with * '/' status
+| project _time, method, status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20parse%20method%20with%20%2A%20'%2F'%20status%20%7C%20project%20_time%2C%20method%2C%20status%22%7D)
+
+**Output**
+
+| _time              | method   | status |
+|--------------------|----------|--------|
+| 2024-10-18T12:00:00| GET      | 200    |
+| 2024-10-18T12:00:05| POST     | 404    |
+
+This query extracts the HTTP method and status from the `method` field and shows them along with the timestamp.
+
+</Tab>
+</Tabs>
+
+## Other examples
+
+### Parse content type
+
+This example parses the `content_type` field to extract the `datatype` and `format` values separated by a `/`. The extracted values are projected as separate fields.
+
+**Original string**
+
+```bash
+application/charset=utf-8
+```
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| parse content_type with datatype '/' format
+| project datatype, format
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20parse%20content_type%20with%20datatype%20'%2F'%20format%20%7C%20project%20datatype%2C%20format%22%7D)
+
+**Output**
+
+```json
+{
+  "datatype": "application",
+  "format": "charset=utf-8"
+}
+```
+
+### Parse user agent
+
+This example parses the `user_agent` field to extract the operating system name (`os_name`) and version (`os_version`) enclosed within parentheses. The extracted values are projected as separate fields.
+
+**Original string**
+
+```bash
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36
+```
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| parse user_agent with * '(' os_name ' ' os_version ';' * ')' *
+| project os_name, os_version
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20parse%20user_agent%20with%20*%20'('%20os_name%20'%20'%20os_version%20'%3B'%20*%20')'%20*%20%7C%20project%20os_name%2C%20os_version%22%7D)
+
+**Output**
+
+```json
+{
+  "os_name": "Windows NT 10.0; Win64; x64",
+  "os_version": "10.0"
+}
+```
+
+### Parse URI endpoint
+
+This example parses the `uri` field to extract the `endpoint` value that appears after `/api/v1/`. The extracted value is projected as a new field.
+
+**Original string**
+
+```bash
+/api/v1/ping/user/textdata
+```
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| parse uri with '/api/v1/' endpoint
+| project endpoint
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20parse%20uri%20with%20'%2Fapi%2Fv1%2F'%20endpoint%20%7C%20project%20endpoint%22%7D)
+
+**Output**
+
+```json
+{
+  "endpoint": "ping/user/textdata"
+}
+```
+
+### Parse ID into region, tenant, and user ID
+
+This example demonstrates how to parse the `id` field into three parts: `region`, `tenant`, and `userId`. The `id` field is structured with these parts separated by hyphens (`-`). The extracted parts are projected as separate fields.
+
+**Original string**
+
+```bash
+usa-acmeinc-3iou24
+```
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| parse id with region '-' tenant '-' userId
+| project region, tenant, userId
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20parse%20id%20with%20region%20'-'%20tenant%20'-'%20userId%20%7C%20project%20region%2C%20tenant%2C%20userId%22%7D)
+
+**Output**
+
+```json
+{
+  "region": "usa",
+  "tenant": "acmeinc",
+  "userId": "3iou24"
+}
+```
+
+### Parse in relaxed mode
+
+The parse operator supports a relaxed mode that allows for more flexible parsing. In relaxed mode, Axiom treats the parsing pattern as a regular string and matches results in a relaxed manner. If some parts of the pattern are missing or don’t match the expected type, Axiom assigns null values.
+
+This example parses the `log` field into four separate parts (`method`, `url`, `status`, and `responseTime`) based on a structured format. The extracted parts are projected as separate fields.
+
+**Original string**
+
+```bash
+GET /home 200 123ms
+POST /login 500 nonValidResponseTime
+PUT /api/data 201 456ms
+DELETE /user/123 404 nonValidResponseTime
+```
+
+**Query**
+
+```kusto
+['HttpRequestLogs']
+| parse kind=relaxed log with method " " url " " status:int " " responseTime
+| project method, url, status, responseTime
+```
+
+**Output**
+
+```json
+[
+  {
+    "method": "GET",
+    "url": "/home",
+    "status": 200,
+    "responseTime": "123ms"
+  },
+  {
+    "method": "POST",
+    "url": "/login",
+    "status": 500,
+    "responseTime": null
+  },
+  {
+    "method": "PUT",
+    "url": "/api/data",
+    "status": 201,
+    "responseTime": "456ms"
+  },
+  {
+    "method": "DELETE",
+    "url": "/user/123",
+    "status": 404,
+    "responseTime": null
+  }
+]
+```
+
+### Parse in regex mode
+
+The parse operator supports a regex mode that allows you to parse use regular expressions. In regex mode, Axiom treats the parsing pattern as a regular expression and matches results based on the specified regex pattern.
+
+This example demonstrates how to parse Kubernetes pod log entries using regex mode to extract various fields such as `podName`, `namespace`, `phase`, `startTime`, `nodeName`, `hostIP`, and `podIP`. The parsing pattern is treated as a regular expression, and the extracted values are assigned to the respective fields.
+
+**Original string**
+
+```bash
+Log: PodStatusUpdate (podName=nginx-pod, namespace=default, phase=Running, startTime=2023-05-14 08:30:00, nodeName=node-1, hostIP=192.168.1.1, podIP=10.1.1.1)
+```
+
+**Query**
+
+```kusto
+['PodLogs']
+| parse kind=regex AppName with @"Log: PodStatusUpdate \(podName=" podName: string @", namespace=" namespace: string @", phase=" phase: string @", startTime=" startTime: datetime @", nodeName=" nodeName: string @", hostIP=" hostIP: string @", podIP=" podIP: string @"\)"
+| project podName, namespace, phase, startTime, nodeName, hostIP, podIP
+```
+
+**Output**
+
+```json
+{
+  "podName": "nginx-pod",
+  "namespace": "default",
+  "phase": "Running",
+  "startTime": "2023-05-14 08:30:00",
+  "nodeName": "node-1",
+  "hostIP": "192.168.1.1",
+  "podIP": "10.1.1.1"
+}
+```
+
+## Best practices
+
+When using the parse operator, consider the following best practices:
+
+- Use appropriate parsing modes: Choose the parsing mode (simple, relaxed, regex) based on the complexity and variability of the data being parsed. Simple mode is suitable for fixed patterns, while relaxed and regex modes offer more flexibility.
+- Handle missing or invalid data: Consider how to handle scenarios where the parsing pattern doesn’t match or the extracted values don’t conform to the expected types. Use the relaxed mode or provide default values to handle such cases.
+- Project only necessary fields: After parsing, use the project operator to select only the fields that are relevant for further querying. This helps reduce the amount of data transferred and improves query performance.
+- Use parse in combination with other operators: Combine parse with other APL operators like where, extend, and summarize to filter, transform, and aggregate the parsed data effectively.
+
+By following these best practices and understanding the capabilities of the parse operator, you can effectively extract and transform data from string fields in APL, enabling powerful querying and insights.
+
+## List of related operators
+
+- [extend](/apl/tabular-operators/extend-operator): Use the `extend` operator when you want to add calculated fields without parsing text.
+- [project](/apl/tabular-operators/project-operator): Use `project` to select and rename fields after parsing text.
+- [extract](/apl/scalar-functions/string-functions#extract): Use `extract` to retrieve the first substring matching a regular expression from a source string.
+- [extract_all](/apl/scalar-functions/string-functions#extract-all): Use `extract_all` to retrieve all substrings matching a regular expression from a source string.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk, the `rex` command is often used to extract fields from raw events or text. In APL, the `parse` operator performs a similar function. You define the text pattern to match and extract fields, allowing you to extract structured data from unstructured strings.
+
+<CodeGroup>
+```splunk Splunk example
+index=web_logs | rex field=_raw "duration=(?<duration>\d+)"
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| parse uri with * "duration=" req_duration_ms:int
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, there isn’t a direct equivalent to the `parse` operator. Typically, you use string functions such as `SUBSTRING` or `REGEXP` to extract parts of a text field. However, APL’s `parse` operator simplifies this process by allowing you to define a text pattern and extract multiple fields in a single statement.
+
+<CodeGroup>
+```sql SQL example
+SELECT SUBSTRING(uri, CHARINDEX('duration=', uri) + 9, 3) AS req_duration_ms
+FROM sample_http_logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| parse uri with * "duration=" req_duration_ms:int
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

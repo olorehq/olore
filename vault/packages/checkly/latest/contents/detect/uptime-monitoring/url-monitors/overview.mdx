@@ -1,13 +1,14 @@
 ---
-title: 'URL Monitors Overview'
+title: 'URL monitors overview'
 description: 'Monitor websites and apps to verify their availability and performance.'
 sidebarTitle: Overview
+canonical: 'https://www.checklyhq.com/docs/detect/uptime-monitoring/url-monitors/overview/'
 ---
 <Tip>
-**Monitoring as Code**: Learn more about the [URL Monitor Construct](/constructs/url-monitor).
+**Monitoring as Code**: Learn more about the [URL monitor construct](/constructs/url-monitor).
 </Tip>
 
-## What are URL Monitors?
+## What are URL monitors?
 
 URL monitors track the availability of your HTTP-based services by sending requests to specified URLs and validating avaliability and performance.
 
@@ -33,9 +34,13 @@ URL monitors track the availability of your HTTP-based services by sending reque
 * Checking that your SSL certificate is still valid
 * Confirming that a public pricing endpoint is reachable for customers
 
-## How URL Monitors Work
+## How URL monitors work
 
 URL monitors send HTTP requests to specified URLs and validate availability and performance. They can be configured to check for specific status codes and response times while running from multiple global locations.
+
+<Info>
+URL monitors always send a `GET` request and only support status code assertions. To send a different HTTP method (for example `POST`), add headers or a body, or assert on the response body or headers, use an [API check](/detect/synthetic-monitoring/api-checks/overview) instead.
+</Info>
 
 <Steps>
 <Step title="Enter your URL">
@@ -60,7 +65,7 @@ Schedule your monitor to run at the frequency you want.
 
 </Steps>
 
-## URL Monitor Results
+## URL monitor results
 
 URL monitor results show details about each request and help you understand if your endpoint was available and performing as expected at the time of the check.
 
@@ -101,5 +106,5 @@ Learn more in our documentation on [Results](/concepts/results).
 </Accordion>
 
 <Accordion title="Implement as a Construct">
-For monitoring as code workflows, use the URL Monitor construct to version control your monitoring configuration and deploy alongside your application code. [Learn about URL Monitor Construct →](/constructs/url-monitor)
+For monitoring as code workflows, use the URL monitor construct to version control your monitoring configuration and deploy alongside your application code. [Learn about URL monitor construct →](/constructs/url-monitor)
 </Accordion>

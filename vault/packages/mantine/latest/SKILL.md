@@ -1,40 +1,39 @@
 ---
 name: olore-mantine-latest
-description: Local Mantine documentation reference (latest). Mantine is a React component library with 100+ UI components, hooks, form management, theming, dark mode, charts, date pickers, and extension packages.
+description: Local Mantine documentation reference (latest). Mantine documentation. Use for React component library, hooks, forms, notifications, dark mode, theming, and 100+ UI components.
 ---
 
 # Mantine Documentation
 
-Mantine is a React component library focused on developer experience. It provides 100+ UI components, 80+ hooks, a form management system, theming with dark mode, charts, date/time pickers, a scheduling calendar, and extension packages for carousels, notifications, modals, and more.
+Mantine documentation. Use for React component library, hooks, forms, notifications, dark mode, theming, and 100+ UI components.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started / installation | `contents/getting-started.mdx` |
+| Getting started | `contents/getting-started.mdx` |
 | Core components overview | `contents/core/package.mdx` |
 | Hooks reference | `contents/hooks/package.mdx` |
-| Form management | `contents/form/use-form.mdx` |
+| Forms | `contents/form/use-form.mdx` |
 | Theming and dark mode | `contents/theming/mantine-provider.mdx` |
 | Styling system | `contents/styles/styles-overview.mdx` |
 | Charts | `contents/charts/getting-started.mdx` |
-| Date/time pickers | `contents/dates/getting-started.mdx` |
-| Extension packages | `contents/x/extensions.mdx` |
-| Framework guides (Next.js, Vite, etc.) | `contents/guides/next.mdx` |
+| Dates and time pickers | `contents/dates/getting-started.mdx` |
+| Scheduling calendar | `contents/schedule/getting-started.mdx` |
+| Extensions (notifications, modals, spotlight) | `contents/x/extensions.mdx` |
+| Framework guides and migration | `contents/guides/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Mantine UI components (Button, Modal, Select, Table, Grid, etc.)
+- Mantine UI components (Button, Modal, Select, Table, Grid, AppShell, etc.)
 - Mantine hooks (use-disclosure, use-local-storage, use-hotkeys, etc.)
-- Theming, dark mode, and color schemes
+- Theming, dark mode and color schemes
 - Form handling with @mantine/form
-- Styling with CSS variables, style props, and Styles API
-- Charts (AreaChart, BarChart, LineChart, PieChart, etc.)
-- Date and time picker components
+- Styling: CSS modules, CSS variables, style props, Styles API
+- Charts, date/time pickers and the schedule calendar
 - Extension packages (Carousel, Notifications, Spotlight, Dropzone, Tiptap)
-- Framework integration (Next.js, Vite, React Router, Storybook)
-- Migration between Mantine versions
+- Framework setup (Next.js, Vite, React Router) and migration between versions
 
 ## How to find information
 

@@ -44,7 +44,7 @@ import ControllingPlayback from "/snippets/runtimes/animation-playback/controlli
   <Tab title="New Runtime (Recommended)">
     #### Invoking Playback Controls
 
-    The new runtime uses the `useRive` hook to access the Rive instance for controlling playback: `play`, `pause`, `reset`.
+    The new runtime uses the `useRive` hook to access the Rive instance for controlling playback: `play` and `pause`.
 
     ```javascript
     export default function PlaybackExample() {
@@ -57,10 +57,6 @@ import ControllingPlayback from "/snippets/runtimes/animation-playback/controlli
 
       const pause = () => {
         riveViewRef?.pause();
-      };
-
-      const reset = () => {
-        riveViewRef?.reset();
       };
 
       return (
@@ -77,7 +73,6 @@ import ControllingPlayback from "/snippets/runtimes/animation-playback/controlli
           </View>
           <Button onPress={play} title="Play" />
           <Button onPress={pause} title="Pause" />
-          <Button onPress={reset} title="Reset" />
         </View>
       );
     }

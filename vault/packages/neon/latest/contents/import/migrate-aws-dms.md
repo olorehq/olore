@@ -1,7 +1,7 @@
 ---
 title: Migrate with AWS Database Migration Service (DMS)
 summary: >-
-  AWS Database Migration Service (DMS) can migrate data to a Neon Postgres
+  AWS Database Migration Service (DMS) can migrate data to a Lakebase Postgres
   target from sources including PostgreSQL, MySQL, Oracle, and SQL Server by
   configuring a replication instance, source endpoint, and Neon target endpoint.
   Use this guide when migrating an existing hosted database to Neon via DMS,
@@ -10,7 +10,7 @@ summary: >-
   endpoint setup, migration task configuration, table mapping, and post-migration
   verification in the Neon Console.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-16T19:45:35.340Z'
 ---
 
 This guide outlines the steps for using the AWS Database Migration Service (DMS) to migrate data to Neon from another hosted database server. AWS DMS supports a variety of database migration sources including PostgreSQL, MySQL, Oracle, and Microsoft SQL Server. For a complete list of data migration sources supported by AWS DMS, see [Source endpoints for data migration](https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Introduction.Sources.html#CHAP_Introduction.Sources.DataMigration).
@@ -40,7 +40,7 @@ Complete the following steps before you begin:
 4. Select **Target endpoint** as the **Endpoint type**.
 5. Provide an **Endpoint identifier** label for your new target endpoint. In this guide, we use `neon` as the identifier.
 6. In the **Target engine** drop-down menu, select `PostgreSQL`.
-7. Under **Access to endpoint database**, select **Provide access information manually** and enter the information outlined below. You can obtain the connection details from your Neon connection string, which you can find by clicking the **Connect** button on your Neon **Project Dashboard**. Your connection string will look similar to this: `postgresql://daniel:AbC123dEf@ep-curly-term-54009904.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"`.
+7. Under **Access to endpoint database**, select **Provide access information manually** and enter the information outlined below. You can obtain the connection details from your Neon connection string, which you can find by clicking **Connect** in the Console nav. Your connection string will look similar to this: `postgresql://daniel:AbC123dEf@ep-curly-term-54009904.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"`.
    - **Server name**: Specify your Neon hostname, which is this portion of your connection string: `ep-curly-term-54009904.us-east-2.aws.neon.tech`
    - **Port**: `5432`
    - **User name**: Specify the Neon user.
@@ -109,7 +109,7 @@ Configure the table mapping:
 To verify that data was migrated to your Neon database:
 
 1. In the Neon Console, select your Neon project.
-2. Select **Tables** from the side bar.
+2. Select **Postgres database** > **Tables** from the sidebar.
 3. Select the **Branch**, **Database**, and **Schema** where you imported the data.
    ![Neon Tables view showing imported data](/docs/import/dms_neon_table_data.png).
 

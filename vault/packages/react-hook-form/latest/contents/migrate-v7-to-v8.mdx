@@ -1,6 +1,8 @@
 ---
 title: Migrate V7 to V8 (BETA)
+seoTitle: React Hook Form v8 Migration Guide
 description: React Hook Form V8 migration guide.
+metaDescription: "Upgrade from React Hook Form v7 to v8: breaking changes, renamed APIs, and step-by-step code updates to migrate your React forms safely."
 sidebar: migrateV7ToV8Links
 ---
 
@@ -12,22 +14,98 @@ npm install react-hook-form@beta
 
 ## React Compiler {#ReactCompiler}
 
-V8 adds first-class support for the [React Compiler](https://react.dev/learn/react-compiler). No additional configuration is required — React Hook Form is now compatible out of the box.
+V8 supports the [React Compiler](https://react.dev/learn/react-compiler). `useForm` returns the same object on every render, so the compiler can't tell when something read through that object changes. To work around this, the read methods `register`, `watch`, `getValues`, `getErrors` and `getFieldState` get a new reference whenever form state changes (see [Method References](#MethodReferences)). Two patterns keep compiled components up to date:
+
+- In nested components, subscribe with [`useFormState`](/docs/useformstate) instead of reading `formState` from `useFormContext()`. The compiler memoizes `<FormProvider {...methods}>` in the parent, so the context keeps the `formState` from the first render.
+- Destructure methods such as `getFieldState` from `useForm()` instead of calling them on the returned object. The compiler memoizes `methods.getFieldState("name")` on `methods`, which never changes, but a destructured `getFieldState` changes with form state, so its result is recomputed.
+
+```tsx copy
+function NestedInput() {
+  const { register, control } = useFormContext()
+  const { errors } = useFormState({ control }) // ✅ updates under the compiler
+
+  return (
+    <>
+      <input {...register("name", { required: "Name is required" })} />
+      <p>{errors.name?.message}</p>
+    </>
+  )
+}
+```
+
+For updates from a local `useFormState` subscription, pass its result to `getFieldState` so the compiler sees that dependency:
+
+```tsx copy
+const { control, getFieldState } = useForm()
+const formState = useFormState({ control })
+const { isDirty } = getFieldState("name", formState)
+```
+
+Use [`useWatch`](/docs/usewatch) to render values. Under the compiler, a destructured `getValues` from `useFormContext()` can stay stale during render. It still reads current values in event handlers.
 
 ## Flat Field Array {#FlatFieldArray}
 
-V8 supports flat field arrays, allowing simpler data structures when working with `useFieldArray`.
+V8 supports flat field arrays. Each primitive row in `fields` is an object with the row's `value` and its generated `key`, and the input is registered by index.
+
+```tsx copy
+// Before (V7) — each row had to be an object
+const { fields } = useFieldArray({ name: "items" }) // items: { value: string }[]
+fields.map((field, index) => (
+  <input key={field.id} {...register(`items.${index}.value`)} />
+))
+
+// After (V8) — primitive values work directly
+const { fields } = useFieldArray({ name: "items" }) // items: string[]
+fields.map((field, index) => (
+  <input key={field.key} {...register(`items.${index}`)} />
+))
+```
+
+Object rows are unchanged: `fields` spreads each row and adds `key`.
 
 ## Breaking Changes {#BreakingChanges}
 
 The following changes require updates to your existing code when upgrading from V7.
 
+### Method References {#MethodReferences}
+
+`register`, `watch`, `getValues`, `getErrors` and `getFieldState` no longer keep a stable reference. They get a new reference whenever form state changes, so the React Compiler sees fresh values. The object returned by `useForm` and the other methods (`setValue`, `handleSubmit`, `reset`, …) stay stable.
+
+Any `useEffect`, `useCallback` or `useMemo` that lists one of these methods as a dependency now runs again on every form state update. For example, `useEffect(() => register("x", rules), [register])` registers the field again after `unregister("x")`.
+
+```tsx copy
+// Before (V7)
+useEffect(() => {
+  register("x", { required: true })
+}, [register])
+
+// After (V8) — register during render
+register("x", { required: true })
+```
+
+To react to value changes in an effect, use [`subscribe`](/docs/useform/subscribe) instead of `watch` (see [watch Callback API](#watchCallback)).
+
+### unknown Instead of any {#UnknownTypes}
+
+Public types now use `unknown` instead of `any`. Code that relied on `any` to skip type checking needs explicit types:
+
+- Callbacks without a parameter type now receive `unknown`. This applies to `setValueAs`, `onChange` and `onBlur` in `register` options. Annotate the parameter:
+
+  ```tsx copy
+  // Before (V7) — v was any
+  register("name", { setValueAs: (v) => v.trim() })
+
+  // After (V8) — annotate the parameter
+  register("name", { setValueAs: (v: string) => v.trim() })
+  ```
+
+- [`Controller`](/docs/usecontroller/controller)'s `field.onChange` arguments, `ChangeHandler` event `target` and `type`, `RefCallBack` instances and `CustomElement.value` are typed as `unknown`.
+- `TContext` defaults to `unknown`. In a resolver that uses the default context, narrow `context` before reading from it, or pass a context type: `Resolver<FormValues, MyContext>`.
+- On untyped forms, nested `dirtyFields` and `touchedFields` are `unknown`. Pass a form type with `useForm<FormValues>()`, or narrow the value before you access nested fields.
+
 ### Input Ref {#InputRef}
 
-`register` now passes the input `ref` directly instead of a partial ref object.
-
-- **Before (V7):** register passed a partial object
-- **After (V8):** register passes the actual input ref
+`register`'s returned `ref` and [`Controller`](/docs/usecontroller/controller) / [`useController`](/docs/usecontroller)'s `field.ref` are still callback refs. In V8, RHF stores the supplied element for Controller fields instead of a proxy. This changes `FieldError.ref` and the ref used for error focus, `setFocus`, and native validation. To use the node yourself, call `field.ref(element)` from your own callback ref.
 
 See [#12773](https://github.com/react-hook-form/react-hook-form/issues/12773) for details.
 
@@ -49,8 +127,8 @@ Note: you can still append `id` or `key` as data — neither affects the render 
 
 ```tsx copy
 append({
-  key: "custom-key",  // stored as field data, does not override the render key
-  id: "custom-id",    // stored as field data, does not override the render key
+  key: "custom-key", // stored as field data, does not override the render key
+  id: "custom-id", // stored as field data, does not override the render key
 })
 
 fields[0].key // unique id used for re-render (auto-generated)
@@ -74,25 +152,43 @@ The `<Watch />` component prop `names` has been renamed to `name` for consistenc
 
 ### watch Callback API {#watchCallback}
 
-The `watch` subscription callback API has been removed. Use [`subscribe`](/docs/useform/subscribe) instead for reactive form value changes.
+The `watch(callback)` overload has been removed, along with its `WatchObserver` type. `watch` now only reads values. Use [`subscribe`](/docs/useform/subscribe) to run a callback when values change:
 
 ```tsx copy
 // Before (V7)
-watch((value, { name, type }) => console.log(value))
+useEffect(() => {
+  const { unsubscribe } = watch((value, { name, type }) => console.log(value))
+  return () => unsubscribe()
+}, [watch])
 
 // After (V8) — use subscribe
-subscribe({ formValues: true }, ({ values }) => console.log(values))
+useEffect(() => {
+  return subscribe({
+    formState: { values: true },
+    callback: ({ values }) => console.log(values),
+  })
+}, [subscribe])
 ```
+
+### valueAsDate {#valueAsDate}
+
+With `valueAsDate: true`, an empty input (`""`) now returns `null` instead of `Invalid Date`. This matches the native [`HTMLInputElement.valueAsDate`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/valueAsDate) behavior.
+
+```tsx copy
+register("birthday", { valueAsDate: true })
+
+// Empty input
+// Before (V7): Invalid Date
+// After (V8):  null
+```
+
+If you checked for an empty date with `isNaN(value.getTime())`, check for `null` instead.
 
 ### setValue {#setValue}
 
-`setValue` no longer directly updates `useFieldArray` fields. Use the `replace` method from `useFieldArray` instead when you need to overwrite an entire field array.
+As of the current beta, `setValue` still directly updates `useFieldArray` fields, unchanged from V7 — this section describes a planned change that has not yet shipped. If you need to overwrite an entire field array, the `replace` method from `useFieldArray` remains the recommended approach in both V7 and V8:
 
 ```tsx copy
-// Before (V7)
-setValue("items", newItems)
-
-// After (V8)
 const { replace } = useFieldArray({ name: "items" })
 replace(newItems)
 ```

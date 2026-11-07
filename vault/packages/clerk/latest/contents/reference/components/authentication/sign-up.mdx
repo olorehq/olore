@@ -1,7 +1,7 @@
 ---
 title: '`<SignUp />` component'
 description: Clerk's <SignUp /> component renders a UI for signing up users.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
+sdk: astro, chrome-extension, electron, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
 preview:
   src: '/sign-up'
   shadcn:
@@ -21,11 +21,18 @@ The `<SignUp />` component renders a UI for signing up users. The functionality 
   <If sdk="nextjs">
     If you would like to create a dedicated `/sign-up` page in your Next.js application, see the [dedicated guide](/docs/nextjs/guides/development/custom-sign-up-page) for more information.
 
+    <Include src="_partials/nextjs/catch-all-suspense" />
+
     ```tsx {{ filename: 'app/sign-up/[[...sign-up]]/page.tsx' }}
     import { SignUp } from '@clerk/nextjs'
+    import { Suspense } from 'react'
 
     export default function SignUpPage() {
-      return <SignUp />
+      return (
+        <Suspense>
+          <SignUp />
+        </Suspense>
+      )
     }
     ```
   </If>
@@ -43,8 +50,30 @@ The `<SignUp />` component renders a UI for signing up users. The functionality 
   <If sdk="expo">
     <Include src="_partials/expo/web-only-callout" />
 
-    ```jsx {{ filename: 'src/app/sign-up.web.tsx' }}
+    Expo Router requires a non-platform route alongside `src/app/sign-up.web.tsx`, so this example also includes `src/app/sign-up.tsx`, which renders the native [`<AuthView />`](/docs/reference/expo/native-components/auth-view) component on iOS and Android.
+
+    ```tsx {{ filename: 'src/app/sign-up.tsx' }}
+    import { AuthView } from '@clerk/expo/native-components'
+
+    export default function Page() {
+      return <AuthView mode="signUp" isDismissible={false} />
+    }
+    ```
+
+    ```tsx {{ filename: 'src/app/sign-up.web.tsx' }}
     import { SignUp } from '@clerk/expo/web'
+
+    export default function Page() {
+      return <SignUp />
+    }
+    ```
+
+    For a complete walkthrough, including redirecting native users once authentication completes, see the [custom sign-up page guide](/docs/guides/development/web-support/custom-sign-up-page).
+  </If>
+
+  <If sdk="react">
+    ```jsx {{ filename: 'src/pages/sign-up.tsx' }}
+    import { SignUp } from '@clerk/react'
 
     export default function SignUpPage() {
       return <SignUp />
@@ -52,9 +81,9 @@ The `<SignUp />` component renders a UI for signing up users. The functionality 
     ```
   </If>
 
-  <If sdk="react">
-    ```jsx {{ filename: 'src/pages/sign-up.tsx' }}
-    import { SignUp } from '@clerk/react'
+  <If sdk="electron">
+    ```jsx {{ filename: 'src/App.tsx' }}
+    import { SignUp } from '@clerk/electron/react'
 
     export default function SignUpPage() {
       return <SignUp />
@@ -87,11 +116,11 @@ The `<SignUp />` component renders a UI for signing up users. The functionality 
   <If sdk="tanstack-react-start">
     If you would like to create a dedicated `/sign-up` page in your TanStack React Start application, see the [dedicated guide](/docs/tanstack-react-start/guides/development/custom-sign-up-page) for more information.
 
-    ```tsx {{ filename: 'app/routes/sign-up.$.tsx' }}
+    ```tsx {{ filename: 'src/routes/sign-up.$.tsx' }}
     import { SignUp } from '@clerk/tanstack-react-start'
     import { createFileRoute } from '@tanstack/react-router'
 
-    export const Route = createFileRoute('/sign-up')({
+    export const Route = createFileRoute('/sign-up/$')({
       component: SignUpPage,
     })
 
@@ -131,10 +160,10 @@ The `<SignUp />` component renders a UI for signing up users. The functionality 
 
   The following methods available on an instance of the [`Clerk`](/docs/reference/objects/clerk) class are used to render and control the `<SignUp />` component:
 
-  - [`mountSignUp()`](#mount-sign-up)
-  - [`unmountSignUp()`](#unmount-sign-up)
-  - [`openSignUp()`](#open-sign-up)
-  - [`closeSignUp()`](#close-sign-up)
+  - [`mountSignUp()`](#mountsignup)
+  - [`unmountSignUp()`](#unmountsignup)
+  - [`openSignUp()`](#opensignup)
+  - [`closeSignUp()`](#closesignup)
 
   The following examples assume that you have followed the [quickstart](/docs/js-frontend/getting-started/quickstart) in order to add Clerk to your JavaScript application.
 
@@ -370,7 +399,7 @@ All props are optional.
   ---
 
   - `unsafeMetadata?`
-  - [`SignUpUnsafeMetadata`](/docs/reference/types/metadata#sign-up-unsafe-metadata)
+  - [`SignUpUnsafeMetadata`](/docs/reference/types/metadata#signupunsafemetadata)
 
   Metadata that can be read and set from the frontend and the backend. Once the sign-up is complete, the value of this field will be automatically copied to the created user's unsafe metadata (`User.unsafeMetadata`). One common use case is to collect custom information about the user during the sign-up process and store it in this property. Read more about [unsafe metadata](/docs/guides/users/extending#unsafe-metadata).
 </Properties>

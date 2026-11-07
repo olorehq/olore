@@ -327,6 +327,13 @@ Run every test file in isolation. To disable isolation, use `--no-isolate` (defa
 
 Inject apis globally
 
+### injectCjsGlobals
+
+- **CLI:** `--injectCjsGlobals`
+- **Config:** [injectCjsGlobals](/config/injectcjsglobals)
+
+Inject CommonJS variables (`module`, `exports`, `require`, `__filename`, `__dirname`) into every test module. To disable, use `--no-inject-cjs-globals` (default: `true`)
+
 ### dom
 
 - **CLI:** `--dom`
@@ -353,48 +360,6 @@ Run all tests in a specific browser. Some browsers are only available for specif
 
 Run the browser in headless mode (i.e. without opening the GUI (Graphical User Interface)). If you are running Vitest in CI, it will be enabled by default (default: `process.env.CI`)
 
-### browser.api.port
-
-- **CLI:** `--browser.api.port [port]`
-- **Config:** [browser.api.port](/config/browser/api#api-port)
-
-Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on. If true will be set to `63315`
-
-### browser.api.host
-
-- **CLI:** `--browser.api.host [host]`
-- **Config:** [browser.api.host](/config/browser/api#api-host)
-
-Specify which IP addresses the server should listen on. Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and public addresses
-
-### browser.api.strictPort
-
-- **CLI:** `--browser.api.strictPort`
-- **Config:** [browser.api.strictPort](/config/browser/api#api-strictport)
-
-Set to true to exit if port is already in use, instead of automatically trying the next available port
-
-### browser.api.allowExec
-
-- **CLI:** `--browser.api.allowExec`
-- **Config:** [browser.api.allowExec](/config/browser/api#api-allowexec)
-
-Allow API to execute code. (Be careful when enabling this option in untrusted environments)
-
-### browser.api.allowWrite
-
-- **CLI:** `--browser.api.allowWrite`
-- **Config:** [browser.api.allowWrite](/config/browser/api#api-allowwrite)
-
-Allow API to edit files. (Be careful when enabling this option in untrusted environments)
-
-### browser.isolate
-
-- **CLI:** `--browser.isolate`
-- **Config:** [browser.isolate](/config/browser/isolate)
-
-Run every browser test file in isolation. To disable isolation, use `--browser.isolate=false` (default: `true`)
-
 ### browser.ui
 
 - **CLI:** `--browser.ui`
@@ -409,12 +374,6 @@ Show Vitest UI when running tests (default: `!process.env.CI`)
 
 Default position for the details panel in browser mode. Either `right` (horizontal split) or `bottom` (vertical split) (default: `right`)
 
-### browser.fileParallelism
-
-- **CLI:** `--browser.fileParallelism`
-
-Should browser test files run in parallel. Use `--browser.fileParallelism=false` to disable (default: `true`)
-
 ### browser.connectTimeout
 
 - **CLI:** `--browser.connectTimeout <timeout>`
@@ -422,12 +381,26 @@ Should browser test files run in parallel. Use `--browser.fileParallelism=false`
 
 If connection to the browser takes longer, the test suite will fail (default: `60_000`)
 
+### browser.dependencySourcemaps
+
+- **CLI:** `--browser.dependencySourcemaps`
+- **Config:** [browser.dependencySourcemaps](/config/browser/dependencysourcemaps)
+
+Serve sourcemaps of dependencies to the browser in headless runs, used by devtools when debugging into `node_modules`. Reported test errors are source-mapped either way. Use `--browser.dependencySourcemaps=false` to speed up test runs if you don't step into dependency code (default: `true`)
+
 ### browser.trackUnhandledErrors
 
 - **CLI:** `--browser.trackUnhandledErrors`
 - **Config:** [browser.trackUnhandledErrors](/config/browser/trackunhandlederrors)
 
 Control if Vitest catches uncaught exceptions so they can be reported (default: `true`)
+
+### browser.importMapMocks
+
+- **CLI:** `--browser.importMapMocks`
+- **Config:** [browser.importMapMocks](/config/browser/importmapmocks)
+
+Serve module mocks through an import map instead of request interception. By default, enabled when the browser supports it
 
 ### browser.trace
 
@@ -441,7 +414,14 @@ Enable trace view mode. Supported: "on", "off", "on-first-retry", "on-all-retrie
 - **CLI:** `--browser.traceView.enabled`
 - **Config:** [browser.traceView.enabled](/config/browser/traceview#traceview-enabled)
 
-Enable Vitest trace-view collection for browser tests (default: `false`)
+Deprecated, use `--browser.traceView.mode` instead. `true` is the same as `--browser.traceView.mode=on`
+
+### browser.traceView.mode
+
+- **CLI:** `--browser.traceView.mode <mode>`
+- **Config:** [browser.traceView.mode](/config/browser/traceview#traceview-mode)
+
+How trace view records tests. Supported: "on" (every test), "failure-only" (only failed tests), "off" (default: `"failure-only"`)
 
 ### browser.traceView.recordCanvas
 
@@ -456,6 +436,13 @@ Capture canvas pixels in trace-view snapshots (default: `false`)
 - **Config:** [browser.traceView.inlineImages](/config/browser/traceview#traceview-inlineimages)
 
 Inline loaded image pixels in trace-view snapshots (default: `false`)
+
+### browser.traceView.ariaSnapshot
+
+- **CLI:** `--browser.traceView.ariaSnapshot`
+- **Config:** [browser.traceView.ariaSnapshot](/config/browser/traceview#traceview-ariasnapshot)
+
+Capture the accessibility tree in trace-view snapshots (default: `true`)
 
 ### browser.locators.exact
 
@@ -541,6 +528,19 @@ Allow tests and suites that are marked as only (default: `!process.env.CI`)
 
 Ignore any unhandled errors that occur
 
+### changed
+
+- **CLI:** `--changed [since]`
+- **Config:** [changed](/config/changed)
+
+Run tests that are affected by the changed files (default: `false`)
+
+### lastFailed
+
+- **CLI:** `--lastFailed`
+
+Run only the tests that failed in the last run (default: `false`)
+
 ### sequence.shuffle.files
 
 - **CLI:** `--sequence.shuffle.files`
@@ -574,14 +574,14 @@ Set the randomization seed. This option will have no effect if `--sequence.shuff
 - **CLI:** `--sequence.hooks <order>`
 - **Config:** [sequence.hooks](/config/sequence#sequence-hooks)
 
-Changes the order in which hooks are executed. Accepted values are: "stack", "list" and "parallel". Visit [`sequence.hooks`](/config/sequence#sequence-hooks) for more information (default: `"parallel"`)
+Changes the order in which hooks are executed. Accepted values are: "stack", "list" and "parallel". Visit [`sequence.hooks`](/config/sequence#sequence-hooks) for more information (default: `"stack"`)
 
 ### sequence.setupFiles
 
 - **CLI:** `--sequence.setupFiles <order>`
 - **Config:** [sequence.setupFiles](/config/sequence#sequence-setupfiles)
 
-Changes the order in which setup files are executed. Accepted values are: "list" and "parallel". If set to "list", will run setup files in the order they are defined. If set to "parallel", will run setup files in parallel (default: `"parallel"`)
+Changes the order in which setup files are executed. Accepted values are: "list" and "parallel". If set to "list", will run setup files in the order they are defined. If set to "parallel", will run setup files in parallel (default: `"list"`)
 
 ### inspect
 
@@ -611,7 +611,7 @@ Default hook timeout in milliseconds (default: `10000`). Use `0` to disable time
 
 ### bail
 
-- **CLI:** `--bail <number>`
+- **CLI:** `--bail [number]`
 - **Config:** [bail](/config/bail)
 
 Stop test execution when given number of tests have failed (default: `0`)
@@ -698,7 +698,7 @@ Placeholder for an empty first or last line (default: `""`)
 - **CLI:** `--diff.expand`
 - **Config:** [diff.expand](/config/diff#diff-expand)
 
-Expand all common lines (default: `true`)
+Expand all common lines (default: `false`)
 
 ### diff.includeChangeCounts
 
@@ -719,7 +719,7 @@ Omit annotation lines from the output (default: `false`)
 - **CLI:** `--diff.printBasicPrototype`
 - **Config:** [diff.printBasicPrototype](/config/diff#diff-printbasicprototype)
 
-Print basic prototype Object and Array (default: `true`)
+Print basic prototype Object and Array (default: `false`)
 
 ### diff.maxDepth
 
@@ -821,9 +821,9 @@ Minimum time in milliseconds it takes to spawn the typechecker
 
 ### project
 
-- **CLI:** `--project <name>`
+- **CLI:** `-p, --project <name>`
 
-The name of the project to run if you are using Vitest workspace feature. This can be repeated for multiple projects: `--project=1 --project=2`. You can also filter projects using wildcards like `--project=packages*`, and exclude projects with `--project=!pattern`.
+The name of the project to run if you are using Vitest workspace feature. This can be repeated for multiple projects: `--project=1 --project=2`. You can also filter projects using wildcards like `--project=packages*`, and exclude projects with `--project=!pattern`. A project runs if it matches no negated pattern and, when regular patterns are also given, matches at least one of them.
 
 ### slowTestThreshold
 
@@ -839,12 +839,33 @@ Threshold in milliseconds for a test or suite to be considered slow (default: `3
 
 Default timeout of a teardown function in milliseconds (default: `10000`)
 
+### cache
+
+- **CLI:** `--cache`
+- **Config:** [cache](/config/cache)
+
+Store the results of test runs to run failed and longer test files first (default: `true`)
+
 ### maxConcurrency
 
 - **CLI:** `--maxConcurrency <number>`
 - **Config:** [maxConcurrency](/config/maxconcurrency)
 
 Maximum number of concurrent tests and suites during test file execution (default: `5`)
+
+### fsModuleCache
+
+- **CLI:** `--fsModuleCache`
+- **Config:** [fsModuleCache](/config/fsmodulecache)
+
+Cache transformed modules on the file system and reuse them between reruns (default: `true`)
+
+### fsModuleCachePath
+
+- **CLI:** `--fsModuleCachePath <path>`
+- **Config:** [fsModuleCachePath](/config/fsmodulecachepath)
+
+Directory where the `fsModuleCache` is stored (default: `node_modules/.vitest-cache`)
 
 ### expect.requireAssertions
 
@@ -928,7 +949,7 @@ List all available tags instead of running tests. `--list-tags=json` will output
 
 - **CLI:** `--clearCache`
 
-Delete all Vitest caches, including `experimental.fsModuleCache`, without running any tests. This will reduce the performance in the subsequent test run.
+Delete all Vitest caches, including the `fsModuleCache`, without running any tests. This will reduce the performance in the subsequent test run.
 
 ### tagsFilter
 
@@ -943,12 +964,12 @@ Run only tests with the specified tags. You can use logical operators `&&` (and)
 
 Should Vitest throw an error if test has a tag that is not defined in the config. (default: `true`)
 
-### experimental.fsModuleCache
+### sharedViteServer
 
-- **CLI:** `--experimental.fsModuleCache`
-- **Config:** [experimental.fsModuleCache](/config/experimental#experimental-fsmodulecache)
+- **CLI:** `--sharedViteServer`
+- **Config:** [sharedViteServer](/config/sharedviteserver)
 
-Enable caching of modules on the file system between reruns.
+Let inline projects that don't modify the Vite config reuse the Vite server of the config that declares them. (default: `true`)
 
 ### experimental.importDurations.print
 
@@ -999,12 +1020,26 @@ Control whether Vitest uses Vite's module runner to run the code or fallback to 
 
 Controls whether Vitest will use Node.js Loader API to process in-source or mocked files. This has no effect if `viteModuleRunner` is enabled. Disabling this can increase performance. (default: `true`)
 
+### experimental.traceTimeline
+
+- **CLI:** `--experimental.traceTimeline`
+- **Config:** [experimental.traceTimeline](/config/experimental#experimental-tracetimeline)
+
+Record `expect.poll`, `vi.waitFor`, and `vi.waitUntil` steps of each test and print them as a timeline when the test fails. This has no effect in browser mode. (default: `false`)
+
 ### experimental.vcsProvider
 
 - **CLI:** `--experimental.vcsProvider <path>`
 - **Config:** [experimental.vcsProvider](/config/experimental#experimental-vcsprovider)
 
-Custom provider for detecting changed files. (default: `git`)
+Provider for detecting changed files: `git`, `mtime` (requires `experimental.recordDependencies`) or a path to a custom provider. (default: `git`)
+
+### experimental.recordDependencies
+
+- **CLI:** `--experimental.recordDependencies`
+- **Config:** [experimental.recordDependencies](/config/experimental#experimental-recorddependencies)
+
+Record the modules loaded by every test file in the cache and use the records with `--changed` and `--related` instead of the static module graph. A test file without a record always runs. (default: `false`)
 
 ### experimental.preParse
 
@@ -1012,3 +1047,31 @@ Custom provider for detecting changed files. (default: `git`)
 - **Config:** [experimental.preParse](/config/experimental#experimental-preparse)
 
 Parse test specifications before running them. This will apply `.only` flag and test name pattern across all files without running them. (default: `false`)
+
+### experimental.diagnostics.isolate
+
+- **CLI:** `--experimental.diagnostics.isolate`
+- **Config:** [experimental.diagnostics.isolate](/config/experimental#experimental-diagnostics-isolate)
+
+Print a hint estimating how much time `isolate: false` would save when `isolate: true` spends a significant amount of time spawning a worker per test file. (default: `true`)
+
+### experimental.diagnostics.environment
+
+- **CLI:** `--experimental.diagnostics.environment`
+- **Config:** [experimental.diagnostics.environment](/config/experimental#experimental-diagnostics-environment)
+
+Print a hint when re-creating a DOM environment for every test file dominates the run and a `vm` pool would set it up once per worker. (default: `true`)
+
+### experimental.diagnostics.import
+
+- **CLI:** `--experimental.diagnostics.import`
+- **Config:** [experimental.diagnostics.import](/config/experimental#experimental-diagnostics-import)
+
+Print a hint when test files repeatedly evaluate the same module graph (typical for barrel-file imports) and `isolate: false` would evaluate it once per worker. (default: `true`)
+
+### experimental.diagnostics.transform
+
+- **CLI:** `--experimental.diagnostics.transform`
+- **Config:** [experimental.diagnostics.transform](/config/experimental#experimental-diagnostics-transform)
+
+Print a hint when transforming modules dominates the run and `fsModuleCache` would persist the results across runs. (default: `true`)

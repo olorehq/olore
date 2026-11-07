@@ -125,6 +125,56 @@ test('runs second', async () => {
 });
 ```
 
+## Test locks
+
+A few tests in your suite may access a shared resource that does not support concurrent access, for example an external service or a global account setting. You can declare named locks on such tests, so that tests sharing a lock name never run at the same time, while all other tests continue to run in parallel. Locks work across files, worker processes and [projects](./test-projects.md).
+
+```js title="settings.spec.ts"
+import { test, expect } from '@playwright/test';
+
+test('update user settings', { lock: 'user-settings' }, async ({ page }) => {
+  // ...
+});
+```
+
+```js title="profile.spec.ts"
+import { test, expect } from '@playwright/test';
+
+// Never runs concurrently with 'update user settings' above,
+// even in a different project.
+test('rename user', { lock: 'user-settings' }, async ({ page }) => {
+  // ...
+});
+```
+
+A test can declare multiple locks and will only run when all of them are available. You can also declare locks on a group with [`method: Test.describe`], applying them to every test inside.
+
+```js
+test('reset the database', { lock: ['database', 'external-api'] }, async () => {
+  // ...
+});
+```
+
+You can also add locks to the enclosing file or describe group with [`method: Test.describe.configure`].  Repeated calls add locks without removing existing ones.
+
+```js
+test.describe.configure({ lock: 'user-settings' });
+```
+
+Playwright acquires all the locks of a test before the test starts and releases them when it finishes.
+
+The built-in `-exclusive-` lock runs a test in isolation: it starts only when no other tests are running, and no other tests start until it finishes. All other tests continue to run in parallel with each other. This is useful for a few tests that are sensitive to any concurrent activity, for example tests that measure performance or restart a shared service.
+
+```js
+test('restart the server', { lock: '-exclusive-' }, async () => {
+  // No other test runs while this one is running.
+});
+```
+
+:::note
+In the default and [serial](#serial-mode) modes, all tests in a file run together in order, so a lock declared on any test is held for the duration of the whole file.
+:::
+
 ## Opt out of fully parallel mode
 
 If your configuration applies parallel mode to all tests using [`property: TestConfig.fullyParallel`], you might still want to run some tests with default settings. You can override the mode per describe: 
@@ -135,6 +185,44 @@ test.describe('runs in parallel with other describes', () => {
   test('in order 2', async ({ page }) => {});
 });
 ```
+
+## Avoiding shared state in parallel tests
+
+Playwright runs tests in separate worker processes, each with its own isolated [BrowserContext], so cookies, storage and in-memory globals are already isolated. Flakiness comes from state that lives *outside* a single test. Here are recipes for the common cases.
+
+### Give each test its own backend data
+
+Two tests that create or edit the same record race with each other. Derive a unique identifier from [`property: TestInfo.testId`] so parallel tests never collide:
+
+```js
+import { test, expect } from '@playwright/test';
+
+test('creates an order', async ({ page }, testInfo) => {
+  const orderId = `order-${testInfo.testId}`;
+  await page.goto(`/orders/new?id=${orderId}`);
+  await expect(page.getByText(orderId)).toBeVisible();
+});
+```
+
+If many tests can share one dataset, create it once per worker instead — see [Isolate test data between parallel workers](#isolate-test-data-between-parallel-workers).
+
+### Write to a unique file path
+
+Multiple tests writing the same path clobber each other. [`method: TestInfo.outputPath`] returns a path scoped to the current test:
+
+```js
+import { test } from '@playwright/test';
+import fs from 'fs';
+
+test('exports a CSV', async ({ page }, testInfo) => {
+  const file = testInfo.outputPath('export.csv');
+  await fs.promises.writeFile(file, 'a,b,c', 'utf8');
+});
+```
+
+### Keep tests independent
+
+Above all, [keep your tests isolated](./writing-tests.md#test-isolation) from one another. A test that leaks state through a module-level variable or depends on another test's side effects works when tests run in order, but breaks the moment they run in parallel or in a different order. Set up everything a test needs in that test or in a [fixture](./test-fixtures.md#creating-a-fixture), and never rely on another test having run first.
 
 ## Shard tests between multiple machines
 
@@ -169,7 +257,7 @@ export default defineConfig({
 
 ## Worker index and parallel index
 
-Each worker process is assigned two ids: a unique worker index that starts with 1, and a parallel index that is between `0` and `workers - 1`. When a worker is restarted, for example after a failure, the new worker process has the same `parallelIndex` and a new `workerIndex`.
+Each worker process is assigned two ids: a unique worker index that starts with 0, and a parallel index that is between `0` and `workers - 1`. When a worker is restarted, for example after a failure, the new worker process has the same `parallelIndex` and a new `workerIndex`.
 
 You can read an index from environment variables `process.env.TEST_WORKER_INDEX` and `process.env.TEST_PARALLEL_INDEX`, or access them through [`property: TestInfo.workerIndex`] and [`property: TestInfo.parallelIndex`].
 

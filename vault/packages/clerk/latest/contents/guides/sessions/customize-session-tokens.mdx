@@ -9,13 +9,29 @@ By default, session tokens contain claims that are required for Clerk to functio
 
 This guide will show you how to customize a session token to include additional claims that you may need in your application.
 
+## Why customize your session token
+
+To read user data on the server, you'd typically request it from Clerk's Backend API — for example, `currentUser()` on every request. Those requests are slower than reading data you already have, and they count against Clerk's [Backend API rate limits](/docs/guides/how-clerk-works/system-limits#backend-api-requests).
+
+Custom claims remove that round trip. Clerk includes the data in the [session token](!session-token) that your app already receives on each request, so you can read it directly instead of calling the Backend API.
+
+The tradeoff is freshness. Clerk [refreshes the session token every 60 seconds](/docs/guides/how-clerk-works/overview#token-refresh-mechanism), so a claim can be up to a minute out of date after the underlying data changes. When a change must appear immediately, read it from the Backend API or [force a token refresh](/docs/guides/sessions/force-token-refresh).
+
 <Include src="_partials/token-size-callout" />
+
+<If is="llm">
+  **For AI agents:** Instead of editing the **Customize session token** Claims editor in the Dashboard, add custom claims with the CLI: `npx clerk@latest config patch --json '{"session":{"claims":{"fullName":"{{user.full_name}}","primaryEmail":"{{user.primary_email_address}}"}}}'`. Inspect the current claims with `npx clerk@latest config pull --keys session`. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
 
 <Steps>
   ## Add custom claims to your session token
 
   1. In the Clerk Dashboard, navigate to the [**Sessions**](https://dashboard.clerk.com/~/sessions) page.
   1. Under **Customize session token**, in the **Claims** editor, you can add any claim to your session token that you need and select **Save**.
+
+  You can also set claims through [Clerk's MCP server](/docs/guides/ai/mcp/clerk-mcp-server) with the `patch_instance_config` tool, or with the [Clerk CLI](/docs/cli) using `clerk config patch`.
+
+  Claim values can use [shortcodes](/docs/guides/sessions/jwt-templates#available-shortcodes) to include dynamic values.
 
   The following example adds the `fullName` and `primaryEmail` claims to the session token.
 
@@ -77,7 +93,7 @@ This guide will show you how to customize a session token to include additional 
     <Tab>
       For Astro, the `Auth` object is accessed using the `locals.auth()` function. Learn more about [using `locals.auth()`](/docs/astro/guides/users/reading#server-side).
 
-      ```tsx {{ filename: 'src/api/example.ts' }}
+      ```tsx {{ filename: 'src/pages/api/example.ts' }}
       import type { APIRoute } from 'astro'
 
       export const GET: APIRoute = async ({ locals }) => {
@@ -98,10 +114,10 @@ This guide will show you how to customize a session token to include additional 
     </Tab>
 
     <Tab>
-      For Express, the `Auth` object is accessed using the `getAuth()` function. Learn more about [using `getAuth()`](/docs/reference/express/overview#get-auth).
+      For Express, the `Auth` object is accessed using the `getAuth()` function. Learn more about [using `getAuth()`](/docs/reference/express/overview#getauth).
 
       ```js
-      import { clerkMiddleware, getAuth, requireAuth } from '@clerk/express'
+      import { clerkMiddleware, getAuth } from '@clerk/express'
       import express from 'express'
 
       const app = express()
@@ -110,22 +126,23 @@ This guide will show you how to customize a session token to include additional 
       // Apply `clerkMiddleware()` to all routes
       app.use(clerkMiddleware())
 
-      const getSessionClaims = (req, res, next) => {
+      const getSessionClaims = (req, res) => {
         // Use `getAuth()` to access the user's session claims
         const { isAuthenticated, sessionClaims } = getAuth(req)
 
         if (!isAuthenticated) {
-          return res.status(401).json({ error: 'Unauthorized' })
+          res.status(401).json({ error: 'Unauthorized' })
+          return
         }
 
         const fullName = sessionClaims.fullName
 
         const primaryEmail = sessionClaims.primaryEmail
 
-        return res.status(200).json({ fullName, primaryEmail })
+        res.status(200).json({ fullName, primaryEmail })
       }
 
-      app.get('/profile', requireAuth(), getSessionClaims)
+      app.get('/profile', getSessionClaims)
 
       app.listen(PORT, () => {
         console.log(`Server is running on http://localhost:${PORT}`)
@@ -234,29 +251,28 @@ This guide will show you how to customize a session token to include additional 
     </Tab>
 
     <Tab>
-      For TanStack React Start, the `Auth` object is accessed using the `getAuth()` function. Learn more about [using `getAuth()`](/docs/tanstack-react-start/guides/users/reading#server-side).
+      For TanStack React Start, the `Auth` object is accessed using the `auth()` function. Learn more about [using `auth()`](/docs/tanstack-react-start/guides/users/reading#server-side).
 
       ```ts {{ filename: 'src/routes/api/example.ts' }}
       import { auth } from '@clerk/tanstack-react-start/server'
-      import { json } from '@tanstack/react-start'
       import { createFileRoute } from '@tanstack/react-router'
 
-      export const ServerRoute = createFileRoute('/api/example')({
+      export const Route = createFileRoute('/api/example')({
         server: {
           handlers: {
             GET: async () => {
               // Use `auth()` to access the user's session claims
-              const { isAuthenticated, sessionClaims } = await auth
+              const { isAuthenticated, sessionClaims } = await auth()
 
               if (!isAuthenticated) {
-                return json({ error: 'Unauthorized' }, { status: 401 })
+                return Response.json({ error: 'Unauthorized' }, { status: 401 })
               }
 
               const fullName = sessionClaims.fullName
 
               const primaryEmail = sessionClaims.primaryEmail
 
-              return json({ fullName, primaryEmail })
+              return Response.json({ fullName, primaryEmail })
             },
           },
         },

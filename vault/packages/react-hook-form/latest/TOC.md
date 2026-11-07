@@ -4,76 +4,82 @@
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/` | Top-level guides | 5 |
-| `contents/docs/` | API reference (top-level hooks and components) | 8 |
-| `contents/docs/useform/` | useForm API sub-methods | 16 |
+| `contents/` | Getting started, guides, FAQs, TypeScript, migration, integrations overview | 6 |
+| `contents/docs/` | API reference for hooks and components | 9 |
+| `contents/docs/useform/` | useForm methods and props | 20 |
 | `contents/docs/usecontroller/` | Controller component | 1 |
-| `contents/docs/useformstate/` | Form state subscriptions | 2 |
-| `contents/docs/usewatch/` | Watch utilities | 1 |
+| `contents/docs/usefieldarray/` | FieldArray component | 1 |
+| `contents/docs/useformstate/` | ErrorMessage and FormState components | 2 |
+| `contents/docs/usewatch/` | Watch component | 1 |
+| `contents/integrations/` | Resolvers, Zod, Yup, Next.js, React 19, shadcn/ui | 6 |
 
-## contents/ (top-level)
-
-| File | Description |
-|------|-------------|
-| `get-started.mdx` | Installation, quickstart, and first form example |
-| `advanced-usage.mdx` | Advanced patterns: dynamic fields, schema validation, integrations |
-| `faqs.mdx` | Frequently asked questions and troubleshooting |
-| `ts.mdx` | TypeScript usage and type definitions |
-| `migrate-v7-to-v8.mdx` | Migration guide from v7 to v8 (React Compiler, flat field arrays) |
-
-## contents/docs/ (core API)
+## contents/
 
 | File | Description |
 |------|-------------|
-| `useform.mdx` | `useForm` hook — primary hook for form management |
-| `usecontroller.mdx` | `useController` hook for controlled components |
-| `usefieldarray.mdx` | `useFieldArray` hook for dynamic field arrays |
-| `usewatch.mdx` | `useWatch` hook for subscribing to form values |
-| `useformstate.mdx` | `useFormState` hook for subscribing to form state |
-| `useformcontext.mdx` | `useFormContext` hook for consuming form context |
-| `formprovider.mdx` | `FormProvider` component for context sharing |
-| `createFormControl.mdx` | `createFormControl` for framework-agnostic form control |
-| `uselens.mdx` | `useLens` hook for scoped form subscriptions |
+| `get-started.mdx` | Simple form validation with React Hook Form |
+| `advanced-usage.mdx` | Practical guides for building accessible, reusable, and performant forms |
+| `faqs.mdx` | Answers to common setup, validation, state, performance, and testing questions |
+| `ts.mdx` | List of exported TypeScript types |
+| `migrate-v7-to-v8.mdx` | V8 (beta) migration guide from V7 |
+| `integrations.mdx` | Overview of guides for schema validation, frameworks, and UI libraries |
 
-## contents/docs/useform/ (useForm sub-API)
+## docs/
 
 | File | Description |
 |------|-------------|
-| `register.mdx` | `register` — connect inputs to the form |
-| `handlesubmit.mdx` | `handleSubmit` — form submission handler |
-| `watch.mdx` | `watch` — observe input values |
-| `formstate.mdx` | `formState` — access form state object |
-| `getvalues.mdx` | `getValues` — read form values |
-| `setvalue.mdx` | `setValue` — programmatically set a value |
-| `setvalues.mdx` | `setValues` — programmatically set multiple values |
-| `reset.mdx` | `reset` — reset form to default values |
-| `resetfield.mdx` | `resetField` — reset a single field |
-| `resetdefaultvalues.mdx` | `resetDefaultValues` — asynchronously update default values |
-| `seterror.mdx` | `setError` — manually set field errors |
-| `clearerrors.mdx` | `clearErrors` — manually clear field errors |
-| `trigger.mdx` | `trigger` — manually trigger validation |
-| `unregister.mdx` | `unregister` — unregister fields |
-| `setfocus.mdx` | `setFocus` — programmatically focus a field |
-| `getfieldstate.mdx` | `getFieldState` — get individual field state |
-| `control.mdx` | `control` object for controlled components |
-| `subscribe.mdx` | `subscribe` — subscribe to form state changes |
-| `form.mdx` | `Form` component for form submission |
+| `useform.mdx` | Primary hook for form initialization and its options |
+| `usecontroller.mdx` | Build reusable controlled inputs with full form state access |
+| `usefieldarray.mdx` | Manage dynamic field arrays with optimized performance |
+| `useformstate.mdx` | Subscribe to form state with isolated component re-renders |
+| `usewatch.mdx` | Subscribe to input changes with isolated component re-renders |
+| `useformcontext.mdx` | Access useForm methods anywhere in the component tree |
+| `formprovider.mdx` | Share form context across deeply nested components |
+| `uselens.mdx` | Scope form context to a nested field path |
+| `createFormControl.mdx` | Create standalone form state outside of React components |
 
-## contents/docs/usecontroller/
+## docs/useform/
 
 | File | Description |
 |------|-------------|
-| `controller.mdx` | `Controller` component — wrapper for controlled inputs |
+| `register.mdx` | Register inputs for validation, tracking, and submission |
+| `handlesubmit.mdx` | Validate inputs and invoke your submit callback |
+| `form.mdx` | Form component to submit to an API, Server Action, or callback with built-in state |
+| `formstate.mdx` | Access real-time form state properties |
+| `control.mdx` | The control object for registering controlled inputs |
+| `watch.mdx` | Subscribe to input value changes and trigger re-renders |
+| `subscribe.mdx` | Subscribe to form state changes outside the render cycle |
+| `getvalues.mdx` | Read current form values without subscribing to re-renders |
+| `setvalue.mdx` | Dynamically update a registered field's value |
+| `setvalues.mdx` | Update multiple field values at once |
+| `geterrors.mdx` | Read current form errors without subscribing to re-renders |
+| `getfieldstate.mdx` | Get validation and interaction state of a specific field |
+| `seterror.mdx` | Manually set validation errors on fields |
+| `clearerrors.mdx` | Manually clear validation errors on fields |
+| `setfocus.mdx` | Programmatically focus a registered input field |
+| `trigger.mdx` | Manually trigger validation without submitting |
+| `reset.mdx` | Reset the form to its default values and clear state |
+| `resetfield.mdx` | Reset a single field's value and state independently |
+| `resetdefaultvalues.mdx` | Update the baseline defaults without resetting current values |
+| `unregister.mdx` | Remove a registered input from the form |
 
-## contents/docs/useformstate/
+## docs/usecontroller/, docs/usefieldarray/, docs/useformstate/, docs/usewatch/
 
 | File | Description |
 |------|-------------|
-| `errormessage.mdx` | `ErrorMessage` component for displaying field errors |
-| `formstatesubscribe.mdx` | `formState.subscribe` for external form state subscriptions |
+| `usecontroller/controller.mdx` | Controller component for integrating controlled external UI inputs |
+| `usefieldarray/fieldarray.mdx` | Render-prop component for working with dynamic field arrays |
+| `useformstate/errormessage.mdx` | Render validation error messages for a field |
+| `useformstate/formstate.mdx` | Renderless component for subscribing to form state changes |
+| `usewatch/watch.mdx` | React component that subscribes to form input changes |
 
-## contents/docs/usewatch/
+## integrations/
 
 | File | Description |
 |------|-------------|
-| `watch.mdx` | `watch` utility for observing values outside a component |
+| `resolvers.mdx` | Compare official schema resolvers by package, type inference, and criteria mode |
+| `zod.mdx` | Validate type-safe forms with Zod and zodResolver |
+| `yup.mdx` | Validate forms with Yup schemas and yupResolver |
+| `nextjs.mdx` | Build validated Next.js forms with App Router and Server Actions |
+| `react-19.mdx` | Combine React 19 form actions with validation and progressive enhancement |
+| `shadcn-ui.mdx` | Build accessible, type-safe shadcn/ui forms with React Hook Form and Zod |

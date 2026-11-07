@@ -2,12 +2,13 @@
 title: 'Pulumi Examples'
 description: 'Comprehensive examples for different check types and configurations using the Checkly Pulumi provider'
 sidebarTitle: 'Examples'
+canonical: 'https://www.checklyhq.com/docs/integrations/iac/pulumi/examples/'
 ---
 
 
 This page provides comprehensive examples of how to use the Checkly Pulumi provider to create various types of monitoring checks and configurations.
 
-## Basic API Checks
+## Basic API checks
 
 ### Simple GET Request
 
@@ -85,7 +86,7 @@ new checkly.Check('post-api-check', {
     url: 'https://api.example.com/users',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${process.env.API_TOKEN}',
+      'Authorization': `Bearer ${process.env.API_TOKEN}`,
     },
     body: JSON.stringify({
       name: 'John Doe',
@@ -100,7 +101,7 @@ new checkly.Check('post-api-check', {
       {
         source: 'JSON_BODY',
         property: '$.id',
-        comparison: 'EXISTS',
+        comparison: 'NOT_EMPTY',
       },
     ],
   },
@@ -124,7 +125,7 @@ new checkly.Check('post-api-check', {
     url: 'https://api.example.com/users',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${process.env.API_TOKEN}',
+      'Authorization': `Bearer ${process.env.API_TOKEN}`,
     },
     body: JSON.stringify({
       name: 'John Doe',
@@ -139,7 +140,7 @@ new checkly.Check('post-api-check', {
       {
         source: 'JSON_BODY',
         property: '$.id',
-        comparison: 'EXISTS',
+        comparison: 'NOT_EMPTY',
       },
     ],
   },
@@ -149,7 +150,7 @@ new checkly.Check('post-api-check', {
 </Tab>
 </Tabs>
 
-## Browser Checks
+## Browser checks
 
 ### Basic Page Load Check
 
@@ -291,7 +292,7 @@ new checkly.Check('login-flow-check', {
 </Tab>
 </Tabs>
 
-## Check Groups
+## Check groups
 
 ### Organizing Related Checks
 
@@ -372,7 +373,7 @@ new checkly.Check('health-check', {
   activated: true,
   frequency: 10,
   type: 'API',
-  groupId: apiGroup.id,
+  groupId: apiGroup.id.apply(id => parseInt(id)),
   request: {
     method: 'GET',
     url: 'https://api.example.com/health',
@@ -392,7 +393,7 @@ new checkly.Check('metrics-check', {
   activated: true,
   frequency: 10,
   type: 'API',
-  groupId: apiGroup.id,
+  groupId: apiGroup.id.apply(id => parseInt(id)),
   request: {
     method: 'GET',
     url: 'https://api.example.com/metrics',
@@ -410,9 +411,9 @@ new checkly.Check('metrics-check', {
 </Tab>
 </Tabs>
 
-## Alert Channels
+## Alert channels
 
-### Email Alert Channel
+### Email alert channel
 
 <Tabs>
 <Tab title="JavaScript">
@@ -435,7 +436,10 @@ new checkly.Check('monitored-api', {
   frequency: 10,
   type: 'API',
   locations: ['eu-west-1'],
-  alertChannelSubscriptions: [emailAlertChannel.id],
+  alertChannelSubscriptions: [{
+    channelId: emailAlertChannel.id.apply(id => parseInt(id)),
+    activated: true,
+  }],
   request: {
     method: 'GET',
     url: 'https://api.example.com/health',
@@ -471,7 +475,10 @@ new checkly.Check('monitored-api', {
   frequency: 10,
   type: 'API',
   locations: ['eu-west-1'],
-  alertChannelSubscriptions: [emailAlertChannel.id],
+  alertChannelSubscriptions: [{
+    channelId: emailAlertChannel.id.apply(id => parseInt(id)),
+    activated: true,
+  }],
   request: {
     method: 'GET',
     url: 'https://api.example.com/health',
@@ -489,7 +496,7 @@ new checkly.Check('monitored-api', {
 </Tab>
 </Tabs>
 
-### Slack Alert Channel
+### Slack alert channel
 
 <Tabs>
 <Tab title="JavaScript">
@@ -513,7 +520,10 @@ new checkly.Check('critical-api', {
   frequency: 10,
   type: 'API',
   locations: ['eu-west-1', 'us-west-2'],
-  alertChannelSubscriptions: [slackAlertChannel.id],
+  alertChannelSubscriptions: [{
+    channelId: slackAlertChannel.id.apply(id => parseInt(id)),
+    activated: true,
+  }],
   request: {
     method: 'GET',
     url: 'https://api.example.com/critical',
@@ -550,7 +560,10 @@ new checkly.Check('critical-api', {
   frequency: 10,
   type: 'API',
   locations: ['eu-west-1', 'us-west-2'],
-  alertChannelSubscriptions: [slackAlertChannel.id],
+  alertChannelSubscriptions: [{
+    channelId: slackAlertChannel.id.apply(id => parseInt(id)),
+    activated: true,
+  }],
   request: {
     method: 'GET',
     url: 'https://api.example.com/critical',

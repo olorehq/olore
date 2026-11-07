@@ -2,915 +2,342 @@
 > Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
 > Use this file to discover all available pages before exploring further.
 
-# Claude Code settings
+# Settings files and precedence
 
-> Configure Claude Code with global and project-level settings, and environment variables.
+> Change Claude Code settings, pick the scope a key belongs in, verify the change, and learn which value Claude Code uses when a key is set in several places.
 
-Claude Code offers a variety of settings to configure its behavior to meet your needs. You can configure Claude Code by running the `/config` command when using the interactive REPL, which opens a tabbed Settings interface where you can view status information and modify configuration options.
+Settings are the JSON keys that change how Claude Code behaves: which model it starts with, what it can run without asking, which files it can't read, how it looks in your terminal, and what your organization enforces.
 
-## Configuration scopes
+> [!TIP]
+>
+> To look up a specific key, go to [All settings](https://code.claude.com/docs/en/settings-reference.md), which lists every key with the file you set it in, its default, and an example.
 
-Claude Code uses a **scope system** to determine where configurations apply and who they're shared with. Understanding scopes helps you decide how to configure Claude Code for personal use, team collaboration, or enterprise deployment.
+Claude Code reads settings from JSON settings files such as `~/.claude/settings.json`. It looks for them in a few locations, and [the file it reads a setting from decides who the setting applies to](#settings-files-and-who-they-affect). This page covers those files: which one to put a setting in, how to change a setting and confirm it applied, and which value Claude Code uses when the same key is set in more than one file. [Configure permissions](https://code.claude.com/docs/en/permissions.md) covers what Claude Code can run without asking and how to write `allow`, `ask`, and `deny` rules.
 
-### Available scopes
+> [!NOTE]
+>
+> This page covers Claude Code running on your machine: the terminal, the [VS Code](https://code.claude.com/docs/en/vs-code.md) and [JetBrains](https://code.claude.com/docs/en/jetbrains.md) extensions, and the [desktop app](https://code.claude.com/docs/en/desktop.md), which all read the same settings files. A [cloud session](https://code.claude.com/docs/en/claude-code-on-the-web.md) runs on a different machine and reads only some of them; see [Settings in cloud sessions](#settings-in-cloud-sessions).
 
-| Scope       | Location                                                                           | Who it affects                       | Shared with team?      |
-| :---------- | :--------------------------------------------------------------------------------- | :----------------------------------- | :--------------------- |
-| **Managed** | Server-managed settings, plist / registry, or system-level `managed-settings.json` | All users on the machine             | Yes (deployed by IT)   |
-| **User**    | `~/.claude/` directory                                                             | You, across all projects             | No                     |
-| **Project** | `.claude/` in repository                                                           | All collaborators on this repository | Yes (committed to git) |
-| **Local**   | `.claude/settings.local.json`                                                      | You, in this repository only         | No (gitignored)        |
+## Settings files and who they affect
 
-### When to use each scope
+Claude Code reads settings from four files, and an organization can also deliver managed settings from the claude.ai console. Each source has a scope: the set of people and projects a setting saved in it applies to, whether that's only you, everyone in a project, or everyone in your organization.
 
-**Managed scope** is for:
+| Scope | File | Who it affects | Use it for |
+| :- | :- | :- | :- |
+| User | `~/.claude/settings.json` | You, in every project on this machine | Personal preferences: theme, editor mode, default model, your own permission rules |
+| Shared project | `.claude/settings.json` | Everyone working in the folder that contains it. In a git repository, commit it so teammates get it | Team permissions, hooks, plugins, and the environment variables the project needs |
+| Project local | `.claude/settings.local.json` | You, in this one project only. Claude Code keeps it out of git when it creates the file; if you create it by hand, add it to `.gitignore` yourself | Personal overrides for one project, and testing before you share |
+| Managed | `managed-settings.json` and other [managed sources](https://code.claude.com/docs/en/managed-settings.md#delivery-mechanisms) | Everyone your organization deploys it to; [Settings precedence](#settings-precedence) says what can override it | Security policy and compliance requirements |
 
-* Security policies that must be enforced organization-wide
-* Compliance requirements that can't be overridden
-* Standardized configurations deployed by IT/DevOps
+In the File column, `~/.claude` is the `.claude` folder in your home directory, and a bare `.claude` is the `.claude` folder inside your project.
 
-**User scope** is best for:
+### Compare the scope of each settings file
 
-* Personal preferences you want everywhere (themes, editor settings)
-* Tools and plugins you use across all projects
-* API keys and authentication (stored securely)
+Suppose you have three projects on your machine, `website/`, `api/`, and `acme-app/`, a teammate has their own clone of `acme-app/`, and you start a [cloud session](#settings-in-cloud-sessions) on `acme-app/`.
 
-**Project scope** is best for:
+The graphic below shows which of those folders a setting applies in when you start Claude Code from them. Click a settings file to see the folders it reaches.
 
-* Team-shared settings (permissions, hooks, MCP servers)
-* Plugins the whole team should have
-* Standardizing tooling across collaborators
+Settings file
 
-**Local scope** is best for:
+Your machine
 
-* Personal overrides for a specific project
-* Testing configurations before sharing with the team
-* Machine-specific settings that won't work for others
+A teammate’s machine
 
-### How scopes interact
+A cloud session
 
-When the same setting is configured in multiple scopes, more specific scopes take precedence:
+* **`~/.claude/settings.json`**: every project on your machine, and nothing on your teammate's or in the cloud session
+* **`acme-app/.claude/settings.json`**: your `acme-app/`. It reaches your teammate's clone and the cloud session only if you commit the file to version control; until you do, it's a file on your disk like any other and nobody else has it
+* **`acme-app/.claude/settings.local.json`**: your `acme-app/` only. Claude Code adds it to your global git excludes the first time it writes the file, so it stays out of your commits; if you create the file by hand, [add it to `.gitignore` yourself](#keep-personal-settings-out-of-a-repository)
+* **Managed settings**, whether a `managed-settings.json` file, an MDM policy, or [server-managed settings](https://code.claude.com/docs/en/server-managed-settings.md) from the claude.ai console: every project on every machine your organization deploys it to, or that you sign in to with your organization account. Only server-managed settings reach the cloud session
 
-1. **Managed** (highest) - can't be overridden by anything
-2. **Command line arguments** - temporary session overrides
-3. **Local** - overrides project and user settings
-4. **Project** - overrides user settings
-5. **User** (lowest) - applies when nothing else specifies the setting
+### Find or create your settings files
 
-For example, if a permission is allowed in user settings but denied in project settings, the project setting takes precedence and the permission is blocked.
+Installing Claude Code doesn't create any settings file. If your machine or project already has one, it came from one of these sources:
 
-### What uses scopes
+* **Managed**: your organization deploys it. You don't create or edit it.
+* **Shared project**: a project that already uses Claude Code may have one committed. If not, create it at `.claude/settings.json` in the project folder.
+* **User** and **Project local**: create them yourself, or let Claude Code create them. It writes `~/.claude/settings.json` the first time you change an option in the `/config` menu that it stores in user settings, such as the theme, and `.claude/settings.local.json` the first time you give a standing approval on a permission prompt, such as "Yes, and don't ask again" for a Bash command. A few `/config` options, including **Show tips**, save to `.claude/settings.local.json` instead of the user file.
 
-Scopes apply to many Claude Code features:
+> [!NOTE]
+>
+> On Windows, `~/.claude` means `%USERPROFILE%\.claude`. To keep the home-directory files somewhere else, set [`CLAUDE_CONFIG_DIR`](https://code.claude.com/docs/en/env-vars); Claude Code then stores your settings, session history, and plugins there instead.
 
-| Feature         | User location             | Project location                   | Local location                 |
-| :-------------- | :------------------------ | :--------------------------------- | :----------------------------- |
-| **Settings**    | `~/.claude/settings.json` | `.claude/settings.json`            | `.claude/settings.local.json`  |
-| **Subagents**   | `~/.claude/agents/`       | `.claude/agents/`                  | None                           |
-| **MCP servers** | `~/.claude.json`          | `.mcp.json`                        | `~/.claude.json` (per-project) |
-| **Plugins**     | `~/.claude/settings.json` | `.claude/settings.json`            | `.claude/settings.local.json`  |
-| **CLAUDE.md**   | `~/.claude/CLAUDE.md`     | `CLAUDE.md` or `.claude/CLAUDE.md` | `CLAUDE.local.md`              |
+Claude Code also keeps a fifth file, [`~/.claude.json`](https://code.claude.com/docs/en/claude-directory#ce-claude-json), that it writes for itself; you don't need to edit it. It holds your account details, [MCP server](https://code.claude.com/docs/en/mcp.md) configurations, per-project state such as trust decisions, and the [global config keys](https://code.claude.com/docs/en/settings-reference.md#global-config-settings) that `/config` writes for you.
 
-***
+### Share settings with your team
 
-## Settings files
+Commit `.claude/settings.json` so everyone who clones the repository gets the same permissions, hooks, and plugins. Each teammate can still override it for themselves in their own `.claude/settings.local.json`, so personal exceptions don't need a commit. For a complete team file, see [a team's shared settings](https://code.claude.com/docs/en/settings-example.md#a-teams-shared-settings).
 
-The `settings.json` file is the official mechanism for configuring Claude
-Code through hierarchical settings:
+Some of what you commit waits until each teammate [trusts the folder](https://code.claude.com/docs/en/permissions.md#project-allow-rules-and-workspace-trust), and a few keys never take effect from a repository file; [Troubleshoot a setting that doesn't apply](#common-cases) covers both.
 
-* **User settings** are defined in `~/.claude/settings.json` and apply to all
-  projects.
-* **Project settings** are saved in your project directory:
-  * `.claude/settings.json` for settings that are checked into source control and shared with your team
-  * `.claude/settings.local.json` for settings that are not checked in, useful for personal preferences and experimentation. Claude Code will configure git to ignore `.claude/settings.local.json` when it is created.
-* **Managed settings**: For organizations that need centralized control, Claude Code supports multiple delivery mechanisms for managed settings. All use the same JSON format and cannot be overridden by user or project settings:
+### Keep personal settings out of a repository
 
-  * **Server-managed settings**: delivered from Anthropic's servers via the Claude.ai admin console. See [server-managed settings](/en/server-managed-settings).
-  * **MDM/OS-level policies**: delivered through native device management on macOS and Windows:
-    * macOS: `com.anthropic.claudecode` managed preferences domain. The plist's top-level keys mirror `managed-settings.json`, with nested settings as dictionaries and arrays as plist arrays. Deploy via configuration profiles in Jamf, Iru (Kandji), or similar MDM tools.
-    * Windows: `HKLM\SOFTWARE\Policies\ClaudeCode` registry key with a `Settings` value (REG\_SZ or REG\_EXPAND\_SZ) containing JSON (deployed via Group Policy or Intune)
-    * Windows (user-level): `HKCU\SOFTWARE\Policies\ClaudeCode` (lowest policy priority, only used when no admin-level source exists)
-  * **File-based**: `managed-settings.json` and `managed-mcp.json` deployed to system directories:
+To change a setting for yourself in one project without changing it for your teammates, save it in `.claude/settings.local.json` inside the project. Claude Code applies that file over the committed `.claude/settings.json`, so if your team's file sets `"model": "claude-sonnet-5"` and you want Opus, put `"model": "claude-opus-5-5"` in your local file and only your sessions change.
 
-    * macOS: `/Library/Application Support/ClaudeCode/`
-    * Linux and WSL: `/etc/claude-code/`
-    * Windows: `C:\Program Files\ClaudeCode\`
+Claude Code also writes to this file, keeps it out of your commits, and applies its allow rules without the trust step:
 
-    <Warning>
-      The legacy Windows path `C:\ProgramData\ClaudeCode\managed-settings.json` is no longer supported as of v2.1.75. Administrators who deployed settings to that location must migrate files to `C:\Program Files\ClaudeCode\managed-settings.json`.
-    </Warning>
+* **Claude Code writes it too.** When Claude asks permission to run a Bash command and you choose "Yes, and don't ask again", Claude Code saves that [permission approval](https://code.claude.com/docs/en/permissions.md#permission-system) here as an `allow` rule.
+* **You don't need to gitignore it yourself, unless you created it by hand.** The first time Claude Code writes the file in a git repository that doesn't already ignore it, it adds `**/.claude/settings.local.json` to your global git excludes file, so the file stays out of your commits in every repository. That file is `core.excludesFile` when your global git config sets it to an absolute or `~`-prefixed path; otherwise it's `$XDG_CONFIG_HOME/git/ignore`, or `~/.config/git/ignore` when `XDG_CONFIG_HOME` is unset. If you created the file by hand and Claude Code hasn't written to it yet, add it to `.gitignore` yourself.
+* **Its allow rules don't wait for trust while the file stays untracked.** Because the file is yours and not the repository's, Claude Code applies its `allow` rules without the [workspace trust](https://code.claude.com/docs/en/permissions.md#project-allow-rules-and-workspace-trust) step it requires for the committed file. If the file is tracked by git, the trust step applies to it too; see [When your local settings file needs trust](https://code.claude.com/docs/en/permissions.md#when-your-local-settings-file-needs-trust).
 
-    File-based managed settings also support a drop-in directory at `managed-settings.d/` in the same system directory alongside `managed-settings.json`. This lets separate teams deploy independent policy fragments without coordinating edits to a single file.
+#### Where Claude Code keeps the local file in a git repository
 
-    Following the systemd convention, `managed-settings.json` is merged first as the base, then all `*.json` files in the drop-in directory are sorted alphabetically and merged on top. Later files override earlier ones for scalar values; arrays are concatenated and de-duplicated; objects are deep-merged. Hidden files starting with `.` are ignored.
+When Claude asks permission to run a Bash command and you choose "Yes, and don't ask again", Claude Code saves that approval as an `allow` rule in `.claude/settings.local.json`. If you start Claude Code in a subdirectory of a git repository, it reads and writes that file at the repository root and applies the approval across the whole repository. In a [worktree](https://code.claude.com/docs/en/worktrees.md), it uses the file at the main checkout's root.
 
-    Use numeric prefixes to control merge order, for example `10-telemetry.json` and `20-security.json`.
+Two rules qualify the root location:
 
-  See [managed settings](/en/permissions#managed-only-settings) and [Managed MCP configuration](/en/mcp#managed-mcp-configuration) for details.
+* **When the file stays with `.claude/settings.json` instead**: outside a git repository, when the repository root is your home directory, on Windows, or when the repository root or its `.git` or `.claude` entry isn't owned by your user.
+* **Paths in the file don't anchor at the repository root**: a permission rule that starts with `/` or a relative sandbox path [anchors at the session's primary working directory](https://code.claude.com/docs/en/permissions.md#read-and-edit) instead.
 
-  This [repository](https://github.com/anthropics/claude-code/tree/main/examples/mdm) includes starter deployment templates for Jamf, Iru (Kandji), Intune, and Group Policy. Use these as starting points and adjust them to fit your needs.
+Before v2.1.211, Claude Code kept the file in the starting directory. It still reads a file an earlier version left there alongside the root file; where both set the same key, the root's value applies, and permission rules from both files apply. The Agent SDK's [`resolveSettings()`](https://code.claude.com/docs/en/agent-sdk/typescript#resolvesettings) helper always reads the file from the starting directory.
 
-  <Note>
-    Managed deployments can also restrict **plugin marketplace additions** using
-    `strictKnownMarketplaces`. For more information, see [Managed marketplace restrictions](/en/plugin-marketplaces#managed-marketplace-restrictions).
-  </Note>
-* **Other configuration** is stored in `~/.claude.json`. This file contains your OAuth session, [MCP server](/en/mcp) configurations for user and local scopes, per-project state (allowed tools, trust settings), and various caches. Project-scoped MCP servers are stored separately in `.mcp.json`.
+Claude Code reads the shared `.claude/settings.json` from the session's [primary working directory](https://code.claude.com/docs/en/permissions.md#working-directories), so to use a file committed at the repository root, start Claude Code there. After you [move the session with `/cd`](https://code.claude.com/docs/en/permissions#move-the-session-to-another-directory), Claude Code reads both project files from the new directory instead, placing the local file by the same rules. Reading them from the directory you moved to requires Claude Code v2.1.246 or later. For a worktree session that you start from the desktop app, see [What worktrees share with the main checkout](https://code.claude.com/docs/en/worktrees.md#what-worktrees-share-with-the-main-checkout).
 
-<Note>
-  Claude Code automatically creates timestamped backups of configuration files and retains the five most recent backups to prevent data loss.
-</Note>
+### Check what your organization enforces
 
-```JSON Example settings.json theme={null}
+If your organization manages Claude Code, some settings are decided for you and nothing you put in your own files changes them. To see which, run `/status`: the `Setting sources` line names the managed source that applies to you. Managed settings apply wherever Claude Code runs on this machine; [What a developer can change](https://code.claude.com/docs/en/managed-settings.md#what-a-developer-can-change) covers local admin rights and tools other than Claude Code.
+
+Managed settings reach you through the [delivery mechanisms](https://code.claude.com/docs/en/managed-settings.md#delivery-mechanisms) on the managed settings page, most commonly:
+
+* [Server-managed settings](https://code.claude.com/docs/en/server-managed-settings.md), which Claude Code fetches from the claude.ai admin console or a self-hosted [Claude apps gateway](https://code.claude.com/docs/en/claude-apps-gateway)
+* MDM or OS-level policies, and `managed-settings.json` files in a system directory
+* An embedding host such as Claude Desktop, through the SDK `managedSettings` option; see [Control policy from an embedding host](https://code.claude.com/docs/en/managed-settings.md#parent-settings-from-embedding-hosts)
+
+In a [Cowork](https://claude.com/docs/cowork/overview) session that runs on your machine in the Claude Desktop app, Claude Code doesn't fetch server-managed settings from the claude.ai admin console, and it reads policy deployed to your device unless your organization's Claude Desktop configuration sets `requireCoworkFullVmSandbox`. [Where and when a policy applies](https://code.claude.com/docs/en/managed-settings.md#where-and-when-a-policy-applies) covers Cowork and cloud sessions.
+
+If you're the administrator, [Set up Claude Code for your organization](https://code.claude.com/docs/en/admin-setup.md) walks through choosing what to enforce, and [Deploy managed settings](https://code.claude.com/docs/en/managed-settings.md) covers delivery and how to confirm a policy is in force. For the warning the managed settings editor in the claude.ai admin console can show, see [Configure server-managed settings](https://code.claude.com/docs/en/server-managed-settings.md#configure-server-managed-settings).
+
+## Change a setting
+
+You can change a setting from the `/config` menu, by editing a settings file, or for one session from the command line.
+
+Claude Code's system prompt isn't published. To give Claude standing instructions, use [`CLAUDE.md` files](https://code.claude.com/docs/en/memory) or the `--append-system-prompt` flag.
+
+### Use the /config menu
+
+Run `/config` inside Claude Code and open the **Config** tab. It lists a short set of personal options such as theme, editor mode, and verbose output, not every settings key. Select an option to change it; Claude Code saves it for you:
+
+* **Most options**: `~/.claude/settings.json`
+* **A few options, such as Show tips**: `.claude/settings.local.json`
+* **The [global config options](https://code.claude.com/docs/en/settings-reference.md#global-config-settings)**: `~/.claude.json`
+
+To set one option without the menu, pass `key=value`, such as `/config verbose=true`.
+
+> [!NOTE]
+>
+> `/config` is part of the terminal interface. The [VS Code](https://code.claude.com/docs/en/vs-code.md) chat panel and the [desktop app](https://code.claude.com/docs/en/desktop.md) don't open it; change settings there by editing a settings file or through those apps' own settings.
+
+### Edit a settings file
+
+Open the settings file for the scope you want in your editor and add or change a key. Settings files are strict JSON: a `//` comment or a trailing comma is a syntax error, and Claude Code reports the file as a [Settings Error](#fix-a-broken-settings-file) at the next start. For example, to let Claude Code run your lint and test commands without asking and stop it reading `.env` files, add this to `~/.claude/settings.json`:
+
+```json ~/.claude/settings.json theme={null}
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(npm run lint)",
-      "Bash(npm run test *)",
-      "Read(~/.zshrc)"
+      "Bash(npm run test *)"
     ],
     "deny": [
-      "Bash(curl *)",
       "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./secrets/**)"
+      "Read(./.env.*)"
     ]
-  },
-  "env": {
-    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-    "OTEL_METRICS_EXPORTER": "otlp"
-  },
-  "companyAnnouncements": [
-    "Welcome to Acme Corp! Review our code guidelines at docs.acme.com",
-    "Reminder: Code reviews required for all PRs",
-    "New security policy in effect"
-  ]
-}
-```
-
-The `$schema` line in the example above points to the [official JSON schema](https://json.schemastore.org/claude-code-settings.json) for Claude Code settings. Adding it to your `settings.json` enables autocomplete and inline validation in VS Code, Cursor, and any other editor that supports JSON schema validation.
-
-The published schema is updated periodically and may not include settings added in the most recent CLI releases, so a validation warning on a recently documented field does not necessarily mean your configuration is invalid.
-
-### Available settings
-
-`settings.json` supports a number of options:
-
-| Key                               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Example                                                                                                                        |
-| :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
-| `agent`                           | Run the main thread as a named subagent. Applies that subagent's system prompt, tool restrictions, and model. See [Invoke subagents explicitly](/en/sub-agents#invoke-subagents-explicitly)                                                                                                                                                                                                                                                                                                                                                              | `"code-reviewer"`                                                                                                              |
-| `allowedChannelPlugins`           | (Managed settings only) Allowlist of channel plugins that may push messages. Replaces the default Anthropic allowlist when set. Undefined = fall back to the default, empty array = block all channel plugins. Requires `channelsEnabled: true`. See [Restrict which channel plugins can run](/en/channels#restrict-which-channel-plugins-can-run)                                                                                                                                                                                                       | `[{ "marketplace": "claude-plugins-official", "plugin": "telegram" }]`                                                         |
-| `allowedHttpHookUrls`             | Allowlist of URL patterns that HTTP hooks may target. Supports `*` as a wildcard. When set, hooks with non-matching URLs are blocked. Undefined = no restriction, empty array = block all HTTP hooks. Arrays merge across settings sources. See [Hook configuration](#hook-configuration)                                                                                                                                                                                                                                                                | `["https://hooks.example.com/*"]`                                                                                              |
-| `allowedMcpServers`               | When set in managed-settings.json, allowlist of MCP servers users can configure. Undefined = no restrictions, empty array = lockdown. Applies to all scopes. Denylist takes precedence. See [Managed MCP configuration](/en/mcp#managed-mcp-configuration)                                                                                                                                                                                                                                                                                               | `[{ "serverName": "github" }]`                                                                                                 |
-| `allowManagedHooksOnly`           | (Managed settings only) Only managed hooks, SDK hooks, and hooks from plugins force-enabled in managed settings `enabledPlugins` are loaded. User, project, and all other plugin hooks are blocked. See [Hook configuration](#hook-configuration)                                                                                                                                                                                                                                                                                                        | `true`                                                                                                                         |
-| `allowManagedMcpServersOnly`      | (Managed settings only) Only `allowedMcpServers` from managed settings are respected. `deniedMcpServers` still merges from all sources. Users can still add MCP servers, but only the admin-defined allowlist applies. See [Managed MCP configuration](/en/mcp#managed-mcp-configuration)                                                                                                                                                                                                                                                                | `true`                                                                                                                         |
-| `allowManagedPermissionRulesOnly` | (Managed settings only) Prevent user and project settings from defining `allow`, `ask`, or `deny` permission rules. Only rules in managed settings apply. See [Managed-only settings](/en/permissions#managed-only-settings)                                                                                                                                                                                                                                                                                                                             | `true`                                                                                                                         |
-| `alwaysThinkingEnabled`           | Enable [extended thinking](/en/common-workflows#use-extended-thinking-thinking-mode) by default for all sessions. Typically configured via the `/config` command rather than editing directly                                                                                                                                                                                                                                                                                                                                                            | `true`                                                                                                                         |
-| `apiKeyHelper`                    | Custom script, to be executed in `/bin/sh`, to generate an auth value. This value will be sent as `X-Api-Key` and `Authorization: Bearer` headers for model requests                                                                                                                                                                                                                                                                                                                                                                                     | `/bin/generate_temp_api_key.sh`                                                                                                |
-| `attribution`                     | Customize attribution for git commits and pull requests. See [Attribution settings](#attribution-settings)                                                                                                                                                                                                                                                                                                                                                                                                                                               | `{"commit": "🤖 Generated with Claude Code", "pr": ""}`                                                                        |
-| `autoMemoryDirectory`             | Custom directory for [auto memory](/en/memory#storage-location) storage. Accepts `~/`-expanded paths. Not accepted in project settings (`.claude/settings.json`) to prevent shared repos from redirecting memory writes to sensitive locations. Accepted from policy, local, and user settings                                                                                                                                                                                                                                                           | `"~/my-memory-dir"`                                                                                                            |
-| `autoMode`                        | Customize what the [auto mode](/en/permission-modes#eliminate-prompts-with-auto-mode) classifier blocks and allows. Contains `environment`, `allow`, and `soft_deny` arrays of prose rules. Include the literal string `"$defaults"` in an array to inherit the built-in rules at that position. See [Configure auto mode](/en/auto-mode-config). Not read from shared project settings                                                                                                                                                                  | `{"soft_deny": ["$defaults", "Never run terraform apply"]}`                                                                    |
-| `autoScrollEnabled`               | In [fullscreen rendering](/en/fullscreen), follow new output to the bottom of the conversation. Default: `true`. Appears in `/config` as **Auto-scroll**. Permission prompts still scroll into view when this is off                                                                                                                                                                                                                                                                                                                                     | `false`                                                                                                                        |
-| `autoUpdatesChannel`              | Release channel to follow for updates. Use `"stable"` for a version that is typically about one week old and skips versions with major regressions, or `"latest"` (default) for the most recent release                                                                                                                                                                                                                                                                                                                                                  | `"stable"`                                                                                                                     |
-| `availableModels`                 | Restrict which models users can select via `/model`, `--model`, or `ANTHROPIC_MODEL`. Does not affect the Default option. See [Restrict model selection](/en/model-config#restrict-model-selection)                                                                                                                                                                                                                                                                                                                                                      | `["sonnet", "haiku"]`                                                                                                          |
-| `awaySummaryEnabled`              | Show a one-line session recap when you return to the terminal after a few minutes away. Set to `false` or turn off Session recap in `/config` to disable. Same as [`CLAUDE_CODE_ENABLE_AWAY_SUMMARY`](/en/env-vars)                                                                                                                                                                                                                                                                                                                                      | `true`                                                                                                                         |
-| `awsAuthRefresh`                  | Custom script that modifies the `.aws` directory (see [advanced credential configuration](/en/amazon-bedrock#advanced-credential-configuration))                                                                                                                                                                                                                                                                                                                                                                                                         | `aws sso login --profile myprofile`                                                                                            |
-| `awsCredentialExport`             | Custom script that outputs JSON with AWS credentials (see [advanced credential configuration](/en/amazon-bedrock#advanced-credential-configuration))                                                                                                                                                                                                                                                                                                                                                                                                     | `/bin/generate_aws_grant.sh`                                                                                                   |
-| `blockedMarketplaces`             | (Managed settings only) Blocklist of marketplace sources. Enforced on marketplace add and on plugin install, update, refresh, and auto-update, so a marketplace added before the policy was set cannot be used to fetch plugins. Blocked sources are checked before downloading, so they never touch the filesystem. See [Managed marketplace restrictions](/en/plugin-marketplaces#managed-marketplace-restrictions)                                                                                                                                    | `[{ "source": "github", "repo": "untrusted/plugins" }]`                                                                        |
-| `channelsEnabled`                 | (Managed settings only) Allow [channels](/en/channels) for Team and Enterprise users. Unset or `false` blocks channel message delivery regardless of what users pass to `--channels`                                                                                                                                                                                                                                                                                                                                                                     | `true`                                                                                                                         |
-| `cleanupPeriodDays`               | Session files older than this period are deleted at startup (default: 30 days, minimum 1). Setting to `0` is rejected with a validation error. Also controls the age cutoff for automatic removal of [orphaned subagent worktrees](/en/common-workflows#worktree-cleanup) at startup. To disable transcript writes entirely, set the [`CLAUDE_CODE_SKIP_PROMPT_HISTORY`](/en/env-vars) environment variable, or in non-interactive mode (`-p`) use the `--no-session-persistence` flag or the `persistSession: false` SDK option.                        | `20`                                                                                                                           |
-| `companyAnnouncements`            | Announcement to display to users at startup. If multiple announcements are provided, they will be cycled through at random.                                                                                                                                                                                                                                                                                                                                                                                                                              | `["Welcome to Acme Corp! Review our code guidelines at docs.acme.com"]`                                                        |
-| `defaultShell`                    | Default shell for input-box `!` commands. Accepts `"bash"` (default) or `"powershell"`. Setting `"powershell"` routes interactive `!` commands through PowerShell on Windows. Requires `CLAUDE_CODE_USE_POWERSHELL_TOOL=1`. See [PowerShell tool](/en/tools-reference#powershell-tool)                                                                                                                                                                                                                                                                   | `"powershell"`                                                                                                                 |
-| `deniedMcpServers`                | When set in managed-settings.json, denylist of MCP servers that are explicitly blocked. Applies to all scopes including managed servers. Denylist takes precedence over allowlist. See [Managed MCP configuration](/en/mcp#managed-mcp-configuration)                                                                                                                                                                                                                                                                                                    | `[{ "serverName": "filesystem" }]`                                                                                             |
-| `disableAllHooks`                 | Disable all [hooks](/en/hooks) and any custom [status line](/en/statusline)                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `true`                                                                                                                         |
-| `disableAutoMode`                 | Set to `"disable"` to prevent [auto mode](/en/permission-modes#eliminate-prompts-with-auto-mode) from being activated. Removes `auto` from the `Shift+Tab` cycle and rejects `--permission-mode auto` at startup. Most useful in [managed settings](/en/permissions#managed-settings) where users cannot override it                                                                                                                                                                                                                                     | `"disable"`                                                                                                                    |
-| `disableDeepLinkRegistration`     | Set to `"disable"` to prevent Claude Code from registering the `claude-cli://` protocol handler with the operating system on startup. Deep links let external tools open a Claude Code session with a pre-filled prompt via `claude-cli://open?q=...`. The `q` parameter supports multi-line prompts using URL-encoded newlines (`%0A`). Useful in environments where protocol handler registration is restricted or managed separately                                                                                                                  | `"disable"`                                                                                                                    |
-| `disabledMcpjsonServers`          | List of specific MCP servers from `.mcp.json` files to reject                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `["filesystem"]`                                                                                                               |
-| `disableSkillShellExecution`      | Disable inline shell execution for `` !`...` `` and ` ```! ` blocks in [skills](/en/skills) and custom commands from user, project, plugin, or additional-directory sources. Commands are replaced with `[shell command execution disabled by policy]` instead of being run. Bundled and managed skills are not affected. Most useful in [managed settings](/en/permissions#managed-settings) where users cannot override it                                                                                                                             | `true`                                                                                                                         |
-| `editorMode`                      | Key binding mode for the input prompt: `"normal"` or `"vim"`. Default: `"normal"`. Appears in `/config` as **Editor mode**                                                                                                                                                                                                                                                                                                                                                                                                                               | `"vim"`                                                                                                                        |
-| `effortLevel`                     | Persist the [effort level](/en/model-config#adjust-effort-level) across sessions. Accepts `"low"`, `"medium"`, `"high"`, or `"xhigh"`. Written automatically when you run `/effort` with one of those values. See [Adjust effort level](/en/model-config#adjust-effort-level) for supported models                                                                                                                                                                                                                                                       | `"xhigh"`                                                                                                                      |
-| `enableAllProjectMcpServers`      | Automatically approve all MCP servers defined in project `.mcp.json` files                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `true`                                                                                                                         |
-| `enabledMcpjsonServers`           | List of specific MCP servers from `.mcp.json` files to approve                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `["memory", "github"]`                                                                                                         |
-| `env`                             | Environment variables that will be applied to every session                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `{"FOO": "bar"}`                                                                                                               |
-| `fastModePerSessionOptIn`         | When `true`, fast mode does not persist across sessions. Each session starts with fast mode off, requiring users to enable it with `/fast`. The user's fast mode preference is still saved. See [Require per-session opt-in](/en/fast-mode#require-per-session-opt-in)                                                                                                                                                                                                                                                                                   | `true`                                                                                                                         |
-| `feedbackSurveyRate`              | Probability (0–1) that the [session quality survey](/en/data-usage#session-quality-surveys) appears when eligible. Set to `0` to suppress entirely. Useful when using Bedrock, Vertex, or Foundry where the default sample rate does not apply                                                                                                                                                                                                                                                                                                           | `0.05`                                                                                                                         |
-| `fileSuggestion`                  | Configure a custom script for `@` file autocomplete. See [File suggestion settings](#file-suggestion-settings)                                                                                                                                                                                                                                                                                                                                                                                                                                           | `{"type": "command", "command": "~/.claude/file-suggestion.sh"}`                                                               |
-| `forceLoginMethod`                | Use `claudeai` to restrict login to Claude.ai accounts, `console` to restrict login to Claude Console (API usage billing) accounts                                                                                                                                                                                                                                                                                                                                                                                                                       | `claudeai`                                                                                                                     |
-| `forceLoginOrgUUID`               | Require login to belong to a specific organization. Accepts a single UUID string, which also pre-selects that organization during login, or an array of UUIDs where any listed organization is accepted without pre-selection. When set in managed settings, login fails if the authenticated account does not belong to a listed organization; an empty array fails closed and blocks login with a misconfiguration message                                                                                                                             | `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"` or `["xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"]` |
-| `forceRemoteSettingsRefresh`      | (Managed settings only) Block CLI startup until remote managed settings are freshly fetched from the server. If the fetch fails, the CLI exits rather than continuing with cached or no settings. When not set, startup continues without waiting for remote settings. See [fail-closed enforcement](/en/server-managed-settings#enforce-fail-closed-startup)                                                                                                                                                                                            | `true`                                                                                                                         |
-| `hooks`                           | Configure custom commands to run at lifecycle events. See [hooks documentation](/en/hooks) for format                                                                                                                                                                                                                                                                                                                                                                                                                                                    | See [hooks](/en/hooks)                                                                                                         |
-| `httpHookAllowedEnvVars`          | Allowlist of environment variable names HTTP hooks may interpolate into headers. When set, each hook's effective `allowedEnvVars` is the intersection with this list. Undefined = no restriction. Arrays merge across settings sources. See [Hook configuration](#hook-configuration)                                                                                                                                                                                                                                                                    | `["MY_TOKEN", "HOOK_SECRET"]`                                                                                                  |
-| `includeCoAuthoredBy`             | **Deprecated**: Use `attribution` instead. Whether to include the `co-authored-by Claude` byline in git commits and pull requests (default: `true`)                                                                                                                                                                                                                                                                                                                                                                                                      | `false`                                                                                                                        |
-| `includeGitInstructions`          | Include built-in commit and PR workflow instructions and the git status snapshot in Claude's system prompt (default: `true`). Set to `false` to remove both, for example when using your own git workflow skills. The `CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS` environment variable takes precedence over this setting when set                                                                                                                                                                                                                            | `false`                                                                                                                        |
-| `language`                        | Configure Claude's preferred response language (e.g., `"japanese"`, `"spanish"`, `"french"`). Claude will respond in this language by default. Also sets the [voice dictation](/en/voice-dictation#change-the-dictation-language) language                                                                                                                                                                                                                                                                                                               | `"japanese"`                                                                                                                   |
-| `minimumVersion`                  | Floor that prevents background auto-updates and `claude update` from installing a version below this one. Switching from the `"latest"` channel to `"stable"` via `/config` prompts you to stay on the current version or allow the downgrade. Choosing to stay sets this value. Also useful in [managed settings](/en/permissions#managed-settings) to pin an organization-wide minimum                                                                                                                                                                 | `"2.1.100"`                                                                                                                    |
-| `model`                           | Override the default model to use for Claude Code                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `"claude-sonnet-4-6"`                                                                                                          |
-| `modelOverrides`                  | Map Anthropic model IDs to provider-specific model IDs such as Bedrock inference profile ARNs. Each model picker entry uses its mapped value when calling the provider API. See [Override model IDs per version](/en/model-config#override-model-ids-per-version)                                                                                                                                                                                                                                                                                        | `{"claude-opus-4-6": "arn:aws:bedrock:..."}`                                                                                   |
-| `otelHeadersHelper`               | Script to generate dynamic OpenTelemetry headers. Runs at startup and periodically (see [Dynamic headers](/en/monitoring-usage#dynamic-headers))                                                                                                                                                                                                                                                                                                                                                                                                         | `/bin/generate_otel_headers.sh`                                                                                                |
-| `outputStyle`                     | Configure an output style to adjust the system prompt. See [output styles documentation](/en/output-styles)                                                                                                                                                                                                                                                                                                                                                                                                                                              | `"Explanatory"`                                                                                                                |
-| `permissions`                     | See table below for structure of permissions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |                                                                                                                                |
-| `plansDirectory`                  | Customize where plan files are stored. Path is relative to project root. Default: `~/.claude/plans`                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `"./plans"`                                                                                                                    |
-| `pluginTrustMessage`              | (Managed settings only) Custom message appended to the plugin trust warning shown before installation. Use this to add organization-specific context, for example to confirm that plugins from your internal marketplace are vetted.                                                                                                                                                                                                                                                                                                                     | `"All plugins from our marketplace are approved by IT"`                                                                        |
-| `prefersReducedMotion`            | Reduce or disable UI animations (spinners, shimmer, flash effects) for accessibility                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `true`                                                                                                                         |
-| `prUrlTemplate`                   | URL template for the PR badge shown in the footer and in tool-result summaries. Substitutes `{host}`, `{owner}`, `{repo}`, `{number}`, and `{url}` from the `gh`-reported PR URL. Use to point PR links at an internal code-review tool instead of `github.com`. Does not affect `#123` autolinks in Claude's prose                                                                                                                                                                                                                                      | `"https://reviews.example.com/{owner}/{repo}/pull/{number}"`                                                                   |
-| `respectGitignore`                | Control whether the `@` file picker respects `.gitignore` patterns. When `true` (default), files matching `.gitignore` patterns are excluded from suggestions                                                                                                                                                                                                                                                                                                                                                                                            | `false`                                                                                                                        |
-| `showClearContextOnPlanAccept`    | Show the "clear context" option on the plan accept screen. Defaults to `false`. Set to `true` to restore the option                                                                                                                                                                                                                                                                                                                                                                                                                                      | `true`                                                                                                                         |
-| `showThinkingSummaries`           | Show [extended thinking](/en/common-workflows#use-extended-thinking-thinking-mode) summaries in interactive sessions. When unset or `false` (default in interactive mode), thinking blocks are redacted by the API and shown as a collapsed stub. Redaction only changes what you see, not what the model generates: to reduce thinking spend, [lower the budget or disable thinking](/en/common-workflows#use-extended-thinking-thinking-mode) instead. Non-interactive mode (`-p`) and SDK callers always receive summaries regardless of this setting | `true`                                                                                                                         |
-| `showTurnDuration`                | Show turn duration messages after responses, e.g. "Cooked for 1m 6s". Default: `true`. Appears in `/config` as **Show turn duration**                                                                                                                                                                                                                                                                                                                                                                                                                    | `false`                                                                                                                        |
-| `skipWebFetchPreflight`           | Skip the [WebFetch domain safety check](/en/data-usage#webfetch-domain-safety-check) that sends each requested hostname to `api.anthropic.com` before fetching. Set to `true` in environments that block traffic to Anthropic, such as Bedrock, Vertex AI, or Foundry deployments with restrictive egress. When skipped, WebFetch attempts any URL without consulting the blocklist                                                                                                                                                                      | `true`                                                                                                                         |
-| `spinnerTipsEnabled`              | Show tips in the spinner while Claude is working. Set to `false` to disable tips (default: `true`)                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `false`                                                                                                                        |
-| `spinnerTipsOverride`             | Override spinner tips with custom strings. `tips`: array of tip strings. `excludeDefault`: if `true`, only show custom tips; if `false` or absent, custom tips are merged with built-in tips                                                                                                                                                                                                                                                                                                                                                             | `{ "excludeDefault": true, "tips": ["Use our internal tool X"] }`                                                              |
-| `spinnerVerbs`                    | Customize the action verbs shown in the spinner and turn duration messages. Set `mode` to `"replace"` to use only your verbs, or `"append"` to add them to the defaults                                                                                                                                                                                                                                                                                                                                                                                  | `{"mode": "append", "verbs": ["Pondering", "Crafting"]}`                                                                       |
-| `sshConfigs`                      | SSH connections to show in the [Desktop](/en/desktop#pre-configure-ssh-connections-for-your-team) environment dropdown. Each entry requires `id`, `name`, and `sshHost`; `sshPort`, `sshIdentityFile`, and `startDirectory` are optional. When set in managed settings, connections are read-only for users. Read from managed and user settings only                                                                                                                                                                                                    | `[{"id": "dev-vm", "name": "Dev VM", "sshHost": "user@dev.example.com"}]`                                                      |
-| `statusLine`                      | Configure a custom status line to display context. See [`statusLine` documentation](/en/statusline)                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `{"type": "command", "command": "~/.claude/statusline.sh"}`                                                                    |
-| `strictKnownMarketplaces`         | (Managed settings only) Allowlist of plugin marketplace sources. Undefined = no restrictions, empty array = lockdown. Enforced on marketplace add and on plugin install, update, refresh, and auto-update, so a marketplace added before the policy was set cannot be used to fetch plugins. See [Managed marketplace restrictions](/en/plugin-marketplaces#managed-marketplace-restrictions)                                                                                                                                                            | `[{ "source": "github", "repo": "acme-corp/plugins" }]`                                                                        |
-| `teammateMode`                    | How [agent team](/en/agent-teams) teammates display: `auto` (picks split panes in tmux or iTerm2, in-process otherwise), `in-process`, or `tmux`. See [choose a display mode](/en/agent-teams#choose-a-display-mode)                                                                                                                                                                                                                                                                                                                                     | `"in-process"`                                                                                                                 |
-| `terminalProgressBarEnabled`      | Show the terminal progress bar in supported terminals: ConEmu, Ghostty 1.2.0+, and iTerm2 3.6.6+. Default: `true`. Appears in `/config` as **Terminal progress bar**                                                                                                                                                                                                                                                                                                                                                                                     | `false`                                                                                                                        |
-| `tui`                             | Terminal UI renderer. Use `"fullscreen"` for the flicker-free [alt-screen renderer](/en/fullscreen) with virtualized scrollback. Use `"default"` for the classic main-screen renderer. Set via `/tui`                                                                                                                                                                                                                                                                                                                                                    | `"fullscreen"`                                                                                                                 |
-| `useAutoModeDuringPlan`           | Whether plan mode uses auto mode semantics when auto mode is available. Default: `true`. Not read from shared project settings. Appears in `/config` as "Use auto mode during plan"                                                                                                                                                                                                                                                                                                                                                                      | `false`                                                                                                                        |
-| `viewMode`                        | Default transcript view mode on startup: `"default"`, `"verbose"`, or `"focus"`. Overrides the sticky `/focus` selection when set                                                                                                                                                                                                                                                                                                                                                                                                                        | `"verbose"`                                                                                                                    |
-| `voice`                           | [Voice dictation](/en/voice-dictation) settings: `enabled` turns dictation on, `mode` selects `"hold"` or `"tap"`, and `autoSubmit` sends the prompt on key release in hold mode. Written automatically when you run `/voice`. Requires a Claude.ai account                                                                                                                                                                                                                                                                                              | `{ "enabled": true, "mode": "tap" }`                                                                                           |
-| `voiceEnabled`                    | Legacy alias for `voice.enabled`. Prefer the `voice` object                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `true`                                                                                                                         |
-| `wslInheritsWindowsSettings`      | (Windows managed settings only) When `true`, Claude Code on WSL reads managed settings from the Windows policy chain in addition to `/etc/claude-code`, with Windows sources taking priority. Only honored when set in the HKLM registry key or `C:\Program Files\ClaudeCode\managed-settings.json`, both of which require Windows admin to write. For HKCU policy to also apply on WSL, the flag must additionally be set in HKCU itself. Has no effect on native Windows                                                                               | `true`                                                                                                                         |
-
-### Global config settings
-
-These settings are stored in `~/.claude.json` rather than `settings.json`. Adding them to `settings.json` will trigger a schema validation error.
-
-<Note>
-  Versions before v2.1.119 also store `autoScrollEnabled`, `editorMode`, `showTurnDuration`, `teammateMode`, and `terminalProgressBarEnabled` here instead of in `settings.json`.
-</Note>
-
-| Key                       | Description                                                                                                                                                                                                                                                                                                          | Example |
-| :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
-| `autoConnectIde`          | Automatically connect to a running IDE when Claude Code starts from an external terminal. Default: `false`. Appears in `/config` as **Auto-connect to IDE (external terminal)** when running outside a VS Code or JetBrains terminal                                                                                 | `true`  |
-| `autoInstallIdeExtension` | Automatically install the Claude Code IDE extension when running from a VS Code terminal. Default: `true`. Appears in `/config` as **Auto-install IDE extension** when running inside a VS Code or JetBrains terminal. You can also set the [`CLAUDE_CODE_IDE_SKIP_AUTO_INSTALL`](/en/env-vars) environment variable | `false` |
-| `externalEditorContext`   | Prepend Claude's previous response as `#`-commented context when you open the external editor with `Ctrl+G`. Default: `false`. Appears in `/config` as **Show last response in external editor**                                                                                                                     | `true`  |
-
-### Worktree settings
-
-Configure how `--worktree` creates and manages git worktrees. Use these settings to reduce disk usage and startup time in large monorepos.
-
-| Key                           | Description                                                                                                                                                  | Example                               |
-| :---------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
-| `worktree.symlinkDirectories` | Directories to symlink from the main repository into each worktree to avoid duplicating large directories on disk. No directories are symlinked by default   | `["node_modules", ".cache"]`          |
-| `worktree.sparsePaths`        | Directories to check out in each worktree via git sparse-checkout (cone mode). Only the listed paths are written to disk, which is faster in large monorepos | `["packages/my-app", "shared/utils"]` |
-
-To copy gitignored files like `.env` into new worktrees, use a [`.worktreeinclude` file](/en/common-workflows#copy-gitignored-files-to-worktrees) in your project root instead of a setting.
-
-### Permission settings
-
-| Keys                                | Description                                                                                                                                                                                                                                                                            | Example                                                                |
-| :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
-| `allow`                             | Array of permission rules to allow tool use. See [Permission rule syntax](#permission-rule-syntax) below for pattern matching details                                                                                                                                                  | `[ "Bash(git diff *)" ]`                                               |
-| `ask`                               | Array of permission rules to ask for confirmation upon tool use. See [Permission rule syntax](#permission-rule-syntax) below                                                                                                                                                           | `[ "Bash(git push *)" ]`                                               |
-| `deny`                              | Array of permission rules to deny tool use. Use this to exclude sensitive files from Claude Code access. See [Permission rule syntax](#permission-rule-syntax) and [Bash permission limitations](/en/permissions#tool-specific-permission-rules)                                       | `[ "WebFetch", "Bash(curl *)", "Read(./.env)", "Read(./secrets/**)" ]` |
-| `additionalDirectories`             | Additional [working directories](/en/permissions#working-directories) for file access. Most `.claude/` configuration is [not discovered](/en/permissions#additional-directories-grant-file-access-not-configuration) from these directories                                            | `[ "../docs/" ]`                                                       |
-| `defaultMode`                       | Default [permission mode](/en/permission-modes) when opening Claude Code. Valid values: `default`, `acceptEdits`, `plan`, `auto`, `dontAsk`, `bypassPermissions`. The `--permission-mode` CLI flag overrides this setting for a single session                                         | `"acceptEdits"`                                                        |
-| `disableBypassPermissionsMode`      | Set to `"disable"` to prevent `bypassPermissions` mode from being activated. This disables the `--dangerously-skip-permissions` command-line flag. Typically placed in [managed settings](/en/permissions#managed-settings) to enforce organizational policy, but works from any scope | `"disable"`                                                            |
-| `skipDangerousModePermissionPrompt` | Skip the confirmation prompt shown before entering bypass permissions mode via `--dangerously-skip-permissions` or `defaultMode: "bypassPermissions"`. Ignored when set in project settings (`.claude/settings.json`) to prevent untrusted repositories from auto-bypassing the prompt | `true`                                                                 |
-
-### Permission rule syntax
-
-Permission rules follow the format `Tool` or `Tool(specifier)`. Rules are evaluated in order: deny rules first, then ask, then allow. The first matching rule wins.
-
-Quick examples:
-
-| Rule                           | Effect                                   |
-| :----------------------------- | :--------------------------------------- |
-| `Bash`                         | Matches all Bash commands                |
-| `Bash(npm run *)`              | Matches commands starting with `npm run` |
-| `Read(./.env)`                 | Matches reading the `.env` file          |
-| `WebFetch(domain:example.com)` | Matches fetch requests to example.com    |
-
-For the complete rule syntax reference, including wildcard behavior, tool-specific patterns for Read, Edit, WebFetch, MCP, and Agent rules, and security limitations of Bash patterns, see [Permission rule syntax](/en/permissions#permission-rule-syntax).
-
-### Sandbox settings
-
-Configure advanced sandboxing behavior. Sandboxing isolates bash commands from your filesystem and network. See [Sandboxing](/en/sandboxing) for details.
-
-| Keys                                   | Description                                                                                                                                                                                                                                                                                                                                     | Example                           |
-| :------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------- |
-| `enabled`                              | Enable bash sandboxing (macOS, Linux, and WSL2). Default: false                                                                                                                                                                                                                                                                                 | `true`                            |
-| `failIfUnavailable`                    | Exit with an error at startup if `sandbox.enabled` is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed settings deployments that require sandboxing as a hard gate                                                 | `true`                            |
-| `autoAllowBashIfSandboxed`             | Auto-approve bash commands when sandboxed. Default: true                                                                                                                                                                                                                                                                                        | `true`                            |
-| `excludedCommands`                     | Commands that should run outside of the sandbox                                                                                                                                                                                                                                                                                                 | `["docker *"]`                    |
-| `allowUnsandboxedCommands`             | Allow commands to run outside the sandbox via the `dangerouslyDisableSandbox` parameter. When set to `false`, the `dangerouslyDisableSandbox` escape hatch is completely disabled and all commands must run sandboxed (or be in `excludedCommands`). Useful for enterprise policies that require strict sandboxing. Default: true               | `false`                           |
-| `filesystem.allowWrite`                | Additional paths where sandboxed commands can write. Arrays are merged across all settings scopes: user, project, and managed paths are combined, not replaced. Also merged with paths from `Edit(...)` allow permission rules. See [path prefixes](#sandbox-path-prefixes) below.                                                              | `["/tmp/build", "~/.kube"]`       |
-| `filesystem.denyWrite`                 | Paths where sandboxed commands cannot write. Arrays are merged across all settings scopes. Also merged with paths from `Edit(...)` deny permission rules.                                                                                                                                                                                       | `["/etc", "/usr/local/bin"]`      |
-| `filesystem.denyRead`                  | Paths where sandboxed commands cannot read. Arrays are merged across all settings scopes. Also merged with paths from `Read(...)` deny permission rules.                                                                                                                                                                                        | `["~/.aws/credentials"]`          |
-| `filesystem.allowRead`                 | Paths to re-allow reading within `denyRead` regions. Takes precedence over `denyRead`. Arrays are merged across all settings scopes. Use this to create workspace-only read access patterns.                                                                                                                                                    | `["."]`                           |
-| `filesystem.allowManagedReadPathsOnly` | (Managed settings only) Only `filesystem.allowRead` paths from managed settings are respected. `denyRead` still merges from all sources. Default: false                                                                                                                                                                                         | `true`                            |
-| `network.allowUnixSockets`             | (macOS only) Unix socket paths accessible in sandbox. Ignored on Linux and WSL2, where the seccomp filter cannot inspect socket paths; use `allowAllUnixSockets` instead.                                                                                                                                                                       | `["~/.ssh/agent-socket"]`         |
-| `network.allowAllUnixSockets`          | Allow all Unix socket connections in sandbox. On Linux and WSL2 this is the only way to permit Unix sockets, since it skips the seccomp filter that otherwise blocks `socket(AF_UNIX, ...)` calls. Default: false                                                                                                                               | `true`                            |
-| `network.allowLocalBinding`            | Allow binding to localhost ports (macOS only). Default: false                                                                                                                                                                                                                                                                                   | `true`                            |
-| `network.allowMachLookup`              | Additional XPC/Mach service names the sandbox may look up (macOS only). Supports a single trailing `*` for prefix matching. Needed for tools that communicate via XPC such as the iOS Simulator or Playwright.                                                                                                                                  | `["com.apple.coresimulator.*"]`   |
-| `network.allowedDomains`               | Array of domains to allow for outbound network traffic. Supports wildcards (e.g., `*.example.com`).                                                                                                                                                                                                                                             | `["github.com", "*.npmjs.org"]`   |
-| `network.deniedDomains`                | Array of domains to block for outbound network traffic. Supports the same wildcard syntax as `allowedDomains`. Takes precedence over `allowedDomains` when both match. Merged from all settings sources regardless of `allowManagedDomainsOnly`.                                                                                                | `["sensitive.cloud.example.com"]` |
-| `network.allowManagedDomainsOnly`      | (Managed settings only) Only `allowedDomains` and `WebFetch(domain:...)` allow rules from managed settings are respected. Domains from user, project, and local settings are ignored. Non-allowed domains are blocked automatically without prompting the user. Denied domains are still respected from all sources. Default: false             | `true`                            |
-| `network.httpProxyPort`                | HTTP proxy port used if you wish to bring your own proxy. If not specified, Claude will run its own proxy.                                                                                                                                                                                                                                      | `8080`                            |
-| `network.socksProxyPort`               | SOCKS5 proxy port used if you wish to bring your own proxy. If not specified, Claude will run its own proxy.                                                                                                                                                                                                                                    | `8081`                            |
-| `enableWeakerNestedSandbox`            | Enable weaker sandbox for unprivileged Docker environments (Linux and WSL2 only). **Reduces security.** Default: false                                                                                                                                                                                                                          | `true`                            |
-| `enableWeakerNetworkIsolation`         | (macOS only) Allow access to the system TLS trust service (`com.apple.trustd.agent`) in the sandbox. Required for Go-based tools like `gh`, `gcloud`, and `terraform` to verify TLS certificates when using `httpProxyPort` with a MITM proxy and custom CA. **Reduces security** by opening a potential data exfiltration path. Default: false | `true`                            |
-
-#### Sandbox path prefixes
-
-Paths in `filesystem.allowWrite`, `filesystem.denyWrite`, `filesystem.denyRead`, and `filesystem.allowRead` support these prefixes:
-
-| Prefix            | Meaning                                                                                | Example                                                                   |
-| :---------------- | :------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
-| `/`               | Absolute path from filesystem root                                                     | `/tmp/build` stays `/tmp/build`                                           |
-| `~/`              | Relative to home directory                                                             | `~/.kube` becomes `$HOME/.kube`                                           |
-| `./` or no prefix | Relative to the project root for project settings, or to `~/.claude` for user settings | `./output` in `.claude/settings.json` resolves to `<project-root>/output` |
-
-The older `//path` prefix for absolute paths still works. If you previously used single-slash `/path` expecting project-relative resolution, switch to `./path`. This syntax differs from [Read and Edit permission rules](/en/permissions#read-and-edit), which use `//path` for absolute and `/path` for project-relative. Sandbox filesystem paths use standard conventions: `/tmp/build` is an absolute path.
-
-**Configuration example:**
-
-```json theme={null}
-{
-  "sandbox": {
-    "enabled": true,
-    "autoAllowBashIfSandboxed": true,
-    "excludedCommands": ["docker *"],
-    "filesystem": {
-      "allowWrite": ["/tmp/build", "~/.kube"],
-      "denyRead": ["~/.aws/credentials"]
-    },
-    "network": {
-      "allowedDomains": ["github.com", "*.npmjs.org", "registry.yarnpkg.com"],
-      "deniedDomains": ["uploads.github.com"],
-      "allowUnixSockets": [
-        "/var/run/docker.sock"
-      ],
-      "allowLocalBinding": true
-    }
   }
 }
 ```
 
-**Filesystem and network restrictions** can be configured in two ways that are merged together:
+Each entry under `permissions` is a rule that names a tool and what it may do; [Configure permissions](https://code.claude.com/docs/en/permissions.md) explains the syntax. The `$schema` line points to the [published JSON schema](https://json.schemastore.org/claude-code-settings.json) for Claude Code settings, which gives you autocomplete and inline validation in VS Code, Cursor, and any other editor that supports JSON schema. The schema can lag behind the newest CLI releases, so a validation warning on a recently documented key doesn't mean your configuration is invalid.
 
-* **`sandbox.filesystem` settings** (shown above): Control paths at the OS-level sandbox boundary. These restrictions apply to all subprocess commands (e.g., `kubectl`, `terraform`, `npm`), not just Claude's file tools.
-* **Permission rules**: Use `Edit` allow/deny rules to control Claude's file tool access, `Read` deny rules to block reads, and `WebFetch` allow/deny rules to control network domains. Paths from these rules are also merged into the sandbox configuration.
+After you save, run `/status` inside Claude Code to confirm the file loaded; [Confirm what loaded](#check-what-loaded) says what the `Setting sources` line shows and how a broken file is reported.
 
-### Attribution settings
+For a complete personal file, team file, and organization file, each shown with a comment on every key it sets, see the [example settings files](https://code.claude.com/docs/en/settings-example.md).
 
-Claude Code adds attribution to git commits and pull requests. These are configured separately:
+### Change a setting for one session
 
-* Commits use [git trailers](https://git-scm.com/docs/git-interpret-trailers) (like `Co-Authored-By`) by default,  which can be customized or disabled
-* Pull request descriptions are plain text
+To try a value without saving it, set it when you start Claude Code. The value applies to that session and your settings files stay as they were. You have three ways to do it:
 
-| Keys     | Description                                                                                |
-| :------- | :----------------------------------------------------------------------------------------- |
-| `commit` | Attribution for git commits, including any trailers. Empty string hides commit attribution |
-| `pr`     | Attribution for pull request descriptions. Empty string hides pull request attribution     |
+* **`--settings`**: pass a key as JSON, inline or as a path to a file. Claude Code applies it above your user, project, and local files and below managed settings. It can set any key your user settings file can set; it can't set `Managed` or `Global config` keys.
+* **A flag for that key**: some keys have their own flag, such as `--model` for `model` and `--effort` for `effortLevel` and `modelSettings`.
+* **An environment variable**: export the key's paired variable before you run `claude`, such as `ANTHROPIC_MODEL` for `model`.
 
-**Default commit attribution:**
+Each key's entry on the [settings reference](https://code.claude.com/docs/en/settings-reference.md) lists its per-session overrides and which one takes precedence, so check the entry for the key you want to change.
 
-```text theme={null}
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Commands you run inside a session mostly save your choice: when you change a setting in `/config`, Claude Code writes it to your settings files, and `/model` saves the value as your default for new sessions.
 
-   Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
-```
+If you press `s` in the `/model` picker, Claude Code switches the model without saving it as your user default. [Adjust effort level](https://code.claude.com/docs/en/model-config.md#adjust-effort-level) says which `/effort` picks Claude Code saves as your default for the model you're using and which apply to the current session only.
 
-**Default pull request attribution:**
-
-```text theme={null}
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-```
-
-**Example:**
-
-```json theme={null}
-{
-  "attribution": {
-    "commit": "Generated with AI\n\nCo-Authored-By: AI <ai@example.com>",
-    "pr": ""
-  }
-}
-```
-
-<Note>
-  The `attribution` setting takes precedence over the deprecated `includeCoAuthoredBy` setting. To hide all attribution, set `commit` and `pr` to empty strings.
-</Note>
-
-### File suggestion settings
-
-Configure a custom command for `@` file path autocomplete. The built-in file suggestion uses fast filesystem traversal, but large monorepos may benefit from project-specific indexing such as a pre-built file index or custom tooling.
-
-```json theme={null}
-{
-  "fileSuggestion": {
-    "type": "command",
-    "command": "~/.claude/file-suggestion.sh"
-  }
-}
-```
-
-The command runs with the same environment variables as [hooks](/en/hooks), including `CLAUDE_PROJECT_DIR`. It receives JSON via stdin with a `query` field:
-
-```json theme={null}
-{"query": "src/comp"}
-```
-
-Output newline-separated file paths to stdout (currently limited to 15):
-
-```text theme={null}
-src/components/Button.tsx
-src/components/Modal.tsx
-src/components/Form.tsx
-```
-
-**Example:**
+For example, to start one session on Opus without changing your default:
 
 ```bash theme={null}
-#!/bin/bash
-query=$(cat | jq -r '.query')
-your-repo-file-index --query "$query" | head -20
+claude --settings '{"model": "claude-opus-5-5"}'
 ```
 
-### Hook configuration
+### When edits take effect
 
-These settings control which hooks are allowed to run and what HTTP hooks can access. The `allowManagedHooksOnly` setting can only be configured in [managed settings](#settings-files). The URL and env var allowlists can be set at any settings level and merge across sources.
+Claude Code watches your settings files and reloads them when they change, so it applies most edits to the running session without a restart, including edits to `permissions`, `hooks`, and credential helpers such as `apiKeyHelper`. Claude Code also loads a settings file you create mid-session if its folder existed when the session started. For the project's `.claude/` folder, it loads the file even when you create the folder in the same session.
 
-**Behavior when `allowManagedHooksOnly` is `true`:**
+The reload covers user, project, local, and managed settings, and Claude Code runs the [`ConfigChange` hook](https://code.claude.com/docs/en/hooks#configchange) for each settings-file change it detects, not for managed settings that arrive from MDM or the claude.ai console. Managed settings that arrive through MDM or from the claude.ai console reach a running session on a schedule rather than on save; the [delivery table](https://code.claude.com/docs/en/managed-settings.md#choose-a-delivery-mechanism) gives it per source.
 
-* Managed hooks and SDK hooks are loaded
-* Hooks from plugins force-enabled in managed settings `enabledPlugins` are loaded. This lets administrators distribute vetted hooks through an organization marketplace while blocking everything else. Trust is granted by full `plugin@marketplace` ID, so a plugin with the same name from a different marketplace stays blocked
-* User hooks, project hooks, and all other plugin hooks are blocked
+Claude Code reads some keys only once, at session start, so an edit to one of them doesn't reach the running session. Admin-side keys that also wait for a restart, such as `requiredMinimumVersion`, are listed under [where and when a policy applies](https://code.claude.com/docs/en/managed-settings.md#where-and-when-a-policy-applies). The ones you're most likely to edit mid-session:
 
-**Restrict HTTP hook URLs:**
+* [`model`](https://code.claude.com/docs/en/settings-reference#model): use [`/model`](https://code.claude.com/docs/en/model-config#setting-your-model) to switch mid-session. Each model has its own prompt cache, so the first request after a switch re-reads the whole conversation uncached; see [Switching models](https://code.claude.com/docs/en/prompt-caching.md#switching-models)
+* [`effortLevel`](https://code.claude.com/docs/en/settings-reference#effortlevel) and [`modelSettings`](https://code.claude.com/docs/en/settings-reference#modelsettings): use [`/effort`](https://code.claude.com/docs/en/model-config#adjust-effort-level) to change effort mid-session
 
-Limit which URLs HTTP hooks can target. Supports `*` as a wildcard for matching. When the array is defined, HTTP hooks targeting non-matching URLs are silently blocked.
+If you remove [`permissions.blockReadsOutsideWorkingDirectories`](https://code.claude.com/docs/en/settings-reference#permissions-blockreadsoutsideworkingdirectories) mid-session, the file tools keep the block in the running session. To lift it, remove the key from every settings file that sets it, then restart each running session.
 
-```json theme={null}
-{
-  "allowedHttpHookUrls": ["https://hooks.example.com/*", "http://localhost:*"]
-}
-```
+### Confirm what loaded
 
-**Restrict HTTP hook environment variables:**
+Run `/status` inside Claude Code to see which settings sources are active. The **Status** tab includes a `Setting sources` line that lists each settings file Claude Code loaded for the current session, such as `User settings` or `Project local settings`. When [managed settings](https://code.claude.com/docs/en/admin-setup.md#decide-how-settings-reach-devices) are in effect, the managed settings entry shows in parentheses how they reached your machine.
 
-Limit which environment variable names HTTP hooks can interpolate into header values. Each hook's effective `allowedEnvVars` is the intersection of its own list and this setting.
+The line confirms which files Claude Code read; it doesn't show which file supplied each key. To list entries Claude Code rejected, run [`claude doctor`](https://code.claude.com/docs/en/debug-your-config); for a model that project or managed settings set, the startup header names the file that set it. `/status` and `/config` open the same dialog on different tabs, and the **Config** tab isn't a view of your `settings.json` contents.
 
-```json theme={null}
-{
-  "httpHookAllowedEnvVars": ["MY_TOKEN", "HOOK_SECRET"]
-}
-```
+### Fix a broken settings file
 
-### Settings precedence
+If you mistype JSON or set a key to a value Claude Code doesn't accept, Claude Code tells you at the start of an interactive session. What it shows depends on how much of the file is affected:
 
-Settings apply in order of precedence. From highest to lowest:
+* **Settings Error**: a user, project, or local file has invalid JSON or a value the schema rejects. At the start of an interactive session Claude Code shows a dialog that lets you fix the file with Claude's help, exit, or continue without the broken settings.
+* **Settings Warning**: only individual entries fail, such as a malformed permission rule or an unknown hook event name. Claude Code skips those values and keeps the rest of the file in effect.
+* **Managed settings**: Claude Code keeps enforcing the rest of the file. [Invalid entries in managed settings](https://code.claude.com/docs/en/managed-settings.md#invalid-entries-in-managed-settings) says what it drops and which keys fall back to a stricter value until you fix them. For a managed settings document that isn't valid JSON, see [Managed settings document could not be parsed](https://code.claude.com/docs/en/errors.md#managed-settings-document-could-not-be-parsed).
+* **Configuration error**: [`~/.claude.json`](https://code.claude.com/docs/en/claude-directory#ce-claude-json) can't be parsed. A `claude -p` run exits, and your file is unchanged. See [Configuration error in \~/.claude.json](https://code.claude.com/docs/en/errors.md#configuration-error-in-claude-json) to restore an earlier copy. Claude Code copies the broken file to `~/.claude/backups/.claude.json.corrupted.<timestamp>`, and in an interactive session asks whether to exit and fix it or reset to the default configuration. When the file is blank and there's no backup to restore, Claude Code starts with default settings.
 
-1. **Managed settings** ([server-managed](/en/server-managed-settings), [MDM/OS-level policies](#configuration-scopes), or [managed settings](/en/settings#settings-files))
-   * Policies deployed by IT through server delivery, MDM configuration profiles, registry policies, or managed settings files
-   * Cannot be overridden by any other level, including command line arguments
-   * Within the managed tier, precedence is: server-managed > MDM/OS-level policies > file-based (`managed-settings.d/*.json` + `managed-settings.json`) > HKCU registry (Windows only). Only one managed source is used; sources do not merge across tiers. Within the file-based tier, drop-in files and the base file are merged together.
+After you continue, run `/status` to see the affected files and `claude doctor` for the details of each error.
 
-2. **Command line arguments**
-   * Temporary overrides for a specific session
+A `-p` run shows no dialog. Unless [a managed settings document can't be parsed](https://code.claude.com/docs/en/errors.md#managed-settings-document-could-not-be-parsed), Claude Code skips a broken user, project, or local file or its broken values and continues with the rest. After a `-p` run that ignores a setting, run `claude doctor` from your terminal to see what it dropped.
 
-3. **Local project settings** (`.claude/settings.local.json`)
-   * Personal project-specific settings
+## Settings precedence
 
-4. **Shared project settings** (`.claude/settings.json`)
-   * Team-shared project settings in source control
+When the same key appears in more than one place, Claude Code uses the value from the highest level that sets it. The stack below shows the levels, highest on top; a key at a higher level overrides the same key anywhere below it.
 
-5. **User settings** (`~/.claude/settings.json`)
-   * Personal global settings
+Settings precedence, highest first: managed settings, command line, project local, shared project, user. A key set at a higher level overrides the same key set lower down.
 
-This hierarchy ensures that organizational policies are always enforced while still allowing teams and individuals to customize their experience. The same precedence applies whether you run Claude Code from the CLI, the [VS Code extension](/en/vs-code), or a [JetBrains IDE](/en/jetbrains).
+In order, highest precedence first:
 
-For example, if your user settings allow `Bash(npm run *)` but a project's shared settings deny it, the project setting takes precedence and the command is blocked.
+1. **Managed settings**: settings your organization deploys, by a `managed-settings.json` file, an MDM policy, or [server-managed settings](https://code.claude.com/docs/en/server-managed-settings.md) from the claude.ai console. Nothing in your own settings files or `--settings` overrides a managed key, and a flag such as `--model` picks only from the models your organization allows. A managed [`model`](https://code.claude.com/docs/en/settings-reference#model) is a starting default, not a lock; the locks are [`availableModels`](https://code.claude.com/docs/en/settings-reference#availablemodels) and [`deniedModels`](https://code.claude.com/docs/en/settings-reference#deniedmodels). When your organization delivers more than one managed source, the rules for [precedence within the managed tier](https://code.claude.com/docs/en/managed-settings.md#precedence-within-the-managed-tier) say what Claude Code reads from each.
+2. **Command line**: JSON you pass with `--settings <file-or-json>` when you start `claude`, for that session only; see [Change a setting for one session](#change-a-setting-for-one-session). A key you set there overrides the same key in your project and user settings files, and a key you leave out keeps its value from those files. Other flags, such as `--model`, set one thing for the session and aren't part of this stack; a key's entry on the [settings reference](https://code.claude.com/docs/en/settings-reference.md) says which flags override it.
+3. **Project local settings** (`.claude/settings.local.json`): your personal settings for this project.
+4. **Shared project settings** (`.claude/settings.json`): settings your team checks into source control.
+5. **User settings** (`~/.claude/settings.json`): your personal settings for every project.
 
-<Note>
-  **Array settings merge across scopes.** When the same array-valued setting (such as `sandbox.filesystem.allowWrite` or `permissions.allow`) appears in multiple scopes, the arrays are **concatenated and deduplicated**, not replaced. This means lower-priority scopes can add entries without overriding those set by higher-priority scopes, and vice versa. For example, if managed settings set `allowWrite` to `["/opt/company-tools"]` and a user adds `["~/.kube"]`, both paths are included in the final configuration.
-</Note>
+Environment variables aren't a level in this stack. When a behavior has both a shell variable and a settings key, which one applies is decided per pair, not by level: `ANTHROPIC_MODEL` exported in your shell applies over the `model` key from any file, while `ANTHROPIC_DEFAULT_MODEL` applies only when no file sets `model`. The [environment variables reference](https://code.claude.com/docs/en/env-vars.md#precedence) says which keys have a pair and which one Claude Code reads first. An `env` block inside a settings file is an ordinary key and follows the levels above.
 
-### Verify active settings
+For a few security-sensitive keys, Claude Code honors a stricter value from a lower level over a managed value; [Exceptions to managed settings precedence](#exceptions-to-managed-settings-precedence) lists them.
 
-Run `/status` inside Claude Code to see which settings sources are active and where they come from. The output shows each configuration layer (managed, user, project) along with its origin, such as `Enterprise managed settings (remote)`, `Enterprise managed settings (plist)`, `Enterprise managed settings (HKLM)`, `Enterprise managed settings (HKCU)`, or `Enterprise managed settings (file)`. If a settings file contains errors, `/status` reports the issue so you can fix it.
+### Lists merge instead of overriding
 
-### Key points about the configuration system
+When you set the same list key, such as `permissions.allow`, in more than one file, Claude Code combines the lists instead of picking one, so each file can add entries without removing another file's. Four keys that hold model lists or per-model entries follow their own rules:
 
-* **Memory files (`CLAUDE.md`)**: Contain instructions and context that Claude loads at startup
-* **Settings files (JSON)**: Configure permissions, environment variables, and tool behavior
-* **Skills**: Custom prompts that can be invoked with `/skill-name` or loaded by Claude automatically
-* **MCP servers**: Extend Claude Code with additional tools and integrations
-* **Precedence**: Higher-level configurations (Managed) override lower-level ones (User/Project)
-* **Inheritance**: Settings are merged, with more specific settings adding to or overriding broader ones
+* [`fallbackModel`](https://code.claude.com/docs/en/settings-reference#fallbackmodel) is an ordered chain where position carries meaning, so Claude Code takes the whole value from the highest-precedence file that defines it.
+* [`modelPicker`](https://code.claude.com/docs/en/settings-reference#modelpicker) holds one ordered list of rows plus a replace flag, so Claude Code never merges rows from two sources. It takes the whole value from the highest of managed settings, `--settings`, and user settings that defines it, and ignores the key in project and local settings. Requires Claude Code v2.1.242 or later.
+* [`availableModels`](https://code.claude.com/docs/en/settings-reference#availablemodels): when the managed settings Claude Code applies define it, Claude Code applies that list as-is and ignores entries you add in user, project, or local settings, unless an app that embeds Claude Code supplies its own model list; see [Exceptions to managed settings precedence](#exceptions-to-managed-settings-precedence). Across managed sources the list never merges either; [how Claude Code combines managed sources](https://code.claude.com/docs/en/managed-settings.md#how-claude-code-combines-managed-sources) says which source's list applies. Across non-managed scopes Claude Code merges the arrays as usual.
+* [`modelSettings`](https://code.claude.com/docs/en/settings-reference#modelsettings): Claude Code resolves it one model at a time, together with [`effortLevel`](https://code.claude.com/docs/en/settings-reference#effortlevel). The `modelSettings` entry states which file's value applies to a model.
 
-### System prompt
+### Precedence examples
 
-Claude Code's internal system prompt is not published. To add custom instructions, use `CLAUDE.md` files or the `--append-system-prompt` flag.
+While Claude works, Claude Code shows a one-line tip under the spinner, such as "Use /config to change your default permission mode (including Plan Mode)". Suppose you want those tips off, so you set [`spinnerTipsEnabled`](https://code.claude.com/docs/en/settings-reference#spinnertipsenabled) to `false` in `~/.claude/settings.json`. Each scenario below is something that can turn them back on, and what you can do about it.
 
-### Excluding sensitive files
+#### Team settings override personal settings
 
-To prevent Claude Code from accessing files containing sensitive information like API keys, secrets, and environment files, use the `permissions.deny` setting in your `.claude/settings.json` file:
+Your team's `.claude/settings.json` sets it to `true`. Claude Code uses the project value because shared project sits above user, so you see tips in that project and nowhere else.
 
-```json theme={null}
-{
-  "permissions": {
-    "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./secrets/**)",
-      "Read(./config/credentials.json)",
-      "Read(./build)"
-    ]
-  }
-}
-```
+You can get your value back: add `"spinnerTipsEnabled": false` to `.claude/settings.local.json` in that project. Project local sits above shared project, so your sessions there stop showing tips and your teammates' sessions don't change.
 
-This replaces the deprecated `ignorePatterns` configuration. Files matching these patterns are excluded from file discovery and search results, and read operations on these files are denied.
+#### Organization settings override everything
 
-## Subagent configuration
+Your organization's managed settings set it to `true`. Nothing you put in user, project, or local settings turns tips off, and neither does `--settings`. Managed is the top level.
 
-Claude Code supports custom AI subagents that can be configured at both user and project levels. These subagents are stored as Markdown files with YAML frontmatter:
+You can't get your value back. Run `/status` to see which managed source applies, and ask your administrator if the policy should change.
 
-* **User subagents**: `~/.claude/agents/` - Available across all your projects
-* **Project subagents**: `.claude/agents/` - Specific to your project and can be shared with your team
-
-Subagent files define specialized AI assistants with custom prompts and tool permissions. Learn more about creating and using subagents in the [subagents documentation](/en/sub-agents).
-
-## Plugin configuration
-
-Claude Code supports a plugin system that lets you extend functionality with skills, agents, hooks, and MCP servers. Plugins are distributed through marketplaces and can be configured at both user and repository levels.
-
-### Plugin settings
-
-Plugin-related settings in `settings.json`:
-
-```json theme={null}
-{
-  "enabledPlugins": {
-    "formatter@acme-tools": true,
-    "deployer@acme-tools": true,
-    "analyzer@security-plugins": false
-  },
-  "extraKnownMarketplaces": {
-    "acme-tools": {
-      "source": "github",
-      "repo": "acme-corp/claude-plugins"
-    }
-  }
-}
-```
-
-#### `enabledPlugins`
-
-Controls which plugins are enabled. Format: `"plugin-name@marketplace-name": true/false`
-
-**Scopes**:
-
-* **User settings** (`~/.claude/settings.json`): Personal plugin preferences
-* **Project settings** (`.claude/settings.json`): Project-specific plugins shared with team
-* **Local settings** (`.claude/settings.local.json`): Per-machine overrides (not committed)
-* **Managed settings** (`managed-settings.json`): Organization-wide policy overrides that block installation at all scopes and hide the plugin from the marketplace
-
-**Example**:
-
-```json theme={null}
-{
-  "enabledPlugins": {
-    "code-formatter@team-tools": true,
-    "deployment-tools@team-tools": true,
-    "experimental-features@personal": false
-  }
-}
-```
-
-#### `extraKnownMarketplaces`
-
-Defines additional marketplaces that should be made available for the repository. Typically used in repository-level settings to ensure team members have access to required plugin sources.
-
-**When a repository includes `extraKnownMarketplaces`**:
-
-1. Team members are prompted to install the marketplace when they trust the folder
-2. Team members are then prompted to install plugins from that marketplace
-3. Users can skip unwanted marketplaces or plugins (stored in user settings)
-4. Installation respects trust boundaries and requires explicit consent
-
-**Example**:
-
-```json theme={null}
-{
-  "extraKnownMarketplaces": {
-    "acme-tools": {
-      "source": {
-        "source": "github",
-        "repo": "acme-corp/claude-plugins"
-      }
-    },
-    "security-plugins": {
-      "source": {
-        "source": "git",
-        "url": "https://git.example.com/security/plugins.git"
-      }
-    }
-  }
-}
-```
-
-**Marketplace source types**:
-
-* `github`: GitHub repository (uses `repo`)
-* `git`: Any git URL (uses `url`)
-* `directory`: Local filesystem path (uses `path`, for development only)
-* `hostPattern`: regex pattern to match marketplace hosts (uses `hostPattern`)
-* `settings`: inline marketplace declared directly in settings.json without a separate hosted repository (uses `name` and `plugins`)
-
-Use `source: 'settings'` to declare a small set of plugins inline without setting up a hosted marketplace repository. Plugins listed here must reference external sources such as GitHub or npm. You still need to enable each plugin separately in `enabledPlugins`.
-
-```json theme={null}
-{
-  "extraKnownMarketplaces": {
-    "team-tools": {
-      "source": {
-        "source": "settings",
-        "name": "team-tools",
-        "plugins": [
-          {
-            "name": "code-formatter",
-            "source": {
-              "source": "github",
-              "repo": "acme-corp/code-formatter"
-            }
-          }
-        ]
-      }
-    }
-  }
-}
-```
+#### The command line overrides your files for one session
 
-#### `strictKnownMarketplaces`
+You started the session with `claude --settings '{"spinnerTipsEnabled": true}'`. Command line sits above every file except managed, so that session shows tips even though your files say `false`.
 
-**Managed settings only**: Controls which plugin marketplaces users are allowed to add and install plugins from. This setting can only be configured in [managed settings](/en/settings#settings-files) and provides administrators with strict control over marketplace sources.
+You get your value back on the next session; `--settings` lasts one session and doesn't write to any file.
 
-**Managed settings file locations**:
+#### A flag or environment variable sets the same thing
 
-* **macOS**: `/Library/Application Support/ClaudeCode/managed-settings.json`
-* **Linux and WSL**: `/etc/claude-code/managed-settings.json`
-* **Windows**: `C:\Program Files\ClaudeCode\managed-settings.json`
+Some keys have a command line flag or an environment variable that overrides the settings value regardless of which file set it: `ANTHROPIC_MODEL` overrides the [`model`](https://code.claude.com/docs/en/settings-reference#model) setting, and `--model` overrides both for a session.
 
-**Key characteristics**:
+Whether you can get your value back depends on the key: unset the variable or drop the flag, and check the key's entry on the [settings reference](https://code.claude.com/docs/en/settings-reference.md) and the variable's row on the [environment variables reference](https://code.claude.com/docs/en/env-vars.md) for which one Claude Code uses.
 
-* Only available in managed settings (`managed-settings.json`)
-* Cannot be overridden by user or project settings (highest precedence)
-* Enforced BEFORE network/filesystem operations (blocked sources never execute)
-* Uses exact matching for source specifications (including `ref`, `path` for git sources), except `hostPattern`, which uses regex matching
+### Troubleshoot a setting that doesn't apply
 
-**Allowlist behavior**:
+When you set a key and Claude Code doesn't behave as if you had, start with `/status` to see which files it loaded, then find your symptom below. [Debug your configuration](https://code.claude.com/docs/en/debug-your-config.md) covers the wider checks, including a clean-configuration test.
 
-* `undefined` (default): No restrictions - users can add any marketplace
-* Empty array `[]`: Complete lockdown - users cannot add any new marketplaces
-* List of sources: Users can only add marketplaces that match exactly
+#### A value you set is ignored
 
-**All supported source types**:
+Something else is setting the same key, the file can't set that value, or the file didn't load:
 
-The allowlist supports multiple marketplace source types. Most sources use exact matching, while `hostPattern` uses regex matching against the marketplace host.
-
-1. **GitHub repositories**:
-
-```json theme={null}
-{ "source": "github", "repo": "acme-corp/approved-plugins" }
-{ "source": "github", "repo": "acme-corp/security-tools", "ref": "v2.0" }
-{ "source": "github", "repo": "acme-corp/plugins", "ref": "main", "path": "marketplace" }
-```
-
-Fields: `repo` (required), `ref` (optional: branch/tag/SHA), `path` (optional: subdirectory)
-
-2. **Git repositories**:
-
-```json theme={null}
-{ "source": "git", "url": "https://gitlab.example.com/tools/plugins.git" }
-{ "source": "git", "url": "https://bitbucket.org/acme-corp/plugins.git", "ref": "production" }
-{ "source": "git", "url": "ssh://git@git.example.com/plugins.git", "ref": "v3.1", "path": "approved" }
-```
-
-Fields: `url` (required), `ref` (optional: branch/tag/SHA), `path` (optional: subdirectory)
-
-3. **URL-based marketplaces**:
-
-```json theme={null}
-{ "source": "url", "url": "https://plugins.example.com/marketplace.json" }
-{ "source": "url", "url": "https://cdn.example.com/marketplace.json", "headers": { "Authorization": "Bearer ${TOKEN}" } }
-```
-
-Fields: `url` (required), `headers` (optional: HTTP headers for authenticated access)
-
-<Note>
-  URL-based marketplaces only download the `marketplace.json` file. They do not download plugin files from the server. Plugins in URL-based marketplaces must use external sources (GitHub, npm, or git URLs) rather than relative paths. For plugins with relative paths, use a Git-based marketplace instead. See [Troubleshooting](/en/plugin-marketplaces#plugins-with-relative-paths-fail-in-url-based-marketplaces) for details.
-</Note>
-
-4. **NPM packages**:
-
-```json theme={null}
-{ "source": "npm", "package": "@acme-corp/claude-plugins" }
-{ "source": "npm", "package": "@acme-corp/approved-marketplace" }
-```
-
-Fields: `package` (required, supports scoped packages)
-
-5. **File paths**:
-
-```json theme={null}
-{ "source": "file", "path": "/usr/local/share/claude/acme-marketplace.json" }
-{ "source": "file", "path": "/opt/acme-corp/plugins/marketplace.json" }
-```
-
-Fields: `path` (required: absolute path to marketplace.json file)
-
-6. **Directory paths**:
-
-```json theme={null}
-{ "source": "directory", "path": "/usr/local/share/claude/acme-plugins" }
-{ "source": "directory", "path": "/opt/acme-corp/approved-marketplaces" }
-```
-
-Fields: `path` (required: absolute path to directory containing `.claude-plugin/marketplace.json`)
-
-7. **Host pattern matching**:
-
-```json theme={null}
-{ "source": "hostPattern", "hostPattern": "^github\\.example\\.com$" }
-{ "source": "hostPattern", "hostPattern": "^gitlab\\.internal\\.example\\.com$" }
-```
-
-Fields: `hostPattern` (required: regex pattern to match against the marketplace host)
-
-Use host pattern matching when you want to allow all marketplaces from a specific host without enumerating each repository individually. This is useful for organizations with internal GitHub Enterprise or GitLab servers where developers create their own marketplaces.
-
-Host extraction by source type:
-
-* `github`: always matches against `github.com`
-* `git`: extracts hostname from the URL (supports both HTTPS and SSH formats)
-* `url`: extracts hostname from the URL
-* `npm`, `file`, `directory`: not supported for host pattern matching
-
-**Configuration examples**:
-
-Example: allow specific marketplaces only:
-
-```json theme={null}
-{
-  "strictKnownMarketplaces": [
-    {
-      "source": "github",
-      "repo": "acme-corp/approved-plugins"
-    },
-    {
-      "source": "github",
-      "repo": "acme-corp/security-tools",
-      "ref": "v2.0"
-    },
-    {
-      "source": "url",
-      "url": "https://plugins.example.com/marketplace.json"
-    },
-    {
-      "source": "npm",
-      "package": "@acme-corp/compliance-plugins"
-    }
-  ]
-}
-```
-
-Example - Disable all marketplace additions:
-
-```json theme={null}
-{
-  "strictKnownMarketplaces": []
-}
-```
-
-Example: allow all marketplaces from an internal git server:
-
-```json theme={null}
-{
-  "strictKnownMarketplaces": [
-    {
-      "source": "hostPattern",
-      "hostPattern": "^github\\.example\\.com$"
-    }
-  ]
-}
-```
-
-**Exact matching requirements**:
-
-Marketplace sources must match **exactly** for a user's addition to be allowed. For git-based sources (`github` and `git`), this includes all optional fields:
-
-* The `repo` or `url` must match exactly
-* The `ref` field must match exactly (or both be undefined)
-* The `path` field must match exactly (or both be undefined)
-
-Examples of sources that **do NOT match**:
+* **A higher level sets it.** Another settings file, a `--settings` flag, or a managed source sets the key above yours; the [stack](#settings-precedence) says which. A flag or environment variable can also override the key on its own, decided key by key; the key's entry on the [settings reference](https://code.claude.com/docs/en/settings-reference.md) says which one Claude Code uses, and the [`env` entry](https://code.claude.com/docs/en/settings-reference#env) covers a managed `env` value versus a shell export.
+* **A security key keeps its strict value.** For a few keys Claude Code honors the restrictive value from any file, so a project `true` for [`disableClaudeAiConnectors`](https://code.claude.com/docs/en/settings-reference#disableclaudeaiconnectors) stays on; see [Exceptions to managed settings precedence](#exceptions-to-managed-settings-precedence).
+* **The file can't set that value.** [`permissions.defaultMode`](https://code.claude.com/docs/en/settings-reference#permissions-defaultmode) values `auto` and `bypassPermissions` don't take effect from project or local settings; set them in user or managed settings instead, or pass `--permission-mode` for one session. Before v2.1.257, `bypassPermissions` took effect from any file.
 
-```json theme={null}
-// These are DIFFERENT sources:
-{ "source": "github", "repo": "acme-corp/plugins" }
-{ "source": "github", "repo": "acme-corp/plugins", "ref": "main" }
+  A telemetry export variable in an [`env`](https://code.claude.com/docs/en/settings-reference#env) block doesn't take effect from project or local settings either, apart from a few off values. [Variables Claude Code ignores in `env`](https://code.claude.com/docs/en/settings-reference#variables-claude-code-ignores-in-env) lists the variables and those values.
+* **The file is broken.** Invalid JSON or a rejected value makes Claude Code skip the file or the entry; see [Fix a broken settings file](#fix-a-broken-settings-file).
 
-// These are also DIFFERENT:
-{ "source": "github", "repo": "acme-corp/plugins", "path": "marketplace" }
-{ "source": "github", "repo": "acme-corp/plugins" }
-```
+#### A change you made in Claude Code is lost in new sessions
 
-**Comparison with `extraKnownMarketplaces`**:
+When you save a choice for new sessions from inside Claude Code, such as a default model with `/model`, Claude Code writes it to your user settings file, `~/.claude/settings.json`. If you can't write to that file, for example because another tool generates it or links it to a read-only copy, the change applies to the current session and is gone in the next one. Set the key in the tool that generates the file, or replace the file with one you can write to.
 
-| Aspect                | `strictKnownMarketplaces`            | `extraKnownMarketplaces`             |
-| --------------------- | ------------------------------------ | ------------------------------------ |
-| **Purpose**           | Organizational policy enforcement    | Team convenience                     |
-| **Settings file**     | `managed-settings.json` only         | Any settings file                    |
-| **Behavior**          | Blocks non-allowlisted additions     | Auto-installs missing marketplaces   |
-| **When enforced**     | Before network/filesystem operations | After user trust prompt              |
-| **Can be overridden** | No (highest precedence)              | Yes (by higher precedence settings)  |
-| **Source format**     | Direct source object                 | Named marketplace with nested source |
-| **Use case**          | Compliance, security restrictions    | Onboarding, standardization          |
+If you can write to the file and the change still doesn't last, check whether the change was [for one session only](#change-a-setting-for-one-session) or [a higher level sets the same key](#a-value-you-set-is-ignored). For the `model` key, [A new session starts on a different model than you picked](https://code.claude.com/docs/en/model-config.md#a-new-session-starts-on-a-different-model-than-you-picked) lists more causes.
 
-**Format difference**:
+#### A managed change hasn't reached you
 
-`strictKnownMarketplaces` uses direct source objects:
+Managed sources reach a running session on the schedule in the [delivery table](https://code.claude.com/docs/en/managed-settings.md#choose-a-delivery-mechanism), so restart the session first. If `/status` then names a different source than the one your administrator changed, a higher-priority source applies; [How Claude Code combines managed sources](https://code.claude.com/docs/en/managed-settings.md#how-claude-code-combines-managed-sources) gives the order.
 
-```json theme={null}
-{
-  "strictKnownMarketplaces": [
-    { "source": "github", "repo": "acme-corp/plugins" }
-  ]
-}
-```
+#### A committed key doesn't reach teammates
 
-`extraKnownMarketplaces` requires named marketplaces:
+Two things keep a key in `.claude/settings.json` from applying for everyone who clones it:
 
-```json theme={null}
-{
-  "extraKnownMarketplaces": {
-    "acme-tools": {
-      "source": { "source": "github", "repo": "acme-corp/plugins" }
-    }
-  }
-}
-```
+* **Claude Code ignores the key in a repository file.** Look for `User, local, or managed`, `User or managed`, `User`, `Managed`, or `Global config` in the Scope column of the [settings index](https://code.claude.com/docs/en/settings-reference.md#settings-index). Those keys never apply from the shared file, apart from a few that a repository file can still switch off. Each of those entries says so on its Scope line. `Global config` keys apply only from `~/.claude.json`.
 
-**Using both together**:
+  Inside the `env` key, the telemetry export variables never apply from the shared file either, apart from a few off values; see [Variables Claude Code ignores in `env`](https://code.claude.com/docs/en/settings-reference#variables-claude-code-ignores-in-env).
+* **The key waits for trust.** `permissions.allow` rules, `permissions.additionalDirectories`, `extraKnownMarketplaces`, and most [`env`](https://code.claude.com/docs/en/settings-reference#env) values apply only after each teammate [trusts the folder](https://code.claude.com/docs/en/permissions.md#project-allow-rules-and-workspace-trust). Until then they still see prompts and don't get plugins from a marketplace the file declares. `deny` and `ask` rules apply right away.
 
-`strictKnownMarketplaces` is a policy gate: it controls what users may add but does not register any marketplaces. To both restrict and pre-register a marketplace for all users, set both in `managed-settings.json`:
+#### Permission rules combine differently than you expected
 
-```json theme={null}
-{
-  "strictKnownMarketplaces": [
-    { "source": "github", "repo": "acme-corp/plugins" }
-  ],
-  "extraKnownMarketplaces": {
-    "acme-tools": {
-      "source": { "source": "github", "repo": "acme-corp/plugins" }
-    }
-  }
-}
-```
+* **You chose "Yes, and don't ask again" on a permission prompt but still get prompted for the same tool.** That choice saved an `allow` rule to your local file, and an `allow` rule there doesn't outrank an `ask` rule from a project or managed file; [how permission rules combine](https://code.claude.com/docs/en/permissions.md#settings-precedence) explains the order. In the VS Code extension the approval card lets you pick the destination file, including the project's shared file, which changes the rule for everyone; in the CLI, Claude Code writes only to your local file.
+* **Your organization's allow rules still apply alongside yours.** That's expected: Claude Code merges [`permissions.allow`](https://code.claude.com/docs/en/settings-reference#permissions-allow) across scopes, unless your organization sets [`allowManagedPermissionRulesOnly`](https://code.claude.com/docs/en/settings-reference#allowmanagedpermissionrulesonly).
 
-With only `strictKnownMarketplaces` set, users can still add the allowed marketplace manually via `/plugin marketplace add`, but it is not available automatically.
+### Exceptions to managed settings precedence
 
-**Important notes**:
+For a few keys whose values restrict a session, Claude Code honors a restrictive value from a scope that otherwise couldn't override managed settings. Find the key in this table to see which value it honors and from where.
 
-* Restrictions are checked BEFORE any network requests or filesystem operations
-* When blocked, users see clear error messages indicating the source is blocked by managed policy
-* The restriction is enforced on marketplace add and on plugin install, update, refresh, and auto-update. A marketplace added before the policy was set cannot be used to install or update plugins once its source no longer matches the allowlist
-* Managed settings have the highest precedence and cannot be overridden
+| Key | Value Claude Code honors | Notes |
+| :- | :- | :- |
+| [`disableClaudeAiConnectors`](https://code.claude.com/docs/en/settings-reference#disableclaudeaiconnectors) | `true` from any scope | Honored even when a managed source sets `false` |
+| [`enableArtifact`](https://code.claude.com/docs/en/settings-reference#enableartifact) | `false` from any scope, and `disableArtifact: true` from any scope | Honored even when a managed source sets `true`; nothing turns the [Artifact tool](https://code.claude.com/docs/en/artifacts.md#disable-artifacts) back on. Requires Claude Code v2.1.242 or later |
+| [`isolatePeerMachines`](https://code.claude.com/docs/en/settings-reference#isolatepeermachines) | `true` from any scope | Honored even when a managed source sets `false` |
+| [`permissions.blockReadsOutsideWorkingDirectories`](https://code.claude.com/docs/en/settings-reference#permissions-blockreadsoutsideworkingdirectories) | `true` from any scope | Honored even when a managed source sets `false`. Requires Claude Code v2.1.257 or later |
+| [`permissions.blockWritesOutsideWorkingDirectories`](https://code.claude.com/docs/en/settings-reference#permissions-blockwritesoutsideworkingdirectories) | `true` from any scope | Honored even when a managed source sets `false`. Requires Claude Code v2.1.314 or later |
+| [`autoMode.classifyAllShell`](https://code.claude.com/docs/en/settings-reference#automode-classifyallshell) | `true` from `~/.claude/settings.json` or `--settings` | Honored even when a managed source sets `false` |
+| [`remoteControlAtStartup`](https://code.claude.com/docs/en/settings-reference#remotecontrolatstartup) | `false` from `.claude/settings.json` or `.claude/settings.local.json` | Honored even when a managed source sets `true`; a project or local `true` is ignored |
+| [`crossSessionInbound`](https://code.claude.com/docs/en/settings-reference#crosssessioninbound) | A stricter value from `.claude/settings.json` or `.claude/settings.local.json`, on the `accept` \< `hold` \< `refuse` ladder | Honored over managed, `--settings`, and user values; a project or local value that isn't stricter is ignored |
+| [`useAutoModeDuringPlan`](https://code.claude.com/docs/en/settings-reference#useautomodeduringplan) | `false` from any managed source, `--settings`, `~/.claude/settings.json`, or `.claude/settings.local.json` | Honored even when the winning managed source sets `true`; a `false` in `.claude/settings.json` is ignored. See [the key's entry](https://code.claude.com/docs/en/settings-reference.md#useautomodeduringplan) for a file you leave out at launch |
+| [`syncClaudeAiSkills`](https://code.claude.com/docs/en/settings-reference#syncclaudeaiskills) | `false` from any managed source, `--settings`, `~/.claude/settings.json`, or `.claude/settings.local.json` | Honored even when the winning managed source sets `true`; a `false` in `.claude/settings.json` is ignored |
+| [`syncClaudeAiPlugins`](https://code.claude.com/docs/en/settings-reference#syncclaudeaiplugins) | `false` from any managed source, `--settings`, `~/.claude/settings.json`, or `.claude/settings.local.json` | Honored even when the winning managed source sets `true`; a `false` in `.claude/settings.json` is ignored |
+| [`maxEffortLevel`](https://code.claude.com/docs/en/settings-reference#maxeffortlevel) | A lower cap from any scope, including `--settings` | Honored even when the managed settings Claude Code applies set a higher cap; the lowest cap applies. Requires Claude Code v2.1.267 or later |
 
-See [Managed marketplace restrictions](/en/plugin-marketplaces#managed-marketplace-restrictions) for user-facing documentation.
+An app that runs Claude Code inside itself and sets [`CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST`](https://code.claude.com/docs/en/env-vars) is also an exception. Claude Code takes that app's model configuration over the `model`, `fallbackModel`, `modelPicker`, and `modelOverrides` keys from every managed source, and over the model-selection variables in a managed `env` block, such as `ANTHROPIC_MODEL` and the `ANTHROPIC_DEFAULT_*_MODEL` family. Claude Code keeps a managed [`availableModels`](https://code.claude.com/docs/en/settings-reference#availablemodels) allowlist in force unless the app supplies its own.
 
-### Managing plugins
+## Settings in cloud sessions
 
-Use the `/plugin` command to manage plugins interactively:
+A [cloud session](https://code.claude.com/docs/en/claude-code-on-the-web.md) runs in a [cloud environment](https://code.claude.com/docs/en/cloud-environments.md) on a fresh clone of your repository, not on your machine. That changes which settings reach it:
 
-* Browse available plugins from marketplaces
-* Install/uninstall plugins
-* Enable/disable plugins
-* View plugin details (skills, agents, hooks provided)
-* Add/remove marketplaces
+* **Cloud threads in a project**: in a cloud thread in a [project](https://code.claude.com/docs/en/claude-projects.md#what-threads-pick-up-from-your-repositories), none of a repository's `.claude/settings.json` permission rules, hooks, or `env` apply, however many repositories the project has. [What threads pick up from your repositories](https://code.claude.com/docs/en/claude-projects.md#what-threads-pick-up-from-your-repositories) lists what to use instead.
+* **Shared project settings** (`.claude/settings.json`): read in a session with one repository outside a project's threads, because the file is part of the clone and the session starts inside it. Commit a setting there to apply it in those sessions.
+* **Shared project settings with several repositories**: in an Anthropic-hosted environment, a session with several repositories starts above the clones and reads only the `enabledPlugins` and `extraKnownMarketplaces` keys from each repository's `.claude/settings.json`, not permission rules, hooks, `env`, or other keys. The marketplaces and plugins those two keys declare still [don't load in a cloud session](https://code.claude.com/docs/en/cloud-environments.md#what-carries-over-from-your-setup). For a self-hosted environment, see [which repository's settings apply](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#repository-settings-in-sessions-with-several-repositories).
+* **User and project local settings** (`~/.claude/settings.json` and `.claude/settings.local.json`): not read. Both stay on your machine, and the local file isn't in the clone.
+* **Managed settings**: a `managed-settings.json` file or MDM profile on your device doesn't reach a cloud session. Your organization's [server-managed settings](https://code.claude.com/docs/en/server-managed-settings.md) do; [surface coverage](https://code.claude.com/docs/en/model-config.md#surface-coverage) lists which cloud sessions receive them. A [self-hosted environment](https://code.claude.com/docs/en/self-hosted-environments) also reads the managed settings file in its runner image. [How Claude Code combines managed sources](https://code.claude.com/docs/en/managed-settings.md#how-claude-code-combines-managed-sources) says when that file applies.
+* **`/config`**: in your browser at claude.ai/code, opens your claude.ai **Code** or **Claude Code** settings page instead of changing a value. To change a setting for a cloud session, set an [environment variable](https://code.claude.com/docs/en/cloud-environments.md#set-environment-variables) on the environment. In a session with one repository outside a project's threads, you can instead commit the key to that repository's `.claude/settings.json`.
 
-Learn more about the plugin system in the [plugins documentation](/en/plugins).
+[What carries over from your setup](https://code.claude.com/docs/en/cloud-environments.md#what-carries-over-from-your-setup) lists the rest: `CLAUDE.md`, skills, MCP servers, plugins, and credentials.
 
-## Environment variables
+## What's next
 
-Environment variables let you control Claude Code behavior without editing settings files. Any variable can also be configured in [`settings.json`](#available-settings) under the `env` key to apply it to every session or roll it out to your team.
-
-See the [environment variables reference](/en/env-vars) for the full list.
-
-## Tools available to Claude
-
-Claude Code has access to a set of tools for reading, editing, searching, running commands, and orchestrating subagents. Tool names are the exact strings you use in permission rules and hook matchers.
-
-See the [tools reference](/en/tools-reference) for the full list and Bash tool behavior details.
-
-## See also
-
-* [Permissions](/en/permissions): permission system, rule syntax, tool-specific patterns, and managed policies
-* [Authentication](/en/authentication): set up user access to Claude Code
-* [Debug your configuration](/en/debug-your-config): diagnose why a setting, hook, or MCP server isn't taking effect
-* [Troubleshooting](/en/troubleshooting): installation, authentication, and platform issues
+* [All settings](https://code.claude.com/docs/en/settings-reference.md): every key, with where you set it and an example
+* [Example settings files](https://code.claude.com/docs/en/settings-example.md): a personal file, a team file, and an organization's managed file
+* [Configure permissions](https://code.claude.com/docs/en/permissions.md): allow, ask, and deny rules, and what Claude Code runs without asking
+* [Environment variables](https://code.claude.com/docs/en/env-vars.md): the variables Claude Code reads and the `env` block
+* [Debug your configuration](https://code.claude.com/docs/en/debug-your-config.md): when a setting doesn't apply
+* [Claude directory reference](https://code.claude.com/docs/en/claude-directory.md): every file Claude Code reads, including subagents, MCP servers, plugins, and `CLAUDE.md`

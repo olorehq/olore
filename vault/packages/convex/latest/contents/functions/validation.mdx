@@ -8,6 +8,7 @@ description: "Validate function arguments and return values for security"
 import ConvexValues from "@site/docs/_convexValues.mdx";
 
 import messages from "!!raw-loader!@site/../demos/args-validation/convex/messages.ts";
+import jobsLib from "!!raw-loader!@site/../private-demos/component-args/jobs/lib.ts";
 
 Argument and return value validators ensure that
 [queries](./query-functions.mdx), [mutations](./mutation-functions.mdx), and
@@ -24,7 +25,7 @@ non-public functions that are not called by clients, we recommend
 validation.
 
 **Example:**
-[Argument Validation](https://github.com/get-convex/convex-demos/tree/main/args-validation)
+[Argument Validation](https://github.com/convex/convex-demos/tree/main/args-validation)
 
 ## Adding validators
 
@@ -167,6 +168,19 @@ export default mutation({
 
 This corresponds to the `any` type in TypeScript.
 
+### Function handles
+
+[Function handles](/components/authoring.mdx#function-handles) can be
+represented with `v.function()`, optionally describing the function's type,
+arguments, and return value:
+
+<Snippet source={jobsLib} snippet="enqueue" title="jobs/lib.ts" />
+
+`fnType`, `args`, and `returns` are only used for TypeScript typechecking and
+codegen. At runtime, Convex currently only checks that the value is a
+well-formed function handle string, not the signature of the function it points
+to or that the function exists.
+
 ### Optional fields
 
 You can describe optional fields by wrapping their type with `v.optional(...)`:
@@ -248,12 +262,29 @@ const userWithoutStatus = userValidator.omit("status", "profileUrl");
 // This is useful for validating patches to a document.
 const userPatch = userWithoutStatus.partial();
 
-// Creates a new validator adding system fields to the user validator.
-const userDocument = userValidator.extend({
-  _id: v.id("users"),
-  _creationTime: v.number(),
+// Creates a new validator with an extra field added.
+const userWithFriends = userValidator.extend({
+  friends: v.array(schema.id("users")),
 });
 ```
+
+To validate whole documents of a table, use `schema.doc(tableName)`, which is
+that table's validator with the `_id` and `_creationTime` system fields added.
+`schema.id(tableName)` is `v.id(tableName)` restricted to the table names in
+your schema, for a type-safe alternative to `v.id`.
+
+```typescript
+export const getUserById = query({
+  args: { id: schema.id("users") },
+  returns: v.union(schema.doc("users"), v.null()),
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get("users", id);
+  },
+});
+```
+
+For a table defined with a union, `schema.doc` adds the system fields to each
+member of the union.
 
 Notes:
 

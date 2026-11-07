@@ -2,19 +2,24 @@
 title: checkly whoami
 description: 'Display current account and user information.'
 sidebarTitle: 'checkly whoami'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-whoami/'
 ---
 
-The `checkly whoami` command displays detailed information about your current Checkly authentication, including the logged-in user account and active Checkly account details.
+<Note>This page describes Checkly CLI version 10 and later.</Note>
 
-This command can also be run without authentication to check your current status.
+The `checkly whoami` command shows which user and Checkly account the CLI uses, your default account, and the other accounts your login works with.
 
 ## Usage
 
 The basic command shows current authentication status and account information.
 
 ```bash Terminal
-npx checkly whoami
+npx checkly whoami [options]
 ```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--output, -o` | - | Output format: `detail` (default) or `json`. |
 
 
 ### Authenticated
@@ -24,18 +29,58 @@ If you're logged in, you'll see:
 ```bash Terminal
 npx checkly whoami
 
-You are currently on account "Monitoring as Code" (b2f...) as raccoon@checklyhq.com.
+You are currently on account "Monitoring as Code" (b2f...) as Raccoon.
+Default account: Monitoring as Code (b2f...)
+Plan: Team
+Other accounts: Staging (a43...)
 ```
+
+The default account is the one commands use unless `CHECKLY_ACCOUNT_ID` picks another; see [Working with several accounts](/cli/authentication#working-with-several-accounts). When it does, `whoami` names the account in use and says that the variable takes precedence over the default.
+
+### JSON output
+
+`--output json` returns the same information for scripts and AI agents:
+
+```bash Terminal
+npx checkly whoami --output json
+```
+
+```json
+{
+  "user": {
+    "id": "...",
+    "name": "Raccoon"
+  },
+  "account": {
+    "id": "b2f...",
+    "name": "Monitoring as Code",
+    "plan": "Team",
+    "addons": []
+  },
+  "accountSource": "login",
+  "defaultAccount": {
+    "id": "b2f...",
+    "name": "Monitoring as Code"
+  },
+  "otherAccounts": [
+    {
+      "id": "a43...",
+      "name": "Staging"
+    }
+  ]
+}
+```
+
+`accountSource` is `login` (your stored login and default account), `account_override` (`CHECKLY_ACCOUNT_ID` picks the account for your login) or `environment` (API key credentials from `CHECKLY_API_KEY`). `defaultAccount` is `null` when no default is stored, and for API key credentials, which don't use it.
 
 ### Not Authenticated
 
-If not logged in, you'll see:
+In a terminal or under an AI agent, `whoami` starts [`checkly login`](/cli/checkly-login) first when no credentials are stored. Elsewhere, such as in CI, it fails:
 
 ```bash Terminal
 npx checkly whoami
 
-Error: Run `npx checkly login` or manually set `CHECKLY_API_KEY` & `CHECKLY_ACCOUNT_ID`
-environment variables to setup authentication.
+Error: Run `npx checkly login` or set `CHECKLY_API_KEY` & `CHECKLY_ACCOUNT_ID` in your environment or .env file.
 ```
 
 ## Related Commands

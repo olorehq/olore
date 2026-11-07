@@ -1,0 +1,94 @@
+---
+title: Device Trust
+description: Protect your users from credential stuffing attacks with automatic second-factor verification on new devices.
+---
+
+> [!NOTE]
+> This protection is included on every plan, and it's on by default for applications created after November 14, 2025.
+
+Device Trust is Clerk's defense against [credential stuffing](https://owasp.org/www-community/attacks/Credential_stuffing) attacks - a type of attack where bad actors use lists of stolen passwords to attempt to gain unauthorized access to user accounts.
+
+When Device Trust is enabled, Clerk treats every new device as untrusted until the user has verified their identity with a [second factor](!second-factor).
+
+## How Device Trust works
+
+Device Trust automatically requires a [second factor](!second-factor) when **all of the following conditions are met**:
+
+1. The user enters a **valid password**.
+1. The user **hasn't enabled [multi-factor authentication (MFA)](/docs/guides/configure/auth-strategies/sign-up-sign-in-options#multi-factor-authentication)**.
+1. The user is signing in from a **new device**.
+
+When these conditions are met, Clerk uses an email code, SMS code, or email link based on your settings. The user must complete this verification to finish the sign-in process.
+
+> [!NOTE]
+> If the user has already enabled MFA (such as an authenticator app or SMS verification), Device Trust will not trigger - their existing MFA method will be used instead.
+
+## How long a device remains trusted
+
+Device Trust doesn't have a separate, configurable trust duration. On web applications, Clerk recognizes a browser through the client authentication cookie, so the browser remains trusted for as long as that cookie remains present and valid.
+
+If the cookie expires, is deleted, or is unavailable - for example, after the user clears their browser data, switches browser profiles, or starts a private browsing session without the existing cookie - Clerk treats the browser as a new device and may require second-factor verification again.
+
+You can't configure the Device Trust duration in the Clerk Dashboard or for an individual sign-in attempt. To access the expiration time of the current client's authentication cookie, use the [`Client.cookieExpiresAt`](/docs/reference/objects/client#properties) property:
+
+```ts
+const expiresAt = clerk.client.cookieExpiresAt
+```
+
+For development instances, this property is always `null`. For production instances, it reports the cookie's current expiration time, but can also be `null`. Clerk can refresh the client cookie, so this value can change. A user can also delete the cookie before it expires. If you display the value, describe it as the current cookie expiration time rather than a guaranteed Device Trust expiration date.
+
+> [!NOTE]
+> Device Trust is automatic and Clerk doesn't provide a supported per-sign-in option for changing how long a browser remains trusted. If you build a custom sign-in UI, use informational text to explain how long the browser can remain recognized instead of presenting a "Remember this device" checkbox as a Device Trust setting.
+
+## Settings
+
+This protection has no settings.
+
+## How it works with other protections
+
+Device Trust helps when an attacker already has a user's correct password. [Lock accounts after failed sign-ins](/docs/guides/protect/user-lockout) covers the opposite case, where an attacker guesses at a password and gets it wrong. [Reject compromised passwords](/docs/guides/secure/password-protection-and-rules#reject-compromised-passwords) makes users replace passwords that have appeared in data breaches, which are the passwords credential stuffing relies on.
+
+## Before you enable it
+
+- **Turn on password sign-in.** Device Trust requires [password-based sign-in](/docs/guides/configure/auth-strategies/sign-up-sign-in-options#user-and-authentication) to be enabled.
+- **Check your custom sign-in flow.** If you've built one that allows password sign-ins, it must handle the `needs_client_trust` status. See [Impact on custom sign-in flows](#impact-on-custom-sign-in-flows).
+
+<If is="llm">
+  **For AI agents:** Instead of enabling Device Trust on the Protections page in the Dashboard, run `npx clerk@latest config patch --json '{"auth_password":{"device_trust":{"enabled":true}}}'` (check the current setting first with `npx clerk@latest config pull --keys auth_password`). Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
+
+## How Device Trust differs from traditional MFA
+
+| Aspect | Device Trust | Traditional MFA |
+| - | - | - |
+| **Trigger** | Automatic on new devices | User must enable it |
+| **Verification method** | Email code, SMS code, or email link | TOTP, SMS code, backup codes |
+| **User setup required** | None | User must configure their preferred method |
+| **When it applies** | Only for password sign-ins | All sign-ins |
+
+## Impact on custom sign-in flows
+
+If you've built a [custom sign-in flow](!custom-flow) that allows password-based sign-ins using the Clerk API or SDKs, you'll need to handle the `needs_client_trust` status that Device Trust can trigger.
+
+> [!NOTE]
+> Device Trust was previously called "Client Trust." The feature was renamed, but its API values - including the `needs_client_trust` status - kept their original names so that existing integrations keep working.
+>
+> If an older application has Device Trust enabled but your custom sign-in flow receives the legacy `needs_second_factor` status instead of `needs_client_trust`, opt in to the **Device Trust Status** update on the [**Updates**](https://dashboard.clerk.com/~/updates) page. This update doesn't enable Device Trust. It only changes the custom-flow response from `needs_second_factor` to `needs_client_trust`.
+
+When Device Trust requires verification, the sign-in attempt will return a status of `needs_client_trust` with `email_code`, `phone_code`, or `email_link` in the `supportedSecondFactors` array. Your flow should:
+
+1. Check if the sign-in status is `needs_client_trust`.
+1. Check if `email_code`, `phone_code`, or `email_link` is in the `supportedSecondFactors` array.
+1. Call `prepareSecondFactor()` for the selected strategy.
+1. Complete the selected strategy's verification.
+1. If successful, set the session as active.
+
+For a complete implementation example, see the [email/password custom flow guide](/docs/guides/development/custom-flows/authentication/email-password#sign-in-flow).
+
+> [!TIP]
+> If your application supports both Device Trust and user-enabled MFA, make sure to handle both the `needs_client_trust` and `needs_second_factor` statuses. The `needs_client_trust` status is returned when Device Trust triggers on a new device, while `needs_second_factor` is returned when the user has MFA enabled on their account.
+
+## Limitations
+
+- **Password-only**: Device Trust only applies to password-based sign-ins. Passwordless authentication methods (such as email link sign-ins, [OTPs](!otp), passkeys, and OAuth) are not affected.
+- **Email/Phone number required**: Device Trust requires the user to have a verified email address or phone number to receive the verification.

@@ -70,7 +70,7 @@ interface AstroIntegration {
     }) => void | Promise<void>;
     'astro:build:start'?: (options: {
       logger: AstroIntegrationLogger;
-      setPrerenderer: (prerenderer: AstroPrerenderer | ((defaultPrerenderer: AstroPrerenderer) => AstroPrerenderer)) => void;
+      setPrerenderer: (prerenderer: AstroPrerenderer | ((defaultPrerenderer: AstroPrerenderer, context: { outputDirectories: AstroBuildOutputDirectories }) => AstroPrerenderer)) => void;
     }) => void | Promise<void>;
     'astro:build:setup'?: (options: {
       vite: vite.InlineConfig;
@@ -86,6 +86,7 @@ interface AstroIntegration {
     'astro:build:generated'?: (options: {
       dir: URL;
       logger: AstroIntegrationLogger;
+      routeToHeaders: RouteToHeaders;
     }) => void | Promise<void>;
     'astro:build:done'?: (options: {
       pages: { pathname: string }[];
@@ -898,7 +899,7 @@ The address, family and port number supplied by the [`server.address()` method o
 ```js
 'astro:build:start'?: (options: {
   logger: AstroIntegrationLogger;
-  setPrerenderer: (prerenderer: AstroPrerenderer | ((defaultPrerenderer: AstroPrerenderer) => AstroPrerenderer)) => void;
+  setPrerenderer: (prerenderer: AstroPrerenderer | ((defaultPrerenderer: AstroPrerenderer, context: { outputDirectories: AstroBuildOutputDirectories }) => AstroPrerenderer)) => void;
 }) => void | Promise<void>;
 ```
 
@@ -907,7 +908,7 @@ The address, family and port number supplied by the [`server.address()` method o
 
 <p>
 
-**Type:** <code>(prerenderer: <a href="#astroprerenderer">AstroPrerenderer</a> | ((defaultPrerenderer: AstroPrerenderer) => AstroPrerenderer)) => void</code><br />
+**Type:** <code>(prerenderer: <a href="#astroprerenderer">AstroPrerenderer</a> | ((defaultPrerenderer: AstroPrerenderer, context: \{ outputDirectories: <a href="#astrobuildoutputdirectories">AstroBuildOutputDirectories</a> \}) => AstroPrerenderer)) => void</code><br />
 <Since v="6.0.0" />
 </p>
 
@@ -934,6 +935,30 @@ The function accepts either an [`AstroPrerenderer` object](#astroprerenderer) di
       // Optional: called after all pages are prerendered
     }
   }));
+}
+```
+
+<p><Since v="7.4.0" /></p>
+
+The factory function also receives a context object as its second argument. Its `outputDirectories` property contains the [client, server, and prerender output directories](#astrobuildoutputdirectories) resolved by Vite. Integrations and Vite plugins can change where Astro writes build output. Use these values instead of the configured [`build.client`](/en/reference/configuration-reference/#buildclient) or [`build.server`](/en/reference/configuration-reference/#buildserver).
+
+The following example reads the output directories in a custom prerenderer factory:
+
+```js
+'astro:build:start': ({ setPrerenderer }) => {
+  setPrerenderer((defaultPrerenderer, { outputDirectories }) => {
+    const { client, server, prerender } = outputDirectories;
+
+    return {
+      name: 'my-prerenderer',
+      async getStaticPaths() {
+        return defaultPrerenderer.getStaticPaths();
+      },
+      async render(request, { routeData }) {
+        // Render using the output in `client`, `server`, or `prerender`
+      },
+    };
+  });
 }
 ```
 
@@ -1290,6 +1315,7 @@ export default {
 'astro:build:generated'?: (options: {
   dir: URL;
   logger: AstroIntegrationLogger;
+  routeToHeaders: RouteToHeaders;
 }) => void | Promise<void>;
 ```
 
@@ -1300,7 +1326,7 @@ export default {
 **Type:** [`URL`](https://developer.mozilla.org/en-US/docs/Web/API/URL)
 </p>
 
-A URL path to the build output directory.
+A URL path to the client build output directory, as resolved by Vite. By default, this is [`outDir`](/en/reference/configuration-reference/#outdir) for static builds and [`build.client`](/en/reference/configuration-reference/#buildclient) for on-demand rendered builds, unless an integration or Vite plugin changes the output directory.
 
 The following example uses Node's built-in [`fileURLToPath()`](https://nodejs.org/api/url.html#urlfileurltopathurl-options) utility to compute a valid absolute path string for a file provided by the integration:
 
@@ -1316,6 +1342,16 @@ export default {
   }
 }
 ```
+
+#### `routeToHeaders` option
+
+<p>
+
+**Type:** <code>Map\<string, <a href="#headerpayload">HeaderPayload</a>\></code><br />
+<Since v="6.0.0" />
+</p>
+
+A mapping of routes to their associated HTTP headers. This is useful when an adapter needs to write a configuration file based on those headers.
 
 ### `astro:build:done`
 
@@ -1341,7 +1377,7 @@ export default {
 **Type:** [`URL`](https://developer.mozilla.org/en-US/docs/Web/API/URL)
 </p>
 
-A URL path to the build output directory.
+A URL path to the client build output directory, as resolved by Vite. By default, this is [`outDir`](/en/reference/configuration-reference/#outdir) for static builds and [`build.client`](/en/reference/configuration-reference/#buildclient) for on-demand rendered builds, unless an integration or Vite plugin changes the output directory.
 
 The following example uses Node's built-in [`fileURLToPath()`](https://nodejs.org/api/url.html#urlfileurltopathurl-options) utility to compute a valid absolute path string for a file provided by the integration before writing to it:
 
@@ -1427,11 +1463,13 @@ The following types can be imported from the `astro` module:
 
 ```ts
 import type {
+  AstroBuildOutputDirectories,
   AstroIntegrationLogger,
   AstroIntegrationMiddleware,
   AstroMiddlewareInstance,
   AstroPrerenderer,
   ClientDirectiveConfig,
+  HeaderPayload,
   HookParameters,
   IntegrationResolvedRoute,
   RedirectConfig,
@@ -1443,6 +1481,43 @@ import type {
   ValidRedirectStatus,
 } from "astro";
 ```
+
+### `AstroBuildOutputDirectories`
+
+<p>
+
+**Type:** `{ client: URL; server: URL; prerender: URL; }`<br />
+<Since v="7.4.0" />
+</p>
+
+Describes the output directories resolved by Vite for each build environment. A [custom prerenderer factory](#setprerenderer-option) receives this object as `outputDirectories` in its context argument.
+
+#### `AstroBuildOutputDirectories.client`
+
+<p>
+
+**Type:** `URL`
+</p>
+
+The resolved output directory for client-side build artifacts (e.g. JavaScript, CSS, and static pages).
+
+#### `AstroBuildOutputDirectories.server`
+
+<p>
+
+**Type:** `URL`
+</p>
+
+The resolved output directory for server-side build artifacts.
+
+#### `AstroBuildOutputDirectories.prerender`
+
+<p>
+
+**Type:** `URL`
+</p>
+
+The resolved output directory for the prerender build environment.
 
 ### `AstroIntegrationLogger`
 
@@ -1575,16 +1650,16 @@ Defines an optional method that will be called once before the prerendering star
 
 <p>
 
-**Type:** <code>() => Promise\<Array\<\{ pathname: string; route: <a href="#routedata">RouteData</a>; \}\>\></code>
+**Type:** <code>() => Promise\<\{ paths: Array\<\{ pathname: string; route: <a href="#routedata">RouteData</a>; \}\>; metadata?: object; \}\></code>
 </p>
 
-Returns a list of objects describing the prerendered route path and its associated data.
+Returns an object with a `paths` list describing the prerendered route paths and their associated data.
 
 #### `AstroPrerenderer.render()`
 
 <p>
 
-**Type:** <code>(request: Request, options: \{ routeData: <a href="#routedata">RouteData</a> \}) => Promise\<Response\></code>
+**Type:** <code>(request: Request, options: \{ routeData: <a href="#routedata">RouteData</a> \}) => Promise\<\{ response: Response; metadata?: object; \}\></code>
 </p>
 
 Defines an optional method describing how to render a page. This will be called by Astro for each path returned by [`getStaticPaths()`](/en/reference/routing-reference/#getstaticpaths).
@@ -1596,7 +1671,7 @@ Defines an optional method describing how to render a page. This will be called 
 **Type:** `() => Promise<void>`
 </p>
 
-Defines an optional method called once all pages are pre-rendered. This is useful for performing cleanup tasks such as stopping a preview server.
+Defines an optional method called once all pages are pre-rendered and their images are generated. This is useful for performing cleanup tasks such as stopping a preview server.
 
 ### `ClientDirectiveConfig`
 
@@ -1624,6 +1699,34 @@ A custom name for the event triggered by the directive.
 </p>
 
 Defines the import path of the code executed whenever the directive is used.
+
+### `HeaderPayload`
+
+<p>
+
+**Type:** `{ route: IntegrationResolvedRoute; headers: Headers; }`<br />
+<Since v="6.0.0" />
+</p>
+
+Describes a static route and its associated headers.
+
+#### `HeaderPayload.route`
+
+<p>
+
+**Type:** [`IntegrationResolvedRoute`](#integrationresolvedroute)
+</p>
+
+Contains the static route metadata.
+
+#### `HeaderPayload.headers`
+
+<p>
+
+**Type:** `Headers`
+</p>
+
+The [`Headers`](https://developer.mozilla.org/en-US/docs/Web/API/Headers) associated with the route.
 
 ### `HookParameters`
 
@@ -2454,7 +2557,7 @@ Specifies the [configured directory for generated assets](/en/reference/configur
 <Since v="5.2.0" />
 </p>
 
-Determines the path where client-side build artifacts (e.g. JavaScript, CSS) are output within the build directory.
+Determines the path where client-side build artifacts (e.g. JavaScript, CSS) are output, as resolved by Vite. For on-demand rendered builds, this matches [`build.client`](/en/reference/configuration-reference/#buildclient) by default.
 
 #### `SSRManifest.buildServerDir`
 
@@ -2464,7 +2567,7 @@ Determines the path where client-side build artifacts (e.g. JavaScript, CSS) are
 <Since v="5.2.0" />
 </p>
 
-Determines the path where server-side build artifacts are output within the build directory.
+Determines the path where server-side build artifacts are output, as resolved by Vite. For on-demand rendered builds, this matches [`build.server`](/en/reference/configuration-reference/#buildserver) by default.
 
 #### `SSRManifest.csp`
 
@@ -2496,6 +2599,10 @@ Specifies the [configured hash function](/en/reference/configuration-reference/#
 
 ##### `SSRManifest.csp.scriptHashes`
 
+:::caution[Deprecated]
+Use [`scriptDirective`](#ssrmanifestcspscriptdirective) instead. This property only lists hashes scoped to the generic `script-src` directive. Will be removed in a future major version.
+:::
+
 <p>
 
 **Type:** `string[]`
@@ -2504,6 +2611,10 @@ Specifies the [configured hash function](/en/reference/configuration-reference/#
 Specifies a list of generated hashes for project scripts and [user-supplied hashes](/en/reference/configuration-reference/#securitycspscriptdirectivehashes) for external scripts.
 
 ##### `SSRManifest.csp.scriptResources`
+
+:::caution[Deprecated]
+Use [`scriptDirective`](#ssrmanifestcspscriptdirective) instead. This property only lists sources scoped to the generic `script-src` directive. Will be removed in a future major version.
+:::
 
 <p>
 
@@ -2514,6 +2625,10 @@ Specifies a list of valid sources combining the [configured script resources](/e
 
 ##### `SSRManifest.csp.isStrictDynamic`
 
+:::caution[Deprecated]
+Use [`scriptDirective.strictDynamic`](#ssrmanifestcspscriptdirective) instead. Will be removed in a future major version.
+:::
+
 <p>
 
 **Type:** `boolean`
@@ -2521,7 +2636,21 @@ Specifies a list of valid sources combining the [configured script resources](/e
 
 Determines whether support for [dynamic script injection is enabled in the configuration](/en/reference/configuration-reference/#securitycspscriptdirectivestrictdynamic).
 
+##### `SSRManifest.csp.scriptDirective`
+
+<p>
+
+**Type:** `{ resources: Array<string | { resource: string; kind: 'element' | 'attribute' | 'default' }>; hashes: Array<string | { hash: string; kind: 'element' | 'attribute' | 'default' }>; strictDynamic: boolean }`<br />
+<Since v="7.1.0" />
+</p>
+
+Describes the sources, hashes, and [`'strict-dynamic'`](/en/reference/configuration-reference/#securitycspscriptdirectivestrictdynamic) support for the `script-src` family of directives. Each source or hash can target a more specific directive through its `kind` property. Use `'element'` for `script-src-elem`, `'attribute'` for `script-src-attr`, or `'default'` (the same as a bare string) for `script-src`.
+
 ##### `SSRManifest.csp.styleHashes`
+
+:::caution[Deprecated]
+Use [`styleDirective`](#ssrmanifestcspstyledirective) instead. This property only lists hashes scoped to the generic `style-src` directive. Will be removed in a future major version.
+:::
 
 <p>
 
@@ -2532,12 +2661,26 @@ Specifies a list of generated hashes for project styles and [user-supplied hashe
 
 ##### `SSRManifest.csp.styleResources`
 
+:::caution[Deprecated]
+Use [`styleDirective`](#ssrmanifestcspstyledirective) instead. This property only lists sources scoped to the generic `style-src` directive. Will be removed in a future major version.
+:::
+
 <p>
 
 **Type:** `string[]`
 </p>
 
 Specifies a list of valid sources combining the [configured style resources](/en/reference/configuration-reference/#securitycspstyledirectiveresources) and the [injected style resources](/en/reference/api-reference/#cspinsertstyleresource).
+
+##### `SSRManifest.csp.styleDirective`
+
+<p>
+
+**Type:** `{ resources: Array<string | { resource: string; kind: 'element' | 'attribute' | 'default' }>; hashes: Array<string | { hash: string; kind: 'element' | 'attribute' | 'default' }> }`<br />
+<Since v="7.1.0" />
+</p>
+
+Describes the sources and hashes for the `style-src` family of directives. Each source or hash can target a more specific directive through its `kind` property. Use `'element'` for `style-src-elem`, `'attribute'` for `style-src-attr`, or `'default'` (the same as a bare string) for `style-src`.
 
 ##### `SSRManifest.csp.directives`
 

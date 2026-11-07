@@ -256,35 +256,32 @@ export interface V2List<T> {
    * The URL for the previous page of results, or `null` if this is the first page.
    */
   previous_page_url: string | null;
-
-  /**
-   * TODO(DEVSDK-2534): remove these properties in our next major release.
-   * these deprecated properties were copied from ApiList<T> to not break
-   * existing code.  these properties will continue to be not populated at
-   * runtime.
-   */
-
-  /**
-   * @deprecated This property is not populated at runtime for v2 lists
-   */
-  object: 'list';
-
-  /**
-   * True if this list has another page of items after this one that can be fetched.
-   *
-   * @deprecated This property is not populated at runtime for v2 lists
-   */
-  has_more: boolean;
-
-  /**
-   * The URL where this list can be accessed.
-   * @deprecated This property is not populated at runtime for v2 lists
-   */
-  url: string;
 }
 
 export interface V2ListPromise<T>
   extends Promise<Response<V2List<T>>>,
+    AsyncIterableIterator<T> {
+  autoPagingEach(
+    handler: (item: T) => boolean | void | Promise<boolean | void>,
+    onDone?: (err: any) => void
+  ): Promise<void>;
+
+  autoPagingToArray(
+    opts: {limit: number},
+    onDone?: (err: any) => void
+  ): Promise<Array<T>>;
+}
+
+/** A page of API v2 search results. */
+export interface V2SearchResult<T> extends V2List<T> {
+  object: 'v2.search_result';
+
+  /** The total number of objects matching the search query. */
+  total_count: number;
+}
+
+export interface V2SearchResultPromise<T>
+  extends Promise<Response<V2SearchResult<T>>>,
     AsyncIterableIterator<T> {
   autoPagingEach(
     handler: (item: T) => boolean | void | Promise<boolean | void>,

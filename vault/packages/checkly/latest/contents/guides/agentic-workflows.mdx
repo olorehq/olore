@@ -1,8 +1,9 @@
 ---
 title: Control and Configure your Monitoring Infrastructure with AI
-sidebarTitle: Agentic Workflows
+sidebarTitle: Controlling Monitoring with Agents
 description: >-
   Thanks to Checkly's Monitoring as Code approach, LLMs and AI agents can set up, configure and control your entire monitoring setup.
+canonical: 'https://www.checklyhq.com/docs/guides/agentic-workflows/'
 ---
 
 import { YoutubeEmbed } from "/snippets/youtube-embed.jsx"
@@ -29,34 +30,22 @@ Context management is one of the most important concepts when using LLMs because
 
 Before your AI assistant can effectively configure Checkly monitoring, it needs context about your project, your monitoring goals, and Checkly documentation and conventions. This context is critical and without it, the LLM will rely on potentially outdated training data and most likely produce unreliable results.
 
-### Add the Checkly rules file
+### Install the Checkly skill
 
-Download [the official Checkly rules file](/ai/overview) and add it to your project. This file contains instructions on project structure, CLI commands, links to documentation and code examples for all the different Checkly check types.
+Install the [Checkly skill](/ai/skills) in your project. It gives your agent instructions on project structure, CLI commands, links to documentation and code examples for all the different Checkly check types.
 
-```md checkly.rules.md
-# Checkly
+```bash
+# Start an interactive prompt to pick your agent
+npx checkly skills install
 
-- Refer to docs for Checkly CLI v6.0.0 and above.
-- Check the Checkly CLI output to figure out into which folder the setup was generated.
-- Use the [Checkly CLI reference documentation](https://www.checklyhq.com/docs/cli/overview/).
-- Use the [Checkly construct reference documentation](https://www.checklyhq.com/docs/constructs/overview/).
-- Import and / or require any constructs you need in your code, such as `ApiCheck`, `BrowserCheck` from the `checkly/constructs` package.
-- Always ground generated code and CLI commands against the official documentation and examples in this file.
+# Skip the prompt and install for a specific agent
+npx checkly skills install --target claude
 
-...
+# See all options
+npx checkly skills install --help
 ```
 
-Place this file anywhere in your project. The specific location is unimportant as long as it follows your agent's conventions. In this guide it will be placed in the `.claude/` directory because the guide uses Claude Code.
-
-## Configure your AI agent to read this file
-
-Generally, you don't want to fill your conversation context with unwanted tokens. To avoid including all this Checkly information in every conversation, update your AI assistant's configuration file (e.g., `CLAUDE.md`) to reference the Checkly rules if needed.
-
-Add an instruction like:
-
-```md claude.md
-Whenever you're tasked with anything about monitoring or Checkly, read the `@checkly-rules.md file` first.
-```
+Your agent loads the skill only when a task needs it, so the Checkly context doesn't fill every conversation.
 
 ### Initialize Checkly in your project (optional)
 
@@ -148,7 +137,7 @@ To verify the new monitoring configuration, continue talking to your AI agent:
 Can you check if this new monitor actually works?
 ```
 
-Thanks to the additional context provided via the `checkly.rules.md`, the AI knows how to handle the Checkly CLI and runs `npx checkly test`, which executes your monitoring configuration in Checkly's infrastructure.
+Thanks to the additional context provided via the Checkly skill, the AI knows how to handle the Checkly CLI and runs `npx checkly test`, which executes your monitoring configuration in Checkly's infrastructure.
 
 ```sh
 $ npx checkly test
@@ -252,7 +241,7 @@ new UrlMonitor("base-url-monitor", {
 
 ## Set up API monitoring
 
-For a solid monitoring strategy uptime monitoring is only the first step. [API Checks](/detect/synthetic-monitoring/api-checks/overview) go beyond uptime monitoring by validating response payloads with assertions.
+For a solid monitoring strategy uptime monitoring is only the first step. [API checks](/detect/synthetic-monitoring/api-checks/overview) go beyond uptime monitoring by validating response payloads with assertions.
 
 To create complex assertions, target AI to analyze your source code to generate meaningful assertions automatically.
 
@@ -317,7 +306,7 @@ The AI may iterate on the configuration—running tests, spotting issues, and re
 
 ## Use Playwright for synthetic monitoring
 
-Checkly provides [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview), which let you reuse existing Playwright tests as synthetic monitors. Monitor critical user flows like login, checkout, or search in production using your existing Playwright Test code base.
+Checkly provides [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview), which let you reuse existing Playwright tests as synthetic monitors. Monitor critical user flows like login, checkout, or search in production using your existing Playwright Test code base. And when your agent writes or maintains those Playwright tests, it can debug them with text-first tooling too — see [Debugging with AI agents](/learn/playwright/debugging-with-ai-agents/).
 
 ### Organizing tests for monitoring
 
@@ -370,7 +359,6 @@ new PlaywrightCheck("critical-suite", {
   pwProjects: ["Critical"],
   activated: true,
   muted: false,
-  shouldFail: false,
   locations: ["us-east-1", "eu-west-1", "ap-southeast-2"],
   frequency: Frequency.EVERY_10M,
   runParallel: true,
@@ -493,9 +481,9 @@ As mentioned in the beginning: **Checkly is by definition AI-ready** without com
 
 ## Key takeaways
 
-- Regardless of what you want to achieve: context is everything. Update your `checkly-rules.md` and AI configuration files to fit your project's requirements. When the AI produces unwanted output, refine your instructions. A `claude.md` or `agents.md` is never done!
+- Regardless of what you want to achieve: context is everything. Install the Checkly skill and update your AI configuration files to fit your project's requirements. When the AI produces unwanted output, refine your instructions. A `claude.md` or `agents.md` is never done!
 - Always review generated code. AI assistants are useful but not perfect. **You're still responsible for what you deploy.**
-- Test your monitoring configuration before deploying. Use `npx checkly test` to validate checks locally before pushing to production.
+- Test your monitoring configuration before deploying. Use `npx checkly test` to run your checks on Checkly before you deploy them.
 - Your AI agent might deploy your monitoring when running in YOLO or `--skip-permissions` mode. Be aware of this risk and implement guard rails.
 
 For complete documentation on AI integrations, see [the AI overview](/ai/overview).

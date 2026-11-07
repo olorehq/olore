@@ -3,6 +3,7 @@ title: How to Create an API Monitor using an OpenAPI (Swagger) Spec
 sidebarTitle: Monitoring an OpenAPI Spec
 description: OpenAPI and Swagger help users design and document APIs in a way that is readable from both humans and machines. As a consequence, they can also be used to generate the code that will run the specified API - both on the provider and consumer side. Can we leverage this same principle to simplify API monitoring? After a brief first look at OpenAPI and Swagger, this article will show how we can quickly use them to monitor a new or existing API.
 tags: API Monitoring
+canonical: 'https://www.checklyhq.com/docs/guides/monitoring-an-openapi-spec/'
 ---
 
 ## What is the OpenAPI Specification?
@@ -15,7 +16,7 @@ Following the OAS brings the following advantages:
 2. The possibility of automatically generating documentation, implementation logic and even mock servers for testing.
 3. Early validation of the data flows happening within the API.
 
-For those new to the OAS and wanting to get a basic understanding without diving straight into the specification itself, the official [OpenAPI Specification Explained](https://oai.github.io/Documentation/specification.html) guide is a great place to start.
+For those new to the OAS and wanting to get a basic understanding without diving straight into the specification itself, the official [OpenAPI Specification Explained](https://learn.openapis.org/specification/) guide is a great place to start.
 
 ## Swagger vs OpenAPI
 
@@ -186,7 +187,7 @@ Depending on how much is described in a given API spec, it is possible to move e
 
 ## Generated monitoring checks with Checkly
 
-[API monitoring](/learn/monitoring/api-monitoring) is key to ensure that our endpoints are returning the correct results in an acceptable timeframe.  If we can generate APIs from a OAS description file, we can also generate monitoring checks for them. Checkly is [a member of the OpenAPI initiative](https://www.openapis.org/membership/members), and allows us to import an OpenAPI spec file and automatically creates one or more checks depending on the amount of information available. All it takes is a couple of clicks.
+[API monitoring](/learn/monitoring/api-monitoring) is key to ensure that our endpoints are returning the correct results in an acceptable timeframe.  If we can generate APIs from a OAS description file, we can also generate monitoring checks for them. Checkly is [a member of the OpenAPI initiative](https://www.openapis.org/about), and allows us to import an OpenAPI spec file and automatically creates one or more checks depending on the amount of information available. All it takes is a couple of clicks.
 
 When creating an API check, select the `import from Swagger / OpenAPI` button.
 
@@ -230,21 +231,21 @@ For APIs medium and large, and for any that is already described with an OAS fil
 As we look to increase our endpoint coverage across our APIs, we might want to explore the following resources:
 
 1. Learning more about [API monitoring](/learn/monitoring/api-monitoring) basics and best practices.
-2. Defining our [API checks as code](/guides/getting-started-with-monitoring-as-code) to scale our setup.
-3. Integrating our API monitoring with [E2E monitoring](/guides/end-to-end-monitoring/) for our websites.
+2. Defining our [API checks as code](/guides/structuring-a-checkly-project) to scale our setup.
+3. Integrating our API monitoring with [E2E monitoring](/learn/monitoring/end-to-end-monitoring/) for our websites.
 
 ## Read More
 
 <div class="cards-list">
-<Card title="Monitoring as Code" href="/guides/getting-started-with-monitoring-as-code">
+<Card title="Monitoring as Code" href="/guides/structuring-a-checkly-project">
   Understand monitoring as code (MaC) via our Checkly CLI.
 </Card>
 
-<Card title="End to end monitoring" href="/guides/end-to-end-monitoring/">
-  Learn end-to-end monitoring with puppeteer and playwright to test key website flows.
+<Card title="End to end monitoring" href="/learn/monitoring/end-to-end-monitoring/">
+  Learn end-to-end monitoring with puppeteer and Playwright to test key website flows.
 </Card>
 
-<Card title="Monitoring as code" href="/guides/getting-started-with-monitoring-as-code">
+<Card title="Monitoring as code" href="/guides/structuring-a-checkly-project">
   Why should the way we manage monitoring be any different?
 </Card>
 </div>

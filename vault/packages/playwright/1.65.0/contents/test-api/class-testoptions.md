@@ -1,0 +1,834 @@
+# class: TestOptions
+* since: v1.10
+* langs: js
+
+Playwright Test provides many options to configure test environment, [Browser], [BrowserContext] and more.
+
+These options are usually provided in the [configuration file](../test-configuration.md) through [`property: TestConfig.use`] and [`property: TestProject.use`].
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+export default defineConfig({
+  use: {
+    headless: false,
+    viewport: { width: 1280, height: 720 },
+    ignoreHTTPSErrors: true,
+    video: 'on-first-retry',
+  },
+});
+```
+
+Alternatively, with [`method: Test.use`] you can override some options for a file.
+
+```js title="example.spec.ts"
+import { test, expect } from '@playwright/test';
+
+// Run tests in this file with portrait-like viewport.
+test.use({ viewport: { width: 600, height: 900 } });
+
+test('my portrait test', async ({ page }) => {
+  // ...
+});
+```
+
+## property: TestOptions.acceptDownloads = %%-context-option-acceptdownloads-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    acceptDownloads: false,
+  },
+});
+```
+
+## property: TestOptions.baseURL = %%-context-option-baseURL-%%
+* since: v1.10
+
+**Usage**
+
+```js
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    /* Base URL to use in actions like `await page.goto('/')`. */
+    baseURL: 'http://localhost:3000',
+  },
+});
+```
+
+## property: TestOptions.browserName
+* since: v1.10
+- type: "BrowserName" <"chromium"|"firefox"|"webkit">
+
+Name of the browser that runs tests. Defaults to `'chromium'`. Most of the time you should set `browserName` in your [TestConfig]:
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    browserName: 'firefox',
+  },
+});
+```
+
+## property: TestOptions.actionTimeout
+* since: v1.10
+- type: <[int]>
+
+Default timeout for each Playwright action in milliseconds, defaults to 0 (no timeout).
+
+This is a default timeout for all Playwright actions, same as configured via [`method: Page.setDefaultTimeout`].
+
+**Usage**
+
+```js
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
+    actionTimeout: 0,
+  },
+});
+```
+
+Learn more about [various timeouts](../test-timeouts.md).
+
+## property: TestOptions.bypassCSP = %%-context-option-bypasscsp-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    bypassCSP: true,
+  }
+});
+```
+
+## property: TestOptions.channel = %%-browser-option-channel-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  projects: [
+    {
+      name: 'Microsoft Edge',
+      use: {
+        ...devices['Desktop Edge'],
+        channel: 'msedge'
+      },
+    },
+  ]
+});
+```
+
+## property: TestOptions.clientCertificates = %%-context-option-clientCertificates-%%
+* since: v1.46
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    clientCertificates: [{
+      origin: 'https://example.com',
+      certPath: './cert.pem',
+      keyPath: './key.pem',
+      passphrase: 'mysecretpassword',
+    }],
+  },
+});
+```
+
+## property: TestOptions.colorScheme = %%-context-option-colorscheme-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    colorScheme: 'dark',
+  },
+});
+```
+
+## property: TestOptions.connectOptions
+* since: v1.10
+- type: <[void]|[Object]>
+  - `wsEndpoint` <[string]> A browser websocket endpoint to connect to.
+  - `headers` ?<[void]|[Object]<[string], [string]>> Additional HTTP headers to be sent with web socket connect request. Optional.
+  - `timeout` ?<[int]> Timeout in milliseconds for the connection to be established. Optional, defaults to no timeout.
+  - `exposeNetwork` ?<[string]> Option to expose network available on the connecting client to the browser being connected to. See [`method: BrowserType.connect`] for more details.
+
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    connectOptions: {
+      wsEndpoint: 'ws://localhost:5678',
+    },
+  },
+});
+```
+
+When connect options are specified, default [`property: Fixtures.browser`], [`property: Fixtures.context`] and [`property: Fixtures.page`] use the remote browser instead of launching a browser locally.
+
+## property: TestOptions.contextOptions
+* since: v1.10
+- type: <[Object]>
+
+Options used to create the context, as passed to [`method: Browser.newContext`]. Specific options like [`property: TestOptions.viewport`] take priority over this.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    contextOptions: {
+      reducedMotion: 'reduce',
+    },
+  },
+});
+```
+
+## property: TestOptions.contrast = %%-context-option-contrast-%%
+* since: v1.50
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    contrast: 'more',
+  },
+});
+```
+
+## property: TestOptions.deviceScaleFactor = %%-context-option-devicescalefactor-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    viewport: { width: 2560, height: 1440 },
+    deviceScaleFactor: 2,
+  },
+});
+```
+
+## property: TestOptions.extraHTTPHeaders = %%-context-option-extrahttpheaders-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    extraHTTPHeaders: {
+      'X-My-Header': 'value',
+    },
+  },
+});
+```
+
+## property: TestOptions.forcedColors = %%-context-option-forcedColors-%%
+* since: v1.50
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    forcedColors: 'active',
+  },
+});
+```
+
+## property: TestOptions.geolocation = %%-context-option-geolocation-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    geolocation: { longitude: 12.492507, latitude: 41.889938 },
+  },
+});
+```
+Learn more about [geolocation](../emulation.md#color-scheme-and-media).
+
+## property: TestOptions.hasTouch = %%-context-option-hastouch-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    hasTouch: true
+  },
+});
+```
+
+## property: TestOptions.headless = %%-browser-option-headless-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    headless: false
+  },
+});
+```
+
+## property: TestOptions.httpCredentials = %%-context-option-httpcredentials-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    httpCredentials: {
+      username: 'user',
+      password: 'pass',
+    },
+  },
+});
+```
+
+When passing an array of credentials to [`method: Test.use`], wrap it into an extra array, see [fixture options](../test-fixtures.md#fixtures-options).
+
+```js title="example.spec.ts"
+test.use({
+  httpCredentials: [[
+    { username: 'alice', password: 'alice-pass', origin: 'https://a.example.com' },
+    { username: 'bob', password: 'bob-pass', origin: 'https://b.example.com' },
+  ], { scope: 'test' }],
+});
+```
+
+## property: TestOptions.ignoreHTTPSErrors = %%-context-option-ignorehttpserrors-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    ignoreHTTPSErrors: true,
+  },
+});
+```
+
+## property: TestOptions.isMobile = %%-context-option-ismobile-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    isMobile: false,
+  },
+});
+```
+
+## property: TestOptions.javaScriptEnabled = %%-context-option-javascriptenabled-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    javaScriptEnabled: false,
+  },
+});
+```
+
+
+## property: TestOptions.launchOptions
+* since: v1.10
+- type: <[Object]>
+
+Options used to launch the browser, as passed to [`method: BrowserType.launch`]. Specific options [`property: TestOptions.headless`] and [`property: TestOptions.channel`] take priority over this.
+
+:::warning
+Use custom browser args at your own risk, as some of them may break Playwright functionality.
+:::
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--start-maximized']
+        }
+      }
+    }
+  ]
+});
+```
+
+## property: TestOptions.locale
+* since: v1.10
+- type: <[string]>
+
+Specify user locale, for example `en-GB`, `de-DE`, etc. Locale will affect `navigator.language` value, `Accept-Language` request header value as well as number and date formatting rules. Defaults to `en-US`. Learn more about emulation in our [emulation guide](../emulation.md#locale--timezone).
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    locale: 'it-IT',
+  },
+});
+```
+
+## property: TestOptions.navigationTimeout
+* since: v1.10
+- type: <[int]>
+
+Timeout for each navigation action in milliseconds. Defaults to 0 (no timeout).
+
+This is a default navigation timeout, same as configured via [`method: Page.setDefaultNavigationTimeout`].
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    navigationTimeout: 3000,
+  },
+});
+```
+
+Learn more about [various timeouts](../test-timeouts.md).
+
+## property: TestOptions.offline = %%-context-option-offline-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    offline: true
+  },
+});
+```
+
+## property: TestOptions.permissions = %%-context-option-permissions-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    permissions: ['notifications'],
+  },
+});
+```
+
+## property: TestOptions.proxy = %%-browser-option-proxy-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    proxy: {
+      server: 'http://myproxy.com:3128',
+      bypass: 'localhost',
+    },
+  },
+});
+```
+
+## property: TestOptions.reducedMotion = %%-context-option-reducedMotion-%%
+* since: v1.50
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    reducedMotion: 'reduce',
+  },
+});
+```
+
+## property: TestOptions.reuseContext
+* since: v1.62
+* discouraged: This option trades test isolation for speed and is intended for component tests that drive a story gallery. Leave it unset for end-to-end tests - a fresh browser context per test is one of the core guarantees of Playwright Test.
+- type: <[boolean]>
+
+**Experimental.** When set to `true`, all tests in a worker process run in a single browser context that is reused between tests, instead of getting a brand new context per test. Defaults to `false`.
+
+Between tests, Playwright resets the state that component tests typically touch: it clears cookies, cache, local storage and IndexedDB of visited origins, unregisters service workers, closes extra pages, removes routes, bindings and init scripts, and re-applies the configured storage state, viewport and emulation options.
+
+This reset is best-effort, not a guarantee of isolation. State that is **not** reset includes:
+* Permissions granted with [`method: BrowserContext.grantPermissions`] during a test.
+* Runtime changes made through [`method: BrowserContext.setGeolocation`], [`method: BrowserContext.setOffline`] and [`method: BrowserContext.setExtraHTTPHeaders`].
+* Browsing history, `window.name` and any browser-process-wide state.
+
+Additional restrictions:
+* The option is ignored when [`property: TestOptions.video`] recording is enabled.
+* Only a few context options may differ between consecutive tests: `colorScheme`, `forcedColors`, `reducedMotion`, `contrast`, `screen`, `userAgent`, `viewport` and `testIdAttribute`. Changing any other option in [`method: Test.use`], for example `locale` or `storageState`, silently forces a fresh context and negates the speedup.
+* Do not combine with [`property: TestOptions.connectOptions`] pointing multiple workers at a shared browser - workers would compete for the single reusable context.
+* `recordHar` in [`property: TestOptions.contextOptions`] is not supported and produces no HAR file.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  projects: [
+    {
+      name: 'components',
+      testDir: './tests/components',
+      use: { reuseContext: true },
+    },
+  ],
+});
+```
+
+## property: TestOptions.screen
+* since: v1.64
+- type: ?<[Object]>
+  - `width` <[int]> page width in pixels.
+  - `height` <[int]> page height in pixels.
+
+Emulates consistent window screen size available inside web page via `window.screen`. Is only used when the [`property: TestOptions.viewport`] is set.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    viewport: { width: 390, height: 664 },
+    screen: { width: 390, height: 844 },
+  },
+});
+```
+
+## property: TestOptions.screenshot
+* since: v1.10
+- type: "ScreenshotMode" <[Object]|"off"|"on"|"only-on-failure"|"on-first-failure">
+  - `mode` "ScreenshotMode" <"off"|"on"|"only-on-failure"|"on-first-failure"> Automatic screenshot mode.
+  - `fullPage` ?<[boolean]> When true, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to `false`.
+  - `omitBackground` ?<[boolean]> Hides default white background and allows capturing screenshots with transparency. Not applicable to `jpeg` images. Defaults to `false`.
+
+Whether to automatically capture a screenshot after each test. Defaults to `'off'`.
+* `'off'`: Do not capture screenshots.
+* `'on'`: Capture screenshot after each test.
+* `'only-on-failure'`: Capture screenshot after each test failure.
+* `'on-first-failure'`: Capture screenshot after each test's first failure.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    screenshot: 'only-on-failure',
+  },
+});
+```
+
+Learn more about [automatic screenshots](../test-use-options.md#recording-options).
+
+## property: TestOptions.storageState = %%-js-python-context-option-storage-state-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    storageState: 'storage-state.json',
+  },
+});
+```
+
+**Details**
+
+When storage state is set up in the config, it is possible to reset storage state for a file:
+
+```js title="not-signed-in.spec.ts"
+import { test } from '@playwright/test';
+
+// Reset storage state for this file to avoid being authenticated
+test.use({ storageState: { cookies: [], origins: [] } });
+
+test('not signed in test', async ({ page }) => {
+  // ...
+});
+```
+
+## property: TestOptions.testIdAttribute
+* since: v1.27
+
+Custom attribute to be used in [`method: Page.getByTestId`]. `data-testid` is used by default. To match
+elements with any of several attributes, pass them as a comma-separated list.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    testIdAttribute: 'pw-test-id',
+  },
+});
+```
+
+Multiple attributes:
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    testIdAttribute: 'data-pw,data-ti',
+  },
+});
+```
+
+## property: TestOptions.timezoneId = %%-context-option-timezoneid-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    timezoneId: 'Europe/Rome',
+  },
+});
+```
+
+## property: TestOptions.trace
+* since: v1.10
+- type: "TraceMode" <[Object]|"off"|"on"|"on-first-retry"|"on-all-retries"|"retain-on-failure"|"retain-on-first-failure"|"retain-on-failure-and-retries">
+  - `mode` "TraceMode" <"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries"|"retain-on-first-failure"|"retain-on-failure-and-retries"> Trace recording mode.
+  - `attachments` ?<[boolean]> Whether to include test attachments. Defaults to true. Optional.
+  - `screenshots` ?<[boolean]> Whether to capture screenshots during tracing. Screenshots are used to build a timeline preview. Defaults to true. Optional.
+  - `snapshots` ?<[boolean]|[Object]> Which snapshots to capture on every action. Passing `true` is a shortcut for `{ dom: true }`. Defaults to true. Optional.
+    - `dom` ?<[boolean]> Capture DOM snapshot on every action and record network activity. Optional.
+    - `aria` ?<[boolean]> Capture aria snapshot of the page on every action. Optional.
+    - `screen` ?<[boolean]> Capture a screenshot of the page on every action. Optional.
+  - `sources` ?<[boolean]> Whether to include source files for trace actions. Defaults to true. Optional.
+
+Whether to record trace for each test. Defaults to `'off'`. The initial run of a test is the "first run"; subsequent runs caused by [retries](../test-retries.md) are "retries".
+* `'off'`: Do not record trace.
+* `'on'`: Record and keep a trace for every run.
+* `'on-first-retry'`: Record and keep a trace only for the first retry of a test.
+* `'on-all-retries'`: Record and keep a trace for every retry.
+* `'retain-on-failure'`: Record a trace for every run, but keep it only for runs that failed. A failed run's trace is kept even when a later retry passes.
+* `'retain-on-first-failure'`: Record a trace only for the first run of a test (not for retries), and keep it only if that run failed.
+* `'retain-on-failure-and-retries'`: Record a trace for every run, and keep it for any run that failed or that is a retry.
+
+See [trace modes](../test-use-options.md#trace-modes) for a side-by-side comparison of what each mode records and keeps.
+
+For more control, pass an object that specifies `mode` and trace features to enable.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    trace: 'on-first-retry'
+  },
+});
+```
+
+Learn more about [recording trace](../test-use-options.md#recording-options).
+
+## property: TestOptions.userAgent = %%-context-option-useragent-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    userAgent: 'some custom ua',
+  },
+});
+```
+
+## property: TestOptions.video
+* since: v1.10
+- type: "VideoMode" <[Object]|"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries"|"retain-on-first-failure"|"retain-on-failure-and-retries">
+  - `mode` "VideoMode" <"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries"|"retain-on-first-failure"|"retain-on-failure-and-retries"> Video recording mode.
+  - `size` ?<[Object]> Size of the recorded video. Optional.
+    - `width` <[int]>
+    - `height` <[int]>
+  - `fps` ?<[int]> Frame rate of the recorded video in frames per second. Defaults to `25`.
+  - `show` ?<[Object]> If specified, visually annotates the video with test information and action highlights.
+    - `actions` ?<[Object]> Controls visual annotations on interacted elements.
+      - `duration` ?<[float]> How long each annotation is displayed in milliseconds. Defaults to `500`.
+      - `position` "AnnotatePosition" ?<"top-left"|"top"|"top-right"|"bottom-left"|"bottom"|"bottom-right"> Position of the action title overlay. Defaults to `"top-right"`.
+      - `fontSize` ?<[int]> Font size of the action title in pixels. Defaults to `24`. Deprecated, use `style.title` instead.
+      - `cursor` "ScreencastCursor" ?<"none"|"pointer"> Cursor decoration shown for pointer actions. `"pointer"` (the default) renders a mouse pointer that animates from the previous action point to the next one. `"none"` disables the cursor decoration.
+      - `style` ?<[Object]> Styles of the action decorations.
+        - `point` ?<[string]> CSS declarations for the zero-sized marker centered on the action point. Not shown when omitted.
+        - `highlight` ?<[string]> CSS declarations for the box that covers the target element. Not shown when omitted.
+        - `title` ?<[string]> CSS declarations for the action title.
+    - `test` ?<[Object]> Controls test information displayed as a status overlay in the video.
+      - `level` "TestAnnotationLevel" ?<"file"|"title"|"step"> Level of the detail to include about the current test.
+      - `position` "AnnotatePosition" ?<"top-left"|"top"|"top-right"|"bottom-left"|"bottom"|"bottom-right"> Position of the test information overlay. Defaults to `"top-left"`.
+      - `fontSize` ?<[int]> Font size of the test information in pixels. Defaults to `14`.
+
+Whether to record video for each test. Defaults to `'off'`. The initial run of a test is the "first run"; subsequent runs caused by [retries](../test-retries.md) are "retries".
+* `'off'`: Do not record video.
+* `'on'`: Record and keep a video for every run.
+* `'on-first-retry'`: Record and keep a video only for the first retry of a test.
+* `'on-all-retries'`: Record and keep a video for every retry.
+* `'retain-on-failure'`: Record a video for every run, but keep it only for runs that failed. A failed run's video is kept even when a later retry passes.
+* `'retain-on-first-failure'`: Record a video only for the first run of a test (not for retries), and keep it only if that run failed.
+* `'retain-on-failure-and-retries'`: Record a video for every run, and keep it for any run that failed or that is a retry.
+
+See [video modes](../test-use-options.md#video-modes) for a side-by-side comparison of what each mode records and keeps.
+
+To control video size, pass an object with `mode` and `size` properties. If video size is not specified, it will be equal to [`property: TestOptions.viewport`] scaled down to fit into 800x800. If `viewport` is not configured explicitly the video size defaults to 800x450. Actual picture of each page will be scaled down if necessary to fit the specified size.
+
+To record smoother video of animations and scrolling, pass `fps`, for example `{ mode: 'on', size: { width: 1920, height: 1080 }, fps: 60 }`. Higher frame rates and sizes use more CPU for encoding. Firefox and WebKit currently capture up to 25 frames per second.
+
+To annotate actions in the video, pass `show` with `actions` and/or `test` sub-options. The `actions` option controls visual highlights on interacted elements, each shown for an optional `duration` in milliseconds (defaults to `500`). The `test` option controls which test information is displayed as a status overlay.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    video: 'on-first-retry',
+  },
+});
+```
+
+Learn more about [recording video](../test-use-options.md#recording-options).
+
+## property: TestOptions.viewport = %%-context-option-viewport-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    viewport: { width: 100, height: 100 },
+  },
+});
+```
+
+## property: TestOptions.serviceWorkers = %%-context-option-service-worker-policy-%%
+* since: v1.10
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  use: {
+    serviceWorkers: 'allow'
+  },
+});
+```

@@ -8,11 +8,12 @@ title: "ElevenLabs"
 ---
 
 OpenClaw uses ElevenLabs for text-to-speech, batch speech-to-text with Scribe
-v2, and streaming STT with Scribe v2 Realtime.
+v2, and streaming STT with Scribe v2 Realtime. The plugin is bundled and
+enabled by default; no `plugins install` step is needed.
 
 | Capability               | OpenClaw surface                                                     | Default                  |
 | ------------------------ | -------------------------------------------------------------------- | ------------------------ |
-| Text-to-speech           | `messages.tts` / `talk`                                              | `eleven_multilingual_v2` |
+| Text-to-speech           | `tts` / `talk`                                                       | `eleven_multilingual_v2` |
 | Batch speech-to-text     | `tools.media.audio`                                                  | `scribe_v2`              |
 | Streaming speech-to-text | Voice Call streaming or Google Meet `realtime.transcriptionProvider` | `scribe_v2_realtime`     |
 
@@ -29,14 +30,12 @@ export ELEVENLABS_API_KEY="..."
 
 ```json5
 {
-  messages: {
-    tts: {
-      providers: {
-        elevenlabs: {
-          apiKey: "${ELEVENLABS_API_KEY}",
-          speakerVoiceId: "pMsXgVXv3BLzUgSXRplE",
-          modelId: "eleven_multilingual_v2",
-        },
+  tts: {
+    providers: {
+      elevenlabs: {
+        apiKey: "${ELEVENLABS_API_KEY}",
+        voiceId: "pMsXgVXv3BLzUgSXRplE",
+        modelId: "eleven_multilingual_v2",
       },
     },
   },
@@ -46,12 +45,12 @@ export ELEVENLABS_API_KEY="..."
 Set `modelId` to `eleven_v3` to use ElevenLabs v3 TTS. OpenClaw keeps
 `eleven_multilingual_v2` as the default for existing installs.
 
-Discord voice channels use ElevenLabs' streaming TTS endpoint when ElevenLabs is
-the selected `voice.tts`/`messages.tts` provider. Playback starts from the
-returned audio stream instead of waiting for OpenClaw to download and write the
-whole audio file first. `latencyTier` maps to ElevenLabs'
-`optimize_streaming_latency` query parameter for models that accept it; OpenClaw
-omits that parameter for `eleven_v3`, which rejects it.
+Discord voice channels use ElevenLabs' streaming TTS endpoint when ElevenLabs
+is the selected `voice.tts`/`tts` provider: playback starts from the
+returned audio stream instead of waiting for OpenClaw to download the whole
+audio file first. `latencyTier` maps to ElevenLabs' `optimize_streaming_latency`
+query parameter for models that accept it; OpenClaw omits that parameter for
+`eleven_v3`, which rejects it.
 
 ## Speech-to-text
 
@@ -61,9 +60,9 @@ Use Scribe v2 for inbound audio attachments and short recorded voice segments:
 {
   tools: {
     media: {
+      models: [{ provider: "elevenlabs", model: "scribe_v2", capabilities: ["audio"] }],
       audio: {
         enabled: true,
-        models: [{ provider: "elevenlabs", model: "scribe_v2" }],
       },
     },
   },
@@ -72,6 +71,35 @@ Use Scribe v2 for inbound audio attachments and short recorded voice segments:
 
 OpenClaw sends multipart audio to ElevenLabs `/v1/speech-to-text` with
 `model_id: "scribe_v2"`. Language hints map to `language_code` when present.
+
+### Provider options
+
+Set `providerOptions.elevenlabs` on `tools.media.audio` or a
+`tools.media.models[]` audio entry to forward `no_verbatim`, `tag_audio_events`,
+and `diarize` to `POST /v1/speech-to-text`. Other keys are ignored.
+
+`no_verbatim` is only supported by `scribe_v2`; other models may ignore it.
+`diarize` is forwarded, but OpenClaw currently uses only the transcript text,
+so speaker labels are not shown in chat.
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        providerOptions: {
+          elevenlabs: {
+            no_verbatim: true,
+            tag_audio_events: false,
+            diarize: true,
+          },
+        },
+      },
+    },
+  },
+}
+```
 
 ## Streaming STT
 

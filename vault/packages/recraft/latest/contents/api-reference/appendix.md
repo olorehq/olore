@@ -1,100 +1,96 @@
-\> ## Documentation Index
-\> Fetch the complete documentation index at: https://www.recraft.ai/docs/llms.txt
-\> Use this file to discover all available pages before exploring further.
+> ## Documentation Index
+> Fetch the complete documentation index at: https://www.recraft.ai/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
 
-\# Appendix
+# Limits and sizes
 
-\### Maximum prompt length
+> Rate limits, image storage, prompt length, supported image sizes, and input image limits for every Recraft API model.
 
-The maximum prompt length depends on the model.
+> [card] 100 / min
+>
+> images per user
 
-\| Model \| Limit \|
-\| \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- \| \-\-\-\-\- \|
-\| Recraft V4 \| 10000 \|
-\| Recraft V4 Vector \| 10000 \|
-\| Recraft V4 Pro \| 10000 \|
-\| Recraft V4 Pro Vector \| 10000 \|
-\| Recraft V3 \| 1000 \|
-\| Recraft V3 Vector \| 1000 \|
-\| Recraft V2 \| 1000 \|
-\| Recraft V2 Vector \| 1000 \|
+> [card] 5 / s
+>
+> requests per user
 
-\### List of supported image sizes
+> [card] \~24 h
+>
+> image URL lifetime
 
-The image size can be specified using one of two formats:
+> [card] 10,000
+>
+> prompt characters, V4 and newer
 
-\\* Explicit dimensions (\`WxH\`): defines the exact width (\`W\`) and height (\`H\`) of the output image in pixels. Example: \`1820x1024\`.
-\\* Aspect ratio (\`w:h\`): defines the proportional relationship between width and height without specifying absolute dimensions. Example: \`16:9\`.
+## Rate limits
 
-See \[Wikipedia\](https://en.wikipedia.org/wiki/Aspect\_ratio\_\\(image\\)) for more details.
+| Limit | Value |
+| - | - |
+| Images generated | 100 per minute, per user |
+| Requests | 5 per second, per user |
 
-The set of valid aspects and size values depends on the selected model. Refer to the table below for supported configurations.
+Limits apply per user, across all API tokens. They may change in the future.
 
-| Models | Aspect | Size |
-| --- | --- | --- |
-| Recraft V4 | \`1:1\` | \`1024x1024\` |
-| \`2:1\` | \`1536x768\` |
-| \`1:2\` | \`768x1536\` |
-| \`3:2\` | \`1280x832\` |
-| \`2:3\` | \`832x1280\` |
-| \`4:3\` | \`1216x896\` |
-| \`3:4\` | \`896x1216\` |
-| \`5:4\` | \`1152x896\` |
-| \`4:5\` | \`896x1152\` |
-| \`6:10\` | \`832x1344\` |
-| \`14:10\` | \`1280x896\` |
-| \`10:14\` | \`896x1280\` |
-| \`16:9\` | \`1344x768\` |
-| \`9:16\` | \`768x1344\` |
-| Recraft V4 Pro | \`1:1\` | \`2048x2048\` |
-| \`2:1\` | \`3072x1536\` |
-| \`1:2\` | \`1536x3072\` |
-| \`3:2\` | \`2560x1664\` |
-| \`2:3\` | \`1664x2560\` |
-| \`4:3\` | \`2432x1792\` |
-| \`3:4\` | \`1792x2432\` |
-| \`5:4\` | \`2304x1792\` |
-| \`4:5\` | \`1792x2304\` |
-| \`6:10\` | \`1664x2688\` |
-| \`14:10\` | \`2560x1792\` |
-| \`10:14\` | \`1792x2560\` |
-| \`16:9\` | \`2688x1536\` |
-| \`9:16\` | \`1536x2688\` |
-| Recraft V2<br>Recraft V3 | \`1:1\` | \`1024x1024\` |
-| \`2:1\` | \`2048x1024\` |
-| \`1:2\` | \`1024x2048\` |
-| \`3:2\` | \`1536x1024\` |
-| \`2:3\` | \`1024x1536\` |
-| \`4:3\` | \`1365x1024\` |
-| \`3:4\` | \`1024x1365\` |
-| \`5:4\` | \`1280x1024\` |
-| \`4:5\` | \`1024x1280\` |
-| \`6:10\` | \`1024x1707\` |
-| \`14:10\` | \`1434x1024\` |
-| \`10:14\` | \`1024x1434\` |
-| \`16:9\` | \`1820x1024\` |
-| \`9:16\` | \`1024x1820\` |
-| Recraft V4 Pro Vector<br>Recraft V4 Vector<br>Recraft V3 Vector<br>Recraft V2 Vector | \`1:1\` |
-| \`2:1\` |
-| \`1:2\` |
-| \`3:2\` |
-| \`2:3\` |
-| \`4:3\` |
-| \`3:4\` |
-| \`5:4\` |
-| \`4:5\` |
-| \`6:10\` |
-| \`14:10\` |
-| \`10:14\` |
-| \`16:9\` |
-| \`9:16\` |
+## Image storage
 
-\### Policies
+* Generated images are stored for about **24 hours**. Download the files you need to keep. This policy may change, so don't rely on the exact duration.
+* Image URLs are public and need no authentication. They contain a unique signed identifier, so a lost URL can't be recovered.
 
-\\* All generated images are currently stored for approx. 24 hours, this policy may change in the future, and you should not rely on it remaining constant.
-\\* Images are publicly accessible via direct links without authentication. However, since the URLs include unique image identifiers and are cryptographically signed, restoring lost links is nearly impossible.
-\\* Currently, image generation rates are defined on a per-user basis and set at \*\*100 images per minute\*\*. In addition, requests are limited to \*\*5 per second\*\*. These rate limits may be adjusted in the future.
+## Prompt length
 
-Need help or have suggestions for improving our docs? \[Contact support\](mailto:\\\[help@recraft.ai\]\\(mailto:help@recraft.ai\\))
+| Models | Max characters |
+| - | - |
+| V4.1, V4.1 Utility, V4.1 Flash, V4, V4 Styles, including all Pro and Vector variants | 10,000 |
+| V3, V3 Vector, V2, V2 Vector | 1,000 |
+| [Enhance prompt](https://www.recraft.ai/docs/api-reference/tools/enhance-prompt.md) input | 2,000 |
 
-Built with \[Mintlify\](https://mintlify.com).
+## Image sizes
+
+Set `size` in one of two formats:
+
+* **Aspect ratio** `w:h`, for example `16:9`. Works with every model. Prefer it.
+* **Exact size** `WxH`, for example `1344x768`. Must be one of the sizes listed for the model; any other value is rejected.
+
+When `size` is omitted, the size is picked from the prompt.
+
+| Ratio | 1K models | 2K models (Pro) | V2, V3 |
+| - | - | - | - |
+| `1:1` | `1024x1024` | `2048x2048` | `1024x1024` |
+| `2:1` | `1536x768` | `3072x1536` | `2048x1024` |
+| `1:2` | `768x1536` | `1536x3072` | `1024x2048` |
+| `3:2` | `1280x832` | `2560x1664` | `1536x1024` |
+| `2:3` | `832x1280` | `1664x2560` | `1024x1536` |
+| `4:3` | `1216x896` | `2432x1792` | `1365x1024` |
+| `3:4` | `896x1216` | `1792x2432` | `1024x1365` |
+| `5:4` | `1152x896` | `2304x1792` | `1280x1024` |
+| `4:5` | `896x1152` | `1792x2304` | `1024x1280` |
+| `6:10` | `832x1344` | `1664x2688` | `1024x1707` |
+| `14:10` | `1280x896` | `2560x1792` | `1434x1024` |
+| `10:14` | `896x1280` | `1792x2560` | `1024x1434` |
+| `16:9` | `1344x768` | `2688x1536` | `1820x1024` |
+| `9:16` | `768x1344` | `1536x2688` | `1024x1820` |
+
+* **1K models:** `recraftv4_1`, `recraftv4_1_utility`, `recraftv4_1_flash`, `recraftv4`, `recraftv4_styles`.
+* **2K models:** `recraftv4_1_pro`, `recraftv4_1_utility_pro`, `recraftv4_pro`, `recraftv4_styles_pro`.
+* **V2, V3:** `recraftv2`, `recraftv3`.
+* **Vector models** (every `_vector` model) accept the same 14 ratios as `w:h` only; SVG output has no fixed pixel size.
+
+## Input images
+
+For every endpoint that takes an image, sent as a file or as `image_url`:
+
+| Limit | Value |
+| - | - |
+| Formats | PNG, JPG, WEBP; SVG where noted on the endpoint |
+| File size | Under 20 MB |
+| Resolution | Up to 16 MP, longest side up to 4096 px |
+| Shortest side | At least 256 px (32 px for crisp upscale) |
+| Masks | Grayscale, same size as the image, pixels pure black (`0`) or pure white (`255`) |
+| Style references | 1 to 10 images, 64 MB in total |
+
+See [Image inputs and results](https://www.recraft.ai/docs/api-reference/image-inputs-and-results.md) for how to send images and receive results.
+
+Questions or ideas for these docs? [Contact support](mailto:help@recraft.ai).
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

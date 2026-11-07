@@ -1,17 +1,21 @@
 ---
-title: 'Browser Check Construct'
-description: 'Learn how to configure browser checks with the Checkly CLI.'
-sidebarTitle: 'Browser Check'
+title: 'Browser check construct'
+description: 'Learn how to configure Browser checks with the Checkly CLI.'
+sidebarTitle: 'Browser check'
+canonical: 'https://www.checklyhq.com/docs/constructs/browser-check/'
+mode: "wide"
 ---
 
+import CheckIntent from '/snippets/check-intent.mdx';
+
 <Tip>
-Learn more about Browser Checks in [the Browser Checks overview](/detect/synthetic-monitoring/browser-checks/overview).
+Learn more about Browser checks in [the Browser checks overview](/detect/synthetic-monitoring/browser-checks/overview).
 </Tip>
 
-Use Browser Checks to run end-to-end tests with Playwright. The examples below show how to configure browser checks for different testing scenarios.
+Use Browser checks to run end-to-end tests with Playwright. The examples below show how to configure Browser checks for different testing scenarios.
 
 <Accordion title="Prerequisites">
-Before creating Browser Checks, ensure you have:
+Before creating Browser checks, ensure you have:
 
 - An initialized Checkly CLI project
 - A public website you want to monitor
@@ -39,6 +43,7 @@ new BrowserCheck("browser-check-1", {
 
 ```ts Advanced Example
 import { BrowserCheck, Frequency } from "checkly/constructs"
+import { secret } from "checkly/util"
 import * as path from "path"
 
 new BrowserCheck("advanced-browser-check", {
@@ -51,7 +56,7 @@ new BrowserCheck("advanced-browser-check", {
   runtimeId: "2025.04",
   environmentVariables: [
     { key: "TEST_USERNAME", value: "testuser" },
-    { key: "TEST_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+    { key: "TEST_PASSWORD", value: secret("TEST_PASSWORD"), secret: true },
   ],
   code: {
     entrypoint: path.join(__dirname, "advanced-flow.spec.ts"),
@@ -63,14 +68,15 @@ new BrowserCheck("advanced-browser-check", {
 
 ## Configuration
 
-The Browser Check configuration consists of specific Browser Check options and inherited general check options.
+The Browser check configuration consists of specific Browser check options and inherited general check options.
 
 <Tabs>
-<Tab title="Browser Check">
+<Tab title="Browser check">
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `code` | `object` | ✅ | - | The Playwright test code |
+| `playwrightConfig` | `object` | ❌ | - | Playwright config for this check, with the same keys as `playwright.config.ts` (for example `use.viewport`) |
 
 </Tab>
 <Tab title="General Check">
@@ -79,6 +85,8 @@ The Browser Check configuration consists of specific Browser Check options and i
 |----------|------|----------|---------|-------------|
 | `name` | `string` | ✅ | - | Friendly name for your check |
 | `description` | `string` | ❌ | `null` | A description of the check. Supports markdown. Max 500 characters |
+| `intent` | `CheckIntent` | ❌ | - | Structured guidance for root cause analysis and check repair. See [General Check Options](#general-check-options). |
+| `aiAutoRepairEnabled` | `boolean \| null` | ❌ | - | Enable or disable automatic repair, or inherit the account setting. Requires CLI 9.4.0 or later. See [General Check Options](#general-check-options). |
 | `activated` | `boolean` | ❌ | `true` | Whether the check is enabled |
 | `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
 | `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
@@ -87,8 +95,8 @@ The Browser Check configuration consists of specific Browser Check options and i
 | `group` | `CheckGroup` | ❌ | - | The CheckGroup this check belongs to |
 | `locations` | `string[]` | ❌ | `[]` | Public locations for this monitor/check |
 | `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted |
-| `privateLocations` | `string[]` | ❌ | `[]` | Private Location slugs |
-| `retryStrategy` | `RetryStrategy` | ❌ | - | Strategy for configured retries |
+| `privateLocations` | `string[]` | ❌ | `[]` | Private location slugs |
+| `retryStrategy` | `RetryStrategy` | ❌ | [`singleRetry()`](/constructs/retry-strategy#default-retry-strategy) | Strategy for configured retries |
 | `runtimeId` | `string` | ❌ | - | The ID of the runtime to use |
 | `runParallel` | `boolean` | ❌ | `false` | Whether to run checks in parallel across locations |
 | `tags` | `string[]` | ❌ | `[]` | Tags to organize checks/monitors |
@@ -98,10 +106,10 @@ The Browser Check configuration consists of specific Browser Check options and i
 </Tab>
 </Tabs>
 
-### Browser Check Options
+### Browser check options
 
 <ResponseField name="code" type="object" required>
-The Playwright test code that defines how to execute your end-to-end browser monitor. This is the core component of any browser check.
+The Playwright test code that defines how to execute your end-to-end browser monitor. This is the core component of any Browser check.
 
 **Usage:**
 
@@ -139,6 +147,7 @@ You must provide either `entrypoint` or `content`, but not both.
 
 <CodeGroup>
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts File Reference
 new BrowserCheck("login-flow-check", {
   name: "User Login Flow",
@@ -166,6 +175,10 @@ new BrowserCheck("quick-test", {
 ```
 
 ```ts Complex Test File
+import { BrowserCheck } from "checkly/constructs"
+import { secret } from "checkly/util"
+import * as path from "path"
+
 new BrowserCheck("e2e-purchase", {
   name: "E-commerce Purchase Flow",
   code: {
@@ -173,7 +186,7 @@ new BrowserCheck("e2e-purchase", {
   },
   environmentVariables: [
     { key: "TEST_USER_EMAIL", value: "test@example.com" },
-    { key: "TEST_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+    { key: "TEST_PASSWORD", value: secret("TEST_PASSWORD"), secret: true },
   ],
 })
 ```
@@ -186,10 +199,11 @@ new BrowserCheck("e2e-purchase", {
 ### General Check Options
 
 <ResponseField name="name" type="string" required>
-Friendly name for your Browser Check that will be displayed in the Checkly dashboard and used in notifications.
+Friendly name for your Browser check that will be displayed in the Checkly dashboard and used in notifications.
 
 **Usage:**
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts highlight={2}
 new BrowserCheck("my-check", {
   name: "User Login Flow Test",
@@ -200,12 +214,12 @@ new BrowserCheck("my-check", {
 </ResponseField>
 
 <ResponseField name="frequency" type="Frequency">
-How often the Browser Check should run. Use the `Frequency` enum to set the check interval.
+How often the Browser check should run. Use the `Frequency` enum to set the check interval.
 
 **Usage:**
 
 ```ts highlight={5}
-import { Frequency } from 'checkly/constructs'
+import { BrowserCheck, Frequency } from 'checkly/constructs'
 
 new BrowserCheck("my-check", {
   name: "My Browser Check",
@@ -218,6 +232,7 @@ new BrowserCheck("my-check", {
 
 <CodeGroup>
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts High Frequency
 // For critical user journeys
 new BrowserCheck("critical-login", {
@@ -228,6 +243,7 @@ new BrowserCheck("critical-login", {
 })
 ```
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts Standard Frequency
 // For regular monitoring
 new BrowserCheck("standard-check", {
@@ -240,17 +256,18 @@ new BrowserCheck("standard-check", {
 
 </CodeGroup>
 
-**Available frequencies**: `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+**Available frequencies**: `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_3H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
 </ResponseField>
 
 <ResponseField name="runtimeId" type="string">
 
-The Checkly runtime version used to execute the Browser Check. Runtimes are managed execution environments for Browser and Multistep Checks. They include fixed Checkly-provided dependencies, such as Playwright, browser binaries, and runtime libraries.
+The Checkly runtime version used to execute the Browser check. Runtimes are managed execution environments for Browser and Multistep checks. They include fixed Checkly-provided dependencies, such as Playwright, browser binaries, and runtime libraries.
 
-Use `runtimeId` for Browser Checks and Multistep Checks. For Playwright Check Suites, use [`engine`](/constructs/playwright-check#engine) instead to select the JavaScript engine version that runs your own Playwright project.
+Use `runtimeId` for Browser checks and Multistep checks. For Playwright Check Suites, use [`engine`](/constructs/playwright-check#param-engine) instead to select the JavaScript engine version that runs your own Playwright project.
 
 **Usage:**
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts highlight={3}
 new BrowserCheck("my-check", {
   name: "My Browser Check",
@@ -264,10 +281,11 @@ new BrowserCheck("my-check", {
 </ResponseField>
 
 <ResponseField name="locations" type="string[]" default="[]">
-Array of public location codes where the Browser Check should run. Multiple locations provide geographic coverage and redundancy.
+Array of public location codes where the Browser check should run. Multiple locations provide geographic coverage and redundancy.
 
 **Usage:**
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts highlight={3}
 new BrowserCheck("my-check", {
   name: "My Browser Check",
@@ -280,6 +298,7 @@ new BrowserCheck("my-check", {
 
 <CodeGroup>
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts Global Coverage
 // Comprehensive global monitoring
 new BrowserCheck("global-check", {
@@ -295,6 +314,7 @@ new BrowserCheck("global-check", {
 })
 ```
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts Regional Focus
 // Focus on specific regions
 new BrowserCheck("europe-check", {
@@ -310,10 +330,11 @@ new BrowserCheck("europe-check", {
 </ResponseField>
 
 <ResponseField name="activated" type="boolean" default="true">
-Whether the browser check is enabled and will run according to its schedule.
+Whether the Browser check is enabled and will run according to its schedule.
 
 **Usage:**
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts highlight={3}
 new BrowserCheck("my-check", {
   name: "My Browser Check",
@@ -326,10 +347,11 @@ new BrowserCheck("my-check", {
 
 <ResponseField name="tags" type="string[]" default="[]">
 
-Array of tags to organize and categorize your Browser Checks in the Checkly infrastructure.
+Array of tags to organize and categorize your Browser checks in the Checkly infrastructure.
 
 **Usage:**
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts highlight={3}
 new BrowserCheck("my-check", {
   name: "My Browser Check",
@@ -342,6 +364,7 @@ new BrowserCheck("my-check", {
 
 <CodeGroup>
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts Functional Tags
 new BrowserCheck("login-test", {
   name: "User Authentication",
@@ -351,6 +374,7 @@ new BrowserCheck("login-test", {
 })
 ```
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts Priority Tags
 new BrowserCheck("checkout-flow", {
   name: "Checkout Process",
@@ -360,6 +384,7 @@ new BrowserCheck("checkout-flow", {
 })
 ```
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts Environment Tags
 new BrowserCheck("staging-test", {
   name: "Staging Environment Test",
@@ -378,12 +403,15 @@ Check-level environment variables that will be available during test execution. 
 
 **Usage:**
 
-```ts highlight={3-6}
+```ts highlight={6-9}
+import { BrowserCheck } from "checkly/constructs"
+import { secret } from "checkly/util"
+
 new BrowserCheck("my-check", {
   name: "My Browser Check",
   environmentVariables: [
     { key: "TEST_USERNAME", value: "testuser@example.com" },
-    { key: "TEST_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+    { key: "TEST_PASSWORD", value: secret("TEST_PASSWORD"), secret: true },
   ],
   /* More options... */
 })
@@ -402,17 +430,22 @@ new BrowserCheck("my-check", {
 <CodeGroup>
 
 ```ts Test Credentials
+import { BrowserCheck } from "checkly/constructs"
+import { secret } from "checkly/util"
+import * as path from "path"
+
 new BrowserCheck("user-flow", {
   name: "User Account Flow",
   environmentVariables: [
     { key: "TEST_EMAIL", value: "test@example.com" },
-    { key: "TEST_PASSWORD", value: "{{TEST_USER_PASSWORD}}", secret: true },
+    { key: "TEST_PASSWORD", value: secret("TEST_PASSWORD"), secret: true },
     { key: "BASE_URL", value: "https://staging.example.com" },
   ],
   code: { entrypoint: path.join(__dirname, "user-flow.spec.ts") },
 })
 ```
 
+{/* typecheck-wrap: BrowserCheck */}
 ```ts Feature Flags
 new BrowserCheck("feature-test", {
   name: "Feature Flag Test",
@@ -427,6 +460,14 @@ new BrowserCheck("feature-test", {
 </CodeGroup>
 
 **Use cases**: Test configuration, authentication, API keys, feature flags, environment-specific settings.
+</ResponseField>
+
+<CheckIntent />
+
+<ResponseField name="aiAutoRepairEnabled" type="boolean | null">
+Requires Checkly CLI 9.4.0 or later. Set `true` to enable automatic repair or `false` to disable it. Left unset, or set to `null`, the check follows your account default.
+
+You also need a valid check intent. See [Configure automatic repair](../resolve/automatic-check-repair#define-intent-with-monitoring-as-code) for a complete example and repair prerequisites.
 </ResponseField>
 
 ## Examples
@@ -449,8 +490,8 @@ import { expect, test } from "@playwright/test"
 test("user can login successfully", async ({ page }) => {
   await page.goto("https://app.example.com/login")
 
-  await page.getByLabel('email', { name: /email/i }).fill(process.env.TEST_USERNAME)
-  await page.getByLabel('password', { name: /password/i }).fill(process.env.TEST_PASSWORD)
+  await page.getByLabel(/email/i).fill(process.env.TEST_USERNAME)
+  await page.getByLabel(/password/i).fill(process.env.TEST_PASSWORD)
   await page.getByRole('button', { name: /login/i }).click()
 
   await expect(page).toHaveURL(/dashboard/)

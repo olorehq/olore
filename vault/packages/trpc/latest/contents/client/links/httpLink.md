@@ -1,11 +1,15 @@
 ---
 id: httpLink
 title: HTTP Link
+description: A terminating link that sends each tRPC call as its own HTTP request
 sidebar_label: HTTP Link
 slug: /client/links/httpLink
+section: "Client Usage"
+parent: "client/links"
+order: 31
 ---
 
-`httpLink` is a [**terminating link**](./overview.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
+`httpLink` is a [**terminating link**](../links.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
 
 `httpLink` supports both POST and GET requests.
 
@@ -68,6 +72,13 @@ export interface HTTPLinkOptions {
    * @see https://trpc.io/docs/rpc
    */
   methodOverride?: 'POST';
+  /**
+   * The character between a procedure path's segments in URLs. Must match
+   * the server's `pathSeparator`.
+   * @default '.'
+   * @see https://trpc.io/docs/rpc#path-separator
+   */
+  pathSeparator?: '.' | '_' | '~' | '-';
 }
 ```
 

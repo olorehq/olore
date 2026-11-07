@@ -2,6 +2,7 @@
 title: 'EmailAlertChannel Construct'
 description: 'Learn how to configure email alert channels with the Checkly CLI.'
 sidebarTitle: 'Email'
+canonical: 'https://www.checklyhq.com/docs/constructs/email-alert-channel/'
 ---
 
 import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
@@ -10,7 +11,7 @@ import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
 For general information about alerting, see our docs on [email alerts](/integrations/alerts/email) and [alerting with Checkly](/communicate/alerts/overview/).
 </Tip>
 
-Use Email Alert Channels to send email notifications when checks fail or recover.
+Use Email alert channels to send email notifications when checks fail or recover.
 
 <CodeGroup>
 
@@ -43,12 +44,12 @@ const emailChannel = new EmailAlertChannel("ops-email-channel", {
 
 ## Configuration
 
-### Email Alert Channel Options
+### Email alert channel options
 
 <ResponseField name="address" type="string" required>
-Email address to send notifications to. Each `EmailAlertChannel` supports only one email address, do not use multiple addresses separated by a comma.
+Email address to send notifications to. To notify multiple recipients from one `EmailAlertChannel`, pass a comma-separated list of email addresses.
 </ResponseField>
 
-### General Alert Channel Options
+### General alert channel options
 
 <AlertChannelOptionsText />

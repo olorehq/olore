@@ -1,0 +1,395 @@
+---
+title: 'Set up the Checkly MCP Server'
+description: 'Choose an authentication method, connect an MCP client, select an account, and verify the Checkly MCP Server connection.'
+sidebarTitle: 'Setup'
+canonical: 'https://www.checklyhq.com/docs/ai/mcp-server/setup/'
+---
+
+Use the production MCP endpoint in your client:
+
+```text
+https://api.checklyhq.com/mcp
+```
+
+<Note>
+The Checkly MCP Server supports the `2026-07-28` and `2025-06-18` protocol versions on the same endpoint. Your MCP client negotiates the version automatically, so existing client configurations do not need to change.
+</Note>
+
+## Choose an authentication method
+
+| Method | Best for | Checkly access |
+| --- | --- | --- |
+| OAuth (recommended) | Interactive use with a [supported OAuth client](#supported-oauth-clients) | Uses your Checkly user and the permissions granted during sign-in. |
+| User API key | Personal clients that cannot use Checkly OAuth but can send custom HTTP headers | Uses your Checkly user and account memberships. User API keys start with `cu_...`. |
+| Service API key | Shared or non-interactive clients that need a stable, account-scoped identity | Uses the account and role configured on the key. Service API keys start with `sv_...` and require a Starter, Team, or Enterprise plan. |
+
+OAuth avoids storing a long-lived Checkly credential in your MCP client. Use an API key when OAuth is unavailable or when a non-interactive workflow needs an account-scoped service identity.
+
+## Set up with OAuth
+
+<Accordion title="Before you begin">
+Before connecting with OAuth, ensure you have:
+
+- A Checkly user account.
+- Access to the Checkly account you want the MCP client to use.
+- A [supported OAuth client](#supported-oauth-clients).
+</Accordion>
+
+<Warning>
+The Checkly OAuth flow only supports Checkly-approved clients. Clients that rely on [Dynamic Client Registration (DCR)](https://datatracker.ietf.org/doc/html/rfc7591) are rejected.
+</Warning>
+
+### Supported OAuth clients
+
+| Client | Setup |
+| --- | --- |
+| ChatGPT | [Follow the ChatGPT setup](#chatgpt). |
+| Claude Desktop | [Follow the Claude Desktop setup](#claude-desktop). |
+| Claude Code | [Add the server from Claude Code](#claude-code). |
+| Mistral Vibe | [Configure Mistral Vibe's approved OAuth client](#mistral-vibe). |
+| Devin CLI | [Add Checkly's approved OAuth client](#devin-cli). |
+| Antigravity | [Add Checkly's approved OAuth client](#antigravity). |
+| OpenCode | [Add Checkly's approved OAuth client](#opencode). |
+| Cursor | [Configure Cursor's approved OAuth client](#cursor). |
+| VS Code | [Add the server to VS Code](#vs-code). |
+
+If you want Checkly to support another compatible OAuth client, [share feedback or requests](https://feedback.checklyhq.com).
+
+### Configure your OAuth client
+
+<span id="chatgpt"></span>
+
+**ChatGPT**
+
+Follow OpenAI's [Developer mode and MCP apps in ChatGPT](https://help.openai.com/en/articles/12584461-developer-mode-apps-and-full-mcp-connectors-in-chatgpt-beta) guide. Use the Checkly MCP endpoint from this page as the MCP server endpoint.
+
+<span id="claude-desktop"></span>
+
+**Claude Desktop**
+
+Follow Claude's [custom connectors using remote MCP](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp) guide. Use the Checkly MCP endpoint from this page as the remote MCP server URL.
+
+<span id="claude-code"></span>
+
+**Claude Code**
+
+Add the server with the HTTP transport:
+
+```bash Terminal
+claude mcp add --transport http checkly https://api.checklyhq.com/mcp
+```
+
+Start a Claude Code session and complete the OAuth flow when prompted.
+
+<Note>
+A Checkly Connector has been submitted to Anthropic and is awaiting review. Once approved, you can connect Checkly directly from the connector directory instead of adding the server manually.
+</Note>
+
+<span id="mistral-vibe"></span>
+
+**Mistral Vibe**
+
+Add the server to `~/.vibe/config.toml`:
+
+```toml config.toml
+[[mcp_servers]]
+name = "checkly"
+transport = "streamable-http"
+url = "https://api.checklyhq.com/mcp"
+
+[mcp_servers.auth]
+type = "oauth"
+scopes = []
+client_id = "tpc_vXbM9LP3DXcqvWor1SbQu1"
+```
+
+Start Mistral Vibe, then authenticate:
+
+```text Vibe
+/mcp login checkly
+```
+
+Complete the OAuth flow when prompted.
+
+<span id="devin-cli"></span>
+
+**Devin CLI**
+
+Add the server with Checkly's Devin OAuth client ID:
+
+```bash Terminal
+devin mcp add checkly https://api.checklyhq.com/mcp --transport http --oauth-client-id tpc_5apxvvouctRhwLo7ARsjYA
+```
+
+Then authenticate:
+
+```bash Terminal
+devin mcp login checkly --oauth-client-id tpc_5apxvvouctRhwLo7ARsjYA
+```
+
+Complete the OAuth flow when prompted.
+
+<span id="antigravity"></span>
+
+**Antigravity**
+
+Add the server to `~/.gemini/config/mcp_config.json` for global use, or `.agents/mcp_config.json` in your workspace:
+
+```json mcp_config.json
+{
+  "mcpServers": {
+    "checkly": {
+      "serverUrl": "https://api.checklyhq.com/mcp",
+      "oauth": {
+        "clientId": "tpc_3qGL89LbJQfbt6peyLEUdE"
+      }
+    }
+  }
+}
+```
+
+Open **Settings**, select **Customizations**, and authenticate the Checkly server. Follow Google's [Antigravity MCP integration](https://antigravity.google/docs/mcp) guide for the client workflow.
+
+<span id="opencode"></span>
+
+**OpenCode**
+
+<Accordion title="Before you begin">
+Before configuring OpenCode, ensure port `19876` is available for the OAuth callback.
+</Accordion>
+
+Add the server to your OpenCode configuration:
+
+```json opencode.json
+{
+  "mcp": {
+    "checkly": {
+      "type": "remote",
+      "url": "https://api.checklyhq.com/mcp",
+      "oauth": {
+        "clientId": "tpc_q3CQpmc7tU8LGwAbTLwDR6",
+        "redirectUri": "http://127.0.0.1:19876/mcp/oauth/callback"
+      }
+    }
+  }
+}
+```
+
+Then authenticate:
+
+```bash Terminal
+opencode mcp auth checkly
+```
+
+OpenCode must use the redirect URI shown above. If port `19876` is already in use, this static OAuth client will not work with a different local callback port unless Checkly has approved that redirect URI.
+
+<span id="cursor"></span>
+
+**Cursor**
+
+Add the server to `.cursor/mcp.json` in your project, or to `~/.cursor/mcp.json` for all projects:
+
+```json mcp.json
+{
+  "mcpServers": {
+    "checkly": {
+      "type": "http",
+      "url": "https://api.checklyhq.com/mcp",
+      "auth": {
+        "CLIENT_ID": "tpc_6UZKE6SnYVKGZKExoSK3FT",
+        "scopes": [
+          "checkly:account:read",
+          "checkly:account:invite",
+          "checkly:checks:read",
+          "checkly:checks:write",
+          "checkly:checks:run",
+          "checkly:incidents:read",
+          "checkly:incidents:write",
+          "checkly:environment-variables:read",
+          "checkly:environment-variables:write",
+          "checkly:status-pages:read",
+          "checkly:rca:read",
+          "checkly:rca:run",
+          "checkly:test-sessions:read",
+          "checkly:assets:read",
+          "checkly:usage:read"
+        ]
+      }
+    }
+  }
+}
+```
+
+Restart Cursor after changing the configuration.
+
+<span id="vs-code"></span>
+
+**VS Code**
+
+Add the server to `.vscode/mcp.json` in your workspace, or to your VS Code user profile:
+
+```json mcp.json
+{
+  "servers": {
+    "checkly": {
+      "type": "http",
+      "url": "https://api.checklyhq.com/mcp"
+    }
+  }
+}
+```
+
+Restart VS Code after changing the configuration.
+
+### Known OAuth limitations
+
+- **Cline:** Cline is not currently supported for Checkly OAuth. You can follow or upvote the [Checkly Cline support request](https://feedback.checklyhq.com/p/support-cline-as-mcp-client).
+- **Codex:** Checkly does not currently provide an approved Codex OAuth client. You can [connect Codex with an API key](#codex-with-an-api-key) or follow the [Checkly Codex OAuth support request](https://feedback.checklyhq.com/p/support-codex-for-checkly-mcp).
+- **Windsurf / Devin Desktop:** Windsurf / Devin Desktop is not currently supported for Checkly OAuth. You can follow or upvote the [Checkly Devin support request](https://feedback.checklyhq.com/p/support-devin-devin-cli-for-checkly-mcp).
+
+## Set up with an API key
+
+<Accordion title="Before you begin">
+Before connecting with an API key, ensure you have:
+
+- An MCP client that can send custom HTTP headers.
+- A current Checkly user API key starting with `cu_...`, or a current service API key starting with `sv_...`.
+- A secure place to store the key outside version control.
+</Accordion>
+
+Send the key as a bearer token in every request:
+
+```text
+Authorization: Bearer <checkly-api-key>
+```
+
+Deprecated account API keys and old `sk_...` service-key formats are rejected.
+
+### Choose an API key
+
+| Key | Use it when | Access behavior |
+| --- | --- | --- |
+| User API key (`cu_...`) | You need a personal fallback for a client that cannot use Checkly OAuth. | Inherits your user access and account memberships. Removing your user from an account removes the key's access to that account. |
+| Service API key (`sv_...`) | A shared or non-interactive client needs a stable identity that is not tied to a user. | Limited to one account and the role selected when the key is created. Available on Starter, Team, and Enterprise plans. |
+
+See [Creating an API key in Checkly](/admin/creating-api-key) for key creation, roles, and revocation.
+
+<Warning>
+API keys are long-lived credentials. Store them in your client's secret storage or an environment variable, and rotate them when they are no longer needed. API-key sessions cannot use the `invite-account-member` tool.
+</Warning>
+
+### Configure an API-key client
+
+<span id="claude-code-with-an-api-key"></span>
+
+**Claude Code**
+
+Pass the authorization header when you add the server:
+
+```bash Terminal
+claude mcp add --transport http checkly https://api.checklyhq.com/mcp --header "Authorization: Bearer <checkly-api-key>"
+```
+
+<span id="codex-with-an-api-key"></span>
+
+**Codex**
+
+Store the key in an environment variable and tell Codex to use it as the bearer token:
+
+```bash Terminal
+export CHECKLY_API_KEY="<checkly-api-key>"
+codex mcp add checkly --url https://api.checklyhq.com/mcp --bearer-token-env-var CHECKLY_API_KEY
+```
+
+Restart Codex from an environment where `CHECKLY_API_KEY` is set.
+
+<span id="opencode-with-an-api-key"></span>
+
+**OpenCode**
+
+Store the key in `CHECKLY_API_KEY`, disable automatic OAuth, and reference the environment variable from your OpenCode configuration:
+
+```json opencode.json
+{
+  "mcp": {
+    "checkly": {
+      "type": "remote",
+      "url": "https://api.checklyhq.com/mcp",
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:CHECKLY_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+<span id="vs-code-with-an-api-key"></span>
+
+**VS Code**
+
+Use an input variable so the key is not stored in `mcp.json`:
+
+```json mcp.json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "checkly-api-key",
+      "description": "Checkly API key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "checkly": {
+      "type": "http",
+      "url": "https://api.checklyhq.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:checkly-api-key}"
+      }
+    }
+  }
+}
+```
+
+## Select an account
+
+OAuth sessions and user API keys can access each account available to the authenticated user. Service API keys are already limited to the account configured on the key.
+
+If you can access multiple accounts, tell your MCP client which account you want to use in your prompt:
+
+```text title="Prompt" wrap
+Use Checkly to show the accounts I can access, then show failing checks for <account-name>.
+```
+
+To make every request from a connection use the same account, set the `X-Checkly-Account` header when your client supports custom MCP headers:
+
+```text
+X-Checkly-Account: <account-id>
+```
+
+For Claude Code, add the header when you register the server:
+
+```bash Terminal
+claude mcp add --transport http checkly https://api.checklyhq.com/mcp --header "X-Checkly-Account: <account-id>"
+```
+
+For other clients, add the same header to the Checkly server entry using that client's custom-header configuration.
+
+Use the account ID from Checkly. Omit the header when you want to choose the account in your prompts. You do not need this header with a service API key because the key is already scoped to one account.
+
+## Verify the connection
+
+After authentication, ask your MCP client:
+
+```text title="Prompt" wrap
+Use Checkly to show which accounts I can access.
+```
+
+Then verify tool access:
+
+```text title="Prompt" wrap
+Use Checkly to list the tools available to this session.
+```
+
+The visible tools depend on the permissions granted to your MCP session and the Checkly role associated with the user or service API key. See [Security and permissions](/ai/mcp-server/security-and-permissions) for details.

@@ -1,0 +1,96 @@
+---
+title: "GPU Canvas"
+description: "Opt a Rive component into GPU Canvas to render 3D content in React."
+---
+
+GPU Canvas enables Rive files to render 3D and shader content in the React runtime. It is opt-in per Rive instance and available in [`@rive-app/react-webgl2`](https://www.npmjs.com/package/@rive-app/react-webgl2) `4.34.0+`.
+
+<Warning>
+  GPU Canvas is experimental. The API may change in a minor release without a major version bump.
+</Warning>
+
+## Requirements
+
+- **`@rive-app/react-webgl2` only.** The Canvas2D packages (`@rive-app/react-canvas`, `@rive-app/react-canvas-lite`) do not support GPU Canvas yet.
+- **`useOffscreenRenderer` must stay false.** GPU Canvas rendering requires a WebGL context per `<canvas>`, while the offscreen renderer pattern shares one context across every canvas on the page. 
+  - React defaults this option to `true`, but enabling GPU Canvas flips that default to `false` for you, so there is nothing to change unless you set it to `true` explicitly.
+
+## Enabling GPU Canvas
+
+Pass `enableGPUCanvas: true` in the parameters you give `useRive`:
+
+```jsx highlight={9}
+import { useRive } from '@rive-app/react-webgl2';
+
+export default function Scene() {
+  const { RiveComponent } = useRive({
+    src: 'my_file.riv',
+    stateMachine: 'State Machine 1',
+    autoplay: true,
+    autoBind: true,
+    enableGPUCanvas: true,
+  });
+
+  return <RiveComponent />;
+}
+```
+
+The default exported `<Rive />` component takes the same prop:
+
+```jsx highlight={6}
+import Rive from '@rive-app/react-webgl2';
+
+<Rive
+  src="my_file.riv"
+  stateMachine="State Machine 1"
+  enableGPUCanvas
+/>
+```
+
+GPU Canvas is disabled by default, but that may change in a future major version.
+
+## Enabling GPU Canvas on a cached file
+
+`useRiveFile` takes the same flag. A `RiveFile`'s rendering mode is fixed at creation, so changing `enableGPUCanvas` re-constructs the file:
+
+```jsx highlight={6,16}
+import { useRive, useRiveFile } from '@rive-app/react-webgl2';
+
+export default function Scene() {
+  const { riveFile, status } = useRiveFile({
+    src: 'my_file.riv',
+    enableGPUCanvas: true,
+  });
+
+  const { RiveComponent } = useRive(
+    status === 'success'
+      ? {
+          riveFile,
+          stateMachine: 'State Machine 1',
+          autoplay: true,
+          autoBind: true,
+          enableGPUCanvas: true,
+        }
+      : null
+  );
+
+  return <RiveComponent />;
+}
+```
+
+The `RiveFile`'s flag wins over the same property on `useRive`. A `RiveFile` created with `enableGPUCanvas: true` renders through the required deferred renderer technique even when `useRive` is called with `enableGPUCanvas: false` (or unset), and the runtime logs a warning. `useRive` reads the file's mode too, so a GPU Canvas file turns the offscreen renderer optimization off, even when the component never set `enableGPUCanvas: true`.
+
+<Warning>
+  **A GPU Canvas file cannot be shared across Rive instances.** The renderer binds a file to a single `<canvas>`, so the first component you pass it to claims it. Call `useRiveFile` separately for each component that needs the same `.riv`.
+
+  Additional components will still load, but they won't use the file you passed in. Instead, the runtime logs a warning and creates a fresh copy of the `.riv` from the file's existing buffer. As a result, anything you read or configure through the original file does not apply to those additional components.
+</Warning>
+
+## Limits
+
+Each GPU Canvas instance uses its own WebGL context, and browsers limit how many contexts a page can hold. Only enable GPU Canvas for graphics that need it. See [WebGL Context Limits](/runtimes/web/canvas-vs-webgl#webgl-context-limits).
+
+## Related
+
+- [Parameters and Return Values](/runtimes/react/parameters-and-return-values) — full hook reference
+- [Web (JS): GPU Canvas](/runtimes/web/gpu-canvas)

@@ -1,7 +1,11 @@
 ---
 title: Integrate InstantDB with Clerk
 description: Learn how to integrate Clerk into your InstantDB application.
+tag: deprecated
 ---
+
+> [!DEPRECATED]
+> The [InstantDB team has joined OpenAI](https://www.instantdb.com/essays/instant_team_joins_openai) and Instant Cloud is shutting down. New signups are closed, and the hosted service terminates on August 31, 2027, so this tutorial can no longer be completed with a new InstantDB account. InstantDB is open source and existing users can [self-host](https://www.instantdb.com/docs/self-hosting) their apps. For alternative databases that integrate with Clerk, see the [integrations overview](/docs/guides/development/integrations/overview).
 
 <TutorialHero
   beforeYouStart={[
@@ -11,20 +15,13 @@ description: Learn how to integrate Clerk into your InstantDB application.
       icon: "clerk",
     },
     {
-      title: "Create an InstantDB account",
-      link: "https://instantdb.com",
+      title: "Have an existing InstantDB account",
+      link: "https://www.instantdb.com/dash",
       icon: "cog-6-teeth",
     },
     {
       title: "Integrate the appropriate Clerk SDK in your local project",
       link: "/docs/getting-started/quickstart/overview",
-      icon: "code-bracket",
-    },
-  ]}
-  exampleRepo={[
-    {
-      title: "Clerk + InstantDB + Next.js Demo",
-      link: "https://github.com/clerk/clerk-instantdb-nextjs",
       icon: "code-bracket",
     },
   ]}
@@ -41,7 +38,7 @@ This tutorial will walk you through the steps to integrate InstantDB with Clerk.
 <Steps>
   ## Configure your Clerk session token
 
-  InstantDB uses Clerk's [session token](/docs/guides/sessions/session-tokens) to authenticate users. To use InstantDB with Clerk, you need to include the `email` claim in your Clerk session token.
+  InstantDB uses Clerk's [session token](!session-token) to authenticate users. To use InstantDB with Clerk, you need to include the `email` claim in your Clerk session token.
 
   1. In the Clerk Dashboard, navigate to the [**Sessions**](https://dashboard.clerk.com/~/sessions) page.
   1. Under **Customize session token**, in the **Claims** editor, enter the following JSON and select **Save**. If you have already customized your session token, you may need to merge this with what you currently have.
@@ -57,7 +54,7 @@ This tutorial will walk you through the steps to integrate InstantDB with Clerk.
   ## Get your Clerk Publishable Key
 
   1. In the Clerk Dashboard, navigate to the [**API keys**](https://dashboard.clerk.com/~/api-keys) page.
-  1. In the **Quick Copy** section, copy your Clerk [Publishable Key](!publishable-key).
+  1. In the **Quick copy** section, copy your Clerk [Publishable Key](!publishable-key).
 
   ## Configure InstantDB
 
@@ -161,8 +158,9 @@ This tutorial will walk you through the steps to integrate InstantDB with Clerk.
   import type { Metadata } from 'next'
   import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from '@clerk/nextjs'
   import { Geist, Geist_Mono } from 'next/font/google'
+  import { Suspense } from 'react'
   import './globals.css'
-  import InstantDBAuthSync from '@/component/InstantDBAuthSync'
+  import InstantDBAuthSync from '@/components/InstantDBAuthSync'
 
   const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -185,12 +183,12 @@ This tutorial will walk you through the steps to integrate InstantDB with Clerk.
     children: React.ReactNode
   }>) {
     return (
-      <>
-        <InstantDBAuthSync />
-        <html lang="en">
-          <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-            <ClerkProvider>
-              <header className="flex justify-end items-center p-4 gap-4 h-16">
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+        <body className="min-h-full flex flex-col">
+          <ClerkProvider>
+            <InstantDBAuthSync />
+            <header className="flex justify-end items-center p-4 gap-4 h-16">
+              <Suspense>
                 <Show when="signed-out">
                   <SignInButton />
                   <SignUpButton />
@@ -198,12 +196,12 @@ This tutorial will walk you through the steps to integrate InstantDB with Clerk.
                 <Show when="signed-in">
                   <UserButton />
                 </Show>
-              </header>
-              {children}
-            </ClerkProvider>
-          </body>
-        </html>
-      </>
+              </Suspense>
+            </header>
+            {children}
+          </ClerkProvider>
+        </body>
+      </html>
     )
   }
   ```

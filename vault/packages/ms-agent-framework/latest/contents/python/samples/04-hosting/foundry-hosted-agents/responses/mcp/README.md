@@ -1,0 +1,56 @@
+# What this sample demonstrates
+
+An [Agent Framework](https://github.com/microsoft/agent-framework) agent that connects to a **remote MCP server** (GitHub) for tool discovery and hosted using the **Responses protocol**. Instead of defining tools locally, the agent discovers and invokes tools at runtime from an MCP-compatible endpoint — in this case, the GitHub Copilot MCP server. This enables dynamic tool integration without redeployment.
+
+## How It Works
+
+### Model Integration
+
+The agent uses `FoundryChatClient` from the Agent Framework to create an OpenAI-compatible Responses client. It registers a remote MCP tool pointing at `https://api.githubcopilot.com/mcp/`, authenticating with a GitHub Personal Access Token (PAT). When the model decides to call a tool, the framework forwards the call to the MCP server and returns the result to the model for the final reply.
+
+See [main.py](main.py) for the full implementation.
+
+`agent=create_agent` creates fresh client and hosted-MCP tool configuration for
+each request and closes the request's own SDK transports and credential.
+Local model authentication uses `AzureCliCredential`; deployed calls use managed
+identity. `history_source="agent_server"` supplies the outer transcript and
+disables inner model storage.
+
+**Configure `GITHUB_PAT` separately.** A missing/empty PAT fails explicitly;
+the sample does not silently run an agent with its GitHub integration disabled.
+The PAT is deployment-owned and selects a single external GitHub account,
+**not** the Foundry calling user's GitHub identity. Use a least-privilege,
+read-only token for this demonstration and restrict who can call the agent.
+The MCP configuration additionally permits only `get_me`,
+`search_repositories` and `get_file_contents`. All other tools, including
+write operations, are excluded even if the PAT has broader permissions.
+Auto-approval applies only to those listed read tools; changing the allowlist
+is an explicit operator code change, not a caller option.
+For per-user GitHub access, use an appropriately configured user-authenticated
+Toolbox connection instead. Do not pass a PAT in model options or log it;
+platform user/call headers are not forwarded to GitHub.
+
+GitHub MCP access is credential-gated and is not exercised by credential-free
+checks. Outer `store=false` does not undo actions taken in the external account.
+
+### Agent Hosting
+
+The agent is hosted using the [Agent Framework](https://github.com/microsoft/agent-framework) with the `ResponsesHostServer`, which provisions a REST API endpoint compatible with the OpenAI Responses protocol.
+
+## Running the Agent Host
+
+Follow the instructions in the [Running the Agent Host Locally](../../README.md#running-the-agent-host-locally) section of the README in the parent directory to run the agent host.
+
+## Interacting with the agent
+
+> Depending on how you run the agent host, you can invoke the agent using `curl` (`Invoke-WebRequest` in PowerShell) or `azd`. Please refer to the [parent README](../../README.md) for more details. Use this README for sample queries you can send to the agent.
+
+Send a POST request to the server with a JSON body containing an `"input"` field to interact with the agent. For example:
+
+```bash
+curl -X POST http://localhost:8088/responses -H "Content-Type: application/json" -d '{"input": "List all the repositories I own on GitHub."}'
+```
+
+## Deploying the Agent to Foundry
+
+To host the agent on Foundry, follow the instructions in the [Deploying the Agent to Foundry](../../README.md#deploying-the-agent-to-foundry) section of the README in the parent directory.

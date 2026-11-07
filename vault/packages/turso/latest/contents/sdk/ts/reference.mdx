@@ -3,18 +3,18 @@ title: Reference
 description: TypeScript Reference for Turso
 ---
 
-Turso offers three TypeScript packages:
+Turso offers four TypeScript packages:
 
 | | `@tursodatabase/database` | `@tursodatabase/sync` | `@tursodatabase/serverless` | `@libsql/client` |
 | --- | --- | --- | --- | --- |
-| **Use case** | Local / embedded database | Local database + cloud sync | Remote access (servers, containers, serverless, edge) | ORM support (Drizzle, Prisma) |
-| **Engine** | Turso Database (rewrite) | Turso Database (rewrite) | Turso Database | libSQL (SQLite fork) |
+| **Use case** | Local / embedded database | Local database + cloud sync | Remote Turso database (servers, containers, serverless, edge) | Remote libSQL database, ORM support (Drizzle, Prisma) |
+| **Engine** | Turso (rewrite) | Turso (rewrite) | Turso | libSQL (SQLite fork) |
 | **Dependencies** | Native (Node.js, WASM) | Native (Node.js) | `fetch` only — zero native deps | Requires Node.js or `/web` subpath |
-| **Concurrent writes** | Yes (MVCC) | Yes (MVCC) | Planned | Not supported |
+| **Concurrent writes** | Yes (MVCC) | Yes (MVCC) | Yes (MVCC) | Not supported |
 | **Sync** | — | push/pull (local-first) | — | Embedded Replicas (writes go to cloud primary) |
 | **ORM support** | Drizzle (beta) | — | — | Drizzle, Prisma, and others |
 
-**Starting a new project?** Use `@tursodatabase/database` for local/embedded use, `@tursodatabase/sync` for local + cloud sync, or `@tursodatabase/serverless` for any application that connects to a remote Turso Cloud database (Node.js servers, Docker containers, serverless functions, edge runtimes). **Using an ORM?** Use `@libsql/client` — it's production-ready and supported by Drizzle, Prisma, and others. Drizzle has [beta support](https://orm.drizzle.team/docs/connect-turso-database) for `@tursodatabase/database` for local/embedded use.
+**Starting a new project?** Use `@tursodatabase/database` for local/embedded use, `@tursodatabase/sync` for local + cloud sync, and `@tursodatabase/serverless` to reach a remote [Turso database](/tursodb/quickstart) over the network (Node.js servers, Docker containers, serverless functions, edge runtimes). **Connecting to a remote [libSQL](/libsql) database, or using an ORM?** Use `@libsql/client` — it's production-ready and supported by Drizzle, Prisma, and others. Drizzle has [beta support](https://orm.drizzle.team/docs/connect-turso-database) for `@tursodatabase/database` for local/embedded use.
 
 The following runtime environments are known to be compatible:
 
@@ -183,7 +183,7 @@ const row = await stmt2.get([1]);
 
 ## @libsql/client
 
-The `@libsql/client` package is built on [libSQL](https://github.com/tursodatabase/libsql), the open-source fork of SQLite that powers Turso Cloud today. It is production-ready, battle-tested, and the right choice when you need ORM integration beyond Drizzle (e.g., Prisma) or are working with an existing `@libsql/client`-based codebase.
+The `@libsql/client` package is built on [libSQL](https://github.com/tursodatabase/libsql), the open-source fork of SQLite that has powered Turso Cloud for years. It is production-ready, battle-tested, and the right choice for remote access to libSQL databases, when you need ORM integration beyond Drizzle (e.g., Prisma), or when working with an existing `@libsql/client`-based codebase.
 
 <Info>
 

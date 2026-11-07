@@ -8,10 +8,10 @@ summary: >-
   metadata. Use this page to identify exact metric identifiers such as
   neon_connection_counts, neon_lfc_hits, and host_cpu_seconds_total when
   building dashboards or alerts. Metrics are not sent while a compute is
-  suspended by Scale to Zero, which can cause gaps; log export may also incur
-  network egress charges on paid plans above 500 GB.
+  suspended by Scale to Zero, which can cause gaps; log export also counts
+  toward your plan's public network transfer allowance.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-08-07T13:46:01.605Z'
 ---
 
 This page provides a comprehensive reference for all metrics and log fields that Neon exports to observability platforms through integrations like [Datadog](/docs/guides/datadog), [Grafana Cloud](/docs/guides/grafana-cloud), and [OpenTelemetry](/docs/guides/opentelemetry).
@@ -42,11 +42,11 @@ In Datadog, metric labels are referred to as `tags.` See [Getting Started with T
 | neon_connection_counts                                 | sql-metrics          | Total number of database connections. The `state` label indicates whether the connection is `active` (executing queries), `idle` (awaiting queries), or in a variety of other states derived from the [pg_stat_activity](https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW) Postgres view.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | neon_db_total_size                                     | sql-metrics          | Total size of all databases in your project, measured in bytes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | neon_lfc_approximate_working_set_size_windows          | sql-metrics          | Approximate [working set size](/docs/manage/endpoints#sizing-your-compute-based-on-the-working-set) in pages of 8192 bytes. The metric is tracked over time windows (5m, 15m, 1h) to gauge access patterns. Duration values: `duration="5m"`, `duration="15m"`, `duration="1h"`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| neon_lfc_cache_size_limit                              | sql-metrics          | The limit on the size of the Local File Cache (LFC), measured in bytes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| neon_lfc_hits                                          | sql-metrics          | The number of times requested data was found in the LFC (cache hit). Higher cache hit rates indicate efficient memory use.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| neon_lfc_misses                                        | sql-metrics          | The number of times requested data was not found in the LFC (cache miss), forcing a read from slower storage. High miss rates may indicate insufficient compute size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| neon_lfc_used                                          | sql-metrics          | The amount of space currently used in the LFC, measured in 1MB chunks. It reflects how much of the cache limit is being utilized.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| neon_lfc_writes                                        | sql-metrics          | The number of write operations to the LFC.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| neon_lfc_cache_size_limit                              | sql-metrics          | The limit on the size of the compute cache, measured in bytes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| neon_lfc_hits                                          | sql-metrics          | The number of times requested data was found in the compute cache (cache hit). Higher cache hit rates indicate efficient memory use.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| neon_lfc_misses                                        | sql-metrics          | The number of times requested data was not found in the compute cache (cache miss), forcing a read from slower storage. High miss rates may indicate insufficient compute size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| neon_lfc_used                                          | sql-metrics          | The amount of space currently used in the compute cache, measured in 1MB chunks. It reflects how much of the cache limit is being utilized.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| neon_lfc_writes                                        | sql-metrics          | The number of write operations to the compute cache.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | neon_max_cluster_size                                  | sql-metrics          | The `neon.max_cluster_size` setting in MB.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | neon_pg_stats_userdb                                   | sql-metrics          | Aggregated metrics from the [pg_stat_database](https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-DATABASE-VIEW) Postgres view.<br /><br />We collect stats from the oldest non-system databases based on their creation time, but not for all databases. Only the first X databases (sorted by creation time) are included.<br /><br />**datname**: The name of the database<br />**kind**: The type of value being reported. One of the following:<br />- **db_size**: The size of the database on disk, in bytes (`pg_database_size(datname)`)<br />- **deadlocks**: The number of deadlocks detected<br />- **inserted**: The number of rows inserted (`tup_inserted`)<br />- **updated**: The number of rows updated (`tup_updated`)<br />- **deleted**: The number of rows deleted (`tup_deleted`) |
 | neon_pgbouncer_config_max_client_connections           | sql-metrics          | Configured maximum number of client connections in pgBouncer.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -79,32 +79,111 @@ In Datadog, metric labels are referred to as `tags.` See [Getting Started with T
 
 ## Postgres logs
 
-Neon can export Postgres logs to observability platforms, providing visibility into database activity, errors, and performance. These logs include:
+Neon can export Postgres logs to observability platforms, providing visibility into database activity, errors, and performance. When log export is enabled, Postgres sends its standard server log output to the integration, so what you receive is controlled by the Postgres [logging parameters](https://www.postgresql.org/docs/current/runtime-config-logging.html).
 
-- Error messages and warnings
-- Connection events
-- System notifications
+### What's logged by default
+
+Neon computes use these logging settings:
+
+| Parameter                     | Value     | What you'll see in exported logs                                                                                                                             |
+| ----------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `log_min_messages`            | `warning` | Warnings, errors, and more severe messages. `NOTICE`, `INFO`, and `DEBUG` aren't sent.                                                                       |
+| `log_connections`             | `on`      | `connection received`, `connection authenticated`, and `connection authorized` lines for each new connection. This is often the largest share of log volume. |
+| `log_disconnections`          | `on`      | A line for each closed connection, including session duration.                                                                                               |
+| `log_checkpoints`             | `on`      | A line for each checkpoint, with timing and the number of buffers written.                                                                                   |
+| `log_autovacuum_min_duration` | `1000`    | Autovacuum and autoanalyze runs that take longer than 1 second.                                                                                              |
+| `log_temp_files`              | `1048576` | Temporary files of 1 GB or more, such as large sorts or hashes that spill to disk.                                                                           |
+| `log_error_verbosity`         | `terse`   | Errors and warnings without `DETAIL`, `HINT`, or `CONTEXT` lines.                                                                                            |
+| `log_min_error_statement`     | `panic`   | The SQL statement that caused an error isn't included, to keep query data out of logs.                                                                       |
+
+Statement logging is off by default. Query text isn't logged (`log_statement` is `none`), slow queries aren't logged (`log_min_duration_statement` is `-1`), and lock waits aren't logged (`log_lock_waits` is `off`). To find slow or frequent queries without changing log settings, use [Monitor query performance](/docs/introduction/monitor-query-performance).
+
+For the full list of Neon's Postgres settings, see [Postgres parameter settings](/docs/reference/compatibility#postgres-parameter-settings).
+
+### Log slow queries
+
+You can turn on slow-query logging for a compute by setting `log_min_duration_statement` in the compute's `pg_settings` with the [Update compute endpoint](/docs/reference/api/endpoints/update-project-endpoint) API. Postgres then logs every statement that runs longer than the value you set, in milliseconds. The minimum value is `500`. The setting applies without a compute restart.
+
+```bash
+curl --request PATCH \
+     --url https://console.neon.tech/api/v2/projects/<project_id>/endpoints/<endpoint_id> \
+     --header 'accept: application/json' \
+     --header "authorization: Bearer $NEON_API_KEY" \
+     --header 'content-type: application/json' \
+     --data '
+{
+  "endpoint": {
+    "settings": {
+      "pg_settings": {
+        "log_min_duration_statement": "1000"
+      }
+    }
+  }
+}
+'
+```
+
+<Admonition type="warning">
+Slow-query log lines include the full statement text, including any literal values in the query. If your queries contain sensitive data, consider what you send to your observability platform before you turn this on.
+</Admonition>
+
+The other statement logging parameters, such as `log_statement` and `log_lock_waits`, can't be changed. You can't set any of them with `SET` or `ALTER DATABASE`, because they require superuser privileges.
 
 ### Log fields and metadata
 
-Logs include the following labels and metadata for filtering and organization:
+Each log message starts with a prefix that Neon sets through `log_line_prefix`. It includes:
 
+- Timestamp, in GMT
+- `sqlstate`: the [SQLSTATE error code](https://www.postgresql.org/docs/current/errcodes-appendix.html), or `00000` for messages that aren't errors
+- `user`: the Postgres role
+- `dboid`: the database OID. To map it to a name, run `SELECT oid, datname FROM pg_database;`.
+- `backend`: the process type, such as `client backend`, `autovacuum worker`, or `checkpointer`
+- `app`: the client's `application_name`
+- Process ID
+
+Each exported log record also includes these attributes:
+
+- Log level (severity). See [Log levels](#log-levels).
 - `project_id`
 - `endpoint_id`
-- Timestamp
-- Log level
-- And other standard PostgreSQL log fields
+- `compute_binding_id`: identifies the individual compute instance behind the endpoint
+- `compute_role`: `read_write` or `read_only`
+- `endpoint_type`: `read_write` or `read_only`
+- `region_id`
+- `host`, set to `neon-collector-<project_id>`
+- `service.name`: OpenTelemetry integration only, if you set it in the integration's resource attributes
 
-<Admonition type="note">
-During the beta phase, you may see some Neon-specific system logs included. These will be filtered out before general availability (GA).
-</Admonition>
+If you connect through a [pooled connection string](/docs/connect/connection-pooling), connection lines show `application_name=pgbouncer`, because PgBouncer opens the connection to Postgres for you. Your client's `application_name` still appears in the `app` field on statement and error lines.
+
+### Log levels
+
+Postgres maps its message levels to syslog severities that don't line up with the level names, so the severity on an exported record often differs from the level in the message text:
+
+| Postgres level (in the message) | Exported severity |
+| ------------------------------- | ----------------- |
+| `LOG`, `INFO`                   | `info`            |
+| `WARNING`                       | `notice`          |
+| `ERROR`                         | `warning`         |
+| `FATAL`                         | `err`             |
+| `PANIC`                         | `crit`            |
+
+To find errors, filter on the message text (for example, `ERROR:`) or on the `sqlstate` field instead of the record severity. `NOTICE` messages aren't exported, because `log_min_messages` is `warning`.
+
+### Internal log lines
+
+Neon filters out some internal storage-layer log lines before export, but you'll still see activity from Neon's own processes:
+
+- **Connection lines.** Neon checks each compute's health by connecting to Postgres about once a minute, and its metrics collectors and other management tasks connect too. On an idle compute, these can make up close to half of all exported lines. The `connection authenticated`, `connection authorized`, and `disconnection` lines have `user=[cloud_admin]`. The `connection received` lines are logged before authentication, so they show `user=[[unknown]]` and `host=127.0.0.1`. To hide this activity, exclude lines with `user=[cloud_admin]` and lines containing `connection received: host=127.0.0.1`.
+- **Storage and replication messages.** Lines tagged `[COMMUNICATOR]` or `[WP]` come from Neon's storage layer and are informational.
+- **Restart messages.** When a compute restarts or reconfigures, you'll see `FATAL: terminating connection due to administrator command` for Neon's background processes, and `LOG` lines about reloading configuration. These are expected.
+- **Internal standby.** A compute can have an internal standby instance that also sends logs. Its records have a `compute_binding_id` ending in `-internal` and a `compute_role` of `read_only`, under the same `endpoint_id`.
 
 ### Performance considerations
 
 Enabling log export may result in:
 
 - An increase in compute resource usage for log processing
-- Additional network egress for log transmission, billed on paid plans for usage over 500 GB
+- Additional public network transfer for log transmission, which counts toward your plan's [network transfer allowance](/docs/introduction/network-transfer)
 - Associated costs based on log volume in your observability platform
 
 <Admonition type="note">
@@ -116,6 +195,8 @@ Additionally, if you are setting up an integration for a project with an inactiv
 ### Technical details
 
 Neon processes logs directly on each compute instance using [rsyslogd](https://www.rsyslog.com/doc/index.html), an industry-standard open source logging utility. This compute-level processing means that log collection contributes to your compute's resource usage.
+
+To keep log export from slowing down your database, the compute buffers log lines while forwarding them. If your observability platform is unreachable for long enough that the buffer fills, some log lines are dropped rather than delaying Postgres.
 
 ## Integration guides
 

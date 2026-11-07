@@ -1,21 +1,21 @@
 ---
-title: Migrate from Microsoft SQL Server to Neon Postgres
-subtitle: Learn how to migrate a Microsoft SQL Server database to Neon Postgres using
+title: Migrate from Microsoft SQL Server to Lakebase Postgres
+subtitle: Learn how to migrate a Microsoft SQL Server database to Lakebase Postgres using
   pgloader
 summary: >-
-  Migrating from Microsoft SQL Server (MSSQL) or Azure SQL to Neon Postgres
+  Migrating from Microsoft SQL Server (MSSQL) or Azure SQL to Lakebase Postgres
   uses pgloader, which streams data through the Postgres COPY protocol and
   automatically detects schemas, indexes, and constraints. Use this page when
   you need end-to-end steps covering credentials, firewall rules, pgloader
   configuration, running the migration, and post-migration verification. Neon's
-  Free plan supports up to 0.5 GB; larger datasets require a paid plan. Azure
+  Free plan supports up to 1 GB; larger datasets require a paid plan. Azure
   SQL users may need FreeTDS driver configuration to resolve pgloader
   connection errors.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-28T11:11:18.780Z'
 ---
 
-This guide describes how to migrate your database from a Microsoft SQL Server (MSSQL) database to Neon Postgres using [pgloader](https://pgloader.readthedocs.io/en/latest/intro.html).
+This guide describes how to migrate your database from a Microsoft SQL Server (MSSQL) database to Lakebase Postgres using [pgloader](https://pgloader.readthedocs.io/en/latest/intro.html).
 
 The `pgloader` utility transforms data to a Postgres-compatible format as it reads from your MSSQL database. It uses the Postgres `COPY` protocol to stream the data into your Postgres database.
 
@@ -29,7 +29,7 @@ The `pgloader` utility transforms data to a Postgres-compatible format as it rea
 
   For detailed information on creating a Neon project, see [Create a project](/docs/manage/projects#create-a-project).
 
-- Neon's Free plan supports 0.5 GB of data. If your data size is more than 0.5 GB, you'll need to upgrade to one of Neon's paid plans. See [Neon plans](/docs/introduction/plans) for more information.
+- Neon's Free plan supports 1 GB of data. If your data size is more than 1 GB, you'll need to upgrade to one of Neon's paid plans. See [Neon plans](/docs/introduction/plans) for more information.
 
 - Review the [Pgloader MSSQL to Postgres Guide](https://pgloader.readthedocs.io/en/latest/ref/mssql.html) guide. It will provide you with a good understanding of `pgloader` capabilities and how to configure your `pgloader` configuration file, if necessary.
 
@@ -66,7 +66,7 @@ If you are using Azure SQL, you need to allow inbound traffic from your local ma
 
 ## Prepare your Neon destination database
 
-This section describes how to prepare your destination Neon PostgreSQL database to receive the migrated data.
+This section describes how to prepare your destination database to receive the migrated data.
 
 ### Create the Neon database
 
@@ -80,7 +80,7 @@ CREATE DATABASE "Northwind";
 
 ### Retrieve your Neon database connection string
 
-Log in to the Neon Console. Find the connection string for your database by clicking the **Connect** button on your **Project Dashboard**. It should look similar to this:
+Log in to the Neon Console. Find the connection string for your database by clicking the **Connect** button in the Console nav. It should look similar to this:
 
 ```bash shouldWrap
 postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require
@@ -209,7 +209,7 @@ After successfully migrating and verifying your data on Neon:
 While this guide focuses on using `pgloader`, you might need more manual adjustments to ensure:
 
 - There are no unintended changes to the application behavior. For example, all MSSQL data types don't translate one-to-one to Postgres data types.
-- The application code is compatible with Neon Postgres.
+- The application code is compatible with Lakebase Postgres.
 
 For complex migrations or when you need more control over the migration process, you might consider developing a custom Extract, Transform, Load (ETL) process using tools like Python with SQLAlchemy.
 
@@ -240,6 +240,6 @@ For complex migrations or when you need more control over the migration process,
 For more information on `pgloader` and database migration, refer to the following resources:
 
 - [pgloader documentation - MSSQL to Postgres](https://pgloader.readthedocs.io/en/latest/ref/mssql.html)
-- [Neon documentation](/docs/introduction)
+- [Neon documentation](/docs)
 
 <NeedHelp/>

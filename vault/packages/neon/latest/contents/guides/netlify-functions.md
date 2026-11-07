@@ -1,8 +1,8 @@
 ---
 title: Use Neon with Netlify Functions
-subtitle: Connect a Neon Postgres database to your Netlify Functions application
+subtitle: Connect a Lakebase Postgres database to your Netlify Functions application
 summary: >-
-  End-to-end tutorial for querying a Neon Postgres database from a Netlify
+  End-to-end tutorial for querying a Lakebase Postgres database from a Netlify
   Function using the @neondatabase/serverless driver and ES module (.mjs)
   syntax. The guide walks through creating a Neon project, writing a Node.js
   serverless handler with the neon() tagged-template client, and deploying via
@@ -10,12 +10,12 @@ summary: >-
   page when the goal is serverless backend database access inside a Netlify
   Function, not edge middleware or static site build steps.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
 
 [Netlify Functions](https://www.netlify.com/products/functions/) provide a serverless execution environment for building and deploying backend functionality without managing server infrastructure. It's integrated with Netlify's ecosystem, making it ideal for augmenting web applications with server-side logic, API integrations, and data processing tasks in a scalable way.
 
-This guide will show you how to connect to a Neon Postgres database from your Netlify Functions project. We'll use the [Neon serverless driver](/docs/serverless/serverless-driver) to connect to the database and make queries.
+This guide will show you how to connect to a Lakebase Postgres database from your Netlify Functions project. We'll use the [Neon serverless driver](/docs/serverless/serverless-driver) to connect to the database and make queries.
 
 ## Prerequisites
 
@@ -33,7 +33,7 @@ After logging into the Neon Console, proceed to the [Projects](https://console.n
 
 1. Click `New Project` to start a new one.
 
-2. In the Neon **Dashboard**, use the `SQL Editor` from the sidebar to execute the SQL command below, creating a new table for coffee blends:
+2. In the Neon Console, use **Postgres database** > **SQL Editor** from the sidebar to execute the SQL command below, creating a new table for coffee blends:
 
    ```sql
    CREATE TABLE favorite_coffee_blends (
@@ -55,9 +55,9 @@ After logging into the Neon Console, proceed to the [Projects](https://console.n
        ('Robusta Revolution', 'Vietnam', 'Strong, Bold, Bitter');
    ```
 
-### Retrieve your Neon database connection string
+### Retrieve your database connection string
 
-You can find your Neon database connection string by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. It should look similar to this:
+You can find your database connection string by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. It should look similar to this:
 
 ```bash
 postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require
@@ -108,7 +108,7 @@ Linked to neon-netlify-example
 
 ### Implement the function
 
-We'll create a new function to fetch the coffee blends from the Neon database. To set up the function entrypoint script, you can run the command below and use the settings provided:
+We'll create a new function to fetch the coffee blends from the database. To set up the function entrypoint script, you can run the command below and use the settings provided:
 
 ```bash
 ❯ netlify functions:create get_coffee_blends
@@ -124,7 +124,7 @@ Function created!
 
 This command creates a new directory `netlify/functions/get_coffee_blends` with a `get_coffee_blends.js` file inside it. We are using the ES6 `import` syntax to implement the request handler, so we will change the script extension to `.mjs` for the runtime to recognize it.
 
-We also install the `Neon serverless` driver as a dependency to connect to the Neon database and fetch the data.
+We also install the `Neon serverless` driver as a dependency to connect to the database and fetch the data.
 
 ```bash
 mv netlify/functions/get_coffee_blends/get_coffee_blends.js netlify/functions/get_coffee_blends/get_coffee_blends.mjs
@@ -140,7 +140,7 @@ import { neon } from '@neondatabase/serverless';
 export async function handler(event) {
   const sql = neon(process.env.DATABASE_URL);
   try {
-    const rows = await sql('SELECT * FROM favorite_coffee_blends;');
+    const rows = await sql`SELECT * FROM favorite_coffee_blends`;
     return {
       statusCode: 200,
       body: JSON.stringify(rows),
@@ -154,7 +154,7 @@ export async function handler(event) {
 }
 ```
 
-This function connects to your Neon database and fetches the list of your favorite coffee blends.
+This function connects to the database and fetches the list of your favorite coffee blends.
 
 ### Implement the frontend
 
@@ -205,7 +205,7 @@ We are now ready to test our Netlify site project locally. Run the following com
 netlify dev
 ```
 
-The Netlify CLI will print the local server URL where your site is running. Open the URL in your browser to see the coffee blends fetched from your Neon database.
+The Netlify CLI will print the local server URL where your site is running. Open the URL in your browser to see the coffee blends fetched from the database.
 
 ### Deploying your Netlify Site and Function
 

@@ -2,6 +2,7 @@
 title: 'Pulumi Setup Guide'
 description: 'Detailed setup instructions for Pulumi CLI and Checkly integration'
 sidebarTitle: 'Setup Guide'
+canonical: 'https://www.checklyhq.com/docs/integrations/iac/pulumi/setup/'
 ---
 
 
@@ -11,7 +12,7 @@ This guide walks you through the complete setup process for using Pulumi with Ch
 
 Before starting, ensure you have:
 
-- **Node.js** (version 14 or higher)
+- **Node.js** (version 22 or higher, required by the current `@pulumi/pulumi` SDK)
 - **Git** for version control
 - **Checkly account** with API access
 - **Pulumi account** (free tier available)
@@ -35,14 +36,6 @@ Confirm Pulumi CLI is working correctly
 ### Installation Options
 
 <CodeGroup>
-```bash install-pulumi-npm
-npm install -g @pulumi/pulumi
-```
-
-```bash install-pulumi-yarn
-yarn global add @pulumi/pulumi
-```
-
 ```bash install-pulumi-brew
 brew install pulumi/tap/pulumi
 ```
@@ -112,7 +105,7 @@ pulumi whoami
 4. Copy the generated API key (starts with `cu_`)
 
 <Warning>
-API keys have full access to your Checkly account. Keep them secure and never commit them to version control.
+API keys act with the [role and permissions](/admin/creating-api-key) of the user who created them. Keep them secure and never commit them to version control.
 </Warning>
 
 ## Step 4: Project Setup
@@ -148,7 +141,7 @@ yarn add @checkly/pulumi
 
 ## Step 5: Configure Authentication
 
-### Option 1: Environment Variables (Recommended for Development)
+### Option 1: Environment variables (recommended for development)
 
 Add to your shell profile (`.bashrc`, `.zshrc`, etc.):
 

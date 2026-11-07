@@ -20,7 +20,7 @@ Accordion is commonly used for:
 ## order prop
 
 The `order` prop (used in all demos on this page) sets the heading level for the `Accordion.Control` root element.
-According to [WAI-ARIA recommendations](https://www.w3.org/TR/wai-aria-practices-1.1/examples/accordion/accordion.html),
+According to [WAI-ARIA recommendations](https://www.w3.org/WAI/ARIA/apg/patterns/accordion/),
 it is required to use `h2`-`h6` heading levels to fit correctly within the outline of the page.
 
 All examples on this page use `order={3}`, which means that all `button` elements of
@@ -137,6 +137,23 @@ function Demo() {
   );
 }
 ```
+
+## Disable collapse
+
+By default, in single mode (`multiple={false}`) the open item can always be toggled closed,
+which leaves the Accordion fully collapsed. Set the `disableCollapse` prop to prevent this:
+once an item is open, clicking its control again is a no-op, and the only way to change state
+is to open a different item. This is useful for settings panels, stepper-style flows and FAQ
+pages where one section should always stay visible.
+
+`disableCollapse` only prevents collapsing an already-open item – it does not force an item
+open on mount. To guarantee that one item is open from the start, pair it with `defaultValue`
+(uncontrolled) or `value` (controlled).
+
+The prop has no effect when `multiple` is set, as multiple mode already allows any combination
+of opened and closed items.
+
+<Demo data={AccordionDemos.disableCollapse} />
 
 ## Compose controls
 

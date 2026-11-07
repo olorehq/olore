@@ -1,13 +1,14 @@
 ---
 title: reset
+seoTitle: "reset: Reset React Form Values and State"
 description: Reset the form to its default values and clear state.
 metaDescription: Reset the entire form to default values, clearing all errors, dirty fields, and touched state in React Hook Form.
 sidebar: apiLinks
 ---
 
-## \</> `reset:` <TypeText>`<T>(values?: T | ResetAction<T>, options?: Record<string, boolean>) => void`</TypeText>
+## \</> `reset:` <TypeText>[UseFormReset](/ts#UseFormReset)</TypeText>
 
-Reset the entire form state, fields reference, and subscriptions. There are optional arguments and will allow partial form state reset.
+Reset the entire form state, fields reference, and subscriptions. There are optional arguments that allow partial form state reset.
 
 ### Props
 
@@ -15,28 +16,32 @@ Reset the entire form state, fields reference, and subscriptions. There are opti
 
 `Reset` has the ability to retain formState. Here are the options you may use:
 
-| Name      |                          | Type                                                       | Description                                                                                                                                                                                                                                                                                                                                                                                                          |
-| --------- | ------------------------ | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `values`  |                          | <TypeText>object \| (values: Object) => Object </TypeText> | An optional object to reset form values, and it's recommended to provide the **entire** defaultValues when supplied.                                                                                                                                                                                                                                                                                                 |
-| `options` | `keepErrors`             | <TypeText>boolean</TypeText>                               | All errors will remain. This will not guarantee with further user actions.                                                                                                                                                                                                                                                                                                                                           |
-|           | `keepDirty`              | <TypeText>boolean</TypeText>                               | `DirtyFields` form state will remain, and `isDirty` will temporarily remain as the current state until further user's action.<br/><br/>**Important:** this keep option doesn't reflect form input values but only dirty fields form state.                                                                                                                                                                           |
-|           | `keepDirtyValues`        | <TypeText>boolean</TypeText>                               | `DirtyFields` and `isDirty` will remained, and only none dirty fields will be updated to the latest rest value. [Check out the example.](https://codesandbox.io/s/react-keepdirtyvalues-o8to91)<br/><br/>**Important:** formState `dirtyFields` will need to be subscribed.                                                                                                                                          |
-|           | `keepValues`             | <TypeText>boolean</TypeText>                               | Form input values will be unchanged.                                                                                                                                                                                                                                                                                                                                                                                 |
-|           | `keepDefaultValues`      | <TypeText>boolean</TypeText>                               | Keep the same defaultValues which are initialised via `useForm`.<ul><li>`isDirty` will be checked again: it is set to be the result of the comparison of any new values provided against the original `defaultValues`.</li> <li>`dirtyFields` will be updated again if values are provided: it is set to be result of the comparison between the new values provided against the original `defaultValues`.</li></ul> |
-|           | `keepIsSubmitted`        | <TypeText>boolean</TypeText>                               | `isSubmitted` state will be unchanged.                                                                                                                                                                                                                                                                                                                                                                               |
-|           | `keepIsSubmitSuccessful` | <TypeText>boolean</TypeText>                               | `isSubmitSuccessful` state will be unchanged.                                                                                                                                                                                                                                                                                                                                                                        |
-|           | `keepTouched`            | <TypeText>boolean</TypeText>                               | `isTouched` state will be unchanged.                                                                                                                                                                                                                                                                                                                                                                                 |
-|           | `keepIsValid`            | <TypeText>boolean</TypeText>                               | `isValid` will temporarily persist as the current state until additional user actions.                                                                                                                                                                                                                                                                                                                               |
-|           | `keepSubmitCount`        | <TypeText>boolean</TypeText>                               | `submitCount` state will be unchanged.                                                                                                                                                                                                                                                                                                                                                                               |
+| Name      |                          | Type                                                       | Description                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------- | ------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `values`  |                          | <TypeText>object \| (values: Object) => Object </TypeText> | An optional object to reset form values, and it's recommended to provide the **entire** defaultValues when supplied. <Since version="7.36.0" /> Also accepts a callback that receives the current form values and returns the next values.                                                                                                                                                                         |
+| `options` | `keepErrors`             | <TypeText>boolean</TypeText>                               | All errors will remain. This behavior is not guaranteed after further user actions.                                                                                                                                                                                                                                                                                                                                |
+|           | `keepDirty`              | <TypeText>boolean</TypeText>                               | `DirtyFields` form state will remain, and `isDirty` will temporarily remain as the current state until further user's action.<br/><br/>**Important:** this keep option doesn't reflect form input values but only dirty fields form state.                                                                                                                                                                         |
+|           | `keepDirtyValues`        | <TypeText>boolean</TypeText>                               | <Since version="7.31.0" /> `DirtyFields` and `isDirty` will remain, and only non-dirty fields will be updated to the newly provided values. [Check out the example.](https://codesandbox.io/s/react-keepdirtyvalues-o8to91)<br/><br/>**Important:** formState `dirtyFields` will need to be subscribed.                                                                                                            |
+|           | `keepValues`             | <TypeText>boolean</TypeText>                               | Form input values will be unchanged.                                                                                                                                                                                                                                                                                                                                                                               |
+|           | `keepDefaultValues`      | <TypeText>boolean</TypeText>                               | Keep the same defaultValues which are initialised via `useForm`.<ul><li>`isDirty` will be checked again: it is set to the result of the comparison of any new values provided against the original `defaultValues`.</li> <li>`dirtyFields` will be updated again if values are provided: it is set to the result of the comparison between the new values provided against the original `defaultValues`.</li></ul> |
+|           | `keepIsSubmitted`        | <TypeText>boolean</TypeText>                               | `isSubmitted` state will be unchanged.                                                                                                                                                                                                                                                                                                                                                                             |
+|           | `keepIsSubmitSuccessful` | <TypeText>boolean</TypeText>                               | <Since version="7.47.0" /> `isSubmitSuccessful` state will be unchanged.                                                                                                                                                                                                                                                                                                                                           |
+|           | `keepTouched`            | <TypeText>boolean</TypeText>                               | `isTouched` state will be unchanged.                                                                                                                                                                                                                                                                                                                                                                               |
+|           | `keepIsValidating`       | <TypeText>boolean</TypeText>                               | <Since version="7.51.0" /> `isValidating`/`validatingFields` state will be unchanged, rather than cleared by the reset.                                                                                                                                                                                                                                                                                            |
+|           | `keepIsValid`            | <TypeText>boolean</TypeText>                               | `isValid` will temporarily persist as the current state until additional user actions.                                                                                                                                                                                                                                                                                                                             |
+|           | `keepSubmitCount`        | <TypeText>boolean</TypeText>                               | `submitCount` state will be unchanged.                                                                                                                                                                                                                                                                                                                                                                             |
+|           | `keepFieldsRef`          | <TypeText>boolean</TypeText>                               | <Since version="7.60.0" /> Preserve the internal field references (registered inputs). Useful when you want to reset form values without causing inputs to unmount and remount.                                                                                                                                                                                                                                    |
 
 <Admonition type="important" title="Rules">
 
 - It is recommended to always provide <code>defaultValues</code> when resetting a form
   to ensure all inputs, especially controlled components, are restored correctly.
+- Avoid calling `reset` inside `onSubmit`. `handleSubmit` updates `isSubmitted`, `isSubmitSuccessful` and `submitCount` after your handler finishes, so a `reset` there clears the values but not the submission state. Reset in a `useEffect` when `formState.isSubmitSuccessful` becomes `true` instead (see the **Submit with Reset** example below).
+- Calling `reset` with `values` updates the form's `defaultValues` unless `options.keepDefaultValues` is set. If `reset` is later called without `values` or with `{}`, the form resets to the last `values` provided instead of the initial `defaultValues`.
 
 </Admonition>
 
-**Examples:**
+### Examples
 
 ---
 
@@ -84,13 +89,14 @@ export default function Form() {
 ```
 
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-reset-v7-r7m5s"
-import React, { useCallback } from "react"
+import { useCallback, useEffect } from "react"
 import { useForm } from "react-hook-form"
 
 export default function App() {
   const { register, handleSubmit, reset } = useForm()
   const resetAsyncForm = useCallback(async () => {
-    const result = await fetch("./api/formValues.json") // result: { firstName: 'test', lastName: 'test2' }
+    const response = await fetch("./api/formValues.json")
+    const result = await response.json() // result: { firstName: 'test', lastName: 'test2' }
     reset(result) // asynchronously reset your form values
   }, [reset])
 
@@ -141,7 +147,7 @@ export default function App() {
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-v6-controller-ts-jwyzw"
 import { useForm, Controller } from "react-hook-form"
-import { TextField } from "@material-ui/core"
+import { TextField } from "@mui/material"
 
 interface IFormInputs {
   firstName: string
@@ -170,7 +176,7 @@ export default function App() {
       />
 
       <input type="submit" />
-      <input type="button" onClick={reset} />
+      <input type="button" onClick={() => reset()} />
       <input
         type="button"
         onClick={() => {
@@ -187,7 +193,7 @@ export default function App() {
 
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-v7-controller-5h1q5"
 import { useForm, Controller } from "react-hook-form"
-import { TextField } from "@material-ui/core"
+import { TextField } from "@mui/material"
 
 export default function App() {
   const { register, handleSubmit, reset, setValue, control } = useForm()
@@ -210,7 +216,7 @@ export default function App() {
       />
 
       <input type="submit" />
-      <input type="button" onClick={reset} />
+      <input type="button" onClick={() => reset()} />
       <input
         type="button"
         onClick={() => {
@@ -230,6 +236,7 @@ export default function App() {
 **Submit with Reset**
 
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-handlesubmit-with-reset-xu1zu"
+import { useEffect } from "react"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
 
 function App() {
@@ -246,11 +253,11 @@ function App() {
     // reset({ ...data })
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (formState.isSubmitSuccessful) {
       reset({ something: "" })
     }
-  }, [formState, submittedData, reset])
+  }, [formState.isSubmitSuccessful, reset])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -264,7 +271,7 @@ function App() {
 **Field Array**
 
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-reset-usefieldarray-forked-kdh2s"
-import React, { useEffect } from "react"
+import { useEffect } from "react"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
 
 function App() {
@@ -321,8 +328,39 @@ function App() {
 }
 ```
 
-### Videos
+### Video
 
 ---
 
 <YouTube youTubeId="qmCLBjyPwVk" />
+
+### Tips
+
+---
+
+- For a "Discard changes" button, call `reset()` with no arguments. The form goes back to the last default values.
+- After a successful save, call `reset(savedData)` so the saved data becomes the new baseline and `isDirty` goes back to `false`. If you only want to move the dirty baseline and keep errors, touched fields, and submission state, use [`resetDefaultValues`](/docs/useform/resetdefaultvalues).
+- When the server sends fresh data while the user is editing, use `reset(newData, { keepDirtyValues: true })`. Fields the user changed keep their values, and the other fields are updated.
+- To load data once from an API, use `useForm({ values })` instead of `reset` in a `useEffect`. See [which option to use](/docs/useform#values).
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### `reset()` clears the form instead of going back to the loaded data
+
+<Why>
+
+`reset()` with no arguments goes back to the default values. If you loaded the data with `setValue`, the default values never changed, so the form is reset to the original empty values.
+
+</Why>
+
+<Fix>
+
+Load the data with `reset(data)` or [`values`](/docs/useform#values). The loaded data then becomes the default values, and a later `reset()` returns to it.
+
+</Fix>
+
+</Troubleshoot>

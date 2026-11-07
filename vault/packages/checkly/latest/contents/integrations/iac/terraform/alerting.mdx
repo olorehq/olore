@@ -1,14 +1,15 @@
 ---
 title: 'Alert channels and settings for Terraform'
-sidebarTitle: 'Alert Channels'
+sidebarTitle: 'Alert channels'
 description: 'Configure alert settings and alert channels for your Terraform-managed monitoring setup'
+canonical: 'https://www.checklyhq.com/docs/integrations/iac/terraform/alerting/'
 ---
 
 Alerting is organised around alert settings and alert channels.
 
 ## Alert settings
 
-[Alert settings](https://www.checklyhq.com/docs/alerting/) determine _when_ and how many times alerts should be sent out. You can set the alert settings at check level:
+[Alert settings](/communicate/alerts/overview) determine _when_ and how many times alerts should be sent out. To get alerts about expiring SSL certificates, use an [SSL monitor](/detect/uptime-monitoring/ssl-monitors/overview). You can set the alert settings at check level:
 
 ```terraform
 resource "checkly_check" "get-books" {
@@ -26,11 +27,6 @@ resource "checkly_check" "get-books" {
 
     time_based_escalation {
       minutes_failing_threshold = 5 // (TIME_BASED escalation only) after how many minutes spent in failing state to send an alert
-    }
-
-    ssl_certificates {
-      enabled         = true        // Whether the SSL certificate will be checked for expiry
-      alert_threshold = 30          // At which number of days remaining before expiry should the alert be sent
     }
 
     reminders {
@@ -68,11 +64,6 @@ resource "checkly_check_group" "key-shop-flows" {
       minutes_failing_threshold = 5
     }
 
-    ssl_certificates {
-      enabled         = true
-      alert_threshold = 30
-    }
-
     reminders {
       amount   = 2
       interval = 5
@@ -88,7 +79,7 @@ resource "checkly_check_group" "key-shop-flows" {
 
 ## Alert channels
 
-[Alert channels](https://www.checklyhq.com/docs/alerting/alert-channels/) determine _how_ (as in "to which alert systems") alerts are sent out. They can be created as standalone resources:
+[Alert channels](/communicate/alerts/overview) determine _how_ (as in "to which alert systems") alerts are sent out. They can be created as standalone resources:
 
 ```terraform
 resource "checkly_alert_channel" "email_ac" { 
@@ -101,7 +92,7 @@ resource "checkly_alert_channel" "email_ac" {
 }
 ```
 
-Checkly supports a variety of alert channels, from email and SMS to Pagerduty and custom webhooks. For all available alert channels, see the corresponding [resource page](https://registry.terraform.io/providers/checkly/checkly/latest/docs/resources/alert_channel).
+Checkly supports a variety of alert channels, from email and SMS to PagerDuty and custom webhooks. For all available alert channels, see the corresponding [resource page](https://registry.terraform.io/providers/checkly/checkly/latest/docs/resources/alert_channel).
 
 ### Alert channel subscriptions
 

@@ -1,7 +1,7 @@
 ---
 title: Add custom pages and links to the `<UserProfile />` component
 description: Learn how to add custom pages and include external links within the navigation sidenav of the <UserProfile /> component.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
+sdk: astro, chrome-extension, electron, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
 ---
 
 The [`<UserProfile />`](/docs/reference/components/user/user-profile) component supports the addition of custom pages and external links to the component's sidenav. It only accepts the following components as children:
@@ -37,6 +37,13 @@ To add a custom page to the `<UserProfile />` component, you will need to use on
 `<UserButton.UserProfilePage />` and `<UserProfile.Page />` accept the following props, all of which are **required**:
 
 <Properties>
+  - `children`
+  - `React.ReactElement`
+
+  The content to be rendered inside the custom page.
+
+  ---
+
   - `label`
   - `string`
 
@@ -55,13 +62,6 @@ To add a custom page to the `<UserProfile />` component, you will need to use on
   - `string`
 
   The path segment that will be used to navigate to the custom page. For example, if the `<UserProfile />` component is rendered at `/user`, then the custom page will be accessed at `/user/{url}` when using [path routing](/docs/guides/how-clerk-works/routing).
-
-  ---
-
-  - `children`
-  - `React.ReactElement`
-
-  The content to be rendered inside the custom page.
 </Properties>
 
 ### Example

@@ -30,7 +30,7 @@ As long as there is enough allocated memory, Cloudflare does not clear items fro
 
 ## Does the DNS Firewall cache SERVFAIL?
 
-Yes. `SERVFAIL` is treated like any other negative answer for caching purposes. The default TTL is 30 seconds. You can use the [API](/api/resources/dns_firewall/methods/edit/) to set a different `negative_cache_ttl`.
+Yes. `SERVFAIL` is treated like any other negative answer for caching purposes. The default TTL is 30 seconds. You can set a different negative cache TTL on your cluster in the Cloudflare dashboard, or via the [API](/api/resources/dns_firewall/methods/edit/) (`negative_cache_ttl` parameter).
 
 ## Does DNS Firewall support EDNS Client Subnet (ECS)?
 
@@ -49,11 +49,11 @@ EDNS limits the effectiveness of the DNS cache.
 
 :::
 
-Some resolvers might not be sending any EDNS data. When you set the `ecs_fallback` parameter to `true` via the [API](/api/resources/dns_firewall/methods/edit/), DNS Firewall will forward the IP subnet of the resolver instead only if there is no EDNS data present in incoming the DNS query.
+Some resolvers might not be sending any EDNS data. When you enable ECS fallback on your cluster in the Cloudflare dashboard — or set the `ecs_fallback` parameter to `true` via the [API](/api/resources/dns_firewall/methods/edit/) — DNS Firewall will forward the IP subnet of the resolver instead, only if there is no EDNS data present in the incoming DNS query.
 
 ## Does DNS Firewall cache negative answers?
 
-Yes. The default TTL is 30 seconds. You can set `negative_cache_ttl` via the [API](/api/resources/dns_firewall/methods/edit/). This will affect the TTL of responses with status `REFUSED`, `NXDOMAIN`, or `SERVFAIL`.
+Yes. The default TTL is 30 seconds. You can configure the negative cache TTL on your cluster in the Cloudflare dashboard, or via the [API](/api/resources/dns_firewall/methods/edit/) (`negative_cache_ttl` parameter). This will affect the TTL of responses with status `REFUSED`, `NXDOMAIN`, or `SERVFAIL`.
 
 ## How can I set PTR records for nameserver hostnames?
 
@@ -61,3 +61,15 @@ To set up PTR records for the DNS Firewall cluster IPs that point to your namese
 
 - [Show DNS Firewall Cluster Reverse DNS](/api/resources/dns_firewall/subresources/reverse_dns/methods/get/)
 - [Update DNS Firewall Cluster Reverse DNS](/api/resources/dns_firewall/subresources/reverse_dns/methods/edit/)
+
+## Why do I see inconsistent responses for the same ECS subnet from different locations?
+
+DNS Firewall maintains a separate cache at each Cloudflare data center. When two resolvers send the same query for the same ECS subnet but reach different Cloudflare data centers, they may receive different responses if one data center has the answer cached from an earlier upstream query and the other does not. If your upstream nameserver returns non-deterministic answers for a given ECS subnet — for example, returning different address sets on repeated queries — each data center caches whichever answer it received, resulting in inconsistent responses across Cloudflare locations.
+
+To get consistent results, ensure your upstream nameserver returns the same answer for a given ECS subnet on every query. If geographic routing is not required, you can disable ECS on your DNS Firewall cluster to use a single cache that is not segmented by client subnet.
+
+## What happens when the per-data-center rate limit is exceeded?
+
+When the configured [rate limit](/dns/dns-firewall/setup/#additional-options) for a data center is exceeded, DNS Firewall stops forwarding queries to your upstream nameservers at that location for a short period. During this time, DNS Firewall continues to serve responses from its cache. Queries for records that are not in the cache, or whose cached TTL has expired, return `REFUSED`.
+
+The rate limit applies independently at each Cloudflare data center. Exceeding the limit at one location does not affect query forwarding at other locations.

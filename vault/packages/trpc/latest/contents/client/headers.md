@@ -3,6 +3,9 @@ id: headers
 title: Headers
 sidebar_label: Headers
 slug: /client/headers
+section: "Client Usage"
+parent: "client/links"
+order: 40
 ---
 
 The headers option may be used with any of our HTTP links: [`httpBatchLink`](./links/httpBatchLink.md), [`httpBatchStreamLink`](./links/httpBatchStreamLink.md), [`httpLink`](./links/httpLink.md), or [`httpSubscriptionLink`](./links/httpSubscriptionLink.md).
@@ -48,7 +51,7 @@ export const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-### Example with auth login
+## Example with auth login
 
 ```ts twoslash title='auth.ts'
 // @target: esnext

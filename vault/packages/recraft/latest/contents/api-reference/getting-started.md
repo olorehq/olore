@@ -1,58 +1,151 @@
-\> ## Documentation Index
-\> Fetch the complete documentation index at: https://www.recraft.ai/docs/llms.txt
-\> Use this file to discover all available pages before exploring further.
+> ## Documentation Index
+> Fetch the complete documentation index at: https://www.recraft.ai/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
 
-\# Getting started
+# Quickstart
 
-Welcome to Recraft image generation and editing API.
+> Get a Recraft API token and generate your first image with one request, in cURL, Python, or JavaScript.
 
-Learn the basics of the Recraft API, including raster and vector image generation, style creation, image generation in your brand style and colors, image vectorization, and background removal.
+Generate your first image with the Recraft API in about two minutes.
 
-\*\*Authenticate and interact with our API in a matter of minutes.\*\*
+**1. Get an API token**
 
-\### Models
+Open [API tokens](https://www.recraft.ai/app/api/api-keys) and select **Create token**. The selected account needs a positive API unit balance; [add units](https://www.recraft.ai/app/api/billing) if needed. All tokens for that account share its balance.
 
-Recraft has developed three generations of proprietary models:
+**2. Save it as an environment variable**
 
-\\* Recraft V4, Recraft V4 Vector, Recraft V4 Pro, Recraft V4 Pro Vector
-\\* Recraft V3 (aka Red Panda), Recraft V3 Vector
-\\* Recraft V2 (aka Recraft 20B), Recraft V2 Vector
+```bash theme={null}
+export RECRAFT_API_TOKEN=your_token
+```
 
-Recraft V4 models, released in February 2026, represent a ground-up rebuild and our most advanced generation to date. Focused on what matters for real work — design taste, prompt accuracy, and output quality at any size — V4 models deliver true design vision in composition, lighting, textures, and overall feel, along with the world's only production-grade vector generation. Available in two versions: V4 (1MP) for everyday work and fast iteration, and V4 Pro (4MP) for print-ready assets and large-scale use. Both share the same creative capabilities, design taste, and art-directed professional results.
+Every example in these docs reads the token from `RECRAFT_API_TOKEN`.
 
-Recraft V3 models, released in October 2024, were new state-of-the-art models trained from scratch that introduced major advances in photorealism and text rendering. V3 ranked first on the Hugging Face Text-to-Image leaderboard for five consecutive months.
+**3. Make a request**
 
-Recraft V2 models, released in February 2024, were the first AI models built specifically for designers. V2 enabled the creation of both raster and vector images with anatomical accuracy, consistent brand styling, and precise iteration control.
+```bash cURL theme={null}
+curl https://external.api.recraft.ai/v1/images/generations \
+  -H "Authorization: Bearer $RECRAFT_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "two race cars on a track"}'
+```
 
-All eight models from V2, V3, and V4 generations are available in the Recraft API and within the Recraft web and mobile applications.
+```python Python theme={null}
+# pip install requests
+import os
 
-\## Authentication
+import requests
 
-We use \[Bearer\](https://swagger.io/docs/specification/authentication/bearer-authentication/) API tokens for authentication. To access your API key, log in to Recraft, \[enter your profile\](https://app.recraft.ai/profile/api) and hit 'Generate' (available only if your API units balance is above zero). All requests should include your API key in an Authorization HTTP header as follows:\
-\
-\`Authorization: Bearer RECRAFT\_API\_TOKEN\`
+response = requests.post(
+    'https://external.api.recraft.ai/v1/images/generations',
+    headers={'Authorization': f"Bearer {os.environ['RECRAFT_API_TOKEN']}"},
+    json={'prompt': 'two race cars on a track'},
+)
+if not response.ok:
+    raise SystemExit(f'{response.status_code}: {response.text}')
+print(response.json()['data'][0]['url'])
+```
 
-A user may create multiple API tokens; however, all tokens share the same API units balance.
+```python Python (OpenAI SDK) theme={null}
+# pip install openai
+import os
 
-\## Swagger
-
-Interactive API documentation is available via \[Swagger\](https://external.api.recraft.ai/doc/#/). You can explore all available endpoints, test API calls, and view request/response schemas directly in your browser.
-
-\### REST / Python Library
-
-The Recraft API adheres to REST principles, allowing you to interact using any utilities (e.g., curl), programming languages, or libraries of your choice.
-
-One of the easiest of available alternatives is \[OpenAI Python library\](https://github.com/openai/openai-python) which is also compatible with Recraft API, but it’s important to remember that not all parameters/options are supported or implemented. Additionally, some parameters may have different meanings, or they may be quietly ignored if they are not applicable to the Recraft API.
-
-Future examples will be shown using that library, for example, once installed, you can use the following code to be authenticated:
-
-\`\`\`python theme={null}
 from openai import OpenAI
 
 client = OpenAI(
- base\_url='https://external.api.recraft.ai/v1',
- api\_key=,
+    base_url='https://external.api.recraft.ai/v1',
+    api_key=os.environ['RECRAFT_API_TOKEN'],
 )
-\`\`\`
 
-Built with \[Mintlify\](https://mintlify.com).
+response = client.images.generate(
+    prompt='two race cars on a track',
+)
+print(response.data[0].url)
+```
+
+```javascript JavaScript theme={null}
+// Node.js 18+, run as an ES module (file.mjs)
+const response = await fetch('https://external.api.recraft.ai/v1/images/generations', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${process.env.RECRAFT_API_TOKEN}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ prompt: 'two race cars on a track' }),
+});
+if (!response.ok) throw new Error(await response.text());
+const result = await response.json();
+console.log(result.data[0].url);
+```
+
+Without a `model`, the request uses [Recraft V4.1](https://www.recraft.ai/docs/api-reference/models/recraft-v4-1.md) at \$0.035 per image.
+
+**4. Get the image**
+
+The response lists the generated images:
+
+```json theme={null}
+{
+  "created": 1759140000,
+  "credits": 35,
+  "data": [
+    {
+      "image_id": "0e6a1b8c-5b1f-4a8e-9f3a-2c7d4e8b9a10",
+      "url": "https://..."
+    }
+  ]
+}
+```
+
+Download the file from `data[0].url`: image URLs are temporary and files are kept for about 24 hours. `credits` is the number of API units the request cost.
+
+## Authentication
+
+All requests authenticate with a [Bearer token](https://swagger.io/docs/specification/authentication/bearer-authentication/) in the `Authorization` header:
+
+```text theme={null}
+Authorization: Bearer RECRAFT_API_TOKEN
+```
+
+The base URL is `https://external.api.recraft.ai/v1`. The API follows REST principles, so any HTTP client works. To use the OpenAI Python library instead, see [Clients and SDKs](https://www.recraft.ai/docs/api-reference/clients.md).
+
+## Next steps
+
+> [card] [Choose a model](https://www.recraft.ai/docs/api-reference/models/overview.md)
+>
+> Compare every model by price, output, and best use case.
+
+> [card] [Fast generation](https://www.recraft.ai/docs/api-reference/models/recraft-v4-1-flash.md)
+>
+> About 1.3 seconds and \$0.007 per image with V4.1 Flash.
+
+> [card] [Vector output](https://www.recraft.ai/docs/api-reference/models/recraft-v4-1.md#examples)
+>
+> Get editable SVG with a `_vector` model.
+
+> [card] [Generate in a style](https://www.recraft.ai/docs/api-reference/models/recraft-v4-styles.md)
+>
+> Match a style from your own reference images.
+
+> [card] [Edit images](https://www.recraft.ai/docs/api-reference/endpoints.md)
+>
+> Image to image, inpainting, vectorizing, upscaling, and more.
+
+> [card] [Use with AI tools](https://www.recraft.ai/docs/api-reference/ai-tools.md)
+>
+> Give Claude, ChatGPT, or Cursor the docs to write your integration.
+
+## All operations
+
+The API also covers:
+
+* [Create style](https://www.recraft.ai/docs/api-reference/endpoints.md#create-style), reusable custom styles from reference images.
+* [Image to image](https://www.recraft.ai/docs/api-reference/tools/image-to-image.md), [inpainting](https://www.recraft.ai/docs/api-reference/tools/inpainting.md), and [outpainting](https://www.recraft.ai/docs/api-reference/tools/outpainting.md).
+* [Replace background](https://www.recraft.ai/docs/api-reference/tools/background.md), [generate background](https://www.recraft.ai/docs/api-reference/tools/background.md#generate-background), and [remove background](https://www.recraft.ai/docs/api-reference/tools/remove-background.md).
+* [Vectorize image](https://www.recraft.ai/docs/api-reference/tools/vectorize.md), [crisp upscale](https://www.recraft.ai/docs/api-reference/tools/upscale.md), and [creative upscale](https://www.recraft.ai/docs/api-reference/tools/upscale.md#creative-upscale).
+* [Enhance details](https://www.recraft.ai/docs/api-reference/tools/enhance-details.md), [erase region](https://www.recraft.ai/docs/api-reference/tools/erase-region.md), and [remix image](https://www.recraft.ai/docs/api-reference/tools/remix.md).
+* [Enhance prompt](https://www.recraft.ai/docs/api-reference/tools/enhance-prompt.md) and [get user information](https://www.recraft.ai/docs/api-reference/endpoints.md#get-user-information).
+
+An interactive [Swagger reference](https://external.api.recraft.ai/doc/#/) is also available.
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

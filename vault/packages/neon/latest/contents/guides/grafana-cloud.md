@@ -1,14 +1,14 @@
 ---
 title: Grafana Cloud integration
-subtitle: Send metrics and logs from Neon Postgres to Grafana Cloud
+subtitle: Send metrics and logs from Lakebase Postgres on Neon to Grafana Cloud
 summary: >-
-  Grafana Cloud integration for Neon Postgres sends metrics and logs via the
+  Grafana Cloud integration for Lakebase Postgres on Neon sends metrics and logs via the
   OTLP endpoint, routing metrics to Mimir and Postgres logs to Loki. Use this
   page to connect Neon to Grafana Cloud for dashboards, alerts, and LogQL
   queries covering connection counts, CPU, memory, cache hit rate, replication
   delay, and PgBouncer pooling metrics. Requires the Neon Scale plan.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-08-07T16:05:20.768Z'
 ---
 
 <InfoBlock>
@@ -24,7 +24,7 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 </DocsList>
 </InfoBlock>
 
-The Grafana Cloud integration lets you monitor Neon database performance, resource utilization, and system health directly from Grafana Cloud. The integration requires [OTEL support](https://neon.com/docs/guides/opentelemetry), which is available with Neon's Scale plan.
+The Grafana Cloud integration lets you monitor Neon database performance, resource utilization, and system health directly from Grafana Cloud. The integration requires [OTEL support](/docs/guides/opentelemetry), which is available with Neon's Scale plan.
 
 ## How it works
 
@@ -693,14 +693,14 @@ Neon exports a comprehensive set of metrics including connection counts, databas
 
 ## Export Postgres logs
 
-You can export your Postgres logs from your Neon compute to your Grafana Cloud stack. These logs provide visibility into database activity, errors, and performance. The logs are automatically sent to Grafana Cloud Loki and can be queried using LogQL.
+You can export your Postgres logs from your Neon compute to your Grafana Cloud stack. These logs provide visibility into database activity, errors, and performance. The logs are automatically sent to Grafana Cloud Loki and can be queried using LogQL. By default, logs include warnings and errors, connections and disconnections, checkpoints, and slow autovacuum runs. Query text isn't logged, and slow-query logging is off unless you turn it on. For the full list of logging settings and log fields, see [Postgres logs](/docs/reference/metrics-logs#postgres-logs) in the Metrics and logs reference.
 
 ### Performance impact
 
 Enabling this feature may result in:
 
 - An increase in compute resource usage for log processing
-- Additional network egress for log transmission, which is billed after 500 GB on paid plans
+- Additional public network transfer for log transmission, which counts toward your plan's [network transfer allowance](/docs/introduction/network-transfer)
 - Associated costs based on log volume in Grafana Cloud
 
 ### Querying logs in Grafana Cloud

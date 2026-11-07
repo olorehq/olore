@@ -1,13 +1,16 @@
 ---
 title: Client certificates
+description: "Authenticate API checks against APIs that require mutual TLS (mTLS) by adding client certificates, private keys, and a CA per domain on the Enterprise plan."
 sidebarTitle: Client Certificates
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/api-checks/client-certificates/'
 ---
 
 Use client certificates to authenticate your API checks to APIs that require mutual TLS (mTLS) authentication, or
 any other authentication scheme where the requester needs to provide a certificate.
 
-Each client certificate is specific to a domain name, e.g. `acme.com` and will be used automatically by any API checks 
-targeting that domain.
+Each client certificate is specific to a domain name, e.g. `acme.com` and will be used automatically by any API checks
+targeting that domain. You can optionally restrict a certificate to a URL path, so that different routes on the same host
+use different certificates.
 
 <Note>Client certificates are available on the [**Enterprise** plan](https://www.checklyhq.com/pricing/) only.</Note>
 
@@ -19,9 +22,10 @@ Go to the **[Client Certificates](https://app.checklyhq.com/settings/account/cli
 
 1. Click "Add client certificate".
 2. Provide the **host name** for the certificate. You can use wildcard like `*.acme.com`. Under the hood we use [minimatch](https://www.npmjs.com/package/minimatch)
-3. Select the **certificate file** and **private key** file. Both need to be in `PEM` format.
-4. If your client certificate requires a custom **Certificate Authority**, you can add another `PEM` file that contains one or more concatenated CA certificates.
-5. If you provided a **passphrase** when generating your certificate and private key files, provide it in the passphrase input. You can leave it empty if no passphrase is needed.
+3. Optionally provide a **path** to restrict the certificate to one route of that host, e.g. `/partner/api`. See [Restricting a certificate to a path](#restricting-a-certificate-to-a-path).
+4. Select the **certificate file** and **private key** file. Both need to be in `PEM` format.
+5. If your client certificate requires a custom **Certificate Authority**, you can add another `PEM` file that contains one or more concatenated CA certificates.
+6. If you provided a **passphrase** when generating your certificate and private key files, provide it in the passphrase input. You can leave it empty if no passphrase is needed.
 
 <Note>
 Note that your passphrase will be encrypted at rest, in transit and only used at very end when executing your API check. 
@@ -29,13 +33,29 @@ Note that your passphrase will be encrypted at rest, in transit and only used at
 
 ## Using a certificate
 
-Client certificates are automatically used by API checks that match the host name of the certificate. Client certificates 
+Client certificates are automatically used by API checks and Multistep checks whose request matches the host name of the certificate. Client certificates 
 are active account wide and cannot be limited to a specific group.
 
-You can add multiple certificate for the same host. In this case we match the certificate by the following rules:
+You can add multiple certificates for the same host. In this case we match the certificate by the following rules, in order:
 
-1. The most recently added certificate that matches the host name wins. This goes for both full hostname and ones with wildcards.
-2. A certificate with a full hostname wins over one that matches on a wildcard, e.g. `www.acme.com` wins from `*.acme.com` for the host `www.acme.com`
+1. A certificate whose **path** matches the request URL wins over one without a path. If several path-scoped certificates match, the longest path wins.
+2. A certificate with a full hostname wins over one that matches on a wildcard, e.g. `www.acme.com` wins from `*.acme.com` for the host `www.acme.com`.
+3. The most recently added certificate wins.
+
+## Restricting a certificate to a path
+
+A certificate with a **path** is only used for requests whose URL path is that path or lies under it, on whole path
+segments: a certificate for `/partner` applies to `/partner` and `/partner/orders`, but not to `/partnership`.
+
+- The path must start with `/`, must not be just `/`, and may not contain a query string, a fragment, whitespace,
+  empty segments (`//`) or `.`/`..` segments. A trailing `/` is dropped when the certificate is saved.
+- The path is compared against the check's request URL after environment variables have been rendered. A URL rewritten
+  in a setup script is not re-matched (see [Known limitations](#known-limitations)).
+- Only API checks and Multistep checks match on path. gRPC, SSL and TCP monitors have no request path and never use a
+  path-scoped certificate; give those hosts a certificate without a path.
+- Multistep checks running on a [private location](/platform/private-locations/overview) need a Checkly Agent version
+  with path support (see the [agent change log](/platform/private-locations/change-log)). Older agents ignore the path
+  and select the certificate by the host-only rules above: exact host over wildcard, then the most recently added.
 
 ## Editing a certificate
 

@@ -1,0 +1,110 @@
+---
+title: ipv4_is_private
+description: 'This page explains how to use the ipv4_is_private function in APL.'
+---
+
+The `ipv4_is_private` function determines if an IPv4 address belongs to a private range, as defined by [RFC 1918](https://www.rfc-editor.org/rfc/rfc1918). You can use this function to filter private addresses in datasets such as server logs, network traffic, and other IP-based data.
+
+This function is especially useful in scenarios where you want to:
+- Exclude private IPs from logs to focus on public traffic.
+- Identify traffic originating from within an internal network.
+- Simplify security analysis by categorizing IP addresses.
+
+The private IPv4 addresses reserved for private networks by the Internet Assigned Numbers Authority (IANA) are the following:
+
+| IP address range           | Number of addresses	               |  Largest CIDR block (subnet mask) |
+| ------------------------------- | ------------------------------------------------- | ----------------------------------------- |
+|  10.0.0.0 – 10.255.255.255       |  16777216                 |      10.0.0.0/8 (255.0.0.0)                   |
+| 172.16.0.0 – 172.31.255.255      | 1048576                   |  172.16.0.0/12 (255.240.0.0)                  |
+|  192.168.0.0 – 192.168.255.255   |  65536	                   | 192.168.0.0/16 (255.255.0.0)                  |
+
+## Usage
+
+### Syntax
+
+```kusto
+ipv4_is_private(ip: string)
+```
+
+### Parameters
+
+| Parameter | Type   | Description                                           |
+|-----------|--------|-------------------------------------------------------|
+| `ip`      | string | The IPv4 address to evaluate for private range status. |
+
+### Returns
+
+- `true`: The input IP address is private.
+- `false`: The input IP address isn’t private.
+
+## Use case example
+
+You can use `ipv4_is_private` to filter logs and focus on public traffic for external analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend is_private = ipv4_is_private('192.168.0.1')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20is_private%20%3D%20ipv4_is_private('192.168.0.1')%22%7D)
+
+**Output**
+
+| geo.country | is_private |
+|-------------|-------|
+| USA         | true  |
+| UK          | true   |
+
+## List of related functions
+
+- [ipv4_compare](/apl/scalar-functions/ip-functions/ipv4-compare): Compares two IPv4 addresses lexicographically. Use for sorting or range evaluations.
+- [ipv4_is_in_range](/apl/scalar-functions/ip-functions/ipv4-is-in-range): Checks if an IP address is within a specified range.
+- [parse_ipv4](/apl/scalar-functions/ip-functions/parse-ipv4): Converts a dotted-decimal IP address into a numeric representation.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you might use a combination of CIDR matching functions or regex to check for private IPs. In APL, the `ipv4_is_private` function offers a built-in and concise way to achieve the same result.
+
+<CodeGroup>
+
+```sql Splunk example
+eval is_private=if(cidrmatch("10.0.0.0/8", ip) OR cidrmatch("172.16.0.0/12", ip) OR cidrmatch("192.168.0.0/16", ip), 1, 0)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_private=ipv4_is_private(client_ip)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you might use `CASE` statements with CIDR-based checks or regex patterns to detect private IPs. In APL, the `ipv4_is_private` function simplifies this with a single call.
+
+<CodeGroup>
+
+```sql SQL example
+SELECT ip,
+       CASE
+         WHEN ip LIKE '10.%' OR ip LIKE '172.16.%' OR ip LIKE '192.168.%' THEN 'true'
+         ELSE 'false'
+       END AS is_private
+FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_private=ipv4_is_private(client_ip)
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

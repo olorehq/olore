@@ -1,6 +1,6 @@
 ---
 title: Neon data migration guides
-subtitle: Learn how to migrate data to Neon Postgres from different database providers
+subtitle: Learn how to migrate data to Lakebase Postgres from different database providers
   and sources
 summary: >-
   Neon migration guide selection page compares transfer methods (Import Data
@@ -15,7 +15,7 @@ summary: >-
 redirectFrom:
   - /docs/import/import-intro
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-21T11:04:20.383Z'
 ---
 
 This guide helps you choose the best migration method based on your database size, downtime tolerance, source database type, and technical requirements.
@@ -45,7 +45,7 @@ For step-by-step instructions tailored to specific databases or providers, see [
 
 ## Logical replication guides
 
-For near-zero downtime Postgres database migrations using logical replication, see guides for [AWS RDS](/docs/guides/logical-replication-rds-to-neon), [Google Cloud SQL](/docs/guides/logical-replication-cloud-sql), [AlloyDB](/docs/guides/logical-replication-alloydb), [Azure](/docs/import/migrate-from-azure-postgres), [Supabase](/docs/guides/logical-replication-supabase-to-neon), [PostgreSQL](/docs/guides/logical-replication-postgres-to-neon), or [Neon to Neon](/docs/guides/logical-replication-neon-to-neon).
+For near-zero downtime Postgres database migrations using logical replication, see guides for [AWS RDS](/docs/guides/logical-replication-rds-to-neon), [Google Cloud SQL](/docs/guides/logical-replication-cloud-sql), [AlloyDB](/docs/guides/logical-replication-alloydb), [Azure](/docs/import/migrate-from-azure-postgres), [Supabase](/docs/guides/logical-replication-supabase-to-neon), [PostgreSQL](/docs/guides/logical-replication-postgres-to-neon), [Lakebase Postgres on Databricks](/docs/guides/logical-replication-lakebase-to-neon), or [Neon to Neon](/docs/guides/logical-replication-neon-to-neon).
 
 ## Other imports
 

@@ -1,0 +1,205 @@
+---
+title: 'States and transitions in Stately’s editor'
+description: 'Learn how to use states and transitions, including parent states, parallel states, guards, delayed transitions and eventless transitions in Stately’s editor.'
+---
+
+import { MoreHorizontal, Plus, Info, AlertTriangle, Star, Code, PlayCircle } from 'lucide-react';
+
+# States and transitions
+
+State machines help us model how a process goes from state to state when an event occurs. At their most basic, state machines are made up of these states, events, and the transitions between them.
+
+<Callout>
+
+Want to learn more about the concepts of state machines? [Check out our introduction to state machines and statecharts](state-machines-and-statecharts).
+
+</Callout>
+
+## States
+
+In Stately’s editor, the rounded rectangle boxes are states. There are a few different types of states:
+
+- **Normal** states don’t have any special properties.
+- [**Initial states**](#initial-states) are the first states the machine enters when it starts.
+- [**Final states**](#final-states) are the last states the machine enters before it stops.
+- [**Parent states**](#parent-and-child-states) can contain more states, known as child states.
+- [**Parallel states**](#parallel-states) are parent states that have multiple child states that are all active at the same time.
+- [**History states**](#history-states) are parent states that remember which child state was active when the parent state was exited and re-enter that child state when the parent state is re-entered.
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?machineId=61fa1504-a92c-4730-a87d-3ee9dd5d6e33&mode=design"
+  title="Demoing states"
+/>
+
+You can invoke other state machines or actors on a state, or trigger an action when a state is entered or exited. [Read more about actions and actors in Stately’s editor](editor-actions-and-actors).
+
+In Stately’s editor, you can also add [descriptions](descriptions), [colors](colors), and [tags](tags) to states.
+
+### Create a state
+
+- Double-click anywhere on the canvas to create a new state there.
+- Select an existing state and use <Plus size={18} /> **child state** to add a new state inside.
+
+#### Delete a state
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ on a selected state, and choose **Delete** to delete the selected state.
+- Use the <kbd>Backspace</kbd> key to delete the selected state.
+
+### Parent and child states
+
+States can contain more states, also known as child states. These child states are only active when the parent state is active. [Read more about parent and child states](parent-states).
+
+To add a child state:
+
+- Select an existing state and use <Plus size={18} /> **child state** to add a new state inside.
+- If a state already contains child states, you can double-click inside the parent state to create another child state.
+- Copy a state or group of states and transitions, and paste them onto their new parent state.
+- Reparent a child state by selecting the child and choosing a new parent state from inside the state <Info size={18} /> **Details** panel.
+
+### Initial states
+
+When a state machine starts, it enters the **initial state** first. In Stately’s editor, the filled circle with an arrow icon represents the initial state.
+
+Machines can only have one top-level initial state. Each parent state has its own initial state. If you have unreachable states, it might be because there is no initial state. [Read more about initial states](initial-states).
+
+To set a state as the initial state:
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a state and choose Mark as initial state.
+- Select the parent state, open the state <Info size={18} /> **Details** panel, and choose the desired initial state from the **Initial state** menu.
+
+### Final states
+
+When a machine reaches the final state, it can no longer receive any events, and anything running inside it is canceled and cleaned up.
+
+To turn a state into a final state:
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a state, and from **State type**, choose **Final state**.
+- Select the state, open the state <Info size={18} /> **Details** panel, and choose the **Final** state option.
+
+If you want your machine to transition from a parent state when its final child state is reached, use a [state done event](#state-done-event).
+
+### Parallel states
+
+In statecharts, a parallel state is a state that has multiple child states (also known as **regions**) that are all active at the same time. [Read more about parallel states](parallel-states). A dashed line borders each region.
+
+To turn a parent state into a parallel state:
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a parent state, and from **State type**, choose **Parallel state**.
+- Select the parent state, open the state <Info size={18} /> **Details** panel, and choose the **Parallel** state option.
+
+### History states
+
+A history state remembers the last child state that was active before its parent state was exited. When a transition from outside the parent state targets a history state, the remembered child state is entered. [Read more about history states](history-states).
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a state, and from **State type**, choose **History state**.
+- Select the parent state, open the state <Info size={18} /> **Details** panel, and choose the **History** state option.
+
+### Unreachable states
+
+A <AlertTriangle size={18}/> warning icon indicates an unreachable state. The state is unreachable because it isn’t connected to the [initial state](#initial-states) by a [transition](#transitions-and-events).
+
+## Transitions and events
+
+A machine moves from state to state through transitions. Transitions are caused by events; when an event happens, the machine transitions to the next state.
+
+In Stately’s editor, the arrows are transitions, and the rounded rectangles on the arrow’s lines are events. Each transition has a _source_ state, which comes before the transition, and a _target_ state, which comes after the transition. The transition’s arrow starts from the source state and points to the target state.
+
+There are a few different types of transitions:
+
+- **Normal** transitions are triggered by an event.
+- [**Guarded transitions**](#add-guards) are triggered by an event, but only if a specified condition is met.
+- [**Delayed transitions**](#delayed-after-transitions) (also known as _after_ transitions) are triggered by an internal XState event, but only after a specified time interval.
+- [**Eventless transitions**](#eventless-always-transitions) (also known as _always_ transitions) are triggered by a timer or other condition, and don’t have an event.
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?code=834448b4-3b8b-4de9-8b2e-353fd2b342de&mode=design&machineId=50c0ee06-8297-4b79-95d1-b1abf779d757"
+  title="Demoing transitions"
+/>
+
+### Create a transition and event
+
+- Click a handle on any state to create a transition, event, and target state.
+- Drag from a source state’s handle to the target state’s handle to connect them with a transition and event.
+
+#### Delete a transition
+
+Deleting a state will also delete any transitions with that state as a source.
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ on a selected transition, and choose **Delete** to delete the selected transition.
+- Use the <kbd>Backspace</kbd> key to delete the selected transition.
+
+### Changing transition source and target
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ the transition and choose **Switch source and target**.
+- Drag the transition handle from one state to a different state.
+- Select a transition, open the transition <Info size={18} /> **Details** panel from the right tool menu, and choose a new source or target state from the dropdown menus.
+
+### Delayed (after) transitions
+
+**Delayed transitions** are transitions that only happen after a set amount of time. If another event occurs before the end of the timer, the transition doesn’t complete. [Read more about delayed transitions](delayed-transitions).
+
+In Stately’s editor, delayed transitions are labeled “after.” Delayed transitions have a default time interval of 500ms (0.5 seconds).
+
+To make a transition into a delayed transition:
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a transition, and from **Event type**, choose **After**.
+- Select an event, open the transition <Info size={18} /> **Details** panel from the right tool menu, and choose **After** from the **Trigger** dropdown menus.
+
+Your delay time interval will be displayed in a human-readable format on hover. For example, 15000ms will be displayed as 15 seconds.
+
+To set the delay interval:
+
+- Use the text input on the delayed transition to specify the interval in milliseconds (ms).
+- Select the transition delayed transition, open the transition <Info size={18} /> **Details** panel from the right tool menu, and specify the interval in milliseconds (ms) in the **Delay** text input.
+
+To make a delayed transition into a regular transition, use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a transition, and from **Event type**, choose **Event**.
+
+### Eventless (always) transitions
+
+**Eventless transitions** are transitions that are *always* taken when the transition is enabled. In Stately’s editor, eventless transitions are labeled “always.” [Read more about eventless transitions](eventless-transitions).
+
+To make a transition into an eventless transition:
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a transition, and from **Event type**, choose **Always**.
+- Select an event, open the transition <Info size={18} /> **Details** panel from the right tool menu, and choose **Always** from the **Trigger** dropdown menus.
+
+To make an eventless transition into a regular transition, use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a transition, and from **Event type**, choose **Event**.
+
+### State done event
+
+Use a state done event to transition from a parent state when its final child state is reached. [Read more about state done events](state-done-events).
+
+To turn an event into a state done event:
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ an event, and from **Event type**, choose **State Done event**.
+
+To make a state done event into a regular transition, use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a transition, and from **Event type**, choose **Event**.
+
+### Self-transitions
+
+A **self-transition** is when a state transitions back to itself, and is useful for changing context and/or executing actions without changing the finite state. You can also use self-transitions to restart a state. [Read more about self-transitions](/docs/transitions/#self-transitions).
+
+To create a self-transition:
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ an existing event, and choose **Make self transition**. The transition will be connected back to the source state.
+- Select an existing event, open the transition <Info size={18} /> **Details** panel from the right tool menu, and choose the same state from the source and target dropdown menus.
+
+## Add guards
+
+A **guarded transition** is a transition that is only enabled if its condition is evaluated to be `true`. [Read more about guarded transitions](guards).
+
+In Stately’s editor, guards are numbered in the order they are checked and labeled with “if” or “else if” along with their condition. Multiple guards on the same events are connected with a dotted line.
+
+To add a guard:
+
+- Select a transition and use the <Plus size={18} /> **Add guard** to add a new guard to the transition. Use the text input to add the guard’s condition.
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ a transition and use **Add guard** to add a guard to the transition. Use the text input to add the guard’s condition.
+- Select an existing transition, open the transition <Info size={18} /> **Details** panel from the right tool menu, and enter the guard’s condition into the **Guard** text input.
+
+To reorder guards:
+
+- Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ the guarded transition, and from the **Reorder guards** menu, choose **Move up** or **Move down**.
+
+To delete a guard, remove its condition from the text input.
+
+You can add implementation code to your guards from the <Code size={18}/> **[Sources](sources)** panel.

@@ -11,7 +11,8 @@ The Agent2Agent (A2A) Protocol is an open standard for seamless communication an
 
 ```
 contents/
-├── (root)/         # Protocol overview, full spec, definitions, changelog (9 files)
+├── (root)/         # Protocol overview, full spec, definitions, changelog (8 files)
+├── blog/           # Blog index and announcement posts (4 files)
 ├── topics/         # Concept deep-dives and architectural guides (11 files)
 ├── tutorials/      # Tutorial index (1 file)
 ├── tutorials/python/  # Step-by-step Python quickstart, 8 parts (8 files)
@@ -34,7 +35,7 @@ contents/
 | Extensions and custom bindings | `contents/topics/extensions.md`, `contents/topics/custom-protocol-bindings.md`, `contents/topics/extension-and-binding-governance.md` |
 | Python quickstart tutorial | `contents/tutorials/python/1-introduction.md` through `8-next-steps.md` |
 | SDK reference | `contents/sdk/index.md`, `contents/sdk/python.md` |
-| What's new in v1.0 | `contents/whats-new-v1.md` |
+| What's new in v1.0 | `contents/whats-new-v1.md`, `contents/blog/posts/announcing-1.0.md` |
 
 ## When to use
 

@@ -1,0 +1,87 @@
+---
+title: 'Set up the Axiom Portal for Splunk in standard mode'
+description: 'Learn how to register the Axiom Portal for Splunk as a federated provider in standard mode and map Axiom datasets as federated indexes.'
+sidebarTitle: Set up standard mode
+keywords: ['splunk', 'splunk portal', 'axiom portal for splunk', 'federated search', 'federated provider', 'federated index', 'standard mode', 'setup']
+---
+
+In standard mode, each Axiom dataset you expose is mapped to a Splunk federated index, and users search it as `index=federated:<name>`. Standard mode is explicit, simple to reason about, and the recommended starting point. For how the modes differ, see [How the Portal works](/splunk/portal/overview).
+
+<Note>
+If you use Splunk Enterprise Security, [set up transparent mode](/splunk/portal/set-up-transparent) instead. Splunk doesn’t support federated search in standard mode with Enterprise Security.
+</Note>
+
+## Prerequisites
+
+- [Create an advanced API token in Axiom](/reference/tokens#create-advanced-api-token) with query permissions on the datasets you want to expose. The token needs no other permissions.
+- [Determine your Axiom organization ID](/reference/tokens#determine-organization-id).
+- A Splunk Enterprise 9.0 or later search head, or Splunk Cloud Platform on the Victoria Experience, and a Splunk role with permissions to manage federated search. The search head must be able to reach `splunk.portal.axiom.co` on port 443 over HTTPS. If your Splunk Cloud environment restricts outbound traffic, allow egress to this host and port first.
+
+<Note>
+The dataset scope of the token defines what Splunk can see. Splunk users can only search datasets the token can query, and revoking the token removes access immediately.
+</Note>
+
+## Register the Portal as a federated provider
+
+<Steps>
+<Step title="Open federated search settings">
+In Splunk Web, go to **Settings**, and then select **Federated search**.
+</Step>
+<Step title="Add a federated provider">
+Click **Add federated provider** and fill in the fields:
+
+- For the provider mode, select **Standard**.
+- Enter a provider name, for example `axiom`.
+- For the remote host, enter `splunk.portal.axiom.co:443`.
+- For the service account username, enter your Axiom organization ID.
+- For the service account password, enter your Axiom API token.
+</Step>
+<Step title="Test and save">
+Click **Test connection**, and then save the provider.
+</Step>
+</Steps>
+
+<Warning>
+The service account password is the token value itself, the string starting with `xaat-`, not the token’s name in the Axiom UI. A mistyped or expired token can still pass **Test connection**, because the connection test verifies the protocol handshake without running a query. The verification search below is the real credential check.
+</Warning>
+
+## Map datasets as federated indexes
+
+Create one federated index for each Axiom dataset you want to expose:
+
+<Steps>
+<Step title="Add a federated index">
+In Splunk Web, go to **Settings**, select **Federated search**, and then click **Add federated index**.
+</Step>
+<Step title="Map the dataset">
+Fill in the fields:
+
+- Enter a federated index name, for example `http-logs`. This becomes the name users search: `index=federated:http-logs`.
+- Select the federated provider you created.
+- For the remote dataset, enter the Axiom dataset name. Datasets the token can query are listed for autocomplete.
+</Step>
+</Steps>
+
+Repeat for each dataset. When you add datasets in Axiom later, map them the same way.
+
+## Verify the setup
+
+Run a search that queries Axiom:
+
+```spl
+index=federated:http-logs | stats count
+```
+
+An exact event count confirms that authentication, dataset mapping, and query pushdown all work. Then try a raw event search:
+
+```spl
+index=federated:http-logs | head 20
+```
+
+If either search shows an error banner, see [Monitor and troubleshoot](/splunk/portal/troubleshoot).
+
+## What’s next
+
+- [SPL command support](/splunk/portal/spl-support)
+- [Examples](/splunk/portal/examples)
+- Want your Splunk lookups and data models to work against Axiom data? [Set up transparent mode](/splunk/portal/set-up-transparent).

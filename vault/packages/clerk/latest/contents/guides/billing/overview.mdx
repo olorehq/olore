@@ -1,6 +1,8 @@
 ---
 title: Clerk Billing
 description: Clerk Billing is a feature that allows you to create and manage Plans and Features for your application.
+search:
+  rank: 1
 ---
 
 <Include src="_partials/billing/billing-experimental" />
@@ -51,6 +53,12 @@ No. Clerk Billing is a separate product from Stripe Billing; Plans and Subscript
 
 No. Stripe accounts created for development instances are sandbox/test accounts and cannot be used for production. For a production environment, you must create a separate Stripe account.
 
+### Does Clerk Billing work in native mobile apps?
+
+Native iOS and Android apps can use the [Billing object's data APIs](/docs/reference/native-mobile/billing) to access Plans, Subscriptions, statements, and payment attempts, and use [`has()`](/docs/guides/secure/authorization-checks) to check Plan or Feature access. Clerk Billing checkout is only available in web applications, including Expo web. Clerk doesn't provide a native checkout surface or integrate with Apple In-App Purchase or Google Play Billing.
+
+Apple and Google generally require apps to use their billing systems when selling digital goods, features, or subscriptions, though exceptions vary by storefront and program. Review [Apple's App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/#in-app-purchase) and [Google Play's Payments policy](https://support.google.com/googleplay/android-developer/answer/9858738) before choosing a payment flow.
+
 ### How can I test Clerk Billing flows?
 
 You can use test cards to test Clerk Billing flows like creating new Subscriptions, updating Subscriptions, or handling failure scenarios like expired cards or canceled Subscriptions. See [Stripe Testing](https://docs.stripe.com/testing){{ rel: 'noopener noreferrer' }} for a list of test cards and behaviors.
@@ -91,6 +99,12 @@ Clerk Billing does not currently support tax or VAT, but these are planned for f
 
 Clerk Billing is not supported in Brazil, India, Malaysia, Mexico, Singapore, and Thailand due to [payment processing restrictions](https://stripe.com/legal/restricted-businesses). Support may be added in the future. For all other regions, availability depends on Stripe - see [Stripe Global](https://stripe.com/global){{ rel: 'noopener noreferrer' }} for the full list.
 
+### Can a user get another free trial by deleting their account and signing up again?
+
+No. Free trial eligibility is tied to the user's verified primary email address and survives account deletion. A user who signs up again with the same email address goes through the regular paid checkout instead. See [Free trials](/docs/guides/billing/free-trials#starting-a-trial) for the full eligibility rules.
+
 ### Does Clerk Billing support additional factor authentication like 3D Secure?
 
-Clerk Billing does not currently support additional factor authentication. Users will receive an error indicating that the provided payment method requires additional confirmation, which Clerk Billing does not support, and will be asked to use a different payment method.
+Clerk Billing does not currently support payment methods that require additional authentication, such as 3D Secure (3DS). Payments that require a 3DS challenge will fail because Clerk Billing cannot prompt users to complete the authentication step.
+
+This limitation is particularly relevant in the UK and EU and may affect [free trials](/docs/guides/billing/free-trials), since renewal charges are processed in the background without the user present to complete authentication.

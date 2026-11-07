@@ -2,6 +2,7 @@
 title: 'Allowlisting Traffic'
 description: 'Allowlisting traffic to Checkly'
 sidebarTitle: 'Allowlisting Traffic'
+canonical: 'https://www.checklyhq.com/docs/platform/allowlisting-traffic/'
 ---
 
 
@@ -65,16 +66,16 @@ To allowlist API checks, allow traffic that contains a cookie in the shape of `C
 
 You can then [set the Cookie header](/detect/synthetic-monitoring/api-checks/configuration#headers) while editing your check.
 
-> You can set the header at group-level using [API check defaults](/platform/groups#headers--query-parameters) to have it applied to every API check in the group.
+> You can set the header at group-level using [API check defaults](/platform/groups#headers-&-query-parameters) to have it applied to every API check in the group.
 
-### Allowlisting browser checks with user agents
+### Allowlisting Browser checks with user agents
 
-To allowlist browser checks, allow traffic with user agent containing `Checkly/<UUID>`, with `<UUID>` being your shortened Checkly ID or another chosen value.
+To allowlist Browser checks, allow traffic with user agent containing `Checkly/<UUID>`, with `<UUID>` being your shortened Checkly ID or another chosen value.
 
-You will then be able to set up the matching user agent in your browser checks using Playwright's [`userAgent`](https://playwright.dev/docs/emulation#user-agent) property.
+You will then be able to set up the matching user agent in your Browser checks using Playwright's [`userAgent`](https://playwright.dev/docs/emulation#user-agent) property.
 
 <Tabs>
-<Tab title="Typescript">
+<Tab title="TypeScript">
 ```ts user-agent.spec.ts
 import { test } from '@playwright/test'
 
@@ -102,7 +103,7 @@ test('my user agent test', async ({ page }) => {
 </Tab>
 </Tabs>
 
-### Allowlisting Playwright check suites with user agents
+### Allowlisting Playwright Check Suites with user agents
 
 You can configure the user agent globally in your `playwright.config.ts` file to ensure all your Playwright tests use the Checkly user agent.
 
@@ -166,7 +167,7 @@ export default defineConfig({
 
 ## Filtering Google Analytics
 
-You might want to filter Checkly traffic in Google Analytics to prevent Checkly browser checks from skewing your results.
+You might want to filter Checkly traffic in Google Analytics to prevent Checkly Browser checks from skewing your results.
 
 If you are using Google Analytics 4 or newer, Checkly traffic is [already being excluded](https://support.google.com/analytics/answer/9888366?hl=en) as it is recognized as coming from a known bot-traffic source.
 

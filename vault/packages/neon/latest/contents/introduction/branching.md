@@ -12,13 +12,16 @@ redirectFrom:
   - /docs/conceptual-guides/branches
   - /docs/conceptual-guides/branching
   - /docs/concepts/branching
+  - /docs/guides/branching
   - /docs/introduction/point-in-time-restore
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-01T21:19:48.000Z'
 ---
 
 With Neon, you can quickly branch your data for development, testing, and various other purposes, enabling you to improve developer productivity and optimize continuous integration and delivery (CI/CD) pipelines.
 
 You can also rewind your data or create branches from the past to recover from mistakes or analyze historical states.
+
+This page covers branching in Lakebase Postgres. For what one branch action does across the whole backend, see [Branch your backend](/docs/concepts/branch-your-backend).
 
 <YoutubeIframe embedId="UuHnFlg66Io" />
 
@@ -36,8 +39,12 @@ Creating a branch does not increase load on the parent branch or affect it in an
 
 Each Neon project is created with a [root branch](/docs/reference/glossary#root-branch) called `main`. The first branch that you create is branched from the project's root branch. Subsequent branches can be branched from the root branch or from a previously created branch.
 
-<Admonition type="tip" title="Using Neon Auth?">
-Users, sessions, and auth configuration in the `neon_auth` schema branch with your data, so preview and test environments get isolated authentication state. See [Neon Auth](/docs/auth/overview) and [Branching authentication](/docs/auth/branching-authentication).
+<Admonition type="tip" title="Using Managed Better Auth?">
+Users, sessions, and auth configuration in the `neon_auth` schema branch with your data, so preview and test environments get isolated authentication state. See [Managed Better Auth](/docs/auth/overview) and [Branching authentication](/docs/auth/branching-authentication).
+</Admonition>
+
+<Admonition type="tip" title="Using Neon backend services?">
+Object Storage, Functions, and AI Gateway all branch with your data too: each branch gets its own storage namespace, function deployment, and gateway endpoint, isolated from its parent. See [Neon Object Storage](/docs/storage/overview), [Neon Functions](/docs/compute/functions/overview), and [Neon AI Gateway](/docs/ai-gateway/overview).
 </Admonition>
 
 ## Branching workflows
@@ -99,13 +106,13 @@ Branches with expiration work well for:
 
 ## Restore and recover data
 
-If you lose data due to an unintended deletion or some other event, you can use **[instant restore](/docs/introduction/branch-restore)** to recover: roll the branch back to any point in time that still falls within your project's **history window** (the retention you configure under **Settings → Instant restore**). You can also create a new restore branch for historical analysis or any other reason.
+If you lose data due to an unintended deletion or some other event, you can use **[instant restore](/docs/introduction/branch-restore)** to recover: roll the branch back to any point in time that still falls within your project's **history window** (the retention you configure under **Settings → Postgres**). You can also create a new restore branch for historical analysis or any other reason.
 
 ![Recover from data loss using restore branching](/docs/introduction/branching_data_loss.png)
 
 ### History window
 
-**Instant restore** (and Time Travel, branching from the past, and snapshots) need Neon to keep a log of data changes. The **history window** is the project-wide setting—on **Settings → Instant restore** in the Console—that controls how long that change history is retained, which sets how far back **instant restore** and the other features can reach.
+**Instant restore** (and Time Travel, branching from the past, and snapshots) need Neon to keep a log of data changes. The **history window** is the project-wide setting—on **Settings → Postgres** in the Console—that controls how long that change history is retained, which sets how far back **instant restore** and the other features can reach.
 
 Neon retains a history of changes for your branches, with defaults of 6 hours on Free plan and 1 day on paid plans. Increasing the history window expands recovery options but also increases storage costs, as more history is kept. You can configure it up to 7 days on Launch or 30 days on Scale plans.
 

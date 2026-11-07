@@ -6,11 +6,16 @@ import {
   HttpClientInterface,
   HttpClientResponseInterface,
 } from './net/HttpClient.js';
-import {PlatformFunctions} from './platform/PlatformFunctions.js';
-import {HttpClientResponseError, RequestSender} from './RequestSender.js';
+import {HttpClientResponseError} from './RequestSender.js';
 import {StripeContext} from './StripeContext.js';
 import {Stripe} from './stripe.core.js';
 import {AppInfo} from './lib.js';
+// errorTypeImports: The beginning of the section generated from our OpenAPI spec
+import {PaymentIntent} from './resources/PaymentIntents.js';
+import {PaymentMethod} from './resources/PaymentMethods.js';
+import {SetupIntent} from './resources/SetupIntents.js';
+import {CustomerSource} from './resources/CustomerSources.js';
+// errorTypeImports: The end of the section generated from our OpenAPI spec
 
 export type ApiMode = 'v1' | 'v2';
 export type BaseAddress = 'api' | 'files' | 'connect' | 'meter_events';
@@ -30,7 +35,12 @@ export type V2RuntimeSchema =
   | {kind: 'decimal_string'}
   | {kind: 'object'; fields: Record<string, V2RuntimeSchema>}
   | {kind: 'array'; element: V2RuntimeSchema}
-  | {kind: 'nullable'; inner: V2RuntimeSchema};
+  | {kind: 'nullable'; inner: V2RuntimeSchema}
+  | {
+      kind: 'discriminatedUnion';
+      discriminator: string;
+      variants: Record<string, V2RuntimeSchema>;
+    };
 export type MethodSpec = {
   method: string;
   methodType?: string;
@@ -62,8 +72,26 @@ export type RawErrorType =
   | 'invalid_scope'
   | 'unsupported_grant_type'
   | 'unsupported_response_type'
+  | 'already_canceled'
+  | 'blocked_by_stripe'
+  | 'cannot_proceed'
+  | 'capability_not_enabled'
+  | 'controlled_by_alternate_resource'
+  | 'feature_not_enabled'
+  | 'financial_account_not_open'
+  | 'fx_quote_needs_refresh'
+  | 'insufficient_funds'
+  | 'invalid_payment_method'
+  | 'invalid_payout_method'
+  | 'invalid_vaulted_credential'
+  | 'not_cancelable'
+  | 'quota_exceeded'
   | 'rate_limit'
-  | 'temporary_session_expired';
+  | 'recipient_not_notifiable'
+  | 'temporary_session_expired'
+  | 'verification_attempt_failed'
+  | 'verification_expired'
+  | 'verification_not_initiated';
 // rawErrorTypeEnum: The end of the section generated from our OpenAPI spec
 export type RequestArgs = Array<any>;
 export type StripeRequest = {
@@ -138,23 +166,80 @@ export type StreamingFile = {
   file: {data: EventEmitter};
 };
 export type StripeRawError = {
+  // errorRawFields: The beginning of the section generated from our OpenAPI spec
+  /**
+   * For card errors resulting from a card issuer decline, a short string indicating [how to proceed with an error](https://docs.stripe.com/declines/card#retrying-issuer-declines) if they provide one.
+   */
+  advice_code?: string;
+  /**
+   * For card errors, the ID of the failed charge.
+   */
+  charge?: string;
+  /**
+   * For some errors that could be handled programmatically, a short string indicating the [error code](https://docs.stripe.com/error-codes) reported.
+   */
+  code?: string;
+  /**
+   * For card errors resulting from a card issuer decline, a short string indicating the [card issuer's reason for the decline](https://docs.stripe.com/declines#issuer-declines) if they provide one.
+   */
+  decline_code?: string;
+  /**
+   * A URL to more information about the [error code](https://docs.stripe.com/error-codes) reported.
+   */
+  doc_url?: string;
+  /**
+   * A human-readable message providing more details about the error. For card errors, these messages can be shown to your users.
+   */
   message?: string;
-  user_message?: string;
+  /**
+   * For card errors resulting from a card issuer decline, a 2 digit code which indicates the advice given to merchant by the card network on how to proceed with an error.
+   */
+  network_advice_code?: string;
+  /**
+   * For payments declined by the network, an alphanumeric code which indicates the reason the payment failed.
+   */
+  network_decline_code?: string;
+  /**
+   * If the error is parameter-specific, the parameter related to the error. For example, you can use this to display a message near the correct form field.
+   */
+  param?: string;
+  /**
+   * The PaymentIntent object for errors returned on a request involving a PaymentIntent.
+   */
+  payment_intent?: PaymentIntent;
+  /**
+   * The PaymentMethod object for errors returned on a request involving a PaymentMethod.
+   */
+  payment_method?: PaymentMethod;
+  /**
+   * If the error is specific to the type of payment method, the payment method type that had a problem. This field is only populated for invoice-related errors.
+   */
+  payment_method_type?: string;
+  /**
+   * A URL to the request log entry in your dashboard.
+   */
+  request_log_url?: string;
+  /**
+   * The SetupIntent object for errors returned on a request involving a SetupIntent.
+   */
+  setup_intent?: SetupIntent;
+  /**
+   * The CustomerSource object for errors returned on a request involving a CustomerSource.
+   */
+  source?: CustomerSource;
+  /**
+   * The type of error returned. One of `api_error`, `card_error`, `idempotency_error`, or `invalid_request_error`
+   */
   type?: RawErrorType;
+  /**
+   * The user message associated with the error.
+   */
+  user_message?: string;
+  // errorRawFields: The end of the section generated from our OpenAPI spec
   headers?: {[header: string]: string};
   statusCode?: number;
   requestId?: string;
-  code?: string;
-  doc_url?: string;
-  decline_code?: string;
-  param?: string;
   detail?: string | Error | HttpClientResponseError;
-  charge?: string;
-  payment_method_type?: string;
-  payment_intent?: any;
-  payment_method?: any;
-  setup_intent?: any;
-  source?: any;
   exception?: any;
 };
 /**

@@ -2,7 +2,7 @@
 title: User management
 subtitle: 'Update profiles, change passwords, and manage account settings'
 summary: >-
-  Neon Auth user management (Better Auth) exposes `updateUser()` to edit
+  Managed Better Auth user management exposes `updateUser()` to edit
   profile fields such as display name, and `changePassword()` to change
   passwords for signed-in users while requiring the current password for
   verification. Use this page when you need to update account settings or change
@@ -10,10 +10,8 @@ summary: >-
   which are covered in separate guides. The `revokeOtherSessions` flag in
   `changePassword()` lets you sign out all other devices in the same call.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-05T12:32:49.453Z'
 ---
-
-<FeatureBetaProps feature_name="Neon Auth with Better Auth" />
 
 Manage user profiles and account settings after users sign in. This guide covers:
 
@@ -64,6 +62,8 @@ Email address changes are not currently supported. To reset a forgotten password
 
 ## Change password
 
+Passwords can be up to 128 characters. Sign-up and sign-in reject longer passwords with a `400` `PASSWORD_TOO_LONG` error.
+
 Change a user's password while they are logged in using `changePassword()`. This requires the current password for security:
 
 ```jsx filename="src/App.jsx"
@@ -100,7 +100,7 @@ const { data, error } = await authClient.changePassword({
 ```
 
 <Admonition type="note">
-If a user forgot their password, use the password reset flow (`requestPasswordReset()` and `resetPassword()`) instead. See [Password Reset](/docs/auth/guides/password-reset).
+If a user forgot their password, use the password reset flow (`requestPasswordReset()` and `resetPassword()`) instead. See [Password Reset](/docs/auth/guides/password-reset). To sign users out of every session after a reset, turn on [Revoke sessions on password reset](/docs/auth/guides/password-reset#sign-users-out-after-a-reset).
 </Admonition>
 
 ## Refresh user data

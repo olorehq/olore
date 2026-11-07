@@ -1,0 +1,90 @@
+---
+title: 'Send StatsD metrics to Axiom'
+description: 'This page explains how to send StatsD metrics to Axiom using the StatsD receiver of the OpenTelemetry Collector.'
+overview: 'Push-based protocol for counters, gauges, and timers'
+sidebarTitle: StatsD
+keywords: ['statsd', 'axiom documentation', 'documentation', 'axiom', 'metrics', 'opentelemetry', 'otel collector', 'statsd receiver', 'counters', 'gauges', 'timers']
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+
+StatsD is a simple push-based protocol for app metrics like counters, gauges, and timers. Axiom doesn’t provide a native StatsD listener. Instead, you send StatsD metrics to Axiom with the [StatsD receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/statsdreceiver) of the OpenTelemetry Collector. The receiver listens for StatsD packets, aggregates them, and forwards the results to Axiom as OpenTelemetry metrics.
+
+<Note>
+The StatsD receiver is part of the [contrib distribution](https://github.com/open-telemetry/opentelemetry-collector-releases) of the OpenTelemetry Collector (`otelcol-contrib`). It isn’t included in the core distribution.
+</Note>
+
+<Prerequisites />
+
+<Note>
+When you create the dataset, select **Metrics** as the dataset type. StatsD data arrives in Axiom as OTel metrics, and metrics require their own dedicated dataset. For more information, see [Create dataset](/reference/datasets#create-dataset).
+</Note>
+
+## Configure the OpenTelemetry Collector
+
+Add the StatsD receiver and an OTLP/HTTP exporter that sends data to Axiom:
+
+```yaml
+receivers:
+  statsd:
+    endpoint: 0.0.0.0:8125    # UDP by default. Defaults to localhost:8125 if omitted.
+    aggregation_interval: 60s # How often aggregated metrics are flushed to the exporter.
+
+processors:
+  batch:
+    send_batch_max_size: 8192
+
+exporters:
+  otlphttp:
+    compression: zstd
+    endpoint: https://AXIOM_DOMAIN
+    headers:
+      authorization: Bearer API_TOKEN
+      x-axiom-metrics-dataset: DATASET_NAME
+
+service:
+  pipelines:
+    metrics:
+      receivers:
+        - statsd
+      processors:
+        - batch
+      exporters:
+        - otlphttp
+```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+For metrics, use the `x-axiom-metrics-dataset` header instead of `x-axiom-dataset`.
+</Info>
+
+Point your StatsD clients at the collector’s address and port (UDP 8125 in the example above) instead of your previous StatsD server.
+
+## Send a test metric
+
+With the collector running, send a test counter using netcat:
+
+```shell
+echo -n "test.requests:1|c" | nc -u -w1 localhost 8125
+```
+
+After the next aggregation interval, the `test.requests` metric appears in your Metrics dataset in Axiom.
+
+## Metric types
+
+The StatsD receiver maps StatsD metric types to OpenTelemetry metric types:
+
+| StatsD type | OpenTelemetry type |
+|:---|:---|
+| Counter (`c`) | Sum |
+| Gauge (`g`) | Gauge |
+| Timer (`ms`), histogram (`h`), distribution (`d`) | Configurable with the receiver’s [`timer_histogram_mapping`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/statsdreceiver) option: `histogram`, `summary`, or `gauge` |
+
+Axiom supports all of these resulting types. For the full list of supported OTel metric types and current limitations, see [Supported data types](/query-data/metrics#supported-data-types).
+
+## Query your metrics
+
+Once data is flowing, query your StatsD metrics like any other OTel metrics in Axiom. For more information, see [Metrics](/query-data/metrics).

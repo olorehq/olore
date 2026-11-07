@@ -1,14 +1,15 @@
 ---
 title: 'Email Notifications'
-description: 'Configure email alerts for individuals or distribution lists with customizable formatting and content'
+description: 'Configure email alerts for individuals or distribution lists'
 sidebarTitle: 'Email'
+canonical: 'https://www.checklyhq.com/docs/integrations/alerts/email/'
 ---
 
 <Tip>
 **Monitoring as Code**: Learn more about the [Email Alert Channel Construct](/constructs/email-alert-channel).
 </Tip>
 
-Email notifications provide a reliable and widely-supported way to receive alerts from your Checkly monitors. Set up email alerts for individuals or distribution lists with customizable content.
+Email notifications provide a reliable and widely-supported way to receive alerts from your Checkly monitors. Set up email alerts for individuals or distribution lists.
 
 <Frame>
   <img 
@@ -25,7 +26,19 @@ Email notifications provide a reliable and widely-supported way to receive alert
 
 ## Basic Email Configuration
 
-To recieve alerts, you'll need to add a valid email address, choose what states you want to receive alerts for, and then also add subscriptions to checks. 
+To receive alerts, you'll need to add one or more valid email addresses, choose what states you want to receive alerts for, and then also add subscriptions to checks.
+
+1. Log in to Checkly and go to [Alert channels](https://app.checklyhq.com/alerts/settings).
+2. Click **+ Add more channels** (**New alert channel** if you have none yet) and choose **Email**.
+3. Enter the email address. You can use an individual address or a distribution list.
+4. Select the alert types you want to receive: failure, degraded, and recovery.
+5. Choose which checks and check groups to subscribe (all are selected by default), then click **Create email**.
+
+After you create the channel, it appears in the **Alert channels** section of each check's and monitor's alert settings. You can turn it on or off per check there.
+
+<Note>
+Owner, Admin and Read & Write members can create alert channels. Read & Run and Read Only members can't.
+</Note>
 
 When an alert is triggered, you'll receive an email like below:
 <Frame>
@@ -35,3 +48,17 @@ When an alert is triggered, you'll receive an email like below:
     alt=" mode interface"
   />
 </Frame>
+
+## Troubleshooting
+
+### "Inactive addresses" error
+
+If you see this error, this means that your email address has been added to our email suppression list:
+
+> You tried to send to recipient(s) that have been marked as inactive. Found inactive addresses: `name@example.com`. Inactive recipients are ones that have generated a hard bounce, a spam complaint, or a manual suppression.
+
+If we send an email to your email address and your email provider rejects it with a hard bounce, then we automatically add that recipient address to our email suppression list. This ensures that we don't send emails that permanently can't be delivered, like to deleted email addresses. However, sometimes transient issues with your email provider can also return a hard bounce.
+
+If you see this error or if you're not recieving emails from Checkly, reach out to [support@checklyhq.com](mailto:support@checklyhq.com). We can check if your email is on our suppression list and re-activate it.
+
+If the same address keeps getting suppressed after re-activation, please check with your IT or email administrator to understand why your email provider keeps hard bouncing emails from Checkly.

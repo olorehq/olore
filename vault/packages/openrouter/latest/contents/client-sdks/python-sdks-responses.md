@@ -1,0 +1,140 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://openrouter.ai/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Responses
+
+> OpenAI-compatible Responses API endpoints
+
+## Overview
+
+OpenAI-compatible Responses API endpoints
+
+### Available Operations
+
+* [send](#send) - Create a response
+
+## send
+
+Creates a streaming or non-streaming response using OpenResponses API format
+
+### Example Usage: guardrail-blocked
+
+```python theme={null}
+from openrouter import OpenRouter
+import os
+
+
+with OpenRouter(
+    http_referer="<value>",
+    x_open_router_title="<value>",
+    x_open_router_categories="<value>",
+    api_key=os.getenv("OPENROUTER_API_KEY", ""),
+) as open_router:
+
+    res = open_router.responses.send(service_tier="auto", stream=False)
+
+    with res as event_stream:
+        for event in event_stream:
+            # handle event
+            print(event, flush=True)
+
+```
+
+### Example Usage: insufficient-permissions
+
+```python theme={null}
+from openrouter import OpenRouter
+import os
+
+
+with OpenRouter(
+    http_referer="<value>",
+    x_open_router_title="<value>",
+    x_open_router_categories="<value>",
+    api_key=os.getenv("OPENROUTER_API_KEY", ""),
+) as open_router:
+
+    res = open_router.responses.send(service_tier="auto", stream=False)
+
+    with res as event_stream:
+        for event in event_stream:
+            # handle event
+            print(event, flush=True)
+
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description | Example |
+| - | - | - | - | - |
+| `http_referer` | *Optional\[str]* | ➖ | The app identifier should be your app's URL and is used as the primary identifier for rankings. This is used to track API usage per application.  | |
+| `x_open_router_title` | *Optional\[str]* | ➖ | The app display name allows you to customize how your app appears in OpenRouter's dashboard.  | |
+| `x_open_router_categories` | *Optional\[str]* | ➖ | Comma-separated list of app categories (e.g. "cli-agent,cloud-agent"). Used for marketplace rankings.  | |
+| `x_open_router_metadata` | [Optional\[components.MetadataLevel\]](../../components/metadatalevel.mdx) | ➖ | Opt-in to surface routing metadata on the response under `openrouter_metadata`. Defaults to `disabled`. The legacy header `X-OpenRouter-Experimental-Metadata` is also accepted for backward compatibility. | enabled |
+| `access_programs` | [Optional\[components.ResponsesRequestAccessPrograms\]](../../components/responsesrequestaccessprograms.mdx) | ➖ | OpenAI access programs for this request. `cyber` selects the Cyber access program: `standard`, `daybreak_blue`, or `daybreak_red`. A program other than `standard` is supported only on BYOK requests that run on your own OpenAI key enrolled in that program; any other endpoint, including OpenRouter's own OpenAI credentials, rejects it with a 400 error. Requests on OpenRouter's OpenAI credentials always run `standard`. Omit the field unless your key is enrolled in a Daybreak program. | \{ "cyber": "standard" } |
+| `background` | *OptionalNullable\[bool]* | ➖ | N/A | |
+| `cache_control` | [Optional\[components.AnthropicCacheControlDirective\]](../../components/anthropiccachecontroldirective.mdx) | ➖ | Enable automatic prompt caching. When set at the top level, the system automatically applies cache breakpoints to the last cacheable block in the request. When set on an individual content block, it marks an explicit cache breakpoint; block-level markers also work on OpenAI models that support explicit prompt caching — OpenRouter converts them to the provider's native format. | \{ "type": "ephemeral" } |
+| `debug` | [Optional\[components.ChatDebugOptions\]](../../components/chatdebugoptions.mdx) | ➖ | Debug options for inspecting request transformations (streaming only) | \{ "echo\_upstream\_body": true } |
+| `deferred_tools` | [Optional\[components.DeferredToolsControl\]](../../components/deferredtoolscontrol.mdx) | ➖ | Opt-in versioned router-level deferred-tool protocol. Replay assistant reasoning unchanged on continuation; keep the catalog unchanged. | \{ "profile": "portable", "protocol": "v1", "search": \{ "max\_results": 5, "type": "bm25" }, "validation": "runtime" } |
+| `frequency_penalty` | *OptionalNullable\[float]* | ➖ | N/A | |
+| `image_config` | Dict\[str, [components.ImageConfig](../../components/imageconfig.mdx)] | ➖ | Provider-specific image configuration options. Keys and values vary by model/provider. See [https://openrouter.ai/docs/guides/overview/multimodal/image-generation](https://openrouter.ai/docs/guides/overview/multimodal/image-generation.md) for more details. | \{ "aspect\_ratio": "16:9", "quality": "high" } |
+| `include` | List\[[components.ResponseIncludesEnum](../../components/responseincludesenum.mdx)] | ➖ | N/A | |
+| `input` | [Optional\[components.InputsUnion\]](../../components/inputsunion.mdx) | ➖ | Input for a response request - can be a string or array of items | \[ \{ "content": "What is the weather today?", "role": "user" } ] |
+| `instructions` | *OptionalNullable\[str]* | ➖ | N/A | |
+| `max_output_tokens` | *OptionalNullable\[int]* | ➖ | N/A | |
+| `max_tool_calls` | *OptionalNullable\[int]* | ➖ | Maximum number of server-tool (e.g. `openrouter:web_search`) agent steps the model may take during a request. Defaults to 30, which is also the maximum. Ignored when `stop_server_tools_when` is set. | 30 |
+| `metadata` | Dict\[str, *str*] | ➖ | Metadata key-value pairs for the request. Keys must be ≤64 characters and cannot contain brackets. Values must be ≤512 characters. Maximum 16 pairs allowed. | \{ "session\_id": "abc-def-ghi", "user\_id": "123" } |
+| `modalities` | List\[[components.OutputModalityEnum](../../components/outputmodalityenum.mdx)] | ➖ | Output modalities for the response. Supported values are "text" and "image". | \[ "text", "image" ] |
+| `model` | *Optional\[str]* | ➖ | N/A | |
+| `models` | List\[*str*] | ➖ | N/A | |
+| `parallel_tool_calls` | *OptionalNullable\[bool]* | ➖ | N/A | |
+| `plugins` | List\[[components.ResponsesRequestPlugin](../../components/responsesrequestplugin.mdx)] | ➖ | Plugins you want to enable for this request, including their settings. | |
+| `presence_penalty` | *OptionalNullable\[float]* | ➖ | N/A | |
+| `previous_response_id` | *Optional\[Any]* | ➖ | Not supported on this proxy. Each response request is independent: no responses are stored, so a previous response cannot be referenced. Requests with a non-null value are rejected with a 400 error. Send the full conversation history in `input` instead. | |
+| `prompt` | [OptionalNullable\[components.StoredPromptTemplate\]](../../components/storedprompttemplate.mdx) | ➖ | N/A | \{ "id": "prompt-abc123", "variables": \{ "name": "John" } } |
+| `prompt_cache_key` | *OptionalNullable\[str]* | ➖ | N/A | |
+| `prompt_cache_options` | [OptionalNullable\[components.PromptCacheOptions\]](../../components/promptcacheoptions.mdx) | ➖ | Request-level prompt-cache controls. `mode: "explicit"` disables OpenAI-managed breakpoints so only blocks marked with `prompt_cache_breakpoint` are cached. `ttl` sets the minimum cache lifetime for every breakpoint the request writes: "30m" (default) or "12h" (billed at the higher 12h cache-write rate). Only supported by OpenAI GPT-5.6 and newer. | \{ "mode": "explicit", "ttl": "30m" } |
+| `provider` | [OptionalNullable\[components.ProviderPreferences\]](../../components/providerpreferences.mdx) | ➖ | When multiple model providers are available, optionally indicate your routing preference. | \{ "allow\_fallbacks": true } |
+| `reasoning` | [OptionalNullable\[components.ReasoningConfig\]](../../components/reasoningconfig.mdx) | ➖ | Configuration for reasoning mode in the response | \{ "enabled": true, "summary": "auto" } |
+| `safety_identifier` | *OptionalNullable\[str]* | ➖ | Recommended per-end-user identifier for abuse isolation. Use a stable ID, hash, or pseudonym. When a provider requires a user identity, OpenRouter folds it into the hashed identity sent upstream and never forwards it raw. If omitted, requests use an account-level identity, so provider policy blocks can affect the whole account. | user-123 |
+| `service_tier` | [OptionalNullable\[components.ResponsesRequestServiceTier\]](../../components/responsesrequestservicetier.mdx) | ➖ | The service tier to use for processing this request. `fast` is accepted as an alias for `priority`. `ultrafast` prefers ultrafast endpoints and falls back to `priority`, then default endpoints. | |
+| `session_id` | *Optional\[str]* | ➖ | A unique identifier for grouping related requests (e.g., a conversation or agent workflow). When provided, OpenRouter uses it as the sticky routing key, routing all requests in the session to the same provider to maximize prompt cache hits. Also used for observability grouping. If provided in both the request body and the x-session-id header, the body value takes precedence. Maximum of 256 characters. | |
+| `stop` | [OptionalNullable\[components.ResponsesRequestStop\]](../../components/responsesrequeststop.mdx) | ➖ | Stop sequences (up to 4) | \[ "\n" ] |
+| `stop_server_tools_when` | List\[[components.StopServerToolsWhenCondition](../../components/stopservertoolswhencondition.mdx)] | ➖ | Stop conditions for the server-tool agent loop. Any condition firing halts the loop (OR logic). When set, this overrides `max_tool_calls`. When a condition fires while the model is still emitting tool calls, the pending tool calls are executed and one final turn is made with tool calls disabled so the response ends with a natural-language answer instead of an unfinished tool call. | \[ \{ "step\_count": 5, "type": "step\_count\_is" }, \{ "max\_cost\_in\_dollars": 0.5, "type": "max\_cost" } ] |
+| `stream` | *Optional\[bool]* | ➖ | N/A | |
+| `temperature` | *OptionalNullable\[float]* | ➖ | N/A | |
+| `text` | [Optional\[components.TextExtendedConfig\]](../../components/textextendedconfig.mdx) | ➖ | Text output configuration including format and verbosity | \{ "format": \{ "type": "text" } } |
+| `tool_choice` | [Optional\[components.OpenAIResponsesToolChoiceUnion\]](../../components/openairesponsestoolchoiceunion.mdx) | ➖ | N/A | auto |
+| `tools` | List\[[components.ResponsesRequestToolUnion](../../components/responsesrequesttoolunion.mdx)] | ➖ | N/A | |
+| `top_k` | *Optional\[int]* | ➖ | N/A | |
+| `top_logprobs` | *OptionalNullable\[int]* | ➖ | N/A | |
+| `top_p` | *OptionalNullable\[float]* | ➖ | N/A | |
+| `trace` | [Optional\[components.TraceConfig\]](../../components/traceconfig.mdx) | ➖ | Metadata for observability and tracing. Known keys (trace\_id, trace\_name, span\_name, generation\_name, parent\_span\_id) have special handling. Additional keys are passed through as custom metadata to configured broadcast destinations. | \{ "trace\_id": "trace-abc123", "trace\_name": "my-app-trace" } |
+| `truncation` | [OptionalNullable\[components.OpenAIResponsesTruncation\]](../../components/openairesponsestruncation.mdx) | ➖ | N/A | auto |
+| `user` | *Optional\[str]* | ➖ | A unique identifier representing your end-user, which helps distinguish between different users of your app. This allows your app to identify specific users in case of abuse reports, preventing your entire app from being affected by the actions of individual users. Maximum of 256 characters. | |
+| `retries` | [Optional\[utils.RetryConfig\]](../../models/utils/retryconfig.mdx) | ➖ | Configuration to override the default retry behavior of the client. | |
+
+### Response
+
+**[operations.CreateResponsesResponse](../../operations/createresponsesresponse.mdx)**
+
+### Errors
+
+| Error Type | Status Code | Content Type |
+| - | - | - |
+| errors.BadRequestResponseError | 400 | application/json |
+| errors.UnauthorizedResponseError | 401 | application/json |
+| errors.PaymentRequiredResponseError | 402 | application/json |
+| errors.ForbiddenResponseError | 403 | application/json |
+| errors.NotFoundResponseError | 404 | application/json |
+| errors.RequestTimeoutResponseError | 408 | application/json |
+| errors.PayloadTooLargeResponseError | 413 | application/json |
+| errors.UnprocessableEntityResponseError | 422 | application/json |
+| errors.TooManyRequestsResponseError | 429 | application/json |
+| errors.InternalServerResponseError | 500 | application/json |
+| errors.BadGatewayResponseError | 502 | application/json |
+| errors.ServiceUnavailableResponseError | 503 | application/json |
+| errors.EdgeNetworkTimeoutResponseError | 524 | application/json |
+| errors.ProviderOverloadedResponseError | 529 | application/json |
+| errors.OpenRouterDefaultError | 4XX, 5XX | \*/\* |

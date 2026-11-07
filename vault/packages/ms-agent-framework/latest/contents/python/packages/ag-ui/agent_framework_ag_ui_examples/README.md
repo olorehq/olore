@@ -23,13 +23,16 @@ from agent_framework_ag_ui_examples.agents import simple_agent, weather_agent
 
 app = FastAPI()
 
+# These are local single-user examples. For production, replace single_user=True
+# with an authorization_scope_resolver backed by authenticated request context.
+
 # Option 1: Use Azure OpenAI
 azure_client = OpenAIChatCompletionClient(model="gpt-4")
-add_agent_framework_fastapi_endpoint(app, simple_agent(azure_client), "/chat")
+add_agent_framework_fastapi_endpoint(app, simple_agent(azure_client), "/chat", single_user=True)
 
 # Option 2: Use OpenAI
 openai_client = OpenAIChatClient(model="gpt-4o")
-add_agent_framework_fastapi_endpoint(app, weather_agent(openai_client), "/weather")
+add_agent_framework_fastapi_endpoint(app, weather_agent(openai_client), "/weather", single_user=True)
 
 # Run with: uvicorn main:app --reload
 ```
@@ -51,7 +54,9 @@ agent = Agent(
 
 # Create FastAPI app and add AG-UI endpoint
 app = FastAPI()
-add_agent_framework_fastapi_endpoint(app, agent, "/agent")
+# Local example only. For production, replace single_user=True with an
+# authorization_scope_resolver backed by authenticated request context.
+add_agent_framework_fastapi_endpoint(app, agent, "/agent", single_user=True)
 
 # Run with: uvicorn main:app --reload
 ```
@@ -133,6 +138,30 @@ The server exposes endpoints at:
 - `/predictive_state_updates` - Document writing with `document_writer_agent`
 - `/subgraphs` - Travel planner with interrupt-driven flight/hotel choices via `subgraphs_agent`
 
+### Interrupt and Resume Shape
+
+Human-in-the-loop and workflow examples use the canonical AG-UI protocol shape. A paused run finishes with
+`RUN_FINISHED.outcome.type == "interrupt"` and renders prompts from `RUN_FINISHED.outcome.interrupts`; it does not
+depend on a stable top-level `RUN_FINISHED.interrupt` field.
+
+Resume interrupted example threads with a canonical `resume` array:
+
+```json
+{
+  "threadId": "thread-1",
+  "messages": [],
+  "resume": [
+    {
+      "interruptId": "interrupt_1",
+      "status": "resolved",
+      "payload": {
+        "approved": true
+      }
+    }
+  ]
+}
+```
+
 ### Complete FastAPI Example
 
 ```python
@@ -155,15 +184,37 @@ app = FastAPI(title="AG-UI Examples")
 # Create a chat client (shared across all agents, or create individual ones)
 client = OpenAIChatCompletionClient(model="gpt-4")
 
-# Add all example endpoints
-add_agent_framework_fastapi_endpoint(app, simple_agent(client), "/agentic_chat")
-add_agent_framework_fastapi_endpoint(app, weather_agent(client), "/backend_tool_rendering")
-add_agent_framework_fastapi_endpoint(app, human_in_the_loop_agent(client), "/human_in_the_loop")
-add_agent_framework_fastapi_endpoint(app, task_steps_agent_wrapped(client), "/agentic_generative_ui")  # type: ignore[arg-type]
-add_agent_framework_fastapi_endpoint(app, ui_generator_agent(client), "/tool_based_generative_ui")
-add_agent_framework_fastapi_endpoint(app, recipe_agent(client), "/shared_state")
-add_agent_framework_fastapi_endpoint(app, document_writer_agent(client), "/predictive_state_updates")
-add_agent_framework_fastapi_endpoint(app, subgraphs_agent(), "/subgraphs")
+# Add local single-user example endpoints. For production, replace
+# single_user=True with an authorization_scope_resolver backed by authenticated
+# request context.
+add_agent_framework_fastapi_endpoint(app, simple_agent(client), "/agentic_chat", single_user=True)
+add_agent_framework_fastapi_endpoint(app, weather_agent(client), "/backend_tool_rendering", single_user=True)
+add_agent_framework_fastapi_endpoint(
+    app,
+    human_in_the_loop_agent(client),
+    "/human_in_the_loop",
+    single_user=True,
+)
+add_agent_framework_fastapi_endpoint(
+    app,
+    task_steps_agent_wrapped(client),
+    "/agentic_generative_ui",
+    single_user=True,
+)  # type: ignore[arg-type]
+add_agent_framework_fastapi_endpoint(
+    app,
+    ui_generator_agent(client),
+    "/tool_based_generative_ui",
+    single_user=True,
+)
+add_agent_framework_fastapi_endpoint(app, recipe_agent(client), "/shared_state", single_user=True)
+add_agent_framework_fastapi_endpoint(
+    app,
+    document_writer_agent(client),
+    "/predictive_state_updates",
+    single_user=True,
+)
+add_agent_framework_fastapi_endpoint(app, subgraphs_agent(), "/subgraphs", single_user=True)
 ```
 
 ## Architecture
@@ -195,10 +246,12 @@ from agent_framework import Agent, tool
 from agent_framework import SupportsChatGetResponse
 from agent_framework.ag_ui import AgentFrameworkAgent
 
+
 @tool
 def my_tool(param: str) -> str:
     """My custom tool."""
     return f"Result: {param}"
+
 
 def my_custom_agent(client: SupportsChatGetResponse) -> AgentFrameworkAgent:
     """Create a custom agent with the specified chat client.
@@ -222,8 +275,10 @@ def my_custom_agent(client: SupportsChatGetResponse) -> AgentFrameworkAgent:
         description="My custom agent description",
     )
 
+
 # Use it
 from agent_framework.openai import OpenAIChatCompletionClient
+
 client = OpenAIChatCompletionClient()
 agent = my_custom_agent(client)
 ```
@@ -244,19 +299,11 @@ agent = Agent(
 )
 
 state_schema = {
-    "recipe": {
-        "type": "object",
-        "properties": {
-            "name": {"type": "string"},
-            "ingredients": {"type": "array"}
-        }
-    }
+    "recipe": {"type": "object", "properties": {"name": {"type": "string"}, "ingredients": {"type": "array"}}}
 }
 
 # Configure which tool updates which state fields
-predict_state_config = {
-    "recipe": {"tool": "update_recipe", "tool_argument": "recipe_data"}
-}
+predict_state_config = {"recipe": {"tool": "update_recipe", "tool_argument": "recipe_data"}}
 
 wrapped_agent = AgentFrameworkAgent(
     agent=agent,
@@ -300,10 +347,12 @@ Human-in-the-loop is automatically handled when tools are marked for approval:
 ```python
 from agent_framework import tool
 
+
 @tool(approval_mode="always_require")
 def sensitive_action(param: str) -> str:
     """This action requires user approval."""
     return f"Executed with {param}"
+
 
 # The orchestrator automatically detects approval responses and handles them
 ```

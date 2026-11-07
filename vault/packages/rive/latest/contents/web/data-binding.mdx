@@ -14,6 +14,7 @@ import ReadingAndWritingProperties from "/snippets/runtimes/data-binding/reading
 import NestedPropertyPaths from "/snippets/runtimes/data-binding/nested-property-paths.mdx"
 import Observability from "/snippets/runtimes/data-binding/observability.mdx"
 import Images from "/snippets/runtimes/data-binding/images.mdx"
+import Fonts from "/snippets/runtimes/data-binding/fonts.mdx"
 import Lists from "/snippets/runtimes/data-binding/lists.mdx"
 import Artboards from "/snippets/runtimes/data-binding/artboards.mdx"
 import Enums from "/snippets/runtimes/data-binding/enums.mdx"
@@ -100,6 +101,24 @@ const r = new rive.Rive({
 });
 ```
 
+`bindViewModelInstance()` is a convenience method that sets a view model instance on the state machine and applies it in one step. To apply several instances at once — for example the main instance plus one or more [global view models](#global-view-models) — we recommend staging each view model with a `set` method, then flush them with a single `bind()`:
+
+```typescript
+r.setViewModelInstance(vmi);                     // staged, not applied yet
+r.setGlobalViewModelInstance("Theme", themeVmi); // staged, not applied yet
+r.bind();                                        // applies everything in one rebind
+```
+
+`bindViewModelInstance(vmi)` is shorthand for setting the main instance with `setViewModelInstance(vmi)` followed by `bind()`.
+
+<Tip>
+  **Set every instance first, then call `bind()` once.** The `set` methods are cheap; `bind()` carries a much higher cost, and calling it per view model instance pays that cost again each time. Batching matters most at initialization, and on graphics with many bindings or deeply nested artboards.
+</Tip>
+
+<Note>
+  When a state machine is running, `bind()` also fills in any view models that were not set by using their default instances — the artboard's default view model instance, plus a default instance for each global view model in the file.
+</Note>
+
 <AutoBinding />
 
  ```typescript {4}
@@ -114,7 +133,52 @@ const r = new rive.Rive({
 });
 ```
 
-### Get View Model from Instance
+### Global View Models
+
+A view model marked **global** in the editor is shared across the whole file rather than owned by a single artboard. The file holds one slot per global view model, addressed by name, so every artboard and state machine reads from the same instance — useful for app-wide state such as a theme, session, or settings.
+
+To bind the global view models manually (as opposed to using `autoBind: true`):
+
+```typescript
+const names = r.globalViewModelNames(); // e.g. ["Theme", "Breakpoints"]
+```
+
+This is also available on `RiveFile`, so you can inspect a file's globals before creating a `Rive` instance.
+
+Assign an instance to a global slot with `setGlobalViewModelInstance()`, then apply it with `bind()`. It returns `false` if the name does not match a global view model in the file:
+
+```typescript
+const r = new rive.Rive({
+    src: "my_rive_file.riv",
+    canvas: document.getElementById("canvas"),
+    stateMachine: "State Machine 1",
+    autoBind: false,
+    onLoad: () => {
+        const themeVM = r.viewModelByName("Theme");
+        const themeVMI = themeVM.instanceByName("Dark");
+
+        // Read and write properties exactly as you would on the global view model instance
+        themeVMI.color("background").value = parseInt('ff2266dd', 16);
+
+        r.setGlobalViewModelInstance("Theme", themeVMI); // Staged, not applied yet
+        r.bind(); // This will also create a default instance for the main view model implicitly
+    }
+});
+```
+
+Read back whichever instance currently occupies a slot with `globalViewModelInstance()`:
+
+```typescript
+const themeVMI = r.globalViewModelInstance("Theme"); // ViewModelInstance | null
+```
+
+Global instances are never created implicitly by the getter. `globalViewModelInstance()` returns `null` until an instance has been set, or created for you by `bind()` / `autoBind: true`.
+
+<Note>
+  With `autoBind: true`, Rive creates a default instance for every global view model in the file alongside the artboard's default instance, so `globalViewModelInstance(name)` is populated by the time `onLoad` fires.
+</Note>
+
+### Get View Model from instance
 
 When working with view model instances, you may want to get a reference to the view model the instance came from so you can dynamically create more instances of the same type (i.e. creating instances from lists).
 To do so, first grab the name of the view model the instance came from via the `.viewModelName` property:
@@ -145,6 +209,8 @@ for (let i = 0; i < 10; i++) {
     const properties = viewModel.properties;
     console.log(properties);
 ```
+
+Each entry has a `name` and a `type`. Properties of type `"enum"` also carry an `enumName`, which you can match against the results of [`r.enums()`](#enums) to look up that enum's available values.
 
 <ReadingAndWritingProperties />
 
@@ -282,6 +348,26 @@ const r = new rive.Rive({
 });
 ```
 
+<Fonts />
+
+```typescript
+const r = new rive.Rive({
+    autoBind: true,
+    onLoad: async () => {
+        // Access the current instance that was auto-bound
+        const vmi = r.viewModelInstance;
+        // Get the font property by name
+        const headingFontProperty = vmi.font("headingFont");
+
+        const res = await fetch("/Orbitron.ttf");
+        const font = await decodeFont(new Uint8Array(await res.arrayBuffer()));
+        headingFontProperty.value = font;
+    }
+});
+```
+
+<Demos examples={["dataBindingFonts"]} runtime="web" />
+
 <Lists />
 
 <Demos examples={['dataBindingLists']} runtime="web" />
@@ -344,7 +430,7 @@ const r = new Rive({
         fit: Fit.Layout,
         layoutScaleFactor: 0.5,
     }),
-    stateMachines: "State Machine 1",
+    stateMachine: "State Machine 1",
     onLoad: () => {
         r.resizeDrawingSurfaceToCanvas();
 
@@ -387,7 +473,7 @@ const r = new rive.Rive({
 });
 ```
 
-# Examples
+## Examples
 
 <YouTube id="y7glxOIFEjg" />
 <YouTube id="1WFtGX2coXM" />

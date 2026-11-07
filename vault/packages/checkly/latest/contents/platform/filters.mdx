@@ -1,0 +1,190 @@
+---
+title: 'Filters'
+description: 'Filter a list in the Checkly app, join filters with "and" or "or", group them, and share or save the result.'
+sidebarTitle: 'Filters'
+canonical: 'https://www.checklyhq.com/docs/platform/filters/'
+---
+
+Lists in the Checkly app that support filtering have a filter field above them. Each filter is a block with a field, an operator and a value, such as **status is failing**. Filters join with **and** or **or**. Groups let you mix both.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/filters/filter-groups.png" alt="The Monitors date picker and filter field, with a status filter and a group that joins a tags filter and a name filter with or" />
+  <img className="hidden dark:block" src="/images/filters/filter-groups-dark.png" alt="The Monitors date picker and filter field, with a status filter and a group that joins a tags filter and a name filter with or" />
+</Frame>
+
+## Add a filter
+
+Click the filter field to list every field you can filter on. Each field shows a short description. Pick a field, or type the start of its name and press Enter. Typing the name followed by a colon, such as `name:`, does the same.
+
+A text field such as **Name** then waits for its value. Type it and press Enter.
+
+A field with a fixed set of values, such as **Status** or **Tags**, starts with one of its values. Click the value to pick others. With the keyboard, move to the value and start typing.
+
+Fields like **Tags** take several values. The filter then matches any of them. The block shows how many it holds, such as **3 tags**. Long lists, such as your tags, have a search at the top of the picker.
+
+Text that doesn't start a field name searches by name when you press Enter.
+
+## Fields
+
+Each list has its own fields. A field matches in one of four ways:
+
+| Kind | Examples | Matches when |
+|------|----------|--------------|
+| Text | Name, Group, URL | The text holds every word you type, in any order. |
+| Choice | Status, Check type, Tags | The item has any of the values you picked. |
+| Number | Duration, Availability, P95 | The number compares true with `>`, `>=`, `<`, `<=` or `=`. |
+| Yes or no | Has user, Ran | The answer is the one you picked. |
+
+Durations take a unit, such as `30s`, `5m`, `1h` or `1d`. Percentages are plain numbers, such as `99.9`.
+
+### Monitors
+
+| Field | What it matches |
+|-------|-----------------|
+| Name | The name of the check. |
+| Group | The name of the check's group. |
+| URL | The URL the check requests. |
+| Logical ID | The ID of the check in your Checkly CLI project. |
+| Status | The current status of the check. |
+| Check type | The type of check. |
+| Tags | The tags of the check and of its group. |
+| Project | The [Checkly CLI](/cli/overview) project the check is deployed from. It shows when the account has checks deployed with the CLI. |
+| Traces | Whether the check receives traces. It shows when the account [imports traces](/resolve/traces/import/overview). |
+
+### Heartbeats
+
+| Field | What it matches |
+|-------|-----------------|
+| Name | The name of the heartbeat. |
+| Ping URL | The URL your job calls to send a ping. |
+| Status | The current status of the heartbeat. |
+| Tags | The tags of the heartbeat. |
+| Period | The expected time between pings. |
+| Grace | The extra time Checkly waits for a late ping before it alerts. |
+| Availability | The availability over the time range, as a percentage. |
+
+### Test sessions
+
+Text without a field searches the project name.
+
+| Field | What it matches |
+|-------|-----------------|
+| Project | The project name of the session. |
+| Environment | The environment the session ran in. |
+| Branch | The Git branch of the session. |
+| Commit | The ID or the message of the commit the session ran on. |
+| User | The commit owner, or the person or API key that started the session. |
+| Has user | Whether a person or an API key started the session. |
+| Status | The status of the session. |
+| Provider | The tool or integration that started the session. |
+| Duration | How long the session took to run. A session still running never matches. |
+| Check | The name of a check that ran in the session. |
+| Check type | The type of a check that ran in the session. |
+| Tags | The tags of a check that ran in the session, and of its group. |
+| File | The Playwright test file of a check that ran in the session. |
+
+### Error Groups
+
+The **Error Groups** tab has its own filters. Switching between it and the **Test Sessions** tab clears them. Text without a field searches the error message. The time range keeps the error groups last seen within it.
+
+| Field | What it matches |
+|-------|-----------------|
+| Message | The error message. |
+| Project | The project name of the error group. |
+| Environment | The environment the error occurred in. |
+| Check type | The type of check the error occurred in. |
+| Playwright project | The Playwright project the error occurred in. |
+| Count | How many times the error occurred in the time range. |
+
+### Reporting
+
+Reporting filters on the details of each check and on its results in the time range.
+
+**Check details**
+
+| Field | What it matches |
+|-------|-----------------|
+| Name | The name of the check. |
+| Group | The name of the check's group. |
+| URL | The URL the check requests. |
+| Logical ID | The ID of the check in your Checkly CLI project. |
+| Check type | The type of check. |
+| Tags | The tags of the check and of its group. |
+| Project | The Checkly CLI project the check is deployed from. It shows when the account has checks deployed with the CLI. |
+| Location | A location the check runs in. When you [group by location](#group-the-rows), the location of the row. |
+| Created by | The user or API key that created the check. |
+
+**Results in the time range**
+
+| Field | What it matches |
+|-------|-----------------|
+| Status | The alert state of the check during the time range. |
+| Ran | Whether the check has results in the time range. |
+| Success | The success ratio, as a percentage. |
+| Avg, P95, P99 | The response times, such as `500ms` or `2s`. A number without a unit is in milliseconds. |
+
+**Status** is the check's alert state in the time range. **Failing** and **Degraded** match a check that was in that state at any point, including a failure still open from before the range. **Passing** matches a check that ran and was never failing or degraded.
+
+**Success**, **Avg**, **P95** and **P99** compare the numbers the table shows. **Avg**, **P95** and **P99** count only runs with a measured response time. A run that got no response, such as a refused connection, has none. A check without measured runs shows a dash and matches no filter on them. A check without results in the time range matches none of the four. When you group by location, these filters still compare each check's numbers across all its locations.
+
+## Pick the time range
+
+The date picker left of the filter field sets the time range. Click it and pick a preset, such as **Last 24 hours**. To pick days on a calendar, open **Custom**. Set the start and end times, then click **Apply**. A custom range shows as its days, such as **21-22 Oct**. The time range always applies on top of the filters. A view saves it with the filters.
+
+## Join filters
+
+Filters join with **and** by default. The list then shows what matches every filter. Click the word between two filters to switch it to **or**. The list then shows what matches any filter. The switch applies to every join at that level.
+
+To join only the next filter with **or**, type `or` and a space. The **or** shows at the end of the field. The next filter you add joins with it. For example, with **status is failing and name contains api** in the field, type `or url` and press Enter. Then type `health` and press Enter. The field now reads **status is failing and (name contains api or url contains health)**. The new filter is grouped with the filter right before it. The other joins don't change. Typing `and` works the same way. Without a typed join, a new filter joins with **and**. Press Backspace in the empty field to remove a typed join.
+
+## Group filters
+
+A group holds filters joined by its own **and** or **or**. Click the word inside a group to switch it.
+
+To build a group from the keyboard, type `(` in the filter field. An empty group opens with the cursor inside it. The filters you add next go into it. Type `or` before a filter to join the group's filters with **or**. Type `)` to close the group and go back to the top level. Leaving the field or pressing Escape also closes it.
+
+For example, to find checks with "checkout" in their name or in their URL:
+
+1. Type `(`.
+2. Type `name` and press Enter. Type `checkout` and press Enter.
+3. Type `or url` and press Enter. Type `checkout` and press Enter.
+4. Type `)`.
+
+The field then holds **(name contains checkout or url contains checkout)**.
+
+With the mouse:
+
+- **Make a group:** drop a filter onto another one.
+- **Move filters:** drag a filter to reorder it, or to move it into or out of a group.
+- **Move a group:** drag it by its handle.
+
+A group can't hold another group.
+
+More examples:
+
+- On Heartbeats, **status is failing and (period > 1h or availability < 99.9)** finds failing heartbeats that either expect a ping less often than hourly or are below 99.9% available.
+- On Monitors, **status is failing or tags is critical** lists every failing check and every check tagged `critical`.
+
+## Group the rows
+
+Reporting can list one row for each check and location. Type `group by location` or `groupBy:location` in the filter field and press Enter. A **group by Location** block appears in the field. The table adds a **Location** column before **Success**.
+
+The block groups the rows. It takes no **and** or **or** and can't go into a group. Drag it, or press Alt+Left or Alt+Right on it, to move it anywhere in the field. Remove it to go back to one row per check.
+
+## Use the keyboard
+
+Every part of a filter is reachable from the keyboard.
+
+| Key | What it does |
+|-----|--------------|
+| Tab, Shift+Tab, Left, Right | Moves between the parts of the filters and the joining words |
+| Typing on a value | Changes the value, or searches the picker of a field with many values |
+| Enter, Space | Opens the picker of the focused part, or switches the focused joining word |
+| Backspace, Delete | Removes the focused filter, or a filter whose value you are typing while it is empty |
+| Alt+Left, Alt+Right | Moves the focused filter left or right. It can move into and out of groups. |
+
+In the empty filter field, Backspace removes a typed join first, then the last filter.
+
+## Save and share filters
+
+The page URL holds every filter and its groups. Copy it to send the same list to a teammate. A list with a views bar can also save filters you use often as a [view](/platform/views).

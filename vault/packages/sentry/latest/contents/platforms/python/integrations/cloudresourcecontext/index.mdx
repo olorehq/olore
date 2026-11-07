@@ -24,7 +24,7 @@ uv add "sentry-sdk"
 Add `CloudResourceContextIntegration()` to your `integrations` list:
 
 
-In addition to capturing errors, you can monitor interactions between multiple services or applications by [enabling tracing](/concepts/key-terms/tracing/). You can also collect and analyze performance profiles from real users with [profiling](/product/explore/profiling/).
+In addition to capturing errors, you can monitor interactions between multiple services or applications by [enabling tracing](/concepts/key-terms/tracing/). You can also collect and analyze performance profiles from real users with [profiling](/product/profiling/).
 
 Select which Sentry features you'd like to install in addition to Error Monitoring to get the corresponding installation and configuration instructions below.
 
@@ -42,9 +42,10 @@ from sentry_sdk.integrations.cloud_resource_context import CloudResourceContextI
 
 sentry_sdk.init(
     dsn="___PUBLIC_DSN___",
-    # Add data like request headers and IP for users, if applicable;
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    send_default_pii=True,
+    # Check https://docs.sentry.io/platforms/python/data-management/data-collected/ to configure what data is collected
+    data_collection={
+        "user_info": True,
+    },
     # ___PRODUCT_OPTION_START___ performance
     # Set traces_sample_rate to 1.0 to capture 100%
     # of transactions for tracing.
@@ -83,5 +84,7 @@ In Google Cloud Platform GCE the context looks like this:
 
 ## Supported Versions
 
-- Python: 3.6+
+- Python:
+  - 3.6+ (SDK &lt;3.0)
+  - 3.7+ (SDK 3.0+)
 - Cloud platforms: Amazon EC2, Google Compute Engine

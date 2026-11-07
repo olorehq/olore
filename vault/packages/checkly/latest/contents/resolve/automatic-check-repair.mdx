@@ -1,0 +1,131 @@
+---
+title: 'Automatic check repair'
+sidebarTitle: 'Automatic Repair'
+description: 'Configure automatic repair, start a manual attempt, and restore a Browser or Multistep check script.'
+canonical: 'https://www.checklyhq.com/docs/resolve/automatic-check-repair/'
+---
+
+Automatic repair can attempt to fix a Browser or Multistep check when its script fails because of a check issue. A check intent states the goal, required outcomes, and guardrails that a repair must preserve. A failed check is not automatically repaired just because this setting is on; Rocky AI first needs a repairable failure and a valid intent.
+
+Repair tests the proposed script before saving it to the running check. For a check managed as code, repair can also create a GitHub pull request to keep its source file in sync. Review, merge, and deploy that change so a later deployment does not overwrite the repair.
+
+<Accordion title="Prerequisites">
+
+- A saved Browser or Multistep check with at least one public execution location
+- [Edit checks and Repair checks with Rocky permissions](/admin/team-management/permissions) (`checks:update` and `check-repairs:create`)
+- Rocky AI enabled, with access to check repair and AI invocations available for analysis and repair
+- For Monitoring as Code configuration: Checkly CLI 9.4.0 or later
+
+</Accordion>
+
+## Enable automatic repair
+
+1. Open the check editor and expand **Check intent** in the check settings.
+2. Review the intent. It needs a goal and at least one required outcome or guardrail. Include the outcomes the check must still prove, such as a successful sign-in or an order confirmation. Add guardrails for behavior a repair must not weaken, such as authentication.
+3. Expand **Automatic Repair**. Under **Automatic repair behavior**, select **On** to enable repair for this check. You can also select **Account default** to follow the account setting.
+4. Save the check.
+
+Enable automatic root cause analysis in the [Rocky AI settings](https://app.checklyhq.com/accounts/rocky-ai) so new failures can trigger repair.
+
+An AI-generated check already has an intent. Review it before enabling repair. Repair cannot start without a valid intent, even if the check or account setting is on.
+
+## Add intent to an existing check
+
+For an existing Browser or Multistep check, select **Initialize from saved check** in the **Check intent** section. Checkly reads the saved script and dependencies and suggests an intent. Review the suggestion, edit its goal and outcomes if needed, then save the check. The suggestion is not saved and repair is not enabled just by selecting the button.
+
+You can also write the intent yourself. Use this option when the script does not express all of the business requirements a repair must preserve. For example, a script might check that a page loads while the actual goal also requires a signed-in user to see the correct account.
+
+## Define intent with Monitoring as Code
+
+You can also define `intent` and enable repair with `aiAutoRepairEnabled` in your [Monitoring as Code](../cli/overview) configuration using the Checkly CLI. Keep the goal, required outcomes, and guardrails alongside your check definition. For a check the CLI manages, a deploy writes what the code declares, like every other property, so a value set only in Checkly is cleared by the next deploy of code that does not set it. Before that happens, the deploy plan lists the value and can [update your code with it](../cli/checkly-deploy#updating-your-code-with-changes-made-in-checkly). See the General Check Options in the [Browser Check](../constructs/browser-check#general-check-options) and [Multistep Check](../constructs/multistep-check#general-check-options) construct references for the `intent` schema and a complete configuration example.
+
+Use your existing Browser or Multistep check test file in these examples.
+
+<Tabs>
+<Tab title="Browser check">
+
+```ts
+import { BrowserCheck } from "checkly/constructs"
+
+new BrowserCheck("dashboard-browser", {
+  name: "Authenticated dashboard",
+  locations: ["eu-west-1"],
+  aiAutoRepairEnabled: true,
+  code: {
+    entrypoint: "./dashboard.spec.ts",
+  },
+  intent: {
+    goal: "Verify that authenticated users can open the dashboard.",
+    constraints: [
+      {
+        type: "REQUIRED_OUTCOME",
+        statement: "Authentication succeeds for a valid user.",
+      },
+      {
+        type: "MUST_PRESERVE",
+        statement: "Do not remove or weaken the authentication assertion.",
+      },
+    ],
+  },
+})
+```
+
+</Tab>
+<Tab title="Multistep check">
+
+```ts
+import { MultiStepCheck } from "checkly/constructs"
+
+new MultiStepCheck("authenticated-api", {
+  name: "Authenticated API flow",
+  locations: ["eu-west-1"],
+  aiAutoRepairEnabled: true,
+  code: {
+    entrypoint: "./authenticated-api.spec.ts",
+  },
+  intent: {
+    goal: "Verify that authenticated users can retrieve their account through the API.",
+    constraints: [
+      {
+        type: "REQUIRED_OUTCOME",
+        statement: "Authentication succeeds for a valid user.",
+      },
+      {
+        type: "MUST_PRESERVE",
+        statement: "Do not remove or weaken the authentication assertion.",
+      },
+    ],
+  },
+})
+```
+
+</Tab>
+</Tabs>
+
+Set `aiAutoRepairEnabled` to `true` to enable automatic repair or `false` to disable it for the check. Left unset, or set to `null`, the check follows your account default. Defining `intent` alone does not enable repair.
+
+## Start a manual repair
+
+1. Open a failed check's completed [root cause analysis](./ai-root-cause-analysis/overview).
+2. Select **Repair with AI** to start an attempt. You need a saved, valid check intent, but automatic repair does not need to be enabled.
+3. Select **View repair** to review the attempt, its test results, and any script change or pull request.
+
+To revisit earlier attempts, open the menu beside **View repair** labeled **Repair history and actions**. Select **Start another repair** to retry after an attempt finishes. Each new attempt uses another repair invocation. You can also open an attempt from its repair marker on the check timeline.
+
+<Note>
+Repair tests the candidate in the check's first configured public location. Checks configured only on private locations are not supported by this workflow. Its test does not reproduce a custom per-check Playwright configuration; review the results and verify the check with your normal configuration.
+</Note>
+
+## Restore the original script
+
+In the repair conversation, find **Script saved before this repair**, select **View script**, then **Restore this script**. You need [Edit checks permission](/admin/team-management/permissions), and any pending or running repair of that check must finish first.
+
+You can restore scripts for checks managed in the Checkly UI. Restore repository-managed checks through your repository. This action restores only the saved script, not dependencies or other check settings.
+
+## Repair notifications
+
+Your alert emails can link to a repair attempt. A recovery email credits an in-place repair after a passing check result confirms recovery. A successful repair test or proposed pull request alone does not confirm recovery.
+
+## AI invocation usage
+
+Root cause analysis and automatic repair each use one AI invocation from your plan's allowance. Each AI Assistant conversation uses one invocation on its first run. Later messages in that conversation use no more invocations. **Initialize from saved check** does not use an invocation. See [Rocky AI consumption and invocations](../ai/rocky-ai#consumption-and-invocations).

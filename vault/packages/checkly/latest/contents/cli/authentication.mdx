@@ -2,12 +2,17 @@
 title: Authentication
 description: 'How to authenticate with the Checkly CLI'
 sidebarTitle: 'Authentication'
+canonical: 'https://www.checklyhq.com/docs/cli/authentication/'
 ---
+
+<Note>This page describes Checkly CLI version 10 and later.</Note>
+
 Before you can use the Checkly CLI, you need to authenticate with your Checkly account. There are different ways to authenticate depending on the environment where you are running the CLI from.
 
 ## Interactive
 
-When **running the CLI interactively** from your dev environment, just use the built-in `login` command. If you have multiple
+When **running the CLI interactively** from your dev environment, just use the built-in `login` command. It shows a URL and a code
+that you can open in a browser on any device, so it also works over SSH and from AI agents. If you have multiple
 Checkly accounts, it will prompt which account you want to target.
 
 ```bash Terminal
@@ -32,6 +37,18 @@ To log out and clear your stored credentials:
 npx checkly logout
 ```
 
+## Working with several accounts
+
+Your `checkly login` belongs to you, not to one account, so it works with every account you're a member of. Commands use your default account, which you choose when you log in and change with `checkly switch`. `checkly whoami` lists your accounts and their IDs.
+
+To use another account for a single command without changing the default, set `CHECKLY_ACCOUNT_ID` on that command:
+
+```bash Terminal
+CHECKLY_ACCOUNT_ID=a43... npx checkly test-sessions get <id>
+```
+
+Set in your shell, or in a `.env` file in the directory you run the CLI from, `CHECKLY_ACCOUNT_ID` applies to every command until you remove it. A project can use this to pin its account while each developer logs in with their own `checkly login`. A value on the command line wins over `.env`.
+
 ## From CI
 
 You can also authenticate using environment variables, which is useful for CI/CD pipelines and automated environments.
@@ -39,6 +56,8 @@ You can also authenticate using environment variables, which is useful for CI/CD
 You will need to export two environment variables in the shell:
 - `CHECKLY_API_KEY`
 - `CHECKLY_ACCOUNT_ID`
+
+`CHECKLY_API_KEY` takes precedence over a stored login, and `checkly login` refuses to run while it's set. Always set both variables: without `CHECKLY_ACCOUNT_ID`, the CLI uses the default account from your last `checkly login`, and on its own `CHECKLY_ACCOUNT_ID` only picks the account for your login.
 
 To get your API key, go to your Settings page in Checkly and grab a API key from [the API keys tab](https://app.checklyhq.com/settings/user/api-keys) and your Account ID from the [Account settings tab](https://app.checklyhq.com/settings/account/general).
 
@@ -64,12 +83,6 @@ This will display your account information and confirm your authentication statu
 
 <AccordionGroup>
 <Accordion title="`npx checkly login` doesn't open a browser window">
-If `npx checkly login` doesn't automatically open a browser window to authenticate, you can generate a direct link instead.
-
-When prompted with:
-
-> Do you want to open a browser window to continue with login? (Y/n)
-
-Enter "n". The CLI will provide a link that you can copy and paste into your browser to authenticate.
+`npx checkly login` prints the login URL and a code. If no browser window opens, open the URL in a browser on any device and enter the code.
 </Accordion>
 </AccordionGroup>

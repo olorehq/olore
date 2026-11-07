@@ -1,7 +1,7 @@
 ---
 title: '`OrganizationInvitation`'
 description: The OrganizationInvitation object is the model around an Organization invitation.
-sdk: js-frontend, astro, chrome-extension, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
+sdk: js-frontend, astro, chrome-extension, electron, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
 ---
 
 The `OrganizationInvitation` object is the model around an Organization invitation.
@@ -9,10 +9,10 @@ The `OrganizationInvitation` object is the model around an Organization invitati
 ## Properties
 
 <Properties>
-  - `id`
-  - `string`
+  - `createdAt`
+  - `Date`
 
-  The unique identifier for this Organization invitation.
+  The date when the invitation was created.
 
   ---
 
@@ -20,6 +20,13 @@ The `OrganizationInvitation` object is the model around an Organization invitati
   - `string`
 
   The email address the invitation has been sent to.
+
+  ---
+
+  - `id`
+  - `string`
+
+  The unique identifier for this Organization invitation.
 
   ---
 
@@ -31,7 +38,7 @@ The `OrganizationInvitation` object is the model around an Organization invitati
   ---
 
   - `publicMetadata`
-  - [`OrganizationInvitationPublicMetadata`](/docs/reference/types/metadata#organization-invitation-public-metadata)
+  - [`OrganizationInvitationPublicMetadata`](/docs/reference/types/metadata#organizationinvitationpublicmetadata)
 
   Metadata that can be read from the Frontend API and [Backend API](/docs/reference/backend-api){{ target: '_blank' }} and can be set only from the Backend API.
 
@@ -48,13 +55,6 @@ The `OrganizationInvitation` object is the model around an Organization invitati
   - `'pending' | 'accepted' | 'revoked'`
 
   The status of the invitation.
-
-  ---
-
-  - `createdAt`
-  - `Date`
-
-  The date when the invitation was created.
 
   ---
 
@@ -76,7 +76,7 @@ function revoke(): Promise<OrganizationInvitation>
 
 ### Example
 
-The following example demonstrates how to revoke an Organization invitation. It first gets the list of Organization invitations using [`getInvitations()`](/docs/reference/objects/organization#get-invitations) and then revokes the first invitation in the list.
+The following example demonstrates how to revoke an Organization invitation. It first gets the list of Organization invitations using [`getInvitations()`](/docs/reference/objects/organization#getinvitations) and then revokes the first invitation in the list.
 
 It assumes:
 

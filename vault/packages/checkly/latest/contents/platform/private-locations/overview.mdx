@@ -1,7 +1,8 @@
 ---
-title: 'Getting started with Private Locations'
-description: 'Monitor internal systems and test from custom locations using Checkly Private Locations. Run checks from within your own infrastructure with the lightweight Checkly Agent.'
+title: 'Getting started with private locations'
+description: 'Monitor internal systems and test from custom locations using Checkly private locations. Run checks from within your own infrastructure with the lightweight Checkly Agent.'
 sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/platform/private-locations/overview/'
 ---
 
 <Tip>
@@ -9,18 +10,18 @@ sidebarTitle: 'Overview'
 </Tip>
 
 <Note>
-**Owner** or **Admin** permissions are required to create, edit, and delete Private Locations.
+**Owner** or **Admin** permissions are required to create, edit, and delete private locations.
 </Note>
 
-A Private Location is a monitoring location that you manage by simply deploying a lightweight Checkly Agent.
+A private location is a monitoring location that you manage by deploying a lightweight Checkly Agent. The Agent runs as a container on your own infrastructure: on premises, in a private cloud, or in a [Kubernetes cluster](/platform/private-locations/kubernetes-deployment).
 
-Running a check from a Private Location allows you to:
+Running a check from a private location allows you to:
 
 - **Monitor internal systems**: Test the performance and reliability of applications and APIs that are only accessible from within your network (e.g., development environments, intranet tools)
 
 - **Test from anywhere**: Test the performance and reliability of applications and APIs from different parts of the world. Install your Checkly Agent(s) for location-based performance insights, that we don't cover with our [Global Locations](/concepts/locations)
 
-Configure your checks to use your Private Location and that's it. As long as you have at least one operational Checkly Agent, checks will run in your Private Location. [Adding more agents](/platform/private-locations/scaling-redundancy) will distribute the load and improve resilience automatically.
+Configure your checks to use your private location and that's it. As long as you have at least one operational Checkly Agent, checks will run in your private location. [Adding more agents](/platform/private-locations/scaling-redundancy) will distribute the load and improve resilience automatically.
 
 ## Requirements
 
@@ -28,12 +29,12 @@ Here are the requirements before you get started:
 
 - A container runtime (we test using Docker, but other runtimes should work)
 - Outbound internet access for the Agent to https://agent.checklyhq.com (proxy configuration is supported)
-- Access to your API or browser-based applications and services from the Private Location network
-- Owner or Admin permissions (required to create, edit, and delete Private Locations)
+- Access to your API or browser-based applications and services from the private location network
+- Owner or Admin permissions (required to create, edit, and delete private locations)
 
-## Configuring a Private Location
+## Configuring a private location
 
-1. Navigate to the [Private Locations page](https://app.checklyhq.com/private-locations) and click "New private location"
+1. Navigate to the [Private locations page](https://app.checklyhq.com/private-locations) and click "New private location"
 
     ![private locations screen](/images/docs/images/private-locations/pl_started_1.png)
 
@@ -53,7 +54,7 @@ docker run -e API_KEY="pl_...." -d checkly/agent:latest
 ```
 
 
-5. Refresh the Private Locations page in the Checkly app and you will see a count of the number of running agents.
+5. Refresh the Private locations page in the Checkly app and you will see a count of the number of running agents.
 
     ![agent running](/images/docs/images/private-locations/pl_started_4.png)
 
@@ -62,9 +63,9 @@ docker run -e API_KEY="pl_...." -d checkly/agent:latest
     ![select private location](/images/docs/images/private-locations/pl_started_5.png)
 
 
-## Using Private Locations with the CLI
+## Using private locations with the CLI
 
-With the [Checkly CLI](/cli/overview), you can configure any check to run on a Private Location by adding the slug name to the `privateLocations` array. For example, with an [ApiCheck construct](/constructs/api-check):
+With the [Checkly CLI](/cli/overview), you can configure any check to run on a private location by adding the slug name to the `privateLocations` array. For example, with an [ApiCheck construct](/constructs/api-check):
 
 ```ts {title="api.check.ts"}
 import { ApiCheck } from 'checkly/constructs'
@@ -82,13 +83,13 @@ new ApiCheck('hello-api-1', {
 })
 ```
 
-## Unavailable Private Locations
+## Unavailable private locations
 
-If a private location has had no Checkly agents connected for more than 10 minutes, it will be flagged as unavailable. Checkly will email account owners and admins that the location has become unavailable.
+If a private location has checks assigned but no Checkly agents connected in the last 10 to 20 minutes, it will be flagged as unavailable. Checkly will email account owners and admins when this happens.
 
 While a location is unavailable, no checks will be scheduled to run on it. When a location becomes available, check scheduling and execution will resume automatically.
 
-## Using Playwright Check Suites in Private Locations
+## Using Playwright Check Suites in private locations
 
 We recommend to update the Checkly agent regularly. 
 

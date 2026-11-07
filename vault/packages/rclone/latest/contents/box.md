@@ -126,9 +126,10 @@ have just set.
 
 ### Invalid refresh token
 
-According to the [box docs](https://developer.box.com/v2.0/docs/oauth-20#section-6-using-the-access-and-refresh-tokens):
+According to the [box docs](https://developer.box.com/guides/authentication/tokens/refresh/):
 
-> Each refresh_token is valid for one use in 60 days.
+> A Refresh Token is valid for 60 days and can be used to obtain a new Access
+> Token and Refresh Token only once.
 
 This means that if you
 
@@ -320,19 +321,6 @@ Properties:
 
 - Config:      box_config_file
 - Env Var:     RCLONE_BOX_BOX_CONFIG_FILE
-- Type:        string
-- Required:    false
-
-#### --box-config-credentials
-
-Box App config.json contents.
-
-Leave blank normally.
-
-Properties:
-
-- Config:      config_credentials
-- Env Var:     RCLONE_BOX_CONFIG_CREDENTIALS
 - Type:        string
 - Required:    false
 

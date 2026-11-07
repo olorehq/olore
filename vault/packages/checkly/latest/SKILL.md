@@ -1,9 +1,9 @@
 ---
 name: olore-checkly-latest
-description: Local Checkly documentation reference (latest). Checkly monitoring documentation. Use for synthetic monitoring, Playwright checks, API monitoring, Monitoring as Code (MaC), alerting, and CI/CD integration.
+description: Local checkly documentation reference (latest). Checkly monitoring documentation. Use for synthetic monitoring, Playwright checks, API monitoring, Monitoring as Code (MaC), alerting, and CI/CD integration.
 ---
 
-# Checkly Documentation
+# checkly Documentation
 
 Checkly monitoring documentation. Use for synthetic monitoring, Playwright checks, API monitoring, Monitoring as Code (MaC), alerting, and CI/CD integration.
 
@@ -11,29 +11,20 @@ Checkly monitoring documentation. Use for synthetic monitoring, Playwright check
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started | `contents/quickstarts/` |
-| Core concepts | `contents/concepts/` |
-| CLI reference | `contents/cli/` |
+| Overview | `contents/what-is-checkly.mdx` |
+| Getting started | `contents/quickstart.mdx` |
+| CLI | `contents/cli/` |
 | Monitoring as Code constructs | `contents/constructs/` |
-| API checks | `contents/detect/synthetic-monitoring/api-checks/` |
-| Browser / Playwright checks | `contents/detect/synthetic-monitoring/browser-checks/` |
-| Uptime monitoring | `contents/detect/uptime-monitoring/` |
-| Alerting | `contents/communicate/alerts/` |
+| Playwright checks | `contents/detect/synthetic-monitoring/playwright-checks/` |
 | REST API reference | `contents/api-reference/` |
-| Trace integration (OTel) | `contents/resolve/traces/` |
-| CI/CD integration | `contents/integrations/ci-cd/` |
+| Integrations (CI/CD, IaC, alerts) | `contents/integrations/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Creating and configuring Checkly checks (API, browser, Playwright, multistep, heartbeat, uptime)
-- Monitoring as Code (MaC) using the Checkly CLI and constructs
-- Setting up alert channels, dashboards, or status pages
-- Integrating Checkly with CI/CD pipelines (GitHub Actions, GitLab CI, Jenkins, Vercel)
-- Infrastructure as Code with Terraform or Pulumi Checkly providers
-- Connecting OpenTelemetry traces for root cause analysis
-- Checkly REST API usage
-- Private locations and custom runtime configuration
+- Synthetic monitoring, Playwright checks, API checks, uptime monitoring
+- Monitoring as Code (MaC), Checkly CLI and constructs
+- Alerting, status pages, incidents, and CI/CD or Terraform integration
 
 ## How to find information
 

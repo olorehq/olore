@@ -1,0 +1,14 @@
+---
+id: filterFn_equalsStringSensitive
+title: filterFn_equalsStringSensitive
+---
+
+```ts
+const filterFn_equalsStringSensitive: CreatedFilterFn<any, any>;
+```
+
+Defined in: [features/column-filtering/filterFns.ts:143](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/column-filtering/filterFns.ts#L143)
+
+Keeps rows whose stringified column value exactly equals the filter text.
+
+Matching is case-sensitive and empty filter values are auto-removed.

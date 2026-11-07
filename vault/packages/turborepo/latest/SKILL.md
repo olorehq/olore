@@ -1,9 +1,9 @@
 ---
 name: olore-turborepo-latest
-description: Local Turborepo documentation reference (latest). Use for monorepo build orchestration, task caching, remote caching, parallel execution, and incremental builds.
+description: Local turborepo documentation reference (latest). Turborepo documentation. Use for monorepo build orchestration, task caching, remote caching, parallel execution, and incremental builds.
 ---
 
-# Turborepo Documentation
+# turborepo Documentation
 
 Turborepo documentation. Use for monorepo build orchestration, task caching, remote caching, parallel execution, and incremental builds.
 
@@ -11,25 +11,23 @@ Turborepo documentation. Use for monorepo build orchestration, task caching, rem
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started | `contents/docs/getting-started/index.mdx` |
-| Installation | `contents/docs/getting-started/installation.mdx` |
-| Task configuration | `contents/docs/crafting-your-repository/configuring-tasks.mdx` |
+| Getting started | `contents/docs/getting-started/installation.mdx` |
+| CLI reference | `contents/docs/reference/run.mdx` |
+| turbo.json configuration | `contents/docs/reference/configuration.mdx` |
 | Caching | `contents/docs/crafting-your-repository/caching.mdx` |
 | Remote caching | `contents/docs/core-concepts/remote-caching.mdx` |
-| CLI reference | `contents/docs/reference/run.mdx` |
-| turbo.json config | `contents/docs/reference/configuration.mdx` |
+| CI setup | `contents/docs/guides/ci-vendors/index.mdx` |
+| Tool and framework guides | `contents/docs/guides/tools/index.mdx` |
 | Remote Cache API | `contents/openapi/index.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Turborepo setup, installation, or migration from another build system
-- Task caching, remote caching, or cache invalidation
-- Configuring turbo.json, task dependencies, and pipeline orchestration
-- Monorepo structure, internal packages, and workspace management
-- CI/CD integration with Turborepo (GitHub Actions, Vercel, CircleCI, etc.)
-- Framework or tool integrations (Next.js, TypeScript, Docker, ESLint, etc.)
-- Turborepo CLI commands and their options
+- Configuring turbo.json, tasks, and the task graph
+- Local and remote caching, cache inputs/outputs, environment variables
+- `turbo` CLI commands (run, prune, query, generate, watch, boundaries)
+- Using Turborepo with CI vendors, frameworks, Docker, TypeScript, ESLint, etc.
+- Structuring monorepos and internal packages
 
 ## How to find information
 

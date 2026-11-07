@@ -86,8 +86,8 @@ their names ahead of time.
 **Usage**
 
 ```js
-session.on('event', ({ name, params }) => {
-  console.log(`CDP event: ${name}`, params);
+session.on('event', ({ method, params }) => {
+  console.log(`CDP event: ${method}`, params);
 });
 ```
 
@@ -140,8 +140,21 @@ Optional method parameters.
 
 Optional method parameters.
 
+### option: CDPSession.send.timeout
+* since: v1.65
+- `timeout` <[float]>
+
+Maximum time in milliseconds to wait for the response. Defaults to `0` - no timeout.
+
+### option: CDPSession.send.signal
+* since: v1.65
+* langs: js
+- `signal` <[AbortSignal]>
+
+Allows to cancel the operation using an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal). If the signal is aborted, the operation will be aborted and throw an error.
+
 ## method: CDPSession.event
-* since: v.1.30
+* since: v1.30
 * langs: csharp
 - returns: <[CDPSessionEvent]>
 

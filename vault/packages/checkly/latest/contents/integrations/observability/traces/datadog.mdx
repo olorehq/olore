@@ -1,0 +1,39 @@
+---
+title: 'Export traces to Datadog'
+description: 'Send Checkly traces to Datadog through direct OTLP intake.'
+sidebarTitle: 'Datadog'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/traces/datadog/'
+---
+
+import OtlpVendorIntro from '/snippets/otlp-vendor-intro.mdx';
+import OtlpVendorOutro from '/snippets/otlp-vendor-outro.mdx';
+
+<OtlpVendorIntro vendor="Datadog" />
+
+1. Get the endpoint. Use the URL for your Datadog site.
+
+   | Site | URL |
+   |---|---|
+   | US1 (`datadoghq.com`) | `https://otlp.datadoghq.com/v1/traces` |
+   | US3 (`us3.datadoghq.com`) | `https://otlp.us3.datadoghq.com/v1/traces` |
+   | US5 (`us5.datadoghq.com`) | `https://otlp.us5.datadoghq.com/v1/traces` |
+   | EU (`datadoghq.eu`) | `https://otlp.datadoghq.eu/v1/traces` |
+   | AP1 (`ap1.datadoghq.com`) | `https://otlp.ap1.datadoghq.com/v1/traces` |
+   | AP2 (`ap2.datadoghq.com`) | `https://otlp.ap2.datadoghq.com/v1/traces` |
+   | UK1 (`uk1.datadoghq.com`) | `https://otlp.uk1.datadoghq.com/v1/traces` |
+   | US1-FED (`ddog-gov.com`) | `https://otlp.ddog-gov.com/v1/traces` |
+   | US2-FED (`us2.ddog-gov.com`) | `https://otlp.us2.ddog-gov.com/v1/traces` |
+
+2. Get the key. In Datadog, go to **Organization Settings** > **API Keys** and create a key.
+3. Paste the values into Checkly. On the [Traces settings page](https://app.checklyhq.com/settings/account/traces), turn on **Enable exporting traces**, paste the URL, and add both headers from the table below. Without `compute_stats`, Datadog does not compute trace metrics.
+4. Find the spans. In Datadog APM, the spans appear under service `checkly`.
+
+| Header name | Value |
+|---|---|
+| `dd-api-key` | `<API key>` |
+| `compute_stats` | `true` |
+
+If no spans arrive, check the site first. Datadog answers 403 when the site does not match your organization or the key is wrong.
+
+Datadog documents the intake in [OTLP traces ingest](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest/traces/).
+<OtlpVendorOutro />

@@ -1,6 +1,7 @@
 ---
-title: Sign-in-or-up custom flow (Legacy)
+title: Sign-in-or-up custom flow
 description: Use the legacy Clerk API to handle a combined sign-up and sign-in flow in your application.
+tag: legacy
 search:
   keywords:
     - combined
@@ -16,7 +17,7 @@ This guide demonstrates how to build a custom user interface that **allows users
 
 To use email and password authentication, you first need to ensure they are enabled for your application.
 
-1. In the Clerk Dashboard, navigate to the [**User & authentication**](https://dashboard.clerk.com/last-active?path=user-authentication/user-and-authentication) page.
+1. In the Clerk Dashboard, navigate to the [**User & authentication**](https://dashboard.clerk.com/~/user-authentication/user-and-authentication) page.
 1. Enable **Sign-up with email** and **Sign-in with email**.
 1. Select the **Password** tab and enable **Sign-up with password**. Leave **Require a password at sign-up** enabled.
 
@@ -40,7 +41,7 @@ To blend a sign-up and sign-in flow into a single flow, you must treat it as a s
   import * as React from 'react'
   import { useSignIn, useSignUp } from '@clerk/nextjs/legacy'
   import { useRouter } from 'next/navigation'
-  import type { EmailCodeFactor } from '@clerk/shared/types'
+  import type { EmailCodeFactor } from '@clerk/nextjs/types'
 
   export default function SignInForm() {
     const { isLoaded, signIn, setActive } = useSignIn()
@@ -88,9 +89,9 @@ To blend a sign-up and sign-in flow into a single flow, you must treat it as a s
           })
         } else if (signInAttempt.status === 'needs_second_factor') {
           // Check if email_code is a valid second factor
-          // This is required when Client Trust is enabled and the user
+          // This is required when Device Trust is enabled and the user
           // is signing in from a new device.
-          // See https://clerk.com/docs/guides/secure/client-trust
+          // See https://clerk.com/docs/guides/protect/device-trust
           const emailCodeFactor = signInAttempt.supportedSecondFactors?.find(
             (factor): factor is EmailCodeFactor => factor.strategy === 'email_code',
           )
@@ -275,8 +276,8 @@ To blend a sign-up and sign-in flow into a single flow, you must treat it as a s
           <button type="submit">Continue</button>
         </form>
 
-        {/* Required for sign-up flows
-    Clerk's bot sign-up protection is enabled by default */}
+        {/* Required for sign-up flows if your application uses legacy bot sign-up protection.
+        See https://clerk.com/docs/guides/secure/legacy-bot-protection */}
         <div id="clerk-captcha" />
       </>
     )
@@ -289,7 +290,7 @@ To blend a sign-up and sign-in flow into a single flow, you must treat it as a s
   import { ThemedText } from '@/components/themed-text'
   import { ThemedView } from '@/components/themed-view'
   import { useSignIn, useSignUp } from '@clerk/expo/legacy'
-  import type { EmailCodeFactor } from '@clerk/shared/types'
+  import type { EmailCodeFactor } from '@clerk/expo/types'
   import { useRouter } from 'expo-router'
   import * as React from 'react'
   import { Pressable, StyleSheet, TextInput } from 'react-native'
@@ -341,9 +342,9 @@ To blend a sign-up and sign-in flow into a single flow, you must treat it as a s
           })
         } else if (signInAttempt.status === 'needs_second_factor') {
           // Check if email_code is a valid second factor
-          // This is required when Client Trust is enabled and the user
+          // This is required when Device Trust is enabled and the user
           // is signing in from a new device.
-          // See https://clerk.com/docs/guides/secure/client-trust
+          // See https://clerk.com/docs/guides/protect/device-trust
           const emailCodeFactor = signInAttempt.supportedSecondFactors?.find(
             (factor): factor is EmailCodeFactor => factor.strategy === 'email_code',
           )

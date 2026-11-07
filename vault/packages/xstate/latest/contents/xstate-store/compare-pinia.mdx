@@ -1,0 +1,304 @@
+---
+title: 'Compare to Pinia'
+---
+
+This page compares XState Store with [Pinia](https://pinia.vuejs.org/).
+
+## Summary
+
+| Topic | Pinia | XState Store |
+| --- | --- | --- |
+| State model | Vue stores with state, getters, and actions. | Framework-neutral stores with context, transitions, and atoms. |
+| Updates | Actions mutate or replace Vue state. | Typed events run transition functions. |
+| Effects | Actions and Vue composables/watchers. | Transition-enqueued effects and emitted events. |
+| Rendering | Idiomatic Vue reactivity. | Vue adapter over a framework-neutral core. |
+| Main advantage | Best fit for Vue conventions. | Portable store model across frameworks. |
+
+## State Model
+
+Pinia is the idiomatic Vue store library. Option stores define `state`, `getters`, and `actions`; setup stores use Vue refs, computed values, and functions.
+
+XState Store defines context and event transitions:
+
+<SplitItems>
+<SplitItem value="pinia" label="Pinia">
+
+```ts
+export const useCounterStore = defineStore('counter', {
+  state: () => ({ count: 0 }),
+  actions: {
+    increment(by: number) {
+      this.count += by;
+    },
+  },
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+The main distinction is not raw capability. It is integration style: Pinia feels like Vue; XState Store feels like an evented store that can be used from Vue.
+
+**Migration tip:** Pinia `state` usually maps to store `context`; simple refs in setup stores may map better to atoms.
+
+## Update Model
+
+Pinia actions are methods on the store. They can mutate state directly in Vue's reactive model.
+
+XState Store updates go through named events:
+
+<SplitItems>
+<SplitItem value="pinia" label="Pinia">
+
+```ts
+const counter = useCounterStore();
+
+counter.increment(1);
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+store.trigger.increment({ by: 1 });
+```
+
+</SplitItem>
+</SplitItems>
+
+This makes updates more explicit and portable. Pinia actions are more idiomatic for Vue developers.
+
+**Migration tip:** A Pinia action usually becomes an `on` transition, and its parameters become the event payload.
+
+## Effects Model
+
+Pinia effects usually live inside actions, watchers, composables, or plugins.
+
+XState Store effects are enqueued from transitions:
+
+<SplitItems>
+<SplitItem value="pinia" label="Pinia">
+
+```ts
+actions: {
+  async save() {
+    await api.save(this.count);
+    this.saved = true;
+  },
+}
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { saved: false },
+  on: {
+    save: (context, event, enqueue) => {
+      enqueue.effect(() => {
+        console.log('saved');
+      });
+
+      return { saved: true };
+    },
+  },
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+This keeps the side effect attached to the event transition while keeping the transition synchronous.
+
+## Integration And Rendering
+
+Pinia is the better fit when you want the most idiomatic Vue experience: `defineStore`, setup stores, Vue devtools integration, `storeToRefs`, and Vue plugin conventions.
+
+XState Store's Vue adapter exposes store snapshots as refs:
+
+<SplitItems>
+<SplitItem value="pinia" label="Pinia">
+
+```vue
+<script setup lang="ts">
+const counter = useCounterStore();
+const { count } = storeToRefs(counter);
+</script>
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```vue
+<script setup lang="ts">
+import { createStore, useSelector } from '@xstate/store-vue';
+
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+});
+
+const count = useSelector(store, (state) => state.context.count);
+</script>
+```
+
+</SplitItem>
+</SplitItems>
+
+Choose the adapter when you want the same store model to work outside Vue too.
+
+**Migration tip:** Pinia getters map to `store.select(...)`, adapter `useSelector(...)`, or derived atoms depending on whether the value belongs to a store or atom graph.
+
+## Extensions
+
+Pinia's extension model is Vue plugin-oriented, and it benefits from Vue ecosystem conventions.
+
+XState Store extensions are store-oriented:
+
+- persistence
+- undo/redo
+- reset
+- schema validation
+
+<SplitItems>
+<SplitItem value="pinia" label="Pinia">
+
+```ts
+pinia.use(({ store }) => {
+  store.$subscribe(() => {
+    localStorage.setItem(store.$id, JSON.stringify(store.$state));
+  });
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {},
+}).with(persist({ name: 'counter' }));
+```
+
+</SplitItem>
+</SplitItems>
+
+## Types And Runtime Contracts
+
+Pinia has strong TypeScript inference from state, getters, and actions.
+
+XState Store infers transition event payloads, supports Standard Schema metadata for context/events/emitted events, and can validate schemas at runtime.
+
+<SplitItems>
+<SplitItem value="pinia" label="Pinia">
+
+```ts
+export const useCounterStore = defineStore('counter', {
+  state: () => ({ count: 0 }),
+  actions: {
+    increment(by: number) {},
+  },
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  schemas: {
+    events: {
+      increment: z.object({ by: z.number() }),
+    },
+  },
+  context: { count: 0 },
+  on: {},
+}).with(validateSchemas());
+```
+
+</SplitItem>
+</SplitItems>
+
+## When To Choose Pinia
+
+Choose Pinia when:
+
+- the app is Vue-first
+- idiomatic Vue store ergonomics are the priority
+- you want Vue devtools/plugin conventions
+- actions and getters match the team's mental model
+
+## When To Choose XState Store
+
+Choose XState Store when:
+
+- you want a framework-neutral store that Vue can consume
+- updates are best modeled as named events
+- you want emitted events, `store.can.*(...)`, or schema validation
+- the same state model should work across Vue and non-Vue code
+
+## Migrating from Pinia
+
+### Concept map
+
+| Pinia | XState Store |
+| --- | --- |
+| `state` | store `context` |
+| getter | `store.select(...)`, `useSelector(...)`, or derived atom |
+| action | transition in `on` |
+| action parameters | event payload |
+| plugin | extension or explicit integration code |
+
+### Before
+
+```ts
+export const useCounterStore = defineStore('counter', {
+  state: () => ({ count: 0 }),
+  actions: {
+    increment(by: number) {
+      this.count += by;
+    },
+  },
+});
+```
+
+### After
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+
+store.trigger.increment({ by: 1 });
+```
+
+In Vue components, subscribe through the Vue adapter:
+
+```vue
+<script setup lang="ts">
+const count = useSelector(store, (state) => state.context.count);
+</script>
+```

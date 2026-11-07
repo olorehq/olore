@@ -2,7 +2,10 @@
 title: checkly switch
 description: 'Switch between multiple Checkly accounts.'
 sidebarTitle: 'checkly switch'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-switch/'
 ---
+
+<Note>This page describes Checkly CLI version 10 and later.</Note>
 
 The `checkly switch` command switches between multiple Checkly accounts that you have access to with your current credentials. Useful when you need to manage monitoring across different organizations or environments.
 
@@ -12,12 +15,12 @@ Before using `checkly switch`, ensure you have:
 - Valid Checkly account authentication (run `npx checkly login` if needed)
 - Access to multiple Checkly accounts (team memberships, client projects, etc.)
 
-If you only have access to one account, this command will indicate no alternative accounts are available.
+If you only have access to one account, the menu lists only that account.
 </Accordion>
 
 ## Usage
 
-The basic command displays available accounts and provides an interactive selection interface.
+The basic command displays available accounts and provides an interactive selection interface. It changes the default account: the one commands use from then on.
 
 ```bash Terminal
 npx checkly switch [options]
@@ -26,6 +29,13 @@ npx checkly switch [options]
 | Option | Required | Description |
 |--------|----------|-------------|
 | `--account-id, -a` | - | The id of the account you want to switch to. |
+
+Without a terminal to answer the menu, `checkly switch` lists the accounts instead:
+
+- In CI and other runs without a terminal, it fails with the available accounts and the `--account-id` command to use.
+- Under an AI agent, it prints a JSON line with the default account and the choices, so the agent can ask you which account to use.
+
+<Note>While `CHECKLY_ACCOUNT_ID` is set, commands use that account instead of the default; `checkly switch` still changes the default and warns. See [Working with several accounts](/cli/authentication#working-with-several-accounts).</Note>
 
 
 ## Command Options
@@ -66,7 +76,7 @@ npx checkly switch
 npx checkly switch --account-id="a43....."
 
 # Output
-Account switched to "a43....."
+Account switched to Staging (a43.....)
 ```
 
 </Tab>
@@ -75,12 +85,6 @@ Account switched to "a43....."
 </ResponseField>
 
 ## Troubleshooting
-
-### No Alternative Accounts
-If you see "No alternative accounts available":
-- You only have access to one Checkly account
-- Contact account administrators to request access to additional accounts
-- Consider using separate authentication for different accounts
 
 ### Account Not Listed
 If an expected account doesn't appear:

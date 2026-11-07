@@ -5,7 +5,7 @@ description: Local .NET fundamentals documentation reference (latest). .NET fund
 
 # dotnet-fundamentals Documentation
 
-.NET fundamentals documentation covering runtime libraries, networking, reflection, code analysis (quality and style rules), diagnostics, and .NET standard library APIs including System.* types.
+.NET fundamentals documentation covering code analysis (quality and style rules), networking, reflection, SYSLIB diagnostics, runtime diagnostic events, and API compatibility.
 
 ## Quick Reference
 
@@ -15,7 +15,6 @@ description: Local .NET fundamentals documentation reference (latest). .NET fund
 | Quality rule reference (CA####) | `contents/code-analysis/quality-rules/ca{rule-id}.md` |
 | Style rule reference (IDE####) | `contents/code-analysis/style-rules/ide{rule-id}.md` |
 | Configure code analysis | `contents/code-analysis/configuration-options.md` |
-| Runtime library API (System.*) | `contents/runtime-libraries/system-{typename}.md` |
 | Networking / HttpClient | `contents/networking/http/httpclient.md` |
 | Reflection | `contents/reflection/overview.md` |
 | Obsoletion warnings (SYSLIB####) | `contents/syslib-diagnostics/obsoletions-overview.md` |
@@ -27,7 +26,6 @@ description: Local .NET fundamentals documentation reference (latest). .NET fund
 Use this skill when the user asks about:
 - .NET code analysis rules (CA#### quality rules, IDE#### style rules)
 - Configuring or suppressing .NET analyzer warnings
-- System.* runtime library types (String, DateTime, Task, Regex, HttpClient, etc.)
 - .NET networking APIs (HttpClient, Sockets, WebSockets, QUIC)
 - .NET reflection and dynamic code generation (Reflection.Emit)
 - SYSLIB obsoletion warnings and their workarounds

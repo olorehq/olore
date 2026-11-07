@@ -3,6 +3,9 @@ id: cors
 title: Send cookies cross-origin
 sidebar_label: CORS & Cookies
 slug: /client/cors
+section: "Client Usage"
+parent: "client/links"
+order: 41
 ---
 
 If your API resides on a different origin than your front-end and you wish to send cookies to it, you will need to enable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) on your server and send cookies with your requests by providing the option `{credentials: "include"}` to fetch.

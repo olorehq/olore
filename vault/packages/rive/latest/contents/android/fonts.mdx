@@ -23,7 +23,7 @@ As of v9.12.0, various options for fallback fonts can be used on Android.
 </Note>
 The `Fonts` class provides ways to handle and customize fonts, including retrieving system fonts, defining font options, and finding fallback fonts based on specific characteristics.
 
-### 1. Setting a Fallback Font
+### 1. Setting a fallback font
 
 With v9.12.0, the runtime provides a new API to match missing fonts against a specific weight by extending the `FontFallbackStrategy` interface.
 
@@ -34,6 +34,10 @@ fun getFont(weight: Fonts.Weight): List<FontBytes>
 ```
 
 Implementers need to override this method. The user's implementation must then be set as the current fallback strategy via `FontFallbackStrategy.stylePicker`.
+
+<Warning>
+  `FontFallbackStrategy.stylePicker` is held through a `WeakReference`. Keep a strong reference to your strategy, for example by implementing it on your `Application`. An anonymous object assigned directly to `stylePicker` can be garbage collected.
+</Warning>
 
 **Example:**
 
@@ -68,7 +72,7 @@ The method returns a list of `FontBytes` (\`ByteArray\`). The runtime attempts t
 
 Fallback fonts can also be set using `Rive.setFallbackFont()`, with optional font preferences defined in `Fonts.FontOpts`. These fonts are tried only after attempting the ones returned by `FontFallbackStrategy.getFont()`.
 
-### 2. Font.FontOpts - Font Options
+### 2. Font.FontOpts - font options
 
 Defines the font characteristics when selecting a fallback font.
 
@@ -83,7 +87,7 @@ Defines the font characteristics when selecting a fallback font.
 val defaultFontOpts = Fonts.FontOpts.DEFAULT
 ```
 
-### 3. Retrieving a Fallback Font
+### 3. Retrieving a fallback font
 
 Use `FontHelper.getFallbackFont()` to find a suitable fallback font based on specified options. Returns a `Fonts.Font` object or `null` if no match is found.
 
@@ -94,7 +98,7 @@ val fontOpts = Fonts.FontOpts(familyName = "Roboto", weight = Fonts.Weight.BOLD)
 val fallbackFont = FontHelper.getFallbackFont(fontOpts)
 ```
 
-### 4. Getting Font File and Bytes
+### 4. Getting font file and bytes
 
 - `FontHelper.getFontFile(font: Fonts.Font)`: Retrieves the file for the specified font.
 - `FontHelper.getFontBytes(font: Fonts.Font)`: Reads the font file and returns its bytes.
@@ -106,7 +110,7 @@ val fontFile = FontHelper.getFontFile(fallbackFont)
 val fontBytes = FontHelper.getFontBytes(fallbackFont)
 ```
 
-### 5. Fonts.Weight - Font Weight
+### 5. Fonts.Weight - font weight
 
 Represents the font weight, allowing values from 0 to 1000.
 
@@ -121,7 +125,7 @@ val normalWeight = Fonts.Weight.NORMAL
 val customWeight = Fonts.Weight.fromInt(500)
 ```
 
-### 6. Fonts.Style - Font Style
+### 6. Fonts.Style - font style
 
 Represents the font style, allowing "normal" and "italic"
 
@@ -136,7 +140,7 @@ val normalStyle = Fonts.Font.STYLE_NORMAL
 val italicStyle = Fonts.Font.STYLE_ITALIC
 ```
 
-### 7. Getting System Fonts
+### 7. Getting system fonts
 
 - `FontHelper.getSystemFonts()`: Returns a map of all available system font families.
 

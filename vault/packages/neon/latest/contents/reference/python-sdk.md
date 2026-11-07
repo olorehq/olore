@@ -9,7 +9,7 @@ summary: >-
   Use it when you need to automate Neon platform operations in Python scripts or
   applications without constructing raw HTTP requests against the Neon API.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-08-31T16:23:18.162Z'
 ---
 
 <InfoBlock>
@@ -22,7 +22,7 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 </DocsList>
 
 <DocsList title="Related resources" theme="docs">
-  <a href="/docs/reference/api-reference">Neon API Reference</a>
+  <a href="/docs/reference/api">Neon API Reference</a>
 </DocsList>
 
 <DocsList title="Source code" theme="repo">
@@ -34,7 +34,19 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 ## About the SDK
 
-Neon supports the [neon-api - Python client for the Neon API](https://pypi.org/project/neon-api/), a wrapper for the [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api). This SDK simplifies integration of Python applications with the Neon platform, providing methods to programmatically manage API keys, Neon projects, branches, databases, endpoints, roles, and operations.
+Neon supports the [neon-api - Python client for the Neon API](https://pypi.org/project/neon-api/), a wrapper for the [Neon API](/docs/reference/api). This SDK simplifies integration of Python applications with the Neon platform, providing methods to programmatically manage API keys, Neon projects, branches, databases, endpoints, roles, and operations.
+
+<Admonition type="warning" title="Compatibility limits in version 0.3.0">
+The published Python SDK does not yet support all Neon API routes. Use the [Neon REST API](/docs/reference/api) or [Neon TypeScript SDK](/docs/reference/typescript-sdk) for the operations below.
+
+| Python SDK method            | SDK request                                  | Current API contract                     |
+| ---------------------------- | -------------------------------------------- | ---------------------------------------- |
+| `branch_set_as_primary`      | `POST .../set_as_primary`                    | `POST .../set_as_default`                |
+| `project_permissions_revoke` | `DELETE .../permissions` with a request body | `DELETE .../permissions/{permission_id}` |
+| `role_password_reveal`       | `POST .../reveal_password`                   | `GET .../reveal_password`                |
+
+The current API contract doesn't document compatibility aliases for the outdated requests.
+</Admonition>
 
 <AgentSkillsTip skill_topic="the Neon Python SDK for managing resources programmatically" />
 
@@ -60,6 +72,8 @@ neon = NeonAPI(api_key='your_api_key')
 Documentation for the `neon-api - Python SDK`, including a [Quickstart](https://neon-api-python.readthedocs.io/en/latest/#quickstart), can be found on **Read the Docs**. See [neon-api: Python client for the Neon API](https://neon-api-python.readthedocs.io/en/latest/#neon-api-python-client-for-the-neon-api).
 
 ## Methods of the `NeonAPI` Class
+
+The following list describes the methods exposed by the published Python package. The compatibility warning above identifies methods whose requests don't match the current API contract.
 
 - `me()`: Returns the current user.
 - `current_user_organizations()`: Returns the current user's organizations.
@@ -138,4 +152,4 @@ projects = neon.projects(org_id=org_id)
 
 - `consumption()`: Returns a list of project consumption metrics.
 
-_View the [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api) documentation for more information on the available endpoints and their parameters._
+_View the [Neon API](/docs/reference/api) documentation for more information on the available endpoints and their parameters._

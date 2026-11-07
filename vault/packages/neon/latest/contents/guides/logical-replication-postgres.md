@@ -2,9 +2,9 @@
 title: Replicate data to an external Postgres instance
 subtitle: Learn how to replicate data from Neon to an external Postgres instance
 summary: >-
-  Logical replication from Neon to an external (non-Neon) Postgres instance
+  Logical replication from Lakebase Postgres to an external (non-Neon) Postgres instance
   streams row-level changes over Postgres WAL by setting wal_level to logical,
-  creating a publication on Neon, and creating a subscription on the destination
+  creating a publication on Lakebase Postgres, and creating a subscription on the destination
   database. Use this guide when you need to replicate data out of Neon to a
   self-hosted or third-party Postgres server; for Neon-to-Neon replication, a
   separate guide applies. Enabling logical replication is irreversible per
@@ -12,10 +12,10 @@ summary: >-
   connected.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
 
-Neon's logical replication feature allows you to replicate data from Neon to external subscribers. This guide shows you how to stream data from a Neon Postgres database to an external Postgres database (a Postgres destination other than Neon). If you're looking to replicate data from one Neon Postgres instance to another, see [Replicate data from one Neon project to another](/docs/guides/logical-replication-neon-to-neon).
+Neon's logical replication feature allows you to replicate data from Neon to external subscribers. This guide shows you how to stream data from a Lakebase Postgres database to an external Postgres database (a Postgres destination other than Neon). If you're looking to replicate data from one Lakebase Postgres instance to another, see [Replicate data from one Neon project to another](/docs/guides/logical-replication-neon-to-neon).
 
 ## Prerequisites
 
@@ -52,8 +52,8 @@ Enabling logical replication modifies the Postgres `wal_level` configuration par
 To enable logical replication:
 
 1. Select your project in the Neon Console.
-2. On the Neon **Dashboard**, select **Settings**.
-3. Select **Logical Replication**.
+2. Select **Settings** in the sidebar.
+3. Select **Postgres**, then **Logical replication**.
 4. Click **Enable** to enable logical replication.
 
 You can verify that logical replication is enabled by running the following query:
@@ -73,7 +73,7 @@ It is recommended that you create a dedicated Postgres role for replicating data
 
 <TabItem>
 
-The following CLI command creates a role. To view the CLI documentation for this command, see [Neon CLI commands — roles](https://api-docs.neon.tech/reference/createprojectbranchrole)
+The following CLI command creates a role. To view the CLI documentation for this command, see [Neon CLI commands — roles](/docs/reference/api/branches/create-project-branch-role)
 
 ```bash
 neon roles create --name replication_user
@@ -87,18 +87,17 @@ To create a role in the Neon Console:
 
 1. Navigate to the [Neon Console](https://console.neon.tech).
 2. Select a project.
-3. Select **Branches**.
-4. Select the branch where you want to create the role.
-5. Select the **Roles & Databases** tab.
-6. Click **Add Role**.
-7. In the role creation dialog, specify a role name.
-8. Click **Create**. The role is created, and you are provided with the password for the role.
+3. Select your branch from the project/branch menu at the top of the sidebar.
+4. Under **Postgres database**, select **Roles**.
+5. Click **Add Role**.
+6. In the role creation dialog, specify a role name.
+7. Click **Create**. The role is created, and you are provided with the password for the role.
 
 </TabItem>
 
 <TabItem>
 
-The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API reference](https://api-docs.neon.tech/reference/createprojectbranchrole).
+The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API Reference](/docs/reference/api/branches/create-project-branch-role).
 
 ```bash
 curl 'https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/roles' \
@@ -219,6 +218,6 @@ SELECT subname, received_lsn, latest_end_lsn, last_msg_receipt_time FROM pg_cata
 
 After the replication operation is complete, you can switch your application over to the destination database by swapping out your source database connection details for your destination database connection details.
 
-You can find your Neon database connection details by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. See [Connect from any application](/docs/connect/connect-from-any-app).
+You can find your Neon database connection details by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. See [Connect from any application](/docs/connect/connect-from-any-app).
 
 <NeedHelp/>

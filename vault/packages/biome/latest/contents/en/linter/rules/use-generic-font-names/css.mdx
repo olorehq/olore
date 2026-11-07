@@ -1,0 +1,108 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: false
+
+title: useGenericFontNames (CSS)
+description: CSS documentation for useGenericFontNames
+localized: false
+---
+import RuleLanguageLinks from "@/components/RuleLanguageLinks.astro";
+import RulePlaygroundLink from "@/components/RulePlaygroundLink.astro";
+
+<RuleLanguageLinks current="css" languages={[{"id":"css","label":"CSS","href":"/linter/rules/use-generic-font-names/css/"}]} />
+
+## Summary
+- Rule available since: `v1.8.0`
+- Diagnostic Category: [`lint/a11y/useGenericFontNames`](/reference/diagnostics#diagnostic-category)
+- This rule is **recommended**, meaning it is enabled by default.
+- This rule doesn't have a fix.
+- The default severity of this rule is [**error**](/reference/diagnostics#error).
+- Sources: 
+  - Same as [`font-family-no-missing-generic-family-keyword`](https://github.com/stylelint/stylelint/blob/main/lib/rules/font-family-no-missing-generic-family-keyword/README.md)
+  - Inspired from [`css/font-family-fallbacks`](https://github.com/eslint/css/blob/main/docs/rules/font-family-fallbacks.md)
+
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"a11y": {
+				"useGenericFontNames": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Require a generic fallback in font-family lists.
+
+Generic families such as `serif`, `sans-serif`, and `monospace` let the browser choose an
+available fallback when named fonts cannot be loaded. This rule checks the `font` and
+`font-family` properties.
+
+A generic family may appear anywhere in the list. It is not required when:
+
+- the property uses a CSS-wide keyword such as `inherit` or `initial`;
+- the `font` shorthand uses a system-font value such as `caption` or `menu`;
+- the final family comes from a custom property through `var()`;
+- `font-family` appears inside an `@font-face` or `@font-palette-values` rule, where it is a
+descriptor that names font families rather than a fallback list.
+
+## SCSS limitations
+
+Font values that require SCSS evaluation, including variables, interpolation, and
+user-defined function results, are ignored because the emitted font family is unknown.
+
+## Examples
+
+### Invalid
+
+```css
+a { font-family: Arial; }
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.css:1:18 <a href=\"https://biomejs.dev/linter/rules/use-generic-font-names\">lint/a11y/useGenericFontNames</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">Generic font family missing.</span><br />  <br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>1 │ </strong>a &#123; font-family: Arial; &#125;<br />   <strong>   │ </strong>                 <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>2 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">If none of the listed font families is available, the browser falls back to its default font, which can look very different from the intended design.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Consider adding a generic font family as a fallback.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">For examples and more information, see</span><span style=\"color: lightgreen;\"><a href=\"https://developer.mozilla.org/en-US/docs/Web/CSS/generic-family\"> the MDN Web Docs</a></span><br />  <br />  - serif<br />  - sans-serif<br />  - monospace<br />  - etc.<br />  <br /></code></pre>"} />
+
+```css
+a { font: normal 14px/32px -apple-system, BlinkMacSystemFont; }
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.css:1:43 <a href=\"https://biomejs.dev/linter/rules/use-generic-font-names\">lint/a11y/useGenericFontNames</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">Generic font family missing.</span><br />  <br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>1 │ </strong>a &#123; font: normal 14px/32px -apple-system, BlinkMacSystemFont; &#125;<br />   <strong>   │ </strong>                                          <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>2 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">If none of the listed font families is available, the browser falls back to its default font, which can look very different from the intended design.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Consider adding a generic font family as a fallback.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">For examples and more information, see</span><span style=\"color: lightgreen;\"><a href=\"https://developer.mozilla.org/en-US/docs/Web/CSS/generic-family\"> the MDN Web Docs</a></span><br />  <br />  - serif<br />  - sans-serif<br />  - monospace<br />  - etc.<br />  <br /></code></pre>"} />
+
+### Valid
+
+```css
+a { font-family: "Lucida Grande", "Arial", sans-serif; }
+```
+
+```css
+a { font-family: inherit; }
+```
+
+```css
+a { font-family: sans-serif; }
+```
+
+```css
+a { font-family: var(--font); }
+```
+
+```css
+@font-face { font-family: Gentium; }
+```
+
+```css
+@font-palette-values --palette { font-family: Bixa; }
+```
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code (Edit this Page)](https://github.com/biomejs/biome/blob/main/crates/biome_css_analyze/src/lint/a11y/use_generic_font_names.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_css_analyze/tests/specs/a11y/useGenericFontNames)
+- <RulePlaygroundLink rule="useGenericFontNames" category="lint" language="css" code={"a { font-family: Arial; }\n"} />
+

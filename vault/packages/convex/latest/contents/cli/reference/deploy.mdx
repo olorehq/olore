@@ -28,7 +28,7 @@ The target deployment is chosen like this:
 6. When deploying to a preview deployment, it runs the function specified by `--preview-run`.
 If any step fails, the next steps do not run.
 
-## Usage
+## Syntax
 
 ```sh
 npx convex deploy [options]
@@ -107,6 +107,18 @@ Path to a custom file of environment variables, for choosing the deployment, e.g
 <dd>
 
 Optional message to attach to this deployment in the audit log.
+
+</dd>
+<dt>`--skip-large-indexes-check`</dt>
+<dd>
+
+Skip the confirmation prompt when this push creates, changes, or deletes an index on a large table. Creating or changing an index blocks the deploy until it is backfilled; consider staging it instead so it backfills in the background.
+
+</dd>
+<dt>`--allow-unstaging-schema`</dt>
+<dd>
+
+Skip the confirmation prompt when this push discards a staged table validator that is validating or already validated.
 
 </dd>
 </dl>

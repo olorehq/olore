@@ -2,6 +2,7 @@
 title: 'Configuration'
 description: 'Configure your API checks to validate responses and ensure your endpoints behave as expected.'
 sidebarTitle: 'Configuration'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/api-checks/configuration/'
 ---
 
 import GenericRuntimeVariablesTable from '/snippets/generic-runtime-variables-table.mdx';
@@ -67,7 +68,7 @@ Form encodes bodies are commonly used "traditional" HTML form submissions.
 
 If the predefined data types don't work for you, use `Raw data`. Make sure to define your `Content-Type` header explicitly then.
 
-> To monitor an XML/SOAP-based API define `text/xml; charset=utf-8` as `Content-Type` header, send your XML as `Raw data` and [use a setup script to parse required access tokens](/detect/synthetic-monitoring/api-checks/examples#parse-xmlsoap-data).
+> To monitor an XML/SOAP-based API define `text/xml; charset=utf-8` as `Content-Type` header, send your XML as `Raw data` and [use a setup script to parse required access tokens](/detect/synthetic-monitoring/api-checks/setup-and-teardown).
 
 ## Headers
 
@@ -76,6 +77,8 @@ Add HTTP request headers. The type ahead feature is pre-populated with the most 
 ![api monitoring HTTP headers](/images/docs/images/api-checks/http-request-headers.png)
 
 Clicking the **lock icon** toggles between encrypting the value of the header on the Checkly backend and hiding it from your screen.
+
+The `Authorization`, `Proxy-Authorization`, `X-Api-Key`, `X-Auth-Token`, `Cookie` and `Set-Cookie` request and response headers are stored in the check result as `*********`, even when they contain no secret.
 
 ## Query parameters
 
@@ -90,7 +93,7 @@ request by entering a username and password in the Authentication tab.
 
 ## Accessing environment variables
 
-[Environment variables](/platform/variables) are exposed to your API checks using the common Handlebars/Moustache templating delimiters, i.e. `{{USER_API_KEY}}`. Note that Handlebars (double brackets) variables will be URI encoded. To avoid encoding, you can access your environment variables with triple brackets, i.e. `{{{USER_API_KEY}}}`.
+[Environment variables](/platform/variables) are exposed to your API checks using the common Handlebars/Moustache templating delimiters, i.e. `{{USER_API_KEY}}`. Double-bracket variables are HTML-escaped, for example `&` becomes `&amp;`. To insert the raw value, for example an API key or token, use triple brackets: `{{{USER_API_KEY}}}`. A secret is scrubbed from the stored request URL, query parameters and response body in its URI-encoded spelling as well.
 
 Variables can be used in the following API checks fields:
 
@@ -112,7 +115,7 @@ These variables are specific to API checks:
 | `{{REQUEST_URL}}`    | The request URL. |
 | `{{$UUID}}`          | Generates a random UUID/v4, i.e.  9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d. |
 | `{{$RANDOM_NUMBER}}` | Generates a random decimal number between 0 and 10000, i.e. 345. |
-| `{{moment}}`         | Generates a date or time using **moment.js** and allows for formatting: <ul> <li>`{{moment "YYYY-MM-DD"}}` generates a date, i.e. 2020-08-26</li> <li>`{{moment "2 days ago" "YYYY-MM-DD"}}` generates the date two days ago: 2020-08-24</li> <li>`{{moment "last week" "X"}}` generates a UNIX timestamp from last week: 1597924480</li> </ul> |
+| `{{moment}}`         | Generates a date or time, formatted with moment.js-style format tokens: <ul> <li>`{{moment "YYYY-MM-DD"}}` generates a date, i.e. 2020-08-26</li> <li>`{{moment "2 days ago" "YYYY-MM-DD"}}` generates the date two days ago: 2020-08-24</li> <li>`{{moment "last week" "X"}}` generates a UNIX timestamp from last week: 1597924480</li> </ul> |
 
 A practical example of using the `{{moment}}` helper would be setting the pagination options on a typical API endpoint:
 
@@ -174,17 +177,36 @@ On each API check assertion, the following sources are available:
 - **Status code:** The HTTP response status, parsed as an integer.
 - **JSON body:** The response body parsed as a JSON object. To enable parsing, the Content-Type header of the response should be set to application/json.
 - **Text body:** The response body as plain text.
-- **Headers:** The response headers as an array of key/value pairs.
+- **Headers:** The response headers as an array of key/value pairs. An assertion on one of the headers listed under [Headers](#headers) compares the real value, but the result stores `*********` as the actual value and in the error message.
 - **Response time:** The response time of the full API request in milliseconds, parsed as an integer value.
 
 For more details, see our documentation on [Assertions](/detect/assertions).
 
 ## Responses
 
-In almost all cases, you have full access to the HTTP response for assertions. We also store the full response
-for later retrieval and triaging issues.
+In almost all cases, you have access to the HTTP response for assertions. Checkly reads up to 25MB of the response
+body. For larger responses, only the first 25MB is available to assertions and teardown scripts. The response body
+stored with the result can be truncated further to fit result-size limits.
 
-Response bodies are limited to a size of 25MB. Responses over this size will trigger a check failure.
+### Previewing image response bodies
+
+Checkly displays a preview and download option in API check results when the raw response body is 50KB or smaller
+and the response `Content-Type` is one of these supported raster image types:
+
+- `image/png`
+- `image/jpeg`
+- `image/gif`
+- `image/webp`
+- `image/avif`
+- `image/apng`
+- `image/bmp`
+- `image/x-icon`
+- `image/vnd.microsoft.icon`
+
+Checkly uses the `Content-Type` header rather than the file extension to identify images. Images larger than 50KB
+are truncated when stored and cannot be previewed. SVG, TIFF, other unsupported image types, and results created
+before image preview support cannot be previewed either. Slack alerts do not include a response body preview for
+supported images.
 
 Additionally, if your API responds with a binary type body, i.e. a PDF or video file, we scrub the body and replace
 it with a short text saying that we scrubbed it. We determine the body content type by looking at the `Content-Type`
@@ -213,6 +235,17 @@ This list shows all content types that we scrub from the response data.
 |`video/x-msvideo`|
 |`video/x-flv`|
 |`video/webm`|
+
+### Asserting on binary response bodies
+
+Adding a **Text body** assertion disables binary scrubbing for the entire check. The assertion, teardown scripts,
+and stored result receive the response body instead of the scrubbed message. Use this when a server labels a textual
+payload with a binary content type, such as `application/octet-stream`. This does not decode binary formats such as
+PDF, ZIP, audio, or video files.
+
+The assertion evaluates the response body up to the 25MB limit above. Its *Actual* value is truncated to 10KB for
+display, and the stored response body remains subject to result-size limits. Checks without a Text body assertion
+keep the scrubbing behavior described in this section.
 
 ## Additional Settings
 

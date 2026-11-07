@@ -1,5 +1,6 @@
 ---
 title: How to Fix "Wait Not Respected" Error in Playwright
+description: "Fix Playwright waits that seem ignored, usually because the element already matches your state requirement, and confirm element state in the browser console."
 date: 2021-08-05
 author: Giovanni Rago
 githubUser: ragog
@@ -9,6 +10,7 @@ weight: 7
 sidebarTitle: Wait not respected
 learn_playwright:
   parent: "Debugging"
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/error-wait-not-respected/'
 ---
 
 import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
@@ -18,7 +20,7 @@ import SignUpCta from "/snippets/sign-up-cta.mdx"
 
 Our script might sometimes look as if it were not honoring the waits we are specifying, instead proceeding and potentially running into an error on the next instruction.
 
-For example: we are waiting for an element, e.g. with `page.waitForSelector`, but the script immediately proceeds to the next instruction. This can result in an [element not found error](#element-not-found) or similar on the following step in our script.
+For example: we are waiting for an element, e.g. with `page.waitForSelector`, but the script immediately proceeds to the next instruction. This can result in an [element not found error](/learn/playwright/error-element-not-found) or similar on the following step in our script.
 
 ## Possible causes
 

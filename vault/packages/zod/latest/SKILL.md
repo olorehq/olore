@@ -1,46 +1,42 @@
 ---
 name: olore-zod-latest
-description: Local zod documentation reference (latest). Zod schema validation documentation. Use for TypeScript type inference, parsing, error handling, and schema composition.
+description: Local zod documentation reference (latest). Zod schema validation documentation. Use for TypeScript type inference, parsing, error handling, schema composition, codecs, JSON Schema conversion, and AOT compilation with z.compile.
 ---
 
 # zod Documentation
 
-Zod schema validation documentation. Use for TypeScript type inference, parsing, error handling, and schema composition.
+Zod schema validation documentation. Use for TypeScript type inference, parsing, error handling, schema composition, codecs, JSON Schema conversion, and AOT compilation with z.compile.
 
 ## Quick Reference
 
 | File | Title | Description |
 |------|-------|-------------|
-| `contents/index.mdx` | Intro | Introduction to Zod - TypeScript-first schema validation with static type inference |
-| `contents/basics.mdx` | Basic usage | Schema definition, parsing data, error handling, and type inference |
-| `contents/api.mdx` | Defining schemas | Complete API reference for all Zod schema types, methods, and validation features |
-| `contents/error-customization.mdx` | Customizing errors | Customizing validation error messages and error handling patterns |
-| `contents/error-formatting.mdx` | Formatting errors | Utilities for formatting and displaying Zod errors |
-| `contents/codecs.mdx` | Codecs | Bidirectional transformations with encode and decode |
-| `contents/json-schema.mdx` | JSON Schema | Converting Zod schemas to JSON Schema and using z.fromJSONSchema() |
-| `contents/metadata.mdx` | Metadata and registries | Attaching and manipulating metadata on Zod schemas via registries |
-| `contents/ecosystem.mdx` | Ecosystem | Zod ecosystem integrations, tools, and community resources |
-| `contents/library-authors.mdx` | For library authors | Guidelines for library authors integrating with Zod |
-| `contents/packages/zod.mdx` | Zod | Internals and structure of the main Zod library package |
-| `contents/packages/mini.mdx` | Zod Mini | Tree-shakable variant of Zod for bundle-size-sensitive environments |
-| `contents/packages/core.mdx` | Zod Core | Minimal core package for custom Zod-based implementations |
-| `contents/v4/index.mdx` | Release notes | Zod 4 release notes and new features |
-| `contents/v4/changelog.mdx` | Migration guide | Complete migration guide for upgrading from Zod 3 to Zod 4 |
-| `contents/v4/versioning.mdx` | Versioning | Versioning strategy and compatibility information for Zod 4 |
-| `contents/blog/clerk-fellowship.mdx` | Clerk Fellowship | Background on Zod 4 development and OSS fellowship announcement |
+| `contents/api.mdx` | Defining schemas | Complete reference for all Zod schema types (primitives, objects, arrays, unions, etc.), methods, and validations |
+| `contents/basics.mdx` | Basic usage | Introductory walkthrough: define a schema, parse data, handle errors, and infer TypeScript types |
+| `contents/codecs.mdx` | Codecs | Bidirectional transformations with z.codec, encode and decode (since zod 4.1) |
+| `contents/compile.mdx` | AOT compilation | Compile schemas ahead of time into flat validators for faster hot-path validation (z.compile) |
+| `contents/ecosystem.mdx` | Ecosystem | Third-party integrations, form libraries, code generators, mocking tools, and community resources |
+| `contents/error-customization.mdx` | Customizing errors | Customize validation messages, per-schema and global error maps, and issue structure |
+| `contents/error-formatting.mdx` | Formatting errors | Utilities to format ZodError output: treeifyError, prettifyError, flattenError |
+| `contents/index.mdx` | Intro | Introduction to Zod, installation, requirements, and sponsors |
+| `contents/json-schema.mdx` | JSON Schema | Convert Zod schemas to JSON Schema with z.toJSONSchema and its options |
+| `contents/library-authors.mdx` | For library authors | Guidance for building libraries on top of Zod, peer dependencies, and Zod 3/4 support |
+| `contents/metadata.mdx` | Metadata and registries | Attach metadata to schemas with .meta(), .describe(), and custom registries |
+| `contents/packages/core.mdx` | Zod Core | The zod/v4/core sub-package: base classes and utilities for custom implementations |
+| `contents/packages/mini.mdx` | Zod Mini | Tree-shakable functional variant of Zod, when to use it, and key differences |
+| `contents/packages/zod.mdx` | Zod | Internals and structure of the flagship zod package |
+| `contents/v4/changelog.mdx` | Migration guide | Breaking changes and upgrade guide from Zod 3 to Zod 4 |
+| `contents/v4/index.mdx` | Release notes | Zod 4 release notes: performance gains, new features, and changes |
+| `contents/v4/versioning.mdx` | Versioning | Versioning strategy and subpath compatibility for Zod 4 |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Defining and composing Zod schemas (strings, numbers, objects, arrays, unions, etc.)
-- Parsing and validating data with .parse(), .safeParse(), .decode(), .encode()
-- TypeScript type inference from Zod schemas (z.infer, z.input, z.output)
-- Handling and formatting Zod validation errors
-- Converting Zod schemas to JSON Schema / OpenAPI
-- Attaching metadata and using registries
-- Migrating from Zod 3 to Zod 4
-- Using Zod Mini for tree-shaking / bundle size optimization
-- Building libraries on top of Zod (peer dependencies, Standard Schema)
+- Defining Zod schemas, parsing data, and inferring TypeScript types
+- Customizing and formatting validation errors
+- Codecs, transforms, metadata, and registries
+- JSON Schema conversion and AOT compilation (z.compile)
+- Zod Mini, Zod Core, and migrating from Zod 3 to Zod 4
 
 ## How to find information
 

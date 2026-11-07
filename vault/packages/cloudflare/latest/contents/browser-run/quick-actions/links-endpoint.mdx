@@ -3,7 +3,7 @@ pcx_content_type: how-to
 title: /links - Retrieve links from a webpage
 description: Extract all links from a webpage, including hidden ones, using the Browser Run /links endpoint.
 sidebar:
-  order: 9
+  order: 10
 products:
   - browser-run
 ---
@@ -17,7 +17,7 @@ The `/links` endpoint retrieves all links from a webpage. It can be used to extr
 ## Endpoint
 
 ```txt
-https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-rendering/links
+https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-run/links
 ```
 
 ## Required fields
@@ -43,7 +43,7 @@ This example grabs all links from the [Cloudflare Doc's homepage](https://develo
 The response will be a JSON array containing the links found on the page.
 
 ```bash
-curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-rendering/links' \
+curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-run/links' \
   -H 'Authorization: Bearer <apiToken>' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -83,7 +83,7 @@ curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-
 		"https://developers.cloudflare.com/products/?product-group=AI",
 		"https://developers.cloudflare.com/cloudflare-one/access-controls/policies/",
 		"https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/",
-		"https://developers.cloudflare.com/cloudflare-one/traffic-policies/",
+		"https://developers.cloudflare.com/cloudflare-one/traffic-controls/",
 		"https://developers.cloudflare.com/cloudflare-one/remote-browser-isolation/",
 		"https://developers.cloudflare.com/learning-paths/replace-vpn/concepts/",
 		"https://developers.cloudflare.com/products/?product-group=Cloudflare+One",
@@ -118,7 +118,7 @@ curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-
 		"https://rpki.cloudflare.com/",
 		"https://ct.cloudflare.com/",
 		"https://x.com/cloudflare",
-		"http://discord.cloudflare.com/",
+		"https://discord.cloudflare.com/",
 		"https://www.youtube.com/cloudflare",
 		"https://github.com/cloudflare/cloudflare-docs",
 		"https://www.cloudflare.com/privacypolicy/",
@@ -175,7 +175,7 @@ Visit the [Browser Run API reference](/api/resources/browser_rendering/subresour
 Set the `visibleLinksOnly` parameter to `true` to only return links that are visible on the page. By default, this is set to `false`.
 
 ```bash
-curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-rendering/links' \
+curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-run/links' \
   -H 'Authorization: Bearer <apiToken>' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -216,7 +216,7 @@ curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-
 		"https://developers.cloudflare.com/products/?product-group=AI",
 		"https://developers.cloudflare.com/cloudflare-one/access-controls/policies/",
 		"https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/",
-		"https://developers.cloudflare.com/cloudflare-one/traffic-policies/",
+		"https://developers.cloudflare.com/cloudflare-one/traffic-controls/",
 		"https://developers.cloudflare.com/cloudflare-one/remote-browser-isolation/",
 		"https://developers.cloudflare.com/learning-paths/replace-vpn/concepts/",
 		"https://developers.cloudflare.com/products/?product-group=Cloudflare+One",
@@ -251,7 +251,7 @@ curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-
 		"https://rpki.cloudflare.com/",
 		"https://ct.cloudflare.com/",
 		"https://x.com/cloudflare",
-		"http://discord.cloudflare.com/",
+		"https://discord.cloudflare.com/",
 		"https://www.youtube.com/cloudflare",
 		"https://github.com/cloudflare/cloudflare-docs",
 		"https://www.cloudflare.com/privacypolicy/",
@@ -267,7 +267,7 @@ curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-
 Set the `excludeExternalLinks` parameter to `true` to exclude links pointing to external domains. By default, this is set to `false`.
 
 ```bash
-curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-rendering/links' \
+curl -X POST 'https://api.cloudflare.com/client/v4/accounts/<accountId>/browser-run/links' \
   -H 'Authorization: Bearer <apiToken>' \
   -H 'Content-Type: application/json' \
   -d '{

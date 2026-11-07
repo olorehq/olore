@@ -1,18 +1,18 @@
 ---
 title: Configure Clerk Content-Security-Policy headers
-description: Learn how to configure your Content Security Policy to work with the Clerk APIs.
+description: Learn how to configure your Content Security Policy to work with Clerk and its abuse and fraud protections.
 ---
 
 [Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) (CSP) headers secure your document by preventing resources from being loaded from unexpected sources. This protects your apps from [XSS](/docs/guides/secure/best-practices/xss-leak-protection) attacks and data injections.
 
-For Clerk to work correctly in your application, the following CSP directives are required:
+For Clerk to work correctly and protect your application against abuse and fraud, the following CSP directives are required:
 
-1. `script-src` - This value should include the host application's FAPI hostname, such as `https://clerk.your-domain.com`, as well as cloudflare's bot protection host, `https://challenges.cloudflare.com`.
-1. `connect-src` - This value should include the host application's FAPI hostname, such as `https://clerk.your-domain.com`.
+1. `script-src` - This value should include the host application's FAPI hostname, such as `https://clerk.your-domain.com`, Cloudflare's bot protection host, `https://challenges.cloudflare.com`, and Clerk's abuse and fraud protection hosts through `https://*.protect.clerk.com`.
+1. `connect-src` - This value should include the host application's FAPI hostname, such as `https://clerk.your-domain.com`, and Clerk's abuse and fraud protection hosts through `https://*.protect.clerk.com:*`. The trailing `:*` is required: Clerk's abuse and fraud protection hosts are served on ports other than `443`, and a CSP source with no port matches port `443` only.
 1. `img-src` - This value should be `https://img.clerk.com`.
 1. `worker-src` - Use the `'self'` value to indicate that workers can be loaded from first-party scripts. The `blob:` schema value also needs to be included.
 1. `style-src` - This value should include `'unsafe-inline'` due to Clerk's usage of runtime CSS-in-JS for styling.
-1. `frame-src` - This value should include cloudflare's bot protection host, `https://challenges.cloudflare.com`.
+1. `frame-src` - This value should include Cloudflare's bot protection host, `https://challenges.cloudflare.com`, and Clerk's abuse and fraud protection hosts through `https://*.protect.clerk.com`.
 
 There are two ways to configure your CSP headers:
 
@@ -22,43 +22,38 @@ There are two ways to configure your CSP headers:
 ## Automatic CSP configuration
 
 > [!WARNING]
-> Automatic CSP configuration is available only for `@clerk/nextjs >=6.14.0`.
+> Automatic CSP configuration is available only for `@clerk/nextjs >=6.14.0`. Upgrade to `@clerk/nextjs >=7.7.8` to include Clerk's abuse and fraud protection domains automatically. Versions `>=7.5.21 <7.7.8` include those domains but only on port `443`, so requests to them on other ports are blocked.
 
 Clerk provides built-in support for automatically injecting CSP headers by adding the `contentSecurityPolicy` option to your `clerkMiddleware()`. There are two modes available depending on how strict you want your CSP to be:
 
 - [`default` configuration](#default-configuration)
 - [`strict` configuration](#strict-configuration)
 
+Both modes automatically include Clerk's abuse and fraud protection domains for every application, regardless of plan or enabled features.
+
 ### `default` configuration
 
 The `default` configuration will apply the following CSP directives:
 
-- `connect-src` - `'self' https://clerk-telemetry.com https://*.clerk-telemetry.com https://api.stripe.com https://maps.googleapis.com https://{{fapi_url}}`
+- `connect-src` - `'self' https://clerk-telemetry.com https://*.clerk-telemetry.com https://api.stripe.com https://maps.googleapis.com https://img.clerk.com https://*.protect.clerk.com:* https://{{fapi_url}}`
 - `default-src` - `'self'`
 - `form-action` - `'self'`
-- `frame-src` - `'self' https://challenges.cloudflare.com https://*.js.stripe.com https://js.stripe.com https://hooks.stripe.com`
+- `frame-src` - `'self' https://challenges.cloudflare.com https://*.js.stripe.com https://js.stripe.com https://hooks.stripe.com https://*.protect.clerk.com`
 - `img-src` - `'self' https://img.clerk.com`
-- `script-src` - `'self' 'unsafe-inline' https http https://*.js.stripe.com https://js.stripe.com https://maps.googleapis.com`
+- `script-src` - `'self' 'unsafe-inline' https: http: https://*.js.stripe.com https://js.stripe.com https://maps.googleapis.com https://*.protect.clerk.com`
 - `style-src` - `'self' 'unsafe-inline'`
 - `worker-src` - `'self' blob:`
+
+In development environments, both modes also include `'unsafe-eval'` in the `script-src` directive, which [Next.js requires in development](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy#without-nonces). It is not included in production.
 
 <Include src="_partials/nextjs/nextjs-15-callout" />
 
 ```ts {{ filename: 'proxy.ts' }}
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware } from '@clerk/nextjs/server'
 
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)'])
-
-export default clerkMiddleware(
-  async (auth, request) => {
-    if (!isPublicRoute(request)) {
-      await auth.protect()
-    }
-  },
-  {
-    contentSecurityPolicy: {},
-  },
-)
+export default clerkMiddleware({
+  contentSecurityPolicy: {},
+})
 ```
 
 ### `strict` configuration
@@ -72,31 +67,38 @@ When using the `strict` configuration, Clerk will:
 The middleware will handle passing the nonce to the `<ClerkProvider>` automatically, so you don't need to manually set the `nonce` prop when using server components.
 
 ```ts {{ filename: 'proxy.ts' }}
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware } from '@clerk/nextjs/server'
 
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)'])
-
-export default clerkMiddleware(
-  async (auth, request) => {
-    if (!isPublicRoute(request)) {
-      await auth.protect()
-    }
+export default clerkMiddleware({
+  contentSecurityPolicy: {
+    strict: true,
   },
-  {
-    contentSecurityPolicy: {
-      strict: true,
-    },
-  },
-)
+})
 ```
 
 > [!IMPORTANT]
 > You must pass the [`dynamic` prop](/docs/reference/components/clerk-provider#properties) to `<ClerkProvider>` for `strict` CSP configuration to work correctly. This is because the nonce value is generated on the server and passed to the client, which requires dynamic rendering.
 
+A nonce is new on every request, so every page must render at request time. Next.js adds the nonce to its own scripts only when it renders a page for a request. HTML prerendered at build time has no nonce, so the CSP blocks its scripts and the page never becomes interactive.
+
+New Next.js apps enable [Cache Components](/docs/guides/development/rendering-modes#cache-components), which prerenders a static shell for every page. `<ClerkProvider dynamic>` alone doesn't change that. To render every page at request time, wrap `<html>` in [`<Suspense>`](https://react.dev/reference/react/Suspense) and call [`connection()`](https://nextjs.org/docs/app/api-reference/functions/connection) in an async component inside it, as shown in the following example. The same layout works with or without Cache Components. The tradeoff is that no page gets a static shell or CDN caching. See the [Next.js CSP guide](https://nextjs.org/docs/app/guides/content-security-policy#static-vs-dynamic-rendering-with-csp) for details.
+
 ```tsx {{ filename: 'app/layout.tsx' }}
 import { ClerkProvider } from '@clerk/nextjs'
+import { connection } from 'next/server'
+import { Suspense } from 'react'
 
-export default function Layout({ children }) {
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense>
+      <Document>{children}</Document>
+    </Suspense>
+  )
+}
+
+async function Document({ children }: { children: React.ReactNode }) {
+  await connection()
+
   return (
     <html lang="en">
       <body>
@@ -110,19 +112,16 @@ export default function Layout({ children }) {
 }
 ```
 
-If you need to apply the nonce to custom scripts, you can access it through the headers:
+To apply the nonce to your own scripts, read it from the `x-nonce` request header:
 
-```tsx {{ filename: 'pages/index.tsx' }}
+```tsx {{ filename: 'app/page.tsx' }}
 import { headers } from 'next/headers'
+import Script from 'next/script'
 
-export default function Page() {
-  const nonce = headers().get('x-nonce')
+export default async function Page() {
+  const nonce = (await headers()).get('x-nonce') ?? undefined
 
-  return (
-    <div>
-      <script nonce={nonce} src="/custom-script.js" />
-    </div>
-  )
+  return <Script src="/custom-script.js" strategy="afterInteractive" nonce={nonce} />
 }
 ```
 
@@ -133,26 +132,17 @@ You can customize your Content Security Policy (CSP) by adding your own directiv
 In the following example, the `connect-src` directive is configured to include `api.example.com` and `analytics.example.com`, and the `img-src` directive is configured to include `images.example.com`.
 
 ```ts {{ filename: 'proxy.ts' }}
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware } from '@clerk/nextjs/server'
 
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)'])
-
-export default clerkMiddleware(
-  async (auth, request) => {
-    if (!isPublicRoute(request)) {
-      await auth.protect()
-    }
-  },
-  {
-    contentSecurityPolicy: {
-      strict: true,
-      directives: {
-        'connect-src': ['api.example.com', 'analytics.example.com'],
-        'img-src': ['images.example.com'],
-      },
+export default clerkMiddleware({
+  contentSecurityPolicy: {
+    strict: true,
+    directives: {
+      'connect-src': ['api.example.com', 'analytics.example.com'],
+      'img-src': ['images.example.com'],
     },
   },
-)
+})
 ```
 
 ## Manual CSP configuration
@@ -165,12 +155,12 @@ The following example demonstrates a Next.js config file that sets the necessary
 ```js {{ filename: 'next.config.js' }}
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://{{fapi_url}} https://challenges.cloudflare.com;
-  connect-src 'self' https://{{fapi_url}};
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://{{fapi_url}} https://challenges.cloudflare.com https://*.protect.clerk.com;
+  connect-src 'self' https://{{fapi_url}} https://*.protect.clerk.com:*;
   img-src 'self' https://img.clerk.com;
   worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
-  frame-src 'self' https://challenges.cloudflare.com;
+  frame-src 'self' https://challenges.cloudflare.com https://*.protect.clerk.com;
   form-action 'self';
 `
 
@@ -194,6 +184,12 @@ const nextConfig = {
 module.exports = nextConfig
 ```
 
+<If sdk="electron">
+  ### Apply the policy in an Electron renderer
+
+  In an Electron renderer, apply the policy either as a `<meta http-equiv="Content-Security-Policy">` tag in `index.html` or as a response header from the main process with `session.defaultSession.webRequest.onHeadersReceived()`. The [quickstart](/docs/electron/getting-started/quickstart#add-a-content-security-policy) shows the meta tag with the dev-server allowances, and the [deployment guide](/docs/guides/development/deployment/electron#set-a-production-content-security-policy) shows the header for packaged builds. Clerk loads its UI from your [Frontend API](!frontend-api-url) host at runtime, so `script-src` must include it; otherwise Clerk's components never render.
+</If>
+
 ### Usage of `unsafe-eval` and `unsafe-inline` directives in Next.js
 
 Next.js and Clerk have specific requirements for `script-src` and `style-src` directives. Here's what you need to know:
@@ -202,7 +198,7 @@ Next.js and Clerk have specific requirements for `script-src` and `style-src` di
 - **`script-src 'unsafe-inline'`** depends on your Next.js routing structure.
   - **App Router:** Required in **both development and production** environments, unless you are using [the `strict-dynamic` approach](#implementing-a-strict-dynamic-csp).
   - **Pages Router:** Can be safely removed.
-- **`style-src 'unsafe-inline'`**  is a requirement for Clerk's components to inject their styles. Removing this requirement is on Clerk's roadmap. If you'd like to see this implemented sooner, [contact support](https://clerk.com/contact/support){{ target: '_blank' }}.
+- **`style-src 'unsafe-inline'`**  is a requirement for Clerk's components to inject their styles. Removing this requirement is on Clerk's roadmap. If you'd like to see this implemented sooner, [contact support](/contact/support).
 
 ### Implementing a `strict-dynamic` CSP
 
@@ -214,14 +210,14 @@ If you'd like to manually implement a [strict-dynamic CSP](https://content-secur
 </If>
 
 ```ts {{ filename: 'proxy.ts' }}
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { clerkMiddleware } from '@clerk/nextjs/server'
 
 export default clerkMiddleware((auth, req) => {
   return applyCsp(req)
 })
 
-function applyCsp(req) {
+function applyCsp(req: NextRequest) {
   // create a randomly generated nonce value
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
 
@@ -231,11 +227,11 @@ function applyCsp(req) {
     script-src 'self' 'strict-dynamic' 'nonce-${nonce}' https: http: ${
       process.env.NODE_ENV === 'production' ? '' : `'unsafe-eval'`
     };
-    connect-src 'self' https://{{fapi_url}};
+    connect-src 'self' https://{{fapi_url}} https://*.protect.clerk.com:*;
     img-src 'self' https://img.clerk.com;
     worker-src 'self' blob:;
-    style-src 'self';
-    frame-src 'self' https://challenges.cloudflare.com;
+    style-src 'self' 'unsafe-inline';
+    frame-src 'self' https://challenges.cloudflare.com https://*.protect.clerk.com;
     form-action 'self';
   `
   // Replace newline characters and spaces
@@ -271,13 +267,13 @@ export const config = {
 
 With this `strict-dynamic` configuration in place, **all script tags must be passed with a `nonce` value** or they will be blocked. This can be done by passing the nonce value as a `nonce` parameter to the script tag. For example, `<script src="https://example.com/script.js" nonce="<nonce_value>"></script>`. If you are using Next.js, any scripts loaded through next will automatically have the nonce value injected.
 
-With the above middleware, the nonce value is made accessible via the `x-nonce` request header. An example is provided below on how to access this value within a Next.js page.
+With the above middleware, the nonce value is made accessible via the `x-nonce` request header. An example is provided below on how to access this value within a Next.js page. The page depends on a root layout that renders every page at request time, like the one later in this section.
 
-```tsx {{ filename: 'pages/index.tsx' }}
+```tsx {{ filename: 'app/page.tsx' }}
 import { headers } from 'next/headers'
 
-export default function Page() {
-  const nonce = headers().get('x-nonce')
+export default async function Page() {
+  const nonce = (await headers()).get('x-nonce')
 
   return <p>{nonce}</p>
 }
@@ -288,16 +284,29 @@ If you're using one of Clerk's React-based SDKs, in order for Clerk to load corr
 > [!IMPORTANT]
 > You must pass the [`dynamic` prop](/docs/reference/components/clerk-provider#properties) to `<ClerkProvider>` for `strict-dynamic` CSPs to work correctly. This is because the nonce value is generated on the server and passed to the client, which requires dynamic rendering.
 
+As with the [`strict` configuration](#strict-configuration), wrap `<html>` in `<Suspense>` so that every page renders at request time. Reading `headers()` in the async component opts the page into request-time rendering the same way `connection()` does.
+
 ```tsx {{ filename: 'app/layout.tsx' }}
 import { ClerkProvider } from '@clerk/nextjs'
 import { headers } from 'next/headers'
+import { Suspense } from 'react'
 
-export default function Layout({ children }) {
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense>
+      <Document>{children}</Document>
+    </Suspense>
+  )
+}
+
+async function Document({ children }: { children: React.ReactNode }) {
+  const nonce = (await headers()).get('x-nonce') ?? undefined
+
   return (
     <html lang="en">
       <body>
         {/* Note: since this is server-rendered, you don't _need_ to pass the nonce, see note below */}
-        <ClerkProvider nonce={headers().get('x-nonce')} dynamic>
+        <ClerkProvider nonce={nonce} dynamic>
           {children}
         </ClerkProvider>
       </body>

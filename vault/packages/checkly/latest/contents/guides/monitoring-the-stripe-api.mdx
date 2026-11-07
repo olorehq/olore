@@ -1,18 +1,19 @@
 ---
 title: How to monitor the Stripe customer API with Checkly | API Monitoring Examples
 displayTitle: How to monitor the Stripe customer API with Checkly
-sidebarTitle: Monitoring the Stripe API
+sidebarTitle: Monitoring a Stripe API
 description: Application Programming Interfaces (APIs) are used throughout software to define interactions between different software applications. In this article we focus on web APIs specifically, taking a look at how they fit in the Jamstack architecture and how we can set up API monitoring in order to make sure they don't break and respond fast.
 author: Giovanni Rago
 avatar: 'images/avatars/giovanni-rago.png'
 tags:
+canonical: 'https://www.checklyhq.com/docs/guides/monitoring-the-stripe-api/'
 ---
 
 ![jamstack architecture diagram](/images/guides/images/guides-checkly-jamstack-header.png "Jamstack applications heavily rely on APIs")
 
 ## The rise of APIs
 
-With the rise of the [Jamstack](https://jamstack.org/), the already broadly used web APIs have been brought further into the spotlight and explicitly named as cornerstone of a new way of building web applications. In the Jamstack paradigm, applications rely on APIs returning structured data (JSON or XML) when queried via a build process or Javascript-based frontend.
+With the rise of the [Jamstack](https://jamstack.org/), the already broadly used web APIs have been brought further into the spotlight and explicitly named as cornerstone of a new way of building web applications. In the Jamstack paradigm, applications rely on APIs returning structured data (JSON or XML) when queried via a build process or JavaScript-based frontend.
 
 The API calls might be aimed at internal services or at third-parties handling complex flows such as content management, authentication, merchant services and more. An example of third-party API could be [Stripe](https://stripe.com/), which acts as payment infrastructure for a multitude of businesses.
 
@@ -72,7 +73,7 @@ curl https://api.stripe.com/v1/customers \
   -G
 ```
 
-If we chose to set up a call using Javascript, for example, we could achieve the same call as in the first case above using [axios](https://github.com/axios/axios):
+If we chose to set up a call using JavaScript, for example, we could achieve the same call as in the first case above using [axios](https://github.com/axios/axios):
 
 ```js Stripe.js
 const { default: axios } = require("axios");
@@ -309,7 +310,7 @@ API monitoring checks must be organised as to minimise the time needed to identi
 
 ## Scheduled global API checks
 
-Checkly specialises in API monitoring and allows users to run API checks on a schedule from [global locations](https://www.checklyhq.com/docs/monitoring/global-locations/). We can combine these checks with [custom alerting](https://www.checklyhq.com/docs/alerting/) to be able to quickly respond and remediate potential API issues.
+Checkly specialises in API monitoring and allows users to run API checks on a schedule from [global locations](/concepts/locations). We can combine these checks with [custom alerting](/communicate/alerts/overview) to be able to quickly respond and remediate potential API issues.
 
 ![checkly dashboard with API checks](/images/guides/images/guides-checkly-dashboard-short.png "Checkly API checks shown on a dashboard")
 
@@ -345,7 +346,7 @@ Response time limits enable us to set different thresholds to decide exactly whi
 
 Checkly is highly programmable and allows users to run scripts before and after the main HTTP request of an API check.
 
-![programmable setup scripts](/images/guides/images/guides-checkly-setup.png "Setup and teardown methods are fully scriptable using NodeJS")
+![programmable setup scripts](/images/guides/images/guides-checkly-setup.png "Setup and teardown methods are fully scriptable using Node.js")
 
 Setup scripts run before our check and give us access to properties like the URL, headers and query parameters, enabling us to set up all the prerequisites for a successful request. Some examples could be:
 
@@ -359,19 +360,19 @@ Teardown scripts run after the request has executed, bur right before the assert
 
 As we increase our monitoring coverage across our APIs, we can also increase the efficacy of our setup by:
 
-1. Importing existing [Swagger/OpenAPI specs](https://www.checklyhq.com/docs/api-checks/request-settings/#import-a-swagger--openapi-specification) or even [cURL commands](https://www.checklyhq.com/docs/api-checks/request-settings/#import-a-curl-request) using built-in functionality.
-2. [Defining our API checks as code](/guides/getting-started-with-monitoring-as-code) to scale our setup while lowering maintenance needs.
-3. Combining our API checks with [E2E monitoring](/guides/end-to-end-monitoring/) for any website or web app service whose API we might be monitoring.
+1. Importing existing [Swagger/OpenAPI specs](/detect/synthetic-monitoring/api-checks/configuration#import-a-swagger-/-openapi-specification) or even [cURL commands](/detect/synthetic-monitoring/api-checks/configuration#import-a-curl-request) using built-in functionality.
+2. [Defining our API checks as code](/guides/structuring-a-checkly-project) to scale our setup while lowering maintenance needs.
+3. Combining our API checks with [E2E monitoring](/learn/monitoring/end-to-end-monitoring/) for any website or web app service whose API we might be monitoring.
 
 ## Read More
 
 <div class="cards-list">
-<Card title="Monitoring as Code" href="/guides/getting-started-with-monitoring-as-code">
+<Card title="Monitoring as Code" href="/guides/structuring-a-checkly-project">
   Understand monitoring as code (MaC) via our Checkly CLI.
 </Card>
 
-<Card title="End to end monitoring" href="/guides/end-to-end-monitoring/">
-  Learn end-to-end monitoring with playwright to test key website flows.
+<Card title="End to end monitoring" href="/learn/monitoring/end-to-end-monitoring/">
+  Learn end-to-end monitoring with Playwright to test key website flows.
 </Card>
 
 <Card title="OpenAPI/Swagger Monitoring" href="/guides/monitoring-an-openapi-spec">

@@ -19,17 +19,13 @@ file before fetching the dependencies.
 
 If `--target` is not specified, then all target dependencies are fetched.
 
-See also the [cargo-prefetch](https://crates.io/crates/cargo-prefetch)
-plugin which adds a command to download popular crates. This may be useful if
-you plan to use Cargo without a network with the `--offline` flag.
-
 ## OPTIONS
 
 ### Fetch options
 
 <dl>
-<dt class="option-term" id="option-cargo-fetch---target"><a class="option-anchor" href="#option-cargo-fetch---target"><code>--target</code> <em>triple</em></a></dt>
-<dd class="option-desc"><p>Fetch for the specified target architecture. Flag may be specified multiple times. The default is all architectures. The general format of the triple is
+<dt class="option-term" id="option-cargo-fetch---target"><a class="option-anchor" href="#option-cargo-fetch---target"><code>--target</code> <em>tuple</em></a></dt>
+<dd class="option-desc"><p>Fetch for the specified target architecture. Flag may be specified multiple times. The default is all architectures. The general format of the tuple is
 <code>&lt;arch&gt;&lt;sub&gt;-&lt;vendor&gt;-&lt;sys&gt;-&lt;abi&gt;</code>.</p>
 <p>Possible values:</p>
 <ul>

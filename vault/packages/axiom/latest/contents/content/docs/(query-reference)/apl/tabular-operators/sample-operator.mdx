@@ -1,0 +1,176 @@
+---
+title: sample
+description: 'This page explains how to use the sample operator function in APL.'
+---
+
+The `sample` operator in APL returns a random subset of rows from the input dataset. It samples either a proportion of the rows, such as 5% of the input, or a fixed number of rows, such as 100 rows. Use it to analyze a subset of data, reduce the dataset size for testing, or quickly explore patterns without processing the entire dataset.
+
+You can find the `sample` operator useful when working with large datasets, where processing the entire dataset is resource-intensive or unnecessary. It’s ideal for scenarios like log analysis, performance monitoring, or sampling for data quality checks.
+
+## Usage
+
+### Syntax
+
+```kusto
+| sample ProportionOfRows
+```
+
+```kusto
+| sample N
+```
+
+### Parameters
+
+- `ProportionOfRows`: A real number greater than 0 and less than 1 that specifies the proportion of rows to return from the dataset. For example, `0.05` returns about 5% of the rows.
+- `N`: A positive integer that specifies the number of rows to return from the dataset. The maximum value of `N` is 20,000,000 divided by the number of fields in the query, and at least 50,000. For example, if the query projects two fields, the maximum value of `N` is 10,000,000.
+
+Axiom chooses the sampling method based on the type of the value. For example, `sample 1` returns one row, and `sample 1.0` returns an error.
+
+### Returns
+
+The result depends on the parameter:
+
+- With `ProportionOfRows`, the operator returns each input row with a probability of `ProportionOfRows`. The number of rows in the result varies around `ProportionOfRows` times the number of input rows.
+- With `N`, the operator returns exactly `N` rows. Each input row has the same chance of being in the result. If the input has fewer than `N` rows, the operator returns all rows.
+
+With `N`, Axiom doesn’t apply the default limit of 1,000 rows. For example, `sample 5000` returns 5,000 rows without `take` or `limit`.
+
+<Note>
+`sample N` isn’t available for queries that use the legacy result format. For more information, see [Query data via Axiom API](/restapi/query).
+</Note>
+
+## Choose a sampling method
+
+Sampling a proportion of rows works like a filter. Axiom decides for each row whether to keep it while it reads the data. This makes the method suitable for aggregations, such as `sample 0.01 | summarize count() by status`, where every row of the input has a chance to contribute.
+
+If you combine a proportion with `take` or `limit`, Axiom stops reading data as soon as it has enough rows. As a result, the returned rows tend to come from a small part of the time range. To return a fixed number of rows that are spread across the whole input, use `sample N` instead of `sample ProportionOfRows | take N`.
+
+Sampling a fixed number of rows selects `N` rows uniformly from all rows that reach the `sample` operator. If your query filters the data first, for example with `where`, Axiom samples from the matching rows only.
+
+<Note>
+If `sample N` follows `union`, Axiom applies the maximum limit to the rows that reach the `sample` operator. If the input exceeds this limit, the result represents only part of the input, and Axiom adds `max_limit_warning` to the result. For more information, see [Default and maximum limits](/apl/tabular-operators/limit-operator#default-and-maximum-limits).
+</Note>
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this use case, you sample a small proportion of rows from your HTTP logs to quickly analyze trends without working through the entire dataset.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| sample 0.05
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20sample%200.05%22%7D)
+
+**Output**
+
+| _time               | req_duration_ms | id        | status | uri                | method | geo.city | geo.country |
+|---------------------|-----------------|-----------|--------|--------------------|--------|----------|-------------|
+| 2023-10-16 12:45:00 | 234             | user1     | 200    | /index             | GET    | New York | US          |
+| 2023-10-16 12:47:00 | 120             | user2     | 404    | /login             | POST   | Paris    | FR          |
+| 2023-10-16 12:48:00 | 543             | user3     | 500    | /checkout          | POST   | Tokyo    | JP          |
+
+This query returns a random subset of about 5% of all rows from the HTTP logs, helping you quickly identify any potential issues or patterns without analyzing the entire dataset.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In this use case, you sample a fixed number of traces to investigate performance metrics for a particular service across different spans.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == 'checkoutservice'
+| sample 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20where%20%5B%27service.name%27%5D%20%3D%3D%20%27checkoutservice%27%20%7C%20sample%205%22%7D)
+
+**Output**
+
+| _time               | duration   | span_id    | trace_id | service.name     | kind    | status_code |
+|---------------------|------------|------------|----------|------------------|---------|-------------|
+| 2023-10-16 14:05:00 | 1.34s      | span5678   | trace123 | checkoutservice  | client  | 200         |
+| 2023-10-16 14:06:00 | 0.89s      | span3456   | trace456 | checkoutservice  | server  | 500         |
+| 2023-10-16 14:21:00 | 0.42s      | span9012   | trace789 | checkoutservice  | server  | 200         |
+| 2023-10-16 14:37:00 | 2.05s      | span7890   | trace234 | checkoutservice  | client  | 200         |
+| 2023-10-16 14:52:00 | 0.67s      | span1234   | trace567 | checkoutservice  | server  | 200         |
+
+This query returns 5 spans selected uniformly from all spans of the `checkoutservice` to identify potential performance bottlenecks.
+
+</Tab>
+<Tab title="Security logs">
+
+In this use case, you sample a fixed number of failed requests to spot irregular activity, such as 500-level HTTP responses.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '500'
+| sample 3
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20where%20status%20%3D%3D%20%27500%27%20%7C%20sample%203%22%7D)
+
+**Output**
+
+| _time               | req_duration_ms | id        | status | uri       | method | geo.city | geo.country |
+|---------------------|-----------------|-----------|--------|-----------|--------|----------|-------------|
+| 2023-10-16 14:30:00 | 543             | user4     | 500    | /payment  | POST   | Berlin   | DE          |
+| 2023-10-16 14:32:00 | 876             | user5     | 500    | /order    | POST   | London   | GB          |
+| 2023-10-16 15:10:00 | 312             | user6     | 500    | /cart     | GET    | Madrid   | ES          |
+
+This query returns 3 failed requests (HTTP 500 responses) selected uniformly from all failed requests, helping you investigate any potential causes of these errors.
+
+</Tab>
+</Tabs>
+
+## List of related operators
+
+- [take](/apl/tabular-operators/take-operator): Use `take` when you want to return the first N rows in the dataset rather than a random subset.
+- [where](/apl/tabular-operators/where-operator): Use `where` to filter rows based on conditions rather than sampling randomly.
+- [top](/apl/tabular-operators/top-operator): Use `top` to return the highest N rows based on a sorting criterion.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `sample` command works similarly, returning a subset of data rows randomly. Splunk uses the `count` and `ratio` arguments to choose the sampling method. In APL, the type of the value chooses the method, and `sample` doesn’t support additional arguments for biasing the randomness.
+
+<CodeGroup>
+```sql Splunk example
+| sample count=10
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| sample 10
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `TABLESAMPLE` clause returns a proportion of the rows in a table. To return a fixed number of random rows, you typically sort by a random value and limit the result. In APL, `sample` supports both methods, and it isn’t tied to a table scan.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM sample_http_logs ORDER BY RANDOM() LIMIT 10;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| sample 10
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

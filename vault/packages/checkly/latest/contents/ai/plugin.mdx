@@ -1,0 +1,121 @@
+---
+title: 'Checkly Plugin for AI Coding Agents'
+description: 'Install the Checkly plugin to give your AI coding agent Checkly monitoring skills and Playwright best practices in a single package.'
+sidebarTitle: 'Plugin'
+canonical: 'https://www.checklyhq.com/docs/ai/plugin/'
+---
+
+The [Checkly plugin](https://github.com/checkly/checkly-plugin) bundles the official Checkly skills and the Checkly MCP server for AI coding agents in a single installable package. It targets Claude Code, OpenAI Codex, Cursor, and any agent supporting the plugins standard.
+
+## Getting started
+
+### Installation
+
+<Tabs>
+  <Tab title="Claude Code (CLI)">
+    Add the Checkly plugin marketplace and install the plugin from within Claude Code:
+
+    ```txt
+    /plugin marketplace add checkly/checkly-plugin
+    /plugin install checkly@checkly
+    ```
+  </Tab>
+  <Tab title="Claude Code (Desktop) & Claude Cowork">
+    1. Open the plugin settings and click **Add marketplace**.
+    2. Select **Add from a repository**.
+    3. Enter `https://github.com/checkly/checkly-plugin/` as the URL and click **Sync**.
+
+       <Frame>
+         <img
+           src="/images/plugin-add-marketplace.png"
+           alt="The 'Add marketplace' dialog with the Checkly plugin repository URL entered and automatic syncing enabled"
+         />
+       </Frame>
+
+    4. Install the Checkly plugin from the newly added marketplace.
+
+       <Frame>
+         <img
+           src="/images/plugin-directory-install.png"
+           alt="The plugin directory listing the Checkly plugin from the checkly-plugin marketplace with an install button"
+         />
+       </Frame>
+  </Tab>
+  <Tab title="Codex & ChatGPT">
+    1. Open the plugin settings and click **Add marketplace**.
+    2. Enter `https://github.com/checkly/checkly-plugin` as the source and click **Add marketplace**.
+
+       <Frame>
+         <img
+           src="/images/plugin-codex-add-marketplace.png"
+           alt="The 'Add plugin marketplace' dialog with the Checkly plugin repository URL entered as the source"
+         />
+       </Frame>
+
+    3. Install the Checkly plugin from the newly added marketplace and connect it to your Checkly account.
+
+       <Frame>
+         <img
+           src="/images/plugin-codex-install.png"
+           alt="The Checkly plugin listed in the plugin directory with an install button"
+         />
+       </Frame>
+
+    4. Once installed, the plugin registers the [Checkly MCP server](/ai/mcp-server) so you can inspect checks, trigger runs, and investigate failures from Codex.
+  </Tab>
+</Tabs>
+
+<Note>
+The Checkly plugin has been submitted to Anthropic and OpenAI and is awaiting review. Until it's approved, install it from the GitHub repository as described above.
+</Note>
+
+After installation, restart your AI agent to load the plugin.
+
+## What the plugin provides
+
+### MCP server
+
+The plugin configures the [Checkly MCP server](/ai/mcp-server), connecting your agent to your Checkly account for live operations like inspecting check status and results, triggering checks, or starting root cause analyses.
+
+### Skills
+
+The plugin also ships two skills. Both are synced daily from their source repositories, so you always get the latest guidance.
+
+| Skill | Description |
+| --- | --- |
+| `checkly` | Set up, create, test, and manage monitoring checks with the Checkly CLI. See [Checkly Skills](/ai/skills) for details on what the skill covers. |
+| `playwright-best-practices-for-agents` | Agent-first best practices for writing, structuring, debugging, and stabilizing Playwright tests. |
+
+## Usage
+
+Once installed, your agent automatically loads the relevant skill whenever a Checkly or Playwright task comes up — no manual context loading required.
+
+```txt Claude Code Example highlight={3-4}
+❯ Can you create a new URLMonitor with Checkly for example.com?
+
+⏺ Skill(checkly:checkly)
+  ⎿ Successfully loaded skill · 3 tools allowed
+
+⏺ Let me read more references and check the existing project structure
+```
+
+In agents supporting slash commands, you can also invoke the bundled skills explicitly:
+
+```txt
+/checkly:checkly
+/checkly:playwright-best-practices-for-agents
+```
+
+<Note>
+If you only want the Checkly monitoring skill without the plugin wrapper, install it directly via the Checkly CLI. See [Checkly Skills](/ai/skills).
+</Note>
+
+## Reporting issues
+
+If a skill gives incorrect advice or the plugin doesn't behave as expected, [file an issue on GitHub](https://github.com/checkly/checkly-plugin/issues).
+
+## Additional resources
+
+- [checkly/checkly-plugin on GitHub](https://github.com/checkly/checkly-plugin)
+- [Checkly Skills](/ai/skills)
+- [Agent Skills Specification](https://agentskills.io/specification.md)

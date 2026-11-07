@@ -1,0 +1,36 @@
+---
+title: 'Export traces to Grafana Tempo'
+description: 'Send Checkly traces to Grafana Cloud Tempo through the Grafana OTLP gateway.'
+sidebarTitle: 'Grafana Tempo'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/traces/grafana-tempo/'
+---
+
+import OtlpVendorIntro from '/snippets/otlp-vendor-intro.mdx';
+import OtlpVendorOutro from '/snippets/otlp-vendor-outro.mdx';
+
+<OtlpVendorIntro vendor="Grafana Tempo" />
+
+1. Get the endpoint. In the Grafana Cloud portal, open your stack, select the **OpenTelemetry** tile, then **Configure**. Copy the host from the tile instead of building it yourself, because it depends on your stack's region. The Checkly URL ends in `/otlp/v1/traces`, for example `https://otlp-gateway-prod-eu-west-2.grafana.net/otlp/v1/traces`. Grafana rejects traces sent to `<stack>.grafana.net/tempo`.
+   ![OpenTelemetry tile on the Grafana Cloud stack page](/images/docs/images/otel/export-traces/grafana-cloud-opentelemetry.png)
+   ![OTLP endpoint and instance ID on the Grafana Cloud OpenTelemetry page](/images/docs/images/otel/export-traces/grafana-otlp-endpoint-config.png)
+2. Get the key. On the same page, create a token with the `traces:write` scope and copy your instance ID. Then base64 encode both on your own machine. The output must be one line without a trailing newline.
+   ![Create an API token dialog in Grafana Cloud with the traces:write scope](/images/docs/images/otel/export-traces/create-otlp-token-grafana.png)
+
+   ```bash
+   printf '%s' '<instanceID>:<token>' | base64 | tr -d '\n'
+   ```
+
+3. Paste the values into Checkly. On the [Traces settings page](https://app.checklyhq.com/settings/account/traces), turn on **Enable exporting traces**, paste the URL, and add the header from the table below.
+   ![Export Traces settings with an endpoint URL and an authorization header](/images/docs/images/otel/otel_export_traces_settings.png)
+4. Find the spans. In Grafana, open **Explore** and select your stack's traces data source, named `grafanacloud-<stack>-traces`. The spans appear under service `checkly`.
+   ![Traces data source selected in Grafana Explore](/images/docs/images/otel/export-traces/grafana-cloud-tempo-source.png)
+   ![Checkly traces in Grafana Explore](/images/docs/images/otel/export-traces/grafana-explore-checkly-traces.png)
+
+| Header name | Value |
+|---|---|
+| `Authorization` | `Basic <base64 of instanceID:token>` |
+
+For self-hosted Tempo, use the [OTLP export page](/integrations/observability/traces/otlp) with your distributor's `/v1/traces` URL.
+
+Grafana documents the endpoint and token in [Send data using OpenTelemetry Protocol](https://grafana.com/docs/grafana-cloud/send-data/otlp/send-data-otlp/).
+<OtlpVendorOutro />

@@ -13,7 +13,7 @@ export default Layout(MDX_DATA.FloatingWindow);
 ## Constrain to viewport
 
 Use the `constrainToViewport` prop to restrict element movement to the viewport boundaries.
-If you do not set the `constrainToViewport` prop, the element can be dragged outside the viewport:
+Without it, the element can be dragged outside the viewport:
 
 <Demo data={FloatingWindowDemos.constrainToViewport} />
 
@@ -46,6 +46,31 @@ This function accepts an object with `top`, `left`, `right` and `bottom` propert
 from which you should only specify two (for example, `top` and `left`, `bottom` and `right`).
 
 <Demo data={FloatingWindowDemos.setPosition} />
+
+## Resize handle
+
+Use `FloatingWindow.ResizeHandle` compound component to add a resize handle to the floating window.
+The `dimensions` prop on `FloatingWindow` controls the resize behavior:
+
+- `initialWidth` / `initialHeight` – initial size of the window in px
+- `minWidth` / `minHeight` – minimum size the window can be resized to
+- `maxWidth` / `maxHeight` – maximum size the window can be resized to
+
+The resize handle respects `constrainToViewport` and `constrainOffset` props.
+It can be used with keyboard: arrow keys resize the window in 10px steps,
+`Home` and `End` keys set the minimum and maximum size.
+
+<Demo data={FloatingWindowDemos.resizeHandle} />
+
+## Resize callbacks
+
+Resize callbacks require the `dimensions` prop and `FloatingWindow.ResizeHandle`:
+
+- `onSizeChange` – called with the `{ width, height }` of the window every time it is resized
+- `onResizeStart` – called when the resize starts, pointer resize only
+- `onResizeEnd` – called when the resize stops, pointer resize only
+
+<Demo data={FloatingWindowDemos.resizeCallbacks} />
 
 ## Lock axis
 

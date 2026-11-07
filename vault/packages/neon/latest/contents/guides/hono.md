@@ -2,17 +2,17 @@
 title: Connect a Hono application to Neon
 subtitle: Set up a Neon project in seconds and connect from a Hono application
 summary: >-
-  Connect a Hono application to Neon Postgres using node-postgres, postgres.js,
+  Connect a Hono application to Lakebase Postgres using node-postgres, postgres.js,
   or the Neon serverless driver (@neondatabase/serverless). Covers
   DATABASE_URL setup and route-level query code for Hono on Node.js, Bun,
   Deno, and Edge runtimes. Each driver option includes a complete TypeScript
   route handler with Postgres query examples.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-08T19:32:04.700Z'
 ---
 
 <CopyPrompt src="/prompts/hono-prompt.md"
-description="Pre-built prompt for connecting Hono applications to Neon Postgres"/>
+description="Pre-built prompt for connecting Hono applications to Lakebase Postgres"/>
 
 [Hono](https://hono.dev/) is a lightweight, multi-runtime web framework for the Edge, Node.js, Deno, Bun, and other runtimes. This topic describes how to create a Neon project and access it from a Hono application.
 
@@ -52,7 +52,7 @@ npm install @neondatabase/serverless
 
 ## Store your Neon credentials
 
-Add a `.env` file to your project directory and add your Neon connection string to it. You can find your connection details by clicking **Connect** on the Neon **Project Dashboard**. For more information, see [Connect from any application](/docs/connect/connect-from-any-app).
+Add a `.env` file to your project directory and add your Neon connection string to it. You can find your connection details by clicking **Connect** in the Console nav. For more information, see [Connect from any application](/docs/connect/connect-from-any-app).
 
 ```shell shouldWrap
 DATABASE_URL="postgresql://<user>:<password>@<endpoint_hostname>.neon.tech:<port>/<dbname>?sslmode=require&channel_binding=require"
@@ -156,5 +156,13 @@ Navigate to your application's URL ([localhost:3000](http://localhost:3000)). Yo
 > The specific version may vary depending on the PostgreSQL version you are using.
 
 </Steps>
+
+## Next steps
+
+- [Set up Managed Better Auth](/docs/auth/overview): Add managed authentication that branches with your database
+- [Add Object Storage](/docs/storage/overview): S3-compatible file storage that branches with your database
+- [Deploy a Function](/docs/compute/functions/overview): Run backend compute next to your database, no separate hosting needed
+- [Call an LLM with AI Gateway](/docs/ai-gateway/overview): Access foundation models from Anthropic, OpenAI, Google, and more with one credential
+- [Realtime](/docs/realtime/quickstart): Build realtime apps with end-to-end reactivity &raquo;
 
 <NeedHelp/>

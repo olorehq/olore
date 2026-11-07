@@ -3,7 +3,14 @@ id: useSubscription
 title: useSubscription()
 sidebar_label: useSubscription()
 slug: /client/react/useSubscription
+section: "Client Usage"
+parent: "client/react"
+order: 59
 ---
+
+:::warning Deprecated
+The classic React Query integration (`@trpc/react-query`) only gets bug fixes, and will be removed in the next major version of tRPC. New projects should use the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
+:::
 
 The `useSubscription` hook can be used to subscribe to a [subscription](../../server/subscriptions.md) procedure on the server.
 
@@ -15,7 +22,7 @@ The `useSubscription` hook can be used to subscribe to a [subscription](../../se
 
 - If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
 - If you pass `skipToken` from `@tanstack/react-query`, the subscription will be paused.
-- Have a look at our [SSE example](https://github.com/trpc/examples-next-sse-chat) for a complete example of how to use subscriptions
+- Have a look at our [SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat) for a complete example of how to use subscriptions
 
 :::
 

@@ -1,0 +1,69 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://openrouter.ai/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# OpenRouter TypeScript SDK
+
+> Type-safe TypeScript toolkit for building AI features against 400+ models through OpenRouter.
+
+The OpenRouter TypeScript SDK is a type-safe toolkit for building AI-powered
+features in any JS or TS runtime, giving you access to 400+ models across
+providers through a single unified API.
+
+## Installation
+
+```bash npm theme={null}
+npm add @openrouter/sdk
+```
+
+```bash pnpm theme={null}
+pnpm add @openrouter/sdk
+```
+
+```bash bun theme={null}
+bun add @openrouter/sdk
+```
+
+```bash yarn theme={null}
+yarn add @openrouter/sdk
+```
+
+> [!NOTE]
+>
+> This package is published as an ES Module (ESM) only. For applications using
+> CommonJS, use `await import("@openrouter/sdk")` to import and use this package.
+
+## Quickstart
+
+```typescript theme={null}
+import { OpenRouter } from "@openrouter/sdk";
+
+const openRouter = new OpenRouter();
+
+const result = await openRouter.chat.send({
+  chatRequest: {
+    messages: [
+      {
+        role: "user",
+        content: "Hello, how are you?",
+      },
+    ],
+    model: "openai/gpt-5",
+    provider: {
+      zdr: true,
+      sort: "price",
+    },
+    stream: true,
+  },
+});
+
+for await (const chunk of result) {
+  console.log(chunk.choices[0]?.delta.content);
+}
+```
+
+## API reference
+
+Browse the API reference for each resource in the sidebar. Type definitions for
+every request, response, model, and operation are linked inline from each
+resource page.

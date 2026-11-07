@@ -1,0 +1,79 @@
+---
+title: 'XState VS Code extension'
+---
+
+The [XState VS Code extension](https://marketplace.visualstudio.com/items?itemName=statelyai.stately-vscode) enhances the XState development experience by providing VS Code users with autocomplete, typegen, linting, and a visual editor inside VS Code.
+
+<Callout type="warning">
+
+XState VS Code extension is not fully supported in XState version 5.
+
+</Callout>
+
+<Callout>
+
+If you don’t use VS Code but use an open source code editor that supports VS Code extensions, you can [download the XState VS Code extension from the OpenVSX registry](https://open-vsx.org/extension/statelyai/stately-vscode).
+
+</Callout>
+
+## Installation
+
+1. Open the command palette with `shift` + `cmd/ctrl` + `p`.
+2. Search for the Install Extensions command and hit enter to open the Extensions search.
+3. Search for XState to find the XState VS Code extension and install the extension using the Install button.
+4. Ensure you have [VS Code setup to insert spaces](https://code.visualstudio.com/docs/editor/codebasics#_indentation); we have noticed problems when tabs are used for indentation.
+
+Once installed, you can run `XState: Open Visual Editor` from the command palette to open any machine at your cursor’s location.
+
+If you have code lens enabled (this can be enabled using `editor.codeLens` setting), ‘Open Visual Editor’ will also float above each `createMachine` call.
+
+You can also [download the VS Code extension from the VS Code marketplace](https://marketplace.visualstudio.com/items?itemName=statelyai.stately-vscode) or [download the VS Code extension from the Open VSX marketplace](https://open-vsx.org/extension/statelyai/stately-vscode).
+
+## Features
+
+- **Visually edit machines**. Edit any XState machine with drag-and-drop using the integrated [Stately Visual editor](https://stately.ai/editor).
+- **Autocomplete**. Intelligent suggestions for transition targets and initial states.
+- **Linting**. Highlights errors and potential bugs in your XState machine definitions.
+- **Jump to definition**. Navigate around machines easily with jump to definition on targets, actions, guards, actors and more.
+
+## TypeScript typegen
+
+You can automatically generate intelligent typings for XState with our VS Code extension and [command line interface](developer-tools.mdx#xstate-cli-command-line-interface). [Read more about how to use typegen, and our recommended best practices, on the Typegen page](typegen).
+
+## `xsm` snippet
+
+Use the `xsm` snippet to generate the code required for your state machine quickly. [Watch the ‘XState + VS Code: xsm snippet’ video (1m23s)](https://www.youtube.com/watch?v=Gk3mdlqadYM) for a demo.
+
+## Refactors
+
+When hovering over a named action, guard or actor in a machine, press the lightbulb icon to view available refactors.
+
+## Ignoring machines
+
+If you’d like to ignore linting/autocomplete on a machine, add an `// xstate-ignore-next-line` comment on the line above the machine:
+
+```js
+// xstate-ignore-next-line
+createMachine({});
+```
+
+<Callout title="Machine layout persistence">
+
+
+Upon opening an XState machine in VS Code, you may notice a long `@xstate-layout` comment inserted in the code just above the call to `createMachine()`.
+
+```js
+const machine =
+/** @xstate-layout N4IgpgJg5mDOIC5QFEA... */
+createMachine({...});
+```
+
+This layout string is for persisting manual changes you make to the machine’s layout and is automatically updated by the XState Extension whenever layout changes occur. It is not intended to be human-readable nor manually edited. When updates to this string are made by the extension, the file is not saved until a manual save is performed. The layout algorithm is able to interpret this string and automatically format the machine's layout whenever it is re-opened in Stately Studio’s editor.
+
+</Callout>
+
+<Callout type="warning">
+
+**Caution**: if you use tab based-indentation in VS Code the extension might not work. [Setup VS Code to insert spaces](https://code.visualstudio.com/docs/editor/codebasics#_indentation) automatically.
+
+</Callout>

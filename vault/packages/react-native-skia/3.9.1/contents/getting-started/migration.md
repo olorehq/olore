@@ -1,0 +1,248 @@
+---
+id: migration
+title: Migrating to v3
+sidebar_label: Migrating to v3
+slug: /getting-started/migration
+---
+
+React Native Skia v3 renders with Skia Graphite on iOS, macOS, and Android.
+Graphite is Skia's new GPU backend. In React Native Skia it runs on [Dawn](https://dawn.googlesource.com/dawn), Google's WebGPU implementation, which uses Metal on Apple platforms and Vulkan on Android.
+
+:::info[Staying on v2]
+
+v2 is still maintained. It renders with OpenGL ES on Android and has lower version requirements: it runs on Android devices below API level 26 or without Vulkan, and it supports Android TV and Expo Go.
+If you need any of these, stay on v2 (`yarn add react-native-skia@2`) and use the [v2 documentation](https://wcandillon.github.io/react-native-skia/v2/).
+
+:::
+
+The drawing API is the same as in v2: components, hooks, shaders, and the imperative `Skia` API all work as before.
+What changes is the package name, the platform requirements, and a few `Canvas` props.
+Most apps migrate in three steps, and a fourth one applies to apps that play videos, draw camera frames, or snapshot views:
+
+1. [Rename the package](#1-rename-the-package)
+2. [Check the platform requirements](#2-check-the-platform-requirements)
+3. [Update the Canvas props](#3-update-the-canvas-props)
+4. [Replace the removed APIs](#4-replace-the-removed-apis)
+
+## 1. Rename the package
+
+The package is now published as `react-native-skia`. `@shopify/react-native-skia` stops at version 2.14.
+If your project already depends on `react-native-skia` (2.15), skip to the [next step](#2-check-the-platform-requirements).
+
+```sh
+yarn remove @shopify/react-native-skia
+yarn add react-native-skia
+```
+
+Then update the imports, including the deep imports used on [Web](/docs/getting-started/web) and in [headless](/docs/getting-started/headless) mode:
+
+```diff
+- import { Canvas, Circle } from "@shopify/react-native-skia";
+- import { LoadSkiaWeb } from "@shopify/react-native-skia/lib/module/web";
++ import { Canvas, Circle } from "react-native-skia";
++ import { LoadSkiaWeb } from "react-native-skia/lib/module/web";
+```
+
+The following command rewrites every import of a git repository in one go:
+
+```sh
+git grep -l "@shopify/react-native-skia" -- '*.ts' '*.tsx' '*.js' '*.jsx' \
+  | xargs perl -pi -e 's#\@shopify/react-native-skia#react-native-skia#g'
+```
+
+The Jest configuration references the package by name as well:
+
+```diff
+// jest.config.js
+module.exports = {
+-  testEnvironment: "@shopify/react-native-skia/jestEnv.js",
+-  setupFilesAfterEnv: ["@shopify/react-native-skia/jestSetup.js"],
++  testEnvironment: "react-native-skia/jestEnv.js",
++  setupFilesAfterEnv: ["react-native-skia/jestSetup.js"],
+  transformIgnorePatterns: [
+-    "node_modules/(?!(react-native|react-native.*|@react-native.*|@?react-navigation.*|@shopify/react-native-skia)/)"
++    "node_modules/(?!(react-native|react-native.*|@react-native.*|@?react-navigation.*|react-native-skia)/)"
+  ],
+};
+```
+
+:::warning
+
+Do not install `@shopify/react-native-skia` and `react-native-skia` side by side: both ship the same native module.
+A library that imports from `@shopify/react-native-skia` needs a release that targets `react-native-skia` before you can use it with v3.
+
+:::
+
+## 2. Check the platform requirements
+
+### Android
+
+v3 requires Android API level 26 or above and renders with Vulkan instead of OpenGL ES.
+React Native projects default to a lower `minSdkVersion`, so raise it in `android/build.gradle`:
+
+```groovy
+buildscript {
+    ext {
+        minSdkVersion = 26
+    }
+}
+```
+
+Vulkan 1.1 is a hard requirement: the library's manifest declares `android.hardware.vulkan.version` as a required feature, which merges into your app's manifest.
+The Play Store then stops serving your app to devices without Vulkan 1.1 (older hardware, some TV boxes).
+This is a change in distribution compared to v2, which rendered with OpenGL ES on every device.
+On a device without Vulkan the app still runs: `Skia.gpu.isAvailable` is false and canvases stay blank.
+See [the Vulkan section of the installation guide](/docs/getting-started/installation#vulkan) for the details and how to opt out of the declaration.
+
+### iOS, tvOS, and macOS
+
+The minimum deployment target is iOS 15.1.
+Run `pod install` again after upgrading: the Skia binaries come from new npm packages (`react-native-skia-graphite-apple-ios`, `react-native-skia-graphite-apple-tvos`, `react-native-skia-graphite-apple-macos`), alongside `react-native-webgpu-dawn`.
+
+### Expo
+
+Expo Go bundles the native code of v2, so v3 needs a [development build](https://docs.expo.dev/develop/development-builds/introduction/):
+
+```sh
+npx expo install react-native-skia expo-build-properties
+npx expo run:ios
+npx expo run:android
+```
+
+Use [expo-build-properties](https://docs.expo.dev/versions/latest/sdk/build-properties/) to raise the Android `minSdkVersion`:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      ["expo-build-properties", { "android": { "minSdkVersion": 26 } }]
+    ]
+  }
+}
+```
+
+### Android TV
+
+Android TV is not available with Graphite. It remains supported on v2.
+
+### React Native WebGPU
+
+If your app also uses [react-native-webgpu](https://github.com/wcandillon/react-native-webgpu), both packages now link the same copy of Dawn.
+The native build fails with a Dawn version mismatch error if they were built against different Dawn releases: upgrade both packages together.
+In exchange, Skia and WebGPU can now share a device and textures without any copy (see [WebGPU](/docs/webgpu)).
+
+## 3. Update the Canvas props
+
+Four props of `<Canvas>` were removed, and one changed:
+
+| Prop | Replacement |
+|:--|:--|
+| `debug` | None, remove the prop. |
+| `colorSpace` | Kept, with `"display-p3"` in place of `"p3"`. By default, the canvas picks its [color space](/docs/canvas/overview#color-space) itself: Display P3 on Apple devices with a wide color gamut display (the default of v2), sRGB everywhere else. `colorSpace="srgb"` renders in sRGB there too, like in v2. |
+| `androidWarmup` | None, remove the prop. To control how the canvas is composited on Android, see the [Android rendering options](/docs/canvas/overview#android-rendering-options). |
+| `opaque` | `android.opaque`: the prop only ever applied to Android, where it is now one of the options of the backing view, applied in place. A canvas that relied on `opaque` to get a `SurfaceView` asks for it with `android={{ backingView: "SurfaceView" }}`, see the [Android rendering options](/docs/canvas/overview#android-rendering-options). |
+| `onSize` | `onLayout`, the view prop: the size of the canvas is the one of its layout. Write the layout into your shared value, see [canvas size](/docs/canvas/overview#canvas-size). |
+
+The `NativeSkiaViewProps` type was removed as well.
+Early v3 releases named the Android backing view with `android.surfaceType` and derived its default from `opaque`; `android.backingView` replaces it, with `TextureView` as the default whatever the opacity.
+
+## 4. Replace the removed APIs
+
+Native buffers (camera and video frames) and view snapshots are now produced by [React Native WebGPU](https://wcandillon.github.io/react-native-webgpu/), and Skia only wraps the textures it renders them into.
+The following APIs were removed in favor of it:
+
+| Removed | Replacement |
+|:--|:--|
+| `Skia.Video()` and `useVideo()` | React Native WebGPU's `createVideoPlayer()`, whose frames are copied into a texture that Skia draws. See [native buffers](/docs/webgpu#native-buffers). |
+| `Skia.NativeBuffer.MakeFromImage()` | Export the image as a WebGPU texture with `Skia.Image.MakeGPUTextureFromImage()`. See [exporting an image](/docs/webgpu#exporting-an-image). |
+| `Skia.NativeBuffer.MakeTestBuffer()` | React Native WebGPU's `createTestVideoFrame()`. |
+| `Skia.NativeBuffer.Release()` | `NativeVideoFrame.release()`: React Native WebGPU owns the buffers it hands out. |
+| `Skia.Image.MakeImageFromNativeTextureUnstable()` | `Skia.Image.MakeFromGPUTexture(texture)`, which takes a WebGPU texture. See [WebGPU](/docs/webgpu). |
+| `image.getNativeTextureUnstable()` and `surface.getNativeTextureUnstable()` | `Skia.Image.MakeGPUTextureFromImage()` and `Skia.Surface.MakeFromGPUTexture()`: textures are shared as WebGPU textures. |
+| `makeImageFromView()` and `Skia.Image.MakeImageFromViewTag()` | React Native WebGPU's `queue.drawElementImageToTexture()` draws the view into a texture, which `Skia.Image.MakeFromGPUTexture()` wraps. The snapshot is a GPU image, and on iOS and Android 13+ it never leaves the GPU. See [view snapshots](/docs/webgpu#view-snapshots). |
+| `Skia.Image.MakeImageFromNativeBuffer(pointer)` on native platforms | React Native WebGPU's `copyExternalImageToTexture()` renders the frame into a texture, which `Skia.Image.MakeFromGPUTexture()` wraps. See [native buffers](/docs/webgpu#native-buffers). The method remains on Web as `Skia.Image.MakeFromNativeBuffer()`, where it takes a `CanvasImageSource`. |
+| `ref.current.makeImageSnapshotAsync()` on a `Canvas` | `makeImageSnapshot()`: with Graphite the snapshot is taken on the calling thread and returns a GPU image. Encoding it or reading its pixels is asynchronous. See [snapshots](/docs/canvas/overview#getting-a-canvas-snapshot). |
+| `image.encodeToBytes()`, `image.encodeToBase64()`, `image.readPixels()` and `canvas.readPixels()` returning their result | They return a promise of it: the pixels are read back from the GPU and encoded off the calling thread. `encodeToBytes()` and `encodeToBase64()` reject instead of throwing. See [GPU and CPU images](/docs/images#gpu-and-cpu-images). |
+| `useCanvasSize()` returning `{ ref, size }` | It returns `{ size, onLayout }` and no longer takes a ref: pass `onLayout` to the canvas instead of `ref`, and `size` follows every layout change instead of being measured once. Keep `useCanvasRef()` for the ref: its `size` property reads the layout synchronously. See [canvas size](/docs/canvas/overview#canvas-size). |
+
+`<SkiaPictureView picture={picture} />` was removed as well. Draw the picture in a canvas instead, which renders it the same way:
+
+```diff
+- <SkiaPictureView style={style} picture={picture} />
++ <Canvas style={style}>
++   <Picture picture={picture} />
++ </Canvas>
+```
+
+Its `mode="continuous"` prop has no replacement: to animate the picture, pass a shared value to `picture` (see [pictures](/docs/shapes/pictures)).
+
+When an image cannot be decoded, `useImage()` now calls `onError` with the message `Could not decode the image` (it was `Could not load data`).
+
+A few methods were renamed so that the name says whether the result lives on the CPU or on the GPU: "raster" is a CPU surface or image, "texture" a GPU one (see [GPU and CPU images](/docs/images#gpu-and-cpu-images)).
+`Skia.Surface.MakeOffscreen()`, which creates a GPU surface, keeps its name.
+
+| Renamed | New name |
+|:--|:--|
+| `Skia.Surface.Make(width, height)` | `Skia.Surface.MakeRaster(width, height)`: a CPU surface. |
+| `Skia.Image.MakeImage(info, data, bytesPerRow)` | `Skia.Image.MakeRaster(info, data, bytesPerRow)`: a CPU image. |
+| `image.makeNonTextureImage()` | `image.makeRasterImage()`: it resolves to the CPU copy and rejects when the readback fails instead of returning `null`. There is no synchronous readback, in a worklet either: `await` it, or chain `then()`. |
+
+Factory methods no longer repeat the name of their namespace: `Skia.Image.MakeImageFromEncoded()` is now `Skia.Image.MakeFromEncoded()`, in line with `Skia.Surface.MakeFromGPUTexture()` or `Skia.SVG.MakeFromString()`.
+
+| Renamed | New name |
+|:--|:--|
+| `Skia.Image.MakeImageFromEncoded()` | `Skia.Image.MakeFromEncoded()` |
+| `Skia.Image.MakeImageFromGPUTexture()` | `Skia.Image.MakeFromGPUTexture()` |
+| `Skia.Image.MakeImageFromNativeBuffer()` (Web only) | `Skia.Image.MakeFromNativeBuffer()` |
+| `Skia.Image.MakeRasterImage()` | `Skia.Image.MakeRaster()` |
+| `Skia.AnimatedImage.MakeAnimatedImageFromEncoded()` | `Skia.AnimatedImage.MakeFromEncoded()` |
+| `Skia.Picture.MakePicture()` | `Skia.Picture.Make()` |
+| `Skia.Typeface.MakeFreeTypeFaceFromData()` | `Skia.Typeface.MakeFromData()` |
+| `Skia.ColorFilter.MakeLumaColorFilter()` | `Skia.ColorFilter.MakeLuma()` |
+
+## What is new
+
+### Rendering off the JS and UI threads
+
+In v2, `<Canvas>` drew its frames on the UI thread.
+In v3, the scene is recorded once per React commit that changes it, and a dedicated native thread pool replays it into a Graphite frame whenever its content changes.
+The UI thread only applies the animated values, it no longer draws.
+Nothing changes in your code: see [how frames are produced](/docs/canvas/overview#how-frames-are-produced).
+
+### Textures can be used from any thread
+
+With Ganesh, a GPU texture belonged to the Skia context of the thread that created it, which is why v2 created textures on the UI thread.
+With Graphite, GPU-backed images are shared: an image created on the JS thread can be drawn by any canvas and from any worklet runtime.
+The [texture hooks](/docs/animations/textures) work as before.
+
+### SkiaGraphiteView
+
+[`SkiaGraphiteView`](/docs/canvas/graphite) is a view that you drive frame by frame from any JavaScript runtime: the JS thread, the Reanimated UI runtime, or a dedicated worklet runtime.
+
+### WebGPU interop
+
+With [react-native-webgpu](https://github.com/wcandillon/react-native-webgpu) installed, Skia and WebGPU share the same GPU device.
+You can draw a WebGPU texture in a Skia canvas, or draw with Skia into a texture that WebGPU samples, without any copy. This also works with three.js: see [WebGPU](/docs/webgpu).
+
+### High bit depth on Android
+
+The [`highBitDepth`](/docs/canvas/overview#high-bit-depth) prop is now supported on Android, where it renders into a 10-bit surface.
+
+## Troubleshooting
+
+**The Android build fails after upgrading.**
+Check that `minSdkVersion` is 26 or above, then clean the native build (`cd android && ./gradlew clean`).
+
+**The iOS build fails after upgrading.**
+Run `pod install` again so CocoaPods picks up the new binary packages.
+
+**The build reports a Dawn version mismatch.**
+`react-native-skia` and `react-native-webgpu` were built against different Dawn releases. Upgrade both to their latest versions.
+
+**The app does not run in Expo Go.**
+Expo Go ships the native code of v2. Use a development build.
+
+**Screenshot tests report differences.**
+Graphite is a different renderer than Ganesh, and its output can differ slightly. Review the differences and update your reference images.
+
+If you run into an issue that is not listed here, please [open an issue](https://github.com/wcandillon/react-native-skia/issues/new/choose).

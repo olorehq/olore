@@ -41,7 +41,7 @@ frame should re-draw. `false` means everything has settled.
   across frame rates. See [Rendering Loop](/runtimes/cpp/rendering-loop).
 </Tip>
 
-### Forcing a Layout Pass
+### Forcing a Layout pass
 
 Pass `dt = 0` to re-solve layout without advancing time. Useful right after
 resizing the window or changing the artboard's `width()` / `height()`:
@@ -52,7 +52,7 @@ artboard->height(newHeight);
 sm->advanceAndApply(0.f);
 ```
 
-## Pointer Events
+## Pointer events
 
 A state machine listens for pointer events on `Listener` components placed
 in the editor. Map your window-space coordinates into **artboard-local**
@@ -87,7 +87,7 @@ same event to other UI behind Rive:
 - `hitOpaque` — a listener fired and the shape is opaque. Rive consumed
   the event; don't forward.
 
-## Reading State Changes
+## Reading state changes
 
 After each `advanceAndApply` you can introspect what happened on a
 `StateMachineInstance`. Call directly on your `StateMachineInstance`:

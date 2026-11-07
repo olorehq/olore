@@ -1,12 +1,13 @@
 ---
 title: checkly checks
-description: 'List, inspect, and analyze checks in your Checkly account.'
+description: 'List, inspect, run, and analyze checks in your Checkly account.'
 sidebarTitle: 'checkly checks'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-checks/'
 ---
 
 <Note>Available since CLI v7.3.0. Analytics stats available since v7.6.0.</Note>
 
-The `checkly checks` command lets you list, inspect, and analyze checks in your Checkly account directly from the terminal. You can filter, search, and drill into individual check details, recent results, error groups, and analytics stats.
+The `checkly checks` command lets you list, inspect, run, and analyze checks in your Checkly account directly from the terminal. You can filter, search, run deployed checks on demand, and drill into individual check details, recent results, error groups, and analytics stats.
 
 <Accordion title="Prerequisites">
 Before using `checkly checks`, ensure you have:
@@ -29,7 +30,9 @@ npx checkly checks <subcommand> [arguments] [options]
 |------------|-------------|
 | `list` | List all checks in your account. |
 | `get` | Get details of a specific check, including recent results and analytics stats. |
+| `run` | Run deployed checks now using their configured locations and alerting rules. |
 | `stats` | Show analytics stats for your checks. |
+| `delete` | Delete a check by ID. |
 
 ## `checkly checks list`
 
@@ -180,6 +183,60 @@ npx checkly checks list --output=json
 # Page through results
 npx checkly checks list --limit=10 --page=2
 ```
+
+## `checkly checks run`
+
+<Note>The `checkly checks run` command is available since CLI v8.18.0.</Note>
+
+Run deployed checks immediately using their configured locations and alerting rules. This is the CLI equivalent of selecting **Schedule now** in the Checkly dashboard.
+
+<Warning>
+These are normal monitoring runs. They update check health and can trigger configured alerts. To run checks in a test session without affecting monitoring state or sending alerts, use [`checkly trigger`](/cli/checkly-trigger).
+</Warning>
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks run [options]
+```
+
+Without a selector, the command runs all eligible checks in your account. By default, it waits up to 600 seconds for every check session to finish and exits with a failing status code if a session fails, times out, or is cancelled.
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--tags, -t` | - | Select checks by tag. Use commas to require multiple tags, or repeat the option to match any filter. |
+| `--check-id` | - | Run specific checks by ID. Accepts comma-separated values and can be repeated. |
+| `--refresh-cache` | - | Refresh the selected checks cache before running. |
+| `--timeout` | - | Number of seconds to wait for all check sessions to finish. Default: `600`. |
+| `--detach, -d` | - | Start the check sessions and exit without waiting for results. |
+| `--[no-]fail-on-no-matching` | - | Fail when no checks match. Enabled by default. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### Run Examples
+
+```bash Terminal
+# Run one deployed check and wait for its result
+npx checkly checks run --check-id=<check-id>
+
+# Run checks that have both the production and api tags
+npx checkly checks run --tags=production,api
+
+# Run checks matching either tag filter
+npx checkly checks run --tags=production,api --tags=critical
+
+# Schedule matching checks and exit immediately
+npx checkly checks run --tags=production --detach
+
+# Return machine-readable results
+npx checkly checks run --check-id=<check-id> --output=json
+
+# Exit successfully when no checks match
+npx checkly checks run --tags=optional --no-fail-on-no-matching
+```
+
+The `--timeout` option only controls how long the CLI waits. Check sessions continue running in Checkly after the CLI times out. Use `--detach` when you do not need to wait for results.
 
 ## `checkly checks get`
 
@@ -536,8 +593,77 @@ npx checkly checks stats --search="homepage" --output=json
 npx checkly checks stats --limit=10 --page=2
 ```
 
+## `checkly checks delete`
+
+<Note>The `checkly checks delete` command is only available since CLI v8.8.0.</Note>
+
+Delete a check by ID. By default, the command shows the check to be deleted and prompts for confirmation before proceeding.
+
+<Warning>
+Checks managed by a CLI project are recreated on the next `checkly deploy`. To permanently remove a project-managed check, delete it from your project code instead of using this command.
+</Warning>
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks delete <id> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The ID of the check to delete. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--force, -f` | - | Skip the confirmation prompt. |
+| `--dry-run` | - | Preview what would happen without deleting the check. |
+
+### Delete Options
+
+<ResponseField name="--force, -f" type="boolean" default="false">
+
+Skip the confirmation prompt and delete the check immediately. Useful in scripts and CI.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks delete 12345 --force
+npx checkly checks delete 12345 -f
+```
+
+</ResponseField>
+
+<ResponseField name="--dry-run" type="boolean" default="false">
+
+Preview the deletion without making any changes. Shows the check that would be deleted.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks delete 12345 --dry-run
+```
+
+</ResponseField>
+
+### Delete Examples
+
+```bash Terminal
+# Delete a check with a confirmation prompt
+npx checkly checks delete 12345
+
+# Preview the deletion without making changes
+npx checkly checks delete 12345 --dry-run
+
+# Delete without a confirmation prompt
+npx checkly checks delete 12345 --force
+```
+
 ## Related Commands
 
 - [`checkly status-pages`](/cli/checkly-status-pages) - List and inspect status pages
-- [`checkly trigger`](/cli/checkly-trigger) - Trigger checks on-demand
+- [`checkly trigger`](/cli/checkly-trigger) - Run deployed checks in a test session without affecting monitoring state
 - [`checkly whoami`](/cli/checkly-whoami) - Display current account information

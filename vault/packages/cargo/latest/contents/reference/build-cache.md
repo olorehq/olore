@@ -39,10 +39,11 @@ directory with the name of the [target]:
 
 Directory | Example
 ----------|--------
-<code style="white-space: nowrap">target/&lt;triple&gt;/debug/</code> | <code style="white-space: nowrap">target/thumbv7em-none-eabihf/debug/</code>
-<code style="white-space: nowrap">target/&lt;triple&gt;/release/</code> | <code style="white-space: nowrap">target/thumbv7em-none-eabihf/release/</code>
+<code style="white-space: nowrap">target/&lt;tuple&gt;/debug/</code> | <code style="white-space: nowrap">target/thumbv7em-none-eabihf/debug/</code>
+<code style="white-space: nowrap">target/&lt;tuple&gt;/release/</code> | <code style="white-space: nowrap">target/thumbv7em-none-eabihf/release/</code>
 
-> **Note**: When not using `--target`, this has a consequence that Cargo will
+> [!NOTE]
+> When not using `--target`, this has a consequence that Cargo will
 > share your dependencies with build scripts and proc macros. [`RUSTFLAGS`]
 > will be shared with every `rustc` invocation. With the `--target` flag,
 > build scripts and proc macros are built separately (for the host
@@ -70,9 +71,11 @@ change. Some of these directories are:
 
 Directory | Description
 ----------|------------
-<code style="white-space: nowrap">\<build-dir>/debug/deps/</code> | Dependencies and other artifacts.
 <code style="white-space: nowrap">\<build-dir>/debug/incremental/</code> | `rustc` [incremental output], a cache used to speed up subsequent builds.
-<code style="white-space: nowrap">\<build-dir>/debug/build/</code> | Output from [build scripts].
+<code style="white-space: nowrap">\<build-dir>/debug/build/</code> | Build step results including compilation artifacts and [build script] output.
+
+> [!NOTE]
+> The build-dir layout was changed in Cargo 1.100.0, thus prior versions use a different layout. (see [#15010](https://github.com/rust-lang/cargo/issues/15010))
 
 ## Dep-info files
 
@@ -93,7 +96,7 @@ re-executed. The paths in the file are absolute by default. See the
 A third party tool, [sccache], can be used to share built dependencies across
 different workspaces.
 
-To setup `sccache`, install it with `cargo install sccache` and set
+To setup `sccache`, install it with `cargo install --locked sccache` and set
 `RUSTC_WRAPPER` environment variable to `sccache` before invoking Cargo. If
 you use bash, it makes sense to add `export RUSTC_WRAPPER=sccache` to
 `.bashrc`. Alternatively, you can set [`build.rustc-wrapper`] in the [Cargo
@@ -107,7 +110,7 @@ configuration][config]. Refer to sccache documentation for more details.
 [`cargo doc`]: ../commands/cargo-doc.md
 [`cargo package`]: ../commands/cargo-package.md
 [`cargo publish`]: ../commands/cargo-publish.md
-[build scripts]: ../reference/build-scripts.md
+[build script]: ../reference/build-scripts.md
 [config]: ../reference/config.md
 [def-workspace]:  ../appendix/glossary.md#workspace  '"workspace" (glossary entry)'
 [target]: ../appendix/glossary.md#target '"target" (glossary entry)'

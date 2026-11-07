@@ -67,7 +67,7 @@ If you use the App Router, Edit `app/api/[[...route]]/route.ts`. Refer to the [S
 
 ```ts
 import { Hono } from 'hono'
-import { handle } from 'hono/vercel'
+import { handle } from '@hono/vercel'
 
 const app = new Hono().basePath('/api')
 
@@ -78,8 +78,11 @@ app.get('/hello', (c) => {
 })
 
 export const GET = handle(app)
+
 export const POST = handle(app)
 ```
+
+`handle` comes from the `@hono/vercel` package, which the starter installs. On an existing project, add it with `npm i @hono/vercel`.
 
 ## 3. Run
 

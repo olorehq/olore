@@ -2,6 +2,8 @@
 title: 'Alerting With Checkly'
 description: 'Comprehensive alerting and retry strategies to minimize false positives and ensure reliable incident response when your checks fail or recover.'
 sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/communicate/alerts/overview/'
+mode: "wide"
 ---
 
 
@@ -41,9 +43,9 @@ You can select whether group settings will override individual check settings fo
 ![alert settings check / threshold alerting](/images/docs/images/alerting/alert-settings-check.png)
 
 
-## Alert Channels
+## Alert channels
 
-When adding a channel, you can select which checks to subscribe to the channel. This way you can create specific routings
+When adding an alert channel, you can select which checks to subscribe to the channel. This way you can create specific routings
 for specific checks.
 
 ![alert channels](/images/docs/images/alerting/alert-channels.png)
@@ -73,7 +75,7 @@ Sending out alert notifications like emails and Slack hooks depends on four fact
 As you can see, 1 and 2 are how Checkly works in the backend; you have no influence on this. But 3 and 4 are user configurable.
 We can even add a fifth factor: if the check is muted, no alerts are send out at all.
 
-> Note: Browser checks currently do not have a degraded state.
+> Note: Browser checks can be marked as degraded from your script with `markCheckAsDegraded`. See [degraded state for Browser checks](/detect/synthetic-monitoring/browser-checks/degraded).
 
 ### States & Transitions
 

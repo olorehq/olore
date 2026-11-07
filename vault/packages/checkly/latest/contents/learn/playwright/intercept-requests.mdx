@@ -1,5 +1,6 @@
 ---
 title: How to Intercept Requests in Playwright
+description: "Observe and manipulate network traffic in Playwright by intercepting requests and responses, logging them or modifying them during a test."
 subTitle: Monitoring and manipulating web traffic
 date: 2020-09-03
 author:
@@ -14,6 +15,7 @@ weight: 105
 sidebarTitle: Intercepting requests
 learn_playwright:
   parent: "Basics"
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/intercept-requests/'
 ---
 
 import SignUpCta from "/snippets/sign-up-cta.mdx"
@@ -85,33 +87,31 @@ Playwright makes it easy for us, as for every request we can intercept we also c
 Every time we load it, our test website is sending a request to its backend to fetch a list of best selling books. For our example, we are going to intercept this response and modify it to return a single book we define on the fly.
 
 ```ts title="response-interception.spec.ts"
-// Example code for response interception
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test'
 
-test('intercept and modify response', async ({ page }) => {
-  // Intercept API calls and return custom data
-  await page.route('**/api/best-sellers', route => {
-    const customResponse = {
-      books: [
-        {
-          title: 'Custom Book Title',
-          author: 'Custom Author',
-          genre: 'Custom Genre',
-          price: '$19.99',
-          rating: '4.5 stars'
-        }
-      ]
-    };
+test('intercept response', async ({ page }) => {
+  const mockResponseObject = [
+    {
+      id: 1,
+      title: 'How to Mock a Response',
+      author: 'A. Friend',
+      genre: 'business',
+      price: '0.00',
+      rating: '★★★★★',
+      stock: 65535
+    }
+  ]
 
+  await page.route('https://danube-web.shop/api/books', (route) =>
     route.fulfill({
-      status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(customResponse)
-    });
-  });
+      body: JSON.stringify(mockResponseObject)
+    })
+  )
 
-  await page.goto('https://danube-web.shop/');
-});
+  await page.goto('https://danube-web.shop/')
+  await page.screenshot({ path: 'screenshot.png' })
+})
 ```
 
 Here is what the homepage will look like with our stubbed response:
@@ -120,7 +120,7 @@ Here is what the homepage will look like with our stubbed response:
 
 Run the above examples as follows:
 ```bash
-npx playwright test request-interception.ts
+npx playwright test interception
 ```
 
 ## Takeaways

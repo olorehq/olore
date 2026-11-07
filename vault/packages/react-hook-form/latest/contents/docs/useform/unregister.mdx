@@ -1,13 +1,14 @@
 ---
 title: unregister
+seoTitle: "unregister: Remove React Form Fields"
 description: Remove a registered input from the form.
 metaDescription: Remove a registered input from React Hook Form, optionally preserving its value, error, dirty, or touched state on unmount.
 sidebar: apiLinks
 ---
 
-## \</> `unregister:` <TypeText>(name: string | string[], options) => void</TypeText>
+## \</> `unregister:` <TypeText>[UseFormUnregister](/ts#UseFormUnregister)</TypeText>
 
-This method allows you to `unregister` a single input or an array of inputs. It also provides a second optional argument to keep state after unregistering an input.
+This method allows you to `unregister` a single input or an array of inputs. It also provides a second optional argument <Since version="7.0.0" /> to keep state after unregistering an input.
 
 ### Props
 
@@ -20,11 +21,11 @@ The example below shows what to expect when you invoke the `unregister` method.
 <input {...register('yourDetails.lastName')} />
 ```
 
-| Type                          | Input Name                             | Value              |
-| ----------------------------- | -------------------------------------- | ------------------ |
-| <TypeText>string</TypeText>   | `unregister("yourDetails")`            | `{}`               |
-| <TypeText>string</TypeText>   | `unregister("yourDetails.firstName")`  | `{ lastName: '' }` |
-| <TypeText>string[]</TypeText> | `unregister(["yourDetails.lastName"])` | `''`               |
+| Type                          | Input Name                             | Value               |
+| ----------------------------- | -------------------------------------- | ------------------- |
+| <TypeText>string</TypeText>   | `unregister("yourDetails")`            | `{}`                |
+| <TypeText>string</TypeText>   | `unregister("yourDetails.firstName")`  | `{ lastName: '' }`  |
+| <TypeText>string[]</TypeText> | `unregister(["yourDetails.lastName"])` | `{ firstName: '' }` |
 
 ### Options
 
@@ -37,7 +38,8 @@ The example below shows what to expect when you invoke the `unregister` method.
 | `keepIsValid`      | <TypeText>boolean</TypeText> | `isValid` will be remained during this action. However, this is not going to guarantee the next user input will not update `isValid` for schema validation, you will have to adjust the schema according with the unregister. |
 | `keepError`        | <TypeText>boolean</TypeText> | `errors` will not be updated.                                                                                                                                                                                                 |
 | `keepValue`        | <TypeText>boolean</TypeText> | input's current `value` will not be updated.                                                                                                                                                                                  |
-| `keepDefaultValue` | <TypeText>boolean</TypeText> | input's `defaultValue` which defined in `useForm` will be remained.                                                                                                                                                           |
+| `keepDefaultValue` | <TypeText>boolean</TypeText> | input's `defaultValue` which defined in `useForm` will be remained. **Note:** only has an effect when the form's top-level `shouldUnregister` option is `false` (the default); it is a no-op when `shouldUnregister: true`.   |
+| `keepIsValidating` | <TypeText>boolean</TypeText> | <Since version="7.51.0" /> `validatingFields`/`isValidating` state for the unregistered field will be retained rather than cleared.                                                                                           |
 
 <Admonition type="important" title="Rules">
 
@@ -58,7 +60,7 @@ The example below shows what to expect when you invoke the `unregister` method.
 - Make sure you unmount that input which has `register` callback or else the input will get registered again.
 
   ```javascript
-  const [show, setShow] = React.useState(true)
+  const [show, setShow] = useState(true)
 
   const onClick = () => {
     unregister("test")
@@ -72,57 +74,79 @@ The example below shows what to expect when you invoke the `unregister` method.
 
 </Admonition>
 
-**Examples:**
+### Examples
 
 ---
 
 <TabGroup buttonLabels={["TS", "JS"]}>
 
-```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-unregister-v6-ts-forked-4k2ey"
-import React, { useEffect } from "react"
+```tsx copy
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 
-interface IFormInputs {
-  firstName: string
-  lastName?: string
+type FormInputs = {
+  name: string
+  addPhone: boolean
+  phone?: string
 }
 
 export default function App() {
-  const { register, handleSubmit, unregister } = useForm<IFormInputs>()
-  const onSubmit = (data: IFormInputs) => console.log(data)
+  const { register, handleSubmit, unregister, watch } = useForm<FormInputs>({
+    defaultValues: { name: "", addPhone: false, phone: "" },
+  })
+  const addPhone = watch("addPhone")
+  const onSubmit = (data: FormInputs) => console.log(data)
 
-  React.useEffect(() => {
-    register("lastName")
-  }, [register])
+  useEffect(() => {
+    // the phone input is already unmounted here, so the field stays removed
+    if (!addPhone) unregister("phone")
+  }, [addPhone, unregister])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <button type="button" onClick={() => unregister("lastName")}>
-        unregister
-      </button>
-      <input type="submit" />
+      <input {...register("name")} placeholder="Name" />
+
+      <label>
+        <input type="checkbox" {...register("addPhone")} />
+        Add a phone number
+      </label>
+
+      {addPhone && <input {...register("phone")} placeholder="Phone" />}
+
+      <button type="submit">Submit</button>
     </form>
   )
 }
 ```
 
-```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-unregister-v6-forked-qs8o6"
-import React, { useEffect } from "react"
+```javascript copy
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 
 export default function App() {
-  const { register, handleSubmit, unregister } = useForm()
+  const { register, handleSubmit, unregister, watch } = useForm({
+    defaultValues: { name: "", addPhone: false, phone: "" },
+  })
+  const addPhone = watch("addPhone")
+  const onSubmit = (data) => console.log(data)
 
-  React.useEffect(() => {
-    register("lastName")
-  }, [register])
+  useEffect(() => {
+    // the phone input is already unmounted here, so the field stays removed
+    if (!addPhone) unregister("phone")
+  }, [addPhone, unregister])
 
   return (
-    <form>
-      <button type="button" onClick={() => unregister("lastName")}>
-        unregister
-      </button>
-      <input type="submit" />
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register("name")} placeholder="Name" />
+
+      <label>
+        <input type="checkbox" {...register("addPhone")} />
+        Add a phone number
+      </label>
+
+      {addPhone && <input {...register("phone")} placeholder="Phone" />}
+
+      <button type="submit">Submit</button>
     </form>
   )
 }
@@ -135,3 +159,32 @@ export default function App() {
 ---
 
 <YouTube youTubeId="TM99g_NW5Gk" />
+
+### Tips
+
+---
+
+- For fields that show and hide, try the `shouldUnregister: true` option (on [`useForm`](/docs/useform#shouldUnregister) or [`register`](/docs/useform/register#options)) before you call `unregister` by hand. The field is removed when its input unmounts.
+- With a resolver, `unregister` does not change the schema. Make the schema conditional instead, for example with a discriminated union or `.optional()`, so hidden fields are not validated.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### The field comes back right after `unregister`
+
+<Why>
+
+The input is still rendered. On the next render, its `register` call registers the field again, with the value still in the input.
+
+</Why>
+
+<Fix>
+
+Remove the input from the page first, then call `unregister`. Or use the `shouldUnregister: true` option, which unregisters the field automatically when its input unmounts.
+
+</Fix>
+
+</Troubleshoot>

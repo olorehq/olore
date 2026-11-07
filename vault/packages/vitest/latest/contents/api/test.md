@@ -40,7 +40,7 @@ If test body is not provided, the test is marked as `todo`.
 When a test function returns a promise, the runner will wait until it is resolved to collect async expectations. If the promise is rejected, the test will fail.
 
 ::: tip
-In Jest, `TestFunction` can also be of type `(done: DoneCallback) => void`. If this form is used, the test will not be concluded until `done` is called. You can achieve the same using an `async` function, see the [Migration guide Done Callback section](/guide/migration#done-callback).
+In Jest, `TestFunction` can also be of type `(done: DoneCallback) => void`. If this form is used, the test will not be concluded until `done` is called. You can achieve the same using an `async` function, see the [Migration guide Done Callback section](/guide/migration/jest#done-callback).
 :::
 
 ## Test Options
@@ -74,6 +74,8 @@ test('skipped concurrent test', { skip: true, concurrent: true }, () => {
 ```
 
 They both work in exactly the same way. To use either one is purely a stylistic choice.
+
+Options set to `undefined` are ignored. They don't override values from the chain, the parent suite, or [tags](/guide/test-tags).
 
 ### timeout
 
@@ -109,6 +111,7 @@ test('heavy test', { skip: true, timeout: 10_000 }, () => {
   // ...
 })
 ```
+
 :::
 
 ### retry
@@ -286,7 +289,7 @@ test('server uses correct port', ({ config, server }) => {
 
 ## test.override <Version>4.1.0</Version> {#test-override}
 
-Use `test.override` to override fixture values for all tests within the current suite and its nested suites. This must be called at the top level of a `describe` block. See [Overriding Fixture Values](/guide/test-context.html#overriding-fixture-values) for more information.
+Use `test.override` to override fixture values for all tests within the current suite and its nested suites. This must be called at the top level of a `describe` block. See [Overriding Fixture Values](/guide/test-context#overriding-fixture-values) for more information.
 
 ```ts
 import { test as baseTest, describe, expect } from 'vitest'
@@ -371,11 +374,13 @@ test.skipIf(isDev)('prod only test', () => {
 })
 ```
 
+Unlike `test.skip`, `test.skipIf` always sets the [`skip`](#skip) option: `true` if the condition is truthy, `false` otherwise. A falsy condition overrides `skip` inherited from [tags](/guide/test-tags), the same as `test(name, { skip: false })`.
+
 ## test.runIf
 
 - **Alias:** `it.runIf`
 
-Opposite of [test.skipIf](#test-skipif).
+Opposite of [test.skipIf](#test-skipif). It always sets the [`skip`](#skip) option: `false` if the condition is truthy, `true` otherwise.
 
 ```ts
 import { assert, test } from 'vitest'
@@ -557,24 +562,24 @@ test.each([
 
 You can also access Object attributes with `.`, if you are using objects as arguments:
 
-  ```ts
-  test.each`
-  a               | b      | expected
-  ${{ val: 1 }}   | ${'b'} | ${'1b'}
-  ${{ val: 2 }}   | ${'b'} | ${'2b'}
-  ${{ val: 3 }}   | ${'b'} | ${'3b'}
-  `('add($a.val, $b) -> $expected', ({ a, b, expected }) => {
-    expect(a.val + b).toBe(expected)
-  })
+```ts
+test.each`
+a               | b      | expected
+${{ val: 1 }}   | ${'b'} | ${'1b'}
+${{ val: 2 }}   | ${'b'} | ${'2b'}
+${{ val: 3 }}   | ${'b'} | ${'3b'}
+`('add($a.val, $b) -> $expected', ({ a, b, expected }) => {
+  expect(a.val + b).toBe(expected)
+})
 
-  // this will return
-  // ✓ add(1, b) -> 1b
-  // ✓ add(2, b) -> 2b
-  // ✓ add(3, b) -> 3b
-  ```
+// this will return
+// ✓ add(1, b) -> 1b
+// ✓ add(2, b) -> 2b
+// ✓ add(3, b) -> 3b
+```
 
-* First row should be column names, separated by `|`;
-* One or more subsequent rows of data supplied as template literal expressions using `${value}` syntax.
+- First row should be column names, separated by `|`;
+- One or more subsequent rows of data supplied as template literal expressions using `${value}` syntax.
 
 ```ts
 import { expect, test } from 'vitest'

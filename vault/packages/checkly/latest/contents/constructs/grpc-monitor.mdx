@@ -1,0 +1,471 @@
+---
+title: 'GrpcMonitor Construct'
+description: 'Learn how to configure gRPC monitors with the Checkly CLI.'
+sidebarTitle: 'gRPC monitor'
+canonical: 'https://www.checklyhq.com/docs/constructs/grpc-monitor/'
+mode: "wide"
+---
+
+import CheckIntent from '/snippets/check-intent.mdx';
+
+import GeneralMonitorOptionsTable from '/snippets/general-monitor-options-table.mdx';
+
+<Tip>
+Learn more about gRPC monitors in [the gRPC monitor overview](/detect/uptime-monitoring/grpc-monitors/overview).
+</Tip>
+
+<Note>The `GrpcMonitor` construct requires Checkly CLI 8.15.0 or later.</Note>
+
+Use gRPC monitors to verify that your gRPC services are reachable, responding correctly, and meeting performance expectations. Monitors run in two modes:
+
+- **BEHAVIOR** — Invokes a unary gRPC method and asserts on the response
+- **HEALTH** — Queries the standard `grpc.health.v1.Health/Check` endpoint
+
+<Accordion title="Prerequisites">
+Before creating gRPC monitors, ensure you have:
+
+- An initialized Checkly CLI project
+- The hostname and port of the gRPC service you want to monitor
+- In BEHAVIOR mode: the fully-qualified method name and a service definition. Use server reflection, an inline `.proto` file, or a compiled FlatBuffers `.bfbs` schema.
+- For FlatBuffers: install the [`flatc` compiler](https://flatbuffers.dev/flatbuffers_guide_using_schema_compiler.html)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+<CodeGroup>
+
+```ts HEALTH Mode
+import { Frequency, GrpcAssertionBuilder, GrpcMonitor } from "checkly/constructs"
+
+new GrpcMonitor('grpc-health-1', {
+  name: 'My Service Health Check',
+  description: "Checks that **my-service** reports `SERVING` via the gRPC health protocol.",
+  frequency: Frequency.EVERY_1M,
+  request: {
+    url: 'grpc.example.com',
+    port: 50051,
+    grpcConfig: {
+      mode: 'HEALTH',
+      tls: true,
+      service: 'my.package.MyService',
+    },
+    assertions: [
+      GrpcAssertionBuilder.healthCheckStatus().equals(1), // 1 = SERVING
+      GrpcAssertionBuilder.responseTime().lessThan(500),
+    ],
+  },
+})
+```
+
+```ts BEHAVIOR Mode
+import { Frequency, GrpcAssertionBuilder, GrpcMonitor } from "checkly/constructs"
+
+new GrpcMonitor('grpc-behavior-1', {
+  name: 'User Service GetUser',
+  description: "Invokes `GetUser` on **user-service** and asserts the response.",
+  activated: true,
+  frequency: Frequency.EVERY_5M,
+  locations: ['us-east-1', 'eu-west-1'],
+  maxResponseTime: 3000,
+  degradedResponseTime: 1500,
+  request: {
+    url: 'grpc.example.com',
+    port: 50051,
+    grpcConfig: {
+      mode: 'BEHAVIOR',
+      tls: true,
+      serviceDefinition: 'REFLECTION',
+      method: 'users.UserService/GetUser',
+      message: '{"userId": "health-probe"}',
+      metadata: [{ key: 'authorization', value: 'Bearer {{GRPC_TOKEN}}' }],
+    },
+    assertions: [
+      GrpcAssertionBuilder.statusCode().equals(0),
+      GrpcAssertionBuilder.responseTime().lessThan(1000),
+      GrpcAssertionBuilder.responseMessage('$.name').notEmpty(),
+    ],
+  },
+})
+```
+
+</CodeGroup>
+
+## Use a FlatBuffers schema
+
+Checkly consumes a compiled binary FlatBuffers schema (`.bfbs`), not the source `.fbs` file. Compile your schema locally:
+
+```bash Terminal
+flatc -b --schema --bfbs-builtins schema.fbs
+```
+
+The command creates `schema.bfbs`. The `--bfbs-builtins` flag preserves attributes used for streaming and nested FlatBuffers fields. Load that binary file as base64 in your monitor:
+
+```ts grpc-flatbuffers.check.ts
+import { readFileSync } from 'node:fs'
+import { GrpcAssertionBuilder, GrpcMonitor } from 'checkly/constructs'
+
+new GrpcMonitor('grpc-flatbuffers', {
+  name: 'FlatBuffers gRPC service',
+  request: {
+    url: 'grpc.example.com',
+    port: 443,
+    grpcConfig: {
+      mode: 'BEHAVIOR',
+      tls: true,
+      encoding: 'FLATBUFFERS',
+      bfbsContent: readFileSync('schema.bfbs').toString('base64'),
+      method: 'example.Greeter/Greet',
+      message: JSON.stringify({ name: 'Checkly' }),
+    },
+    assertions: [
+      GrpcAssertionBuilder.statusCode().equals(0),
+      GrpcAssertionBuilder.responseTime().lessThan(1000),
+    ],
+  },
+})
+```
+
+<Note>
+Do not set `serviceDefinition` or `protoContent` for FlatBuffers. The compiled `bfbsContent` provides the service definition.
+</Note>
+
+Recompile the `.fbs` source whenever it changes. Checkly uploads the compiled `.bfbs` content and does not compile the source schema during a test or deployment.
+
+## Configuration
+
+gRPC monitors have their own gRPC-specific settings, plus the standard monitor options shared across all check types.
+
+<Tabs>
+<Tab title="gRPC monitor settings">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `request` | `object` | ✅ | - | gRPC request configuration object |
+| `intent` | `CheckIntent` | ❌ | - | Structured guidance for root cause analysis and check repair. See [General Monitor Options](#general-monitor-options). |
+| `degradedResponseTime` | `number` | ❌ | `10000` | Response time in milliseconds at which the monitor is marked as degraded |
+| `maxResponseTime` | `number` | ❌ | `20000` | Response time in milliseconds at which the monitor is marked as failed (max 180,000) |
+
+</Tab>
+<Tab title="General Monitor Settings">
+
+  <GeneralMonitorOptionsTable />
+
+</Tab>
+</Tabs>
+
+### `GrpcMonitor` Options
+
+<ResponseField name="request" type="object" required>
+
+gRPC connection and call configuration.
+
+**Usage:**
+
+{/* typecheck-wrap: GrpcMonitor */}
+```ts
+new GrpcMonitor('grpc-monitor', {
+  name: 'My gRPC Service',
+  request: {
+    url: 'grpc.example.com',
+    port: 50051,
+    grpcConfig: {
+      mode: 'HEALTH',
+      tls: true,
+    },
+    assertions: [
+      GrpcAssertionBuilder.healthCheckStatus().equals(1), // 1 = SERVING
+    ],
+  },
+})
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `url` | `string` | ✅ | - | Hostname or IP of the gRPC server. No scheme or port. |
+| `port` | `number` | ✅ | - | Port the gRPC server listens on (1–65535) |
+| `grpcConfig` | `object` | ✅ | - | gRPC-specific call configuration (see below) |
+| `ipFamily` | `string` | ❌ | `'IPv4'` | IP family: `'IPv4'` \| `'IPv6'` |
+| `skipSSL` | `boolean` | ❌ | `false` | Skip TLS certificate validation when `tls` is enabled |
+| `timeout` | `number` | ❌ | `60` | Seconds to wait for the gRPC call to complete (1–180) |
+| `assertions` | `GrpcAssertion[]` | ❌ | `[]` | Response assertions using `GrpcAssertionBuilder` |
+
+</ResponseField>
+
+<ResponseField name="request.grpcConfig" type="object" required>
+
+gRPC-specific call configuration nested inside `request`.
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `mode` | `string` | ❌ | `'BEHAVIOR'` | Monitoring mode: `'BEHAVIOR'` \| `'HEALTH'` |
+| `tls` | `boolean` | ❌ | `true` | Use TLS for the connection. Set to `false` for plaintext. |
+| `metadata` | `Array<{key: string, value: string}>` | ❌ | `[]` | gRPC metadata (request headers) sent with the call |
+| `encoding` | `string` | ❌ | `'PROTOBUF'` | Request and response encoding: `'PROTOBUF'` \| `'FLATBUFFERS'`. BEHAVIOR mode only. |
+| `method` | `string` | BEHAVIOR | - | Fully-qualified method: `package.Service/Method`. Required in BEHAVIOR mode. |
+| `serviceDefinition` | `string` | ❌ | `'REFLECTION'` | How to resolve the method schema: `'REFLECTION'` \| `'PROTO_FILE'`. BEHAVIOR mode only. |
+| `protoContent` | `string` | ❌ | - | Inline `.proto` file content. Required when `serviceDefinition` is `'PROTO_FILE'`. |
+| `bfbsContent` | `string` | FLATBUFFERS | - | Base64-encoded compiled `.bfbs` schema. Required when `encoding` is `'FLATBUFFERS'`. |
+| `message` | `string` | ❌ | - | JSON-encoded request payload. BEHAVIOR mode only. |
+| `service` | `string` | ❌ | - | Service name to health-check. HEALTH mode only. Leave empty to query overall server health. |
+
+</ResponseField>
+
+<ResponseField name="degradedResponseTime" type="number" default="10000">
+Response time in milliseconds at which the monitor is marked as degraded (warning state). Maximum: 180,000.
+
+**Usage:**
+
+{/* typecheck-wrap: GrpcMonitor */}
+```ts highlight={3}
+new GrpcMonitor('grpc-thresholds', {
+  name: 'gRPC Latency Thresholds',
+  degradedResponseTime: 1500,
+  maxResponseTime: 3000,
+  request: {
+    url: 'grpc.example.com',
+    port: 50051,
+    grpcConfig: { mode: 'HEALTH' },
+  },
+})
+```
+
+</ResponseField>
+
+<ResponseField name="maxResponseTime" type="number" default="20000">
+Response time in milliseconds at which the monitor is marked as failed. Maximum: 180,000.
+
+**Usage:**
+
+{/* typecheck-wrap: GrpcMonitor */}
+```ts highlight={3}
+new GrpcMonitor('grpc-thresholds', {
+  name: 'gRPC Latency Thresholds',
+  maxResponseTime: 3000,
+  request: {
+    url: 'grpc.example.com',
+    port: 50051,
+    grpcConfig: { mode: 'HEALTH' },
+  },
+})
+```
+
+</ResponseField>
+
+### `GrpcMonitor` Assertions
+
+Use `GrpcAssertionBuilder` to define assertions for the `request` of a `GrpcMonitor`. The following sources are available:
+
+- `responseTime()`: Assert the total response time (DNS + connect + call) in milliseconds
+- `statusCode()`: Assert the numeric gRPC status code (`0` = OK, `14` = UNAVAILABLE, etc.)
+- `healthCheckStatus()`: Assert the health status by its **numeric** value (HEALTH mode). The runner evaluates this as a number — not a string. Enum mapping: `UNKNOWN=0`, `SERVING=1`, `NOT_SERVING=2`, `SERVICE_UNKNOWN=3`
+- `responseMessage(property?)`: Assert against the JSON response body (BEHAVIOR mode), with an optional JSON path (e.g. `'$.name'`)
+- `textBody(property?)`: Assert against the raw response body as text
+- `responseMetadata(property?)`: Assert against response metadata (header) values returned by the server, identified by key
+
+Here are some examples:
+
+- Assert the call returns gRPC OK (code 0):
+
+```ts
+GrpcAssertionBuilder.statusCode().equals(0)
+// Equivalent to:
+{ source: 'GRPC_STATUS_CODE', comparison: 'EQUALS', target: '0' }
+```
+
+- Assert the health check reports SERVING (numeric target required — the runner does not accept string labels):
+
+```ts
+GrpcAssertionBuilder.healthCheckStatus().equals(1) // UNKNOWN=0, SERVING=1, NOT_SERVING=2, SERVICE_UNKNOWN=3
+// Equivalent to:
+{ source: 'GRPC_HEALTHCHECK_STATUS', comparison: 'EQUALS', target: '1' }
+```
+
+- Assert a specific field in the JSON response body:
+
+```ts
+GrpcAssertionBuilder.responseMessage('$.userId').notEmpty()
+// Equivalent to:
+{ source: 'GRPC_RESPONSE', property: '$.userId', comparison: 'NOT_EMPTY', target: '' }
+```
+
+- Assert the total response time:
+
+```ts
+GrpcAssertionBuilder.responseTime().lessThan(500)
+// Equivalent to:
+{ source: 'RESPONSE_TIME', comparison: 'LESS_THAN', target: '500' }
+```
+
+- Assert a response metadata header value:
+
+```ts
+GrpcAssertionBuilder.responseMetadata('content-type').contains('grpc')
+// Equivalent to:
+{ source: 'GRPC_METADATA', property: 'content-type', comparison: 'CONTAINS', target: 'grpc' }
+```
+
+Learn more in our docs on [Assertions](/detect/assertions).
+
+### General Monitor Options
+
+<ResponseField name="name" type="string" required>
+Friendly name for your gRPC monitor displayed in the Checkly dashboard and used in notifications.
+
+**Usage:**
+
+{/* typecheck-wrap: GrpcMonitor */}
+```ts highlight={2}
+new GrpcMonitor('my-grpc-monitor', {
+  name: 'User Service Health',
+  /* More options ... */
+})
+```
+
+</ResponseField>
+
+<ResponseField name="frequency" type="Frequency">
+How often the gRPC monitor should run. Use the `Frequency` enum to set the check interval.
+
+**Usage:**
+
+{/* typecheck-wrap: GrpcMonitor */}
+```ts highlight={3}
+new GrpcMonitor('my-grpc-monitor', {
+  name: 'User Service Health',
+  frequency: Frequency.EVERY_1M,
+  /* More options ... */
+})
+```
+
+**Available frequencies**: `EVERY_10S`, `EVERY_20S`, `EVERY_30S`, `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_3H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+</ResponseField>
+
+<ResponseField name="locations" type="string[]" default="[]">
+Array of [public location codes](/concepts/locations/#public-locations) where the gRPC monitor runs from. Multiple locations provide geographic coverage.
+
+**Usage:**
+
+{/* typecheck-wrap: GrpcMonitor */}
+```ts highlight={3}
+new GrpcMonitor('global-grpc-monitor', {
+  name: 'Global gRPC Health',
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+  /* More options ... */
+})
+```
+
+</ResponseField>
+
+<ResponseField name="activated" type="boolean" default="true">
+Whether the gRPC monitor is enabled and will run according to its schedule.
+
+**Usage:**
+
+{/* typecheck-wrap: GrpcMonitor */}
+```ts highlight={3}
+new GrpcMonitor('my-grpc-monitor', {
+  name: 'User Service Health',
+  activated: false,
+  /* More options ... */
+})
+```
+
+</ResponseField>
+
+<CheckIntent />
+
+## Examples
+
+<Tabs>
+<Tab title="Health check">
+
+```ts
+import { Frequency, GrpcAssertionBuilder, GrpcMonitor } from "checkly/constructs"
+
+new GrpcMonitor('auth-health', {
+  name: 'Auth Service Health',
+  frequency: Frequency.EVERY_1M,
+  locations: ['us-east-1', 'eu-west-1'],
+  request: {
+    url: 'auth.internal.example.com',
+    port: 50051,
+    grpcConfig: {
+      mode: 'HEALTH',
+      tls: true,
+      service: 'auth.AuthService',
+    },
+    assertions: [
+      GrpcAssertionBuilder.healthCheckStatus().equals(1), // 1 = SERVING
+      GrpcAssertionBuilder.responseTime().lessThan(500),
+    ],
+  },
+})
+```
+
+</Tab>
+<Tab title="Unary method (proto file)">
+
+```ts
+import { Frequency, GrpcAssertionBuilder, GrpcMonitor } from "checkly/constructs"
+
+new GrpcMonitor('order-get-order', {
+  name: 'Order Service GetOrder',
+  frequency: Frequency.EVERY_5M,
+  maxResponseTime: 5000,
+  degradedResponseTime: 2000,
+  request: {
+    url: 'orders.example.com',
+    port: 443,
+    grpcConfig: {
+      mode: 'BEHAVIOR',
+      tls: true,
+      serviceDefinition: 'PROTO_FILE',
+      protoContent: `syntax = "proto3";
+package orders;
+service OrderService { rpc GetOrder (GetOrderRequest) returns (Order); }
+message GetOrderRequest { string order_id = 1; }
+message Order { string order_id = 1; string status = 2; }`,
+      method: 'orders.OrderService/GetOrder',
+      message: '{"orderId": "probe-001"}',
+    },
+    assertions: [
+      GrpcAssertionBuilder.statusCode().equals(0),
+      GrpcAssertionBuilder.responseMessage('$.status').notEmpty(),
+    ],
+  },
+})
+```
+
+</Tab>
+<Tab title="Authenticated with metadata">
+
+```ts
+import { Frequency, GrpcAssertionBuilder, GrpcMonitor } from "checkly/constructs"
+
+new GrpcMonitor('secure-grpc', {
+  name: 'Secure gRPC Service',
+  frequency: Frequency.EVERY_2M,
+  request: {
+    url: 'secure-grpc.example.com',
+    port: 443,
+    grpcConfig: {
+      mode: 'HEALTH',
+      tls: true,
+      metadata: [
+        { key: 'authorization', value: 'Bearer {{GRPC_API_TOKEN}}' },
+        { key: 'x-tenant-id', value: '{{TENANT_ID}}' },
+      ],
+    },
+    assertions: [
+      GrpcAssertionBuilder.healthCheckStatus().equals(1), // 1 = SERVING
+    ],
+  },
+})
+```
+
+</Tab>
+</Tabs>

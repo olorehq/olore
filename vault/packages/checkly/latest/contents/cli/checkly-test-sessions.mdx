@@ -2,11 +2,12 @@
 title: checkly test-sessions
 description: 'Inspect recorded test sessions and their error groups.'
 sidebarTitle: 'checkly test-sessions'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-test-sessions/'
 ---
 
 <Note>Available since CLI v8.4.0.</Note>
 
-The `checkly test-sessions` command lets you inspect recorded [test sessions](/detect/testing/overview/) from the terminal. Use it to review a session, wait for a running session to finish, or inspect a test session error group before starting root cause analysis.
+The `checkly test-sessions` command lets you inspect recorded [test sessions](/detect/testing/overview/) from the terminal. Use it to list recent sessions, review a session, wait for a running session to finish, or inspect a test session error group before starting root cause analysis.
 
 <Accordion title="Prerequisites">
 Before using `checkly test-sessions`, ensure you have:
@@ -28,7 +29,211 @@ npx checkly test-sessions <subcommand> [arguments] [options]
 
 | Subcommand | Description |
 |------------|-------------|
+| `list` | List recorded test sessions. |
 | `get` | Get details of a recorded test session. |
+
+## `checkly test-sessions list`
+
+<Note>The `checkly test-sessions list` command is only available since CLI v8.5.0.</Note>
+
+List recorded test sessions for the currently selected account. Use filters to narrow by status, branch, user, or provider, and cursor pagination to page through results.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--limit, -l` | - | Number of test sessions to return (1-100). Default: `20`. |
+| `--cursor` | - | Cursor for the next page (from previous output). |
+| `--from` | - | Only include test sessions created at or after this ISO date or Unix timestamp. |
+| `--to` | - | Only include test sessions created before this ISO date or Unix timestamp. |
+| `--status` | - | Filter by status: `running`, `failed`, `passed`, or `cancelled`. Can be specified multiple times. |
+| `--branch` | - | Filter by Git branch name. Can be specified multiple times. |
+| `--user` | - | Filter by commit owner or invoking user ID. Can be specified multiple times. |
+| `--no-users` | - | Include sessions with no commit owner and no invoking user. |
+| `--provider` | - | Filter by provider: `github`, `vercel`, `api`, `trigger`, or `pw_reporter`. Can be specified multiple times. |
+| `--search, -s` | - | Search test session text fields (3-200 characters). |
+| `--error-group` | - | Filter by test-session error group ID. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### List Options
+
+<ResponseField name="--limit, -l" type="number" default="20">
+
+Number of test sessions to return, between 1 and 100.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --limit=50
+npx checkly test-sessions list -l 10
+```
+
+</ResponseField>
+
+<ResponseField name="--cursor" type="string">
+
+Cursor for paginating through results. Use the cursor value from the previous output, or the next-page command shown in table output.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --limit=20 --cursor=<cursor>
+```
+
+</ResponseField>
+
+<ResponseField name="--from" type="string">
+
+Only include test sessions created at or after this point in time. Accepts an ISO date (such as `2026-06-01`) or a Unix timestamp in seconds.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --from=2026-06-01
+```
+
+</ResponseField>
+
+<ResponseField name="--to" type="string">
+
+Only include test sessions created before this point in time. Accepts an ISO date or a Unix timestamp in seconds.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --from=2026-06-01 --to=2026-06-15
+```
+
+</ResponseField>
+
+<ResponseField name="--status" type="string">
+
+Filter sessions by status. Available values: `running`, `failed`, `passed`, `cancelled`. Specify multiple times to match more than one status.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --status=failed
+npx checkly test-sessions list --status=failed --status=running
+```
+
+</ResponseField>
+
+<ResponseField name="--branch" type="string">
+
+Filter sessions by Git branch name. Specify multiple times to match more than one branch.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --branch=main
+npx checkly test-sessions list --branch=main --branch=staging
+```
+
+</ResponseField>
+
+<ResponseField name="--user" type="string">
+
+Filter sessions by commit owner or invoking user ID. Specify multiple times to match more than one user.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --user=<user-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--no-users" type="boolean">
+
+Include sessions that have no commit owner and no invoking user.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --no-users
+```
+
+</ResponseField>
+
+<ResponseField name="--provider" type="string">
+
+Filter sessions by the provider that triggered them. Available values: `github`, `vercel`, `api`, `trigger`, `pw_reporter`. Specify multiple times to match more than one provider.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --provider=github
+npx checkly test-sessions list --provider=trigger --provider=api
+```
+
+</ResponseField>
+
+<ResponseField name="--search, -s" type="string">
+
+Search test session text fields. The query must be between 3 and 200 characters.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --search="checkout flow"
+npx checkly test-sessions list -s "homepage"
+```
+
+</ResponseField>
+
+<ResponseField name="--error-group" type="string">
+
+Filter sessions by a test-session error group ID.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --error-group=<error-group-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions list --output=json
+npx checkly test-sessions list -o md
+```
+
+</ResponseField>
+
+### List Examples
+
+```bash Terminal
+# List recent test sessions
+npx checkly test-sessions list
+
+# Show only failed sessions
+npx checkly test-sessions list --status=failed
+
+# Filter by branch and provider
+npx checkly test-sessions list --branch=main --provider=github
+
+# Filter by a time range
+npx checkly test-sessions list --from=2026-06-01 --to=2026-06-15
+
+# Get results as JSON
+npx checkly test-sessions list --output=json
+
+# Page through results
+npx checkly test-sessions list --limit=20 --cursor=<cursor>
+```
 
 ## `checkly test-sessions get`
 
@@ -50,6 +255,7 @@ npx checkly test-sessions get <id> [options]
 
 | Option | Required | Description |
 |--------|----------|-------------|
+| `--result, -r` | - | Show details for a specific test session result ID. |
 | `--error-group` | - | Show details for a test session error group ID from this session. |
 | `--error-groups-limit` | - | Number of error group IDs to show in the session summary. Default: `5`. |
 | `--full-error` | - | Print the complete raw error when showing a test session error group. |
@@ -57,6 +263,21 @@ npx checkly test-sessions get <id> [options]
 | `--output, -o` | - | Output format: `detail`, `json`, or `md`. Default: `detail`. |
 
 ### Get Options
+
+<ResponseField name="--result, -r" type="string">
+
+<Note>Available in CLI v8.7.0+.</Note>
+
+Drill into a specific test session result by its result ID. Shows detailed information for that result, including logs and timing data.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions get <id> --result=<result-id>
+npx checkly test-sessions get <id> -r <result-id>
+```
+
+</ResponseField>
 
 <ResponseField name="--error-group" type="string">
 
@@ -131,6 +352,9 @@ npx checkly test-sessions get <id>
 # Wait for a running test session to complete
 npx checkly test-sessions get <id> --watch
 
+# Drill into a specific result
+npx checkly test-sessions get <id> --result=<result-id>
+
 # Inspect a test session error group
 npx checkly test-sessions get <id> --error-group=<error-group-id>
 
@@ -143,3 +367,4 @@ npx checkly test-sessions get <id> --output=json
 - [`checkly trigger`](/cli/checkly-trigger) - Trigger deployed checks as a test session
 - [`checkly test`](/cli/checkly-test) - Test local checks as a test session
 - [`checkly rca`](/cli/checkly-rca) - Trigger root cause analysis for error groups
+- [`checkly assets`](/cli/checkly-assets) - List and download result assets from a test session

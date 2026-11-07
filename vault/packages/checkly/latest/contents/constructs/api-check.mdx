@@ -1,17 +1,21 @@
 ---
-title: 'API Check Construct'
-description: 'Learn how to configure API Checks with the Checkly CLI.'
-sidebarTitle: 'API Check'
+title: 'API check construct'
+description: 'Learn how to configure API checks with the Checkly CLI.'
+sidebarTitle: 'API check'
+canonical: 'https://www.checklyhq.com/docs/constructs/api-check/'
+mode: "wide"
 ---
 
+import CheckIntent from '/snippets/check-intent.mdx';
+
 <Tip>
-Learn more about API Checks in [the API Checks overview](/detect/synthetic-monitoring/api-checks/overview).
+Learn more about API checks in [the API checks overview](/detect/synthetic-monitoring/api-checks/overview).
 </Tip>
 
-Use API Checks to monitor HTTP endpoints, REST APIs, GraphQL APIs, and other HTTP-based services. The examples below show how to configure monitoring for different types of API endpoints.
+Use API checks to monitor HTTP endpoints, REST APIs, GraphQL APIs, and other HTTP-based services. The examples below show how to configure monitoring for different types of API endpoints.
 
 <Accordion title="Prerequisites">
-Before creating API Checks, ensure you have:
+Before creating API checks, ensure you have:
 
 - An initialized Checkly CLI project
 - URLs or HTTP endpoints you want to monitor
@@ -72,10 +76,10 @@ new ApiCheck("advanced-api-check", {
 
 ## Configuration
 
-The API Check configuration consists of specific API Check options and inherited general check options.
+The API check configuration consists of specific API check options and inherited general check options.
 
 <Tabs>
-<Tab title="API Check">
+<Tab title="API check">
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
@@ -83,8 +87,8 @@ The API Check configuration consists of specific API Check options and inherited
 | `degradedResponseTime` | `number` | ❌ | `10000` | Response time threshold in milliseconds for degraded status |
 | `maxResponseTime` | `number` | ❌ | `20000` | Maximum response time in milliseconds before marking as failed |
 | `shouldFail` | `boolean` | ❌ | `false` | Whether a failure should count as a pass (status 400+ reported as passed) |
-| `setupScript` | `object` | ❌ | - | Script to run before the API Check execution |
-| `tearDownScript` | `object` | ❌ | - | Script to run after the API Check execution |
+| `setupScript` | `object` | ❌ | - | Script to run before the API check execution |
+| `tearDownScript` | `object` | ❌ | - | Script to run after the API check execution |
 
 </Tab>
 <Tab title="General Check">
@@ -93,6 +97,7 @@ The API Check configuration consists of specific API Check options and inherited
 |----------|------|----------|---------|-------------|
 | `name` | `string` | ✅ | - | Friendly name for your check |
 | `description` | `string` | ❌ | `null` | A description of the check. Supports markdown. Max 500 characters |
+| `intent` | `CheckIntent` | ❌ | - | Structured guidance for root cause analysis and check repair. See [General Check Options](#general-check-options). |
 | `activated` | `boolean` | ❌ | `true` | Whether the check is enabled |
 | `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
 | `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
@@ -101,8 +106,8 @@ The API Check configuration consists of specific API Check options and inherited
 | `group` | `CheckGroup` | ❌ | - | The CheckGroup this check belongs to |
 | `locations` | `string[]` | ❌ | `[]` | Array of public location codes |
 | `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted |
-| `privateLocations` | `string[]` | ❌ | `[]` | Array of Private Location slugs |
-| `retryStrategy` | `RetryStrategy` | ❌ | - | Strategy for configuring retries |
+| `privateLocations` | `string[]` | ❌ | `[]` | Array of private location slugs |
+| `retryStrategy` | `RetryStrategy` | ❌ | [`singleRetry()`](/constructs/retry-strategy#default-retry-strategy) | Strategy for configuring retries |
 | `runtimeId` | `string` | ❌ | - | The ID of the runtime to use |
 | `runParallel` | `boolean` | ❌ | `false` | Run checks in parallel or round-robin |
 | `tags` | `string[]` | ❌ | `[]` | Array of tags to organize checks |
@@ -115,10 +120,11 @@ The API Check configuration consists of specific API Check options and inherited
 ### `ApiCheck` Options
 
 <ResponseField name="request" type="object" required>
-The HTTP request configuration that defines the API endpoint to monitor. This is the core component of any API Check.
+The HTTP request configuration that defines the API endpoint to monitor. This is the core component of any API check.
 
 **Usage:**
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts
 request: {
   method: 'GET',
@@ -145,6 +151,7 @@ request: {
 
 <CodeGroup>
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts REST API
 request: {
   method: "GET",
@@ -161,6 +168,7 @@ request: {
 },
 ```
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts GraphQL API
 request: {
   method: "POST",
@@ -186,6 +194,7 @@ request: {
 },
 ```
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts Form POST
 request: {
   method: "POST",
@@ -201,6 +210,7 @@ request: {
 },
 ```
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts API with Authentication
 request: {
   method: "GET",
@@ -226,6 +236,7 @@ Response time threshold in milliseconds for marking the check as degraded. This 
 
 **Usage:**
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={3}
 new ApiCheck("performance-check", {
   name: "Performance Monitoring",
@@ -246,6 +257,7 @@ Maximum response time in milliseconds before marking the check as failed. This s
 
 **Usage:**
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={3}
 new ApiCheck("timeout-check", {
   name: "API Timeout Check",
@@ -265,6 +277,7 @@ Whether a failure should count as a pass. When set to `true`, HTTP status codes 
 
 **Usage:**
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={3}
 new ApiCheck("negative-test", {
   name: "Test Error Handling",
@@ -280,6 +293,7 @@ new ApiCheck("negative-test", {
 
 <CodeGroup>
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts Error Testing
 new ApiCheck("error-handling-test", {
   name: "Error Handling Test",
@@ -293,6 +307,7 @@ new ApiCheck("error-handling-test", {
 })
 ```
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts Rate Limit Testing
 new ApiCheck("rate-limit-test", {
   name: "Rate Limit Behavior",
@@ -314,12 +329,13 @@ new ApiCheck("rate-limit-test", {
 </ResponseField>
 
 <ResponseField name="setupScript" type="object">
-Script to run before the API Check execution. Useful for setting up test data or authentication tokens.
+Script to run before the API check execution. Useful for setting up test data or authentication tokens.
 
 **Usage:**
 
 <CodeGroup>
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts File Reference highlight={3-5}
 new ApiCheck("api-with-setup", {
   name: "API with Setup Script",
@@ -333,6 +349,7 @@ new ApiCheck("api-with-setup", {
 })
 ```
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts Inline Script highlight={3-8}
 new ApiCheck('inline-setup', {
   name: 'API with Inline Setup',
@@ -343,6 +360,7 @@ new ApiCheck('inline-setup', {
     `
   },
   request: {
+    method: 'GET',
     url: 'https://api.example.com/users'
   }
 })
@@ -367,12 +385,13 @@ You must provide either `entrypoint` or `content`, but not both.
 </ResponseField>
 
 <ResponseField name="tearDownScript" type="object">
-Script to run after the API Check execution. Useful for cleaning up test data or resources.
+Script to run after the API check execution. Useful for cleaning up test data or resources.
 
 **Usage:**
 
 <CodeGroup>
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts File Reference highlight={3-5}
 new ApiCheck("api-with-teardown", {
   name: "API with Teardown Script",
@@ -386,6 +405,7 @@ new ApiCheck("api-with-teardown", {
 })
 ```
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts Inline Script highlight={3-9}
 new ApiCheck("inline-teardown", {
   name: "API with Inline Teardown",
@@ -447,7 +467,7 @@ AssertionBuilder.statusCode().equals(200)
 - Asserting a part of a JSON response body using a JSON path expression
 
 ```ts
-AssertionBuilder.jsonBody('$.data').greaterThan(2000),
+AssertionBuilder.jsonBody('$.data').greaterThan(2000)
 // Equivalent to:
 { source: 'JSON_BODY', property: '$.data', comparison: 'GREATER_THAN', target: '2000' }
 ```
@@ -455,15 +475,20 @@ AssertionBuilder.jsonBody('$.data').greaterThan(2000),
 - Asserting the value of a part of an HTTP response header. Note that you can pass in a regex as the second argument
 
 ```ts
-AssertionBuilder.headers('strict-transport-security', 'max-age=(\\d+)').greaterThan(10000),
+AssertionBuilder.headers('strict-transport-security', 'max-age=(\\d+)').greaterThan(10000)
 // Equivalent to:
 { source: 'HEADERS', regex: 'max-age=(\d+)', property: 'strict-transport-security', comparison: 'GREATER_THAN', target: '10000' }
 ```
+
+### General Check Options
+
+<CheckIntent />
 
 ## Examples
 
 <CodeGroup>
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts REST API Check
 new ApiCheck("users-api-check", {
   name: "Users API Check",
@@ -485,6 +510,7 @@ new ApiCheck("users-api-check", {
 })
 ```
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts GraphQL API Check
 new ApiCheck("graphql-api-check", {
   name: "GraphQL API Check",
@@ -513,6 +539,7 @@ new ApiCheck("graphql-api-check", {
 })
 ```
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts Form Submission Check
 new ApiCheck("form-api-check", {
   name: "Form Submission Check",
@@ -531,6 +558,7 @@ new ApiCheck("form-api-check", {
 })
 ```
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts Authenticated API Check
 new ApiCheck("protected-api-check", {
   name: "Protected API Check",

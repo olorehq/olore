@@ -59,7 +59,7 @@ Breaking change
 
 The `Machine(config)` function is now called `createMachine(config)`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts twoslash
@@ -96,7 +96,7 @@ Breaking change
 
 The `interpret()` function has been renamed to `createActor()`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -137,7 +137,7 @@ Breaking change
 
 The `machine.withConfig()` method has been renamed to `machine.provide()`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -189,7 +189,7 @@ Breaking change
 
 The `machine.withContext(...)` method can no longer be used, as `context` can no longer be overridden directly. Use [input](input) instead:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -237,7 +237,7 @@ Breaking change
 
 Actions are now in predictable order by default, so the `predictableActionArguments` flag is no longer required. Assign actions will always run in the order they are defined.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -295,7 +295,7 @@ Instead of using the imported `spawn()` function to create actors inside `assign
 
 Read the documentation on [spawning actors](./spawn) for more information.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -346,7 +346,7 @@ const machine = createMachine({
 
 The `machine.transition(…)` method now requires an "actor scope" for the 3rd argument, which is internally created by `createActor(…)`. Instead, use `getNextSnapshot(…)` to get the next snapshot from some actor logic based on the current snapshot and event:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -397,7 +397,7 @@ The `autoForward` property on invoke configs has been removed. Instead, send eve
 
 In general, it's _not_ recommended to forward all events to an actor. Instead, only forward the specific events that the actor needs.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -449,7 +449,7 @@ Breaking change
 
 The `state.meta` property has been renamed to `state.getMeta()`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
   
 ```ts
@@ -509,7 +509,7 @@ Breaking change
 
 The `state.configuration` property has been renamed to `state._nodes`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
   
 ```ts
@@ -533,7 +533,7 @@ state.configuration;
 
 The `state.events` property has been removed, because events are not part of state, unless you explicitly add them to the state's `context`. Use the [inspection API](./inspection) to observe events instead, or add the event explicitly to the state's `context`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs items={['v5', 'v5 context', 'v4']}>
 <Tab value="v5" label="XState v5">
   
 ```ts
@@ -554,7 +554,7 @@ console.log(inspEvent.event);
 
 </Tab>
 
-<Tab value="v5-alt" label="XState v5 (context)">
+<Tab value="v5-context" label="XState v5 (context)">
 
 ```ts
 // ✅
@@ -617,7 +617,7 @@ Breaking change
 
 Implementation functions now take in a single argument: an object with `context`, `event`, and other properties.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -657,7 +657,7 @@ The `send(...)` action creator is removed. Use `raise(...)` for sending events t
 
 Read the documentation on the [`sendTo` action](actions.mdx#send-to-action) and [`raise` action](actions.mdx#raise-action) for more information.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -703,7 +703,7 @@ The `pure()` and `choose()` methods have been removed. Use `enqueueActions()` in
 
 For `pure()` actions:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -734,7 +734,7 @@ entry: [
 
 For `choose()` actions:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -778,7 +778,7 @@ Breaking change
 
 String event types can no longer be sent to, e.g., `actor.send(event)`; you must send an event object instead:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -810,7 +810,7 @@ Breaking change
 
 String event types can no longer be sent to, e.g., `state.can(event)`; you must send an event object instead:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -840,7 +840,7 @@ Breaking change
 
 The `cond` transition property for guarded transitions is now called `guard`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -885,7 +885,7 @@ Breaking change
 
 Properties other than `type` on action objects and guard objects should be nested under a `params` property; `{ type: 'someType', message: 'hello' }` becomes `{ type: 'someType', params: { message: 'hello' }}`. These `params` are then passed to the 2nd argument of the action or guard implementation:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -964,7 +964,7 @@ Breaking change
 
 Strict mode is removed. If you want to throw on unhandled events, you should use a wildcard transition:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1031,7 +1031,7 @@ Breaking change
 
 Eventless (“always”) transitions must now be defined through the `always: { ... }` property of a state node; they can no longer be defined via an empty string:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1085,7 +1085,7 @@ Breaking change
 
 External transitions previously specified with `internal: false` are now specified with `reenter: true`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1131,7 +1131,7 @@ Breaking change
 
 All transitions are **internal by default**. This change is relevant for transitions defined on state nodes with `entry` or `exit` actions, invoked actors, or delayed transitions (`after`). If you relied on the previous XState v4 behavior where transitions implicitly re-entered a state node, use `reenter: true`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1196,7 +1196,7 @@ const machine = createMachine({
 </Tab>
 </Tabs>
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1258,7 +1258,7 @@ Breaking change
 
 Child state nodes are always re-entered when they are targeted by transitions (both external and internal) defined on compound state nodes. This change is relevant only if a child state node has `entry` or `exit` actions, invoked actors, or delayed transitions (`after`). Add a `stateIn` guard to prevent undesirable re-entry of the child state:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1327,7 +1327,7 @@ Breaking change
 
 The `in: 'someState'` transition property is removed. Use `guard: stateIn(...)` instead:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1371,7 +1371,7 @@ Breaking change
 
 The `state.history` property is removed. If you want the previous snapshot, you should maintain that via `actor.subscribe(...)` instead.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1410,7 +1410,7 @@ Breaking change
 
 The `escalate` action creator is removed. In XState v5 actions can throw errors, and they will propagate as expected. Errors can be handled using an `onError` transition.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1480,7 +1480,7 @@ The available actor logic creators are:
 
 See [Actors](actors) for more information.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1528,7 +1528,7 @@ const machine = createMachine({
 </Tab>
 </Tabs>
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1568,7 +1568,7 @@ const machine = createMachine({
 </Tab>
 </Tabs>
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1614,7 +1614,7 @@ Breaking change
 
 The `invoke.data` property is removed. If you want to provide context to invoked actors, use `invoke.input`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1670,7 +1670,7 @@ Breaking change
 
 To produce output data from a machine which reached its final state, use the top-level `output` property instead of `data`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1712,7 +1712,7 @@ const machine = createMachine({
 
 To provide a dynamically generated output, replace `invoke.data` with `invoke.output` and add a top-level `output` property:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1763,7 +1763,7 @@ Breaking change
 
 If you want to provide dynamic context to invoked actors, or produce dynamic output from final states, use a function instead of an object with property mappers.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1841,7 +1841,7 @@ Breaking change
 
 `services` have been renamed to `actors`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1893,7 +1893,7 @@ Breaking change
 
 The `actor.onTransition(...)` method is removed. Use `actor.subscribe(...)` instead.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1931,7 +1931,7 @@ Breaking change
 
 To restore an actor at a specific state, you should now pass the state as the `snapshot` property of the `options` argument of `createActor(logic, options)`. The `actor.start()` property no longer takes in a `state` argument.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -1963,7 +1963,7 @@ Breaking change
 
 Subscribing to an actor (`actor.subscribe(...)`) after the actor has started will no longer emit the current snapshot immediately. Instead, read the current snapshot from `actor.getSnapshot()`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -2006,7 +2006,7 @@ Breaking change
 
 The `actor.batch([...])` method for batching events is removed.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -2108,7 +2108,7 @@ Breaking change
 
 The `machineConfig.schema` property is renamed to `machineConfig.types`:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -2162,7 +2162,7 @@ XState Typegen does not fully support XState v5 yet. However, strongly-typed mac
 
 The `machineConfig.tsTypes` property has been renamed and is now at `machineConfig.types.typegen`.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -2214,7 +2214,7 @@ Breaking change
 
 The `useInterpret()` hook, which is used to return an `actorRef` ("service" in XState v4), is renamed to `useActorRef()`.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```ts
@@ -2250,7 +2250,7 @@ The `useActor(logic)` hook now accepts _actor logic_ (such as `fromPromise(...)`
 
 To use an existing `ActorRef`, use `actor.send(...)` to send events and `useSelector(actor, ...)` to get the snapshot:
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```tsx
@@ -2299,7 +2299,7 @@ Instead, `machine.provide(...)` should be passed directly to the 1st argument.
 
 The `@xstate/react` package considers machines with the same configuration to be the same machine, so it will minimize rerenders but still keep the provided implementations up-to-date.
 
-<Tabs items={['v5', 'v4']}>
+<Tabs items={['v5', 'v4 arguments', 'v4 function']}>
 <Tab value="v5" label="XState v5">
 
 ```tsx
@@ -2386,7 +2386,7 @@ To keep consistent naming with the rest of XState and related libraries:
 - `state` is now `snapshot`
 - `service` is now `actor`
 
-<Tabs items={['v5', 'v4']}>
+<Tabs groupId="xstate-version" items={['v5', 'v4']} persist>
 <Tab value="v5" label="XState v5">
 
 ```tsx

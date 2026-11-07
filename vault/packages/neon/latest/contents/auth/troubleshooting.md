@@ -1,18 +1,19 @@
 ---
 title: Auth troubleshooting
-subtitle: Common issues when implementing Neon Auth and how to fix them
+subtitle: Common issues when implementing Managed Better Auth and how to fix them
 summary: >-
-  Troubleshooting for common Neon Auth errors in `@neondatabase/auth` (Next.js)
-  and `@neondatabase/neon-js` (React SPA). Covers missing `NEON_AUTH_COOKIE_SECRET`,
+  Troubleshooting for common Managed Better Auth errors in `@neon/auth` (Next.js
+  and React SPA). Covers missing `NEON_AUTH_COOKIE_SECRET`,
   missing `force-dynamic` on server components, `NETWORK_DNS` / `NETWORK_TIMEOUT`
-  upstream errors, and OAuth `redirect_uri_mismatch` from misconfigured callback
-  URIs. Use this page when Neon Auth fails at startup, sessions do not persist,
+  upstream errors, `Origin` errors when scripts call the
+  Auth API directly, and OAuth `redirect_uri_mismatch` from misconfigured callback
+  URIs. Use this page when Managed Better Auth fails at startup, sessions do not persist,
   or OAuth logins loop back to the provider instead of the app.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-05T01:14:11.711Z'
 ---
 
-This page covers common issues when integrating [Neon Auth](/docs/auth/overview) with `@neondatabase/auth` (Next.js) or `@neondatabase/neon-js` (React SPAs).
+This page covers common issues when integrating [Managed Better Auth](/docs/auth/overview) with `@neon/auth` in Next.js apps and React SPAs.
 
 ## Missing NEON_AUTH_COOKIE_SECRET
 
@@ -39,11 +40,11 @@ export default async function Page() {
 
 This is required because `getSession()` reads cookies, which are only available at request time. See [getSession](/docs/auth/reference/nextjs-server#get-session) in the Next.js Server SDK reference.
 
-## Neon Auth server logging in the terminal
+## Managed Better Auth server logging in the terminal
 
-You may see structured **`warn`** or **`error`** lines in the Next.js server console when the auth proxy cannot reach Neon Auth or when session cookies fail validation. This is expected: the SDK defaults to **`logLevel: 'warn'`** (opt-out).
+You may see structured **`warn`** or **`error`** lines in the Next.js server console when the auth proxy cannot reach Managed Better Auth or when session cookies fail validation. This is expected: the SDK defaults to **`logLevel: 'warn'`** (opt-out).
 
-To mute Neon Auth console output:
+To mute Managed Better Auth console output:
 
 ```typescript
 export const auth = createNeonAuth({
@@ -65,9 +66,34 @@ Server actions or API routes may return errors with **`code`** values such as **
 
 See [Upstream fetch errors](/docs/auth/reference/nextjs-server#upstream-fetch-errors) for the full code list.
 
+## Origin errors from scripts and server-side calls (#origin-errors)
+
+Managed Better Auth checks the `Origin` header on `POST` requests such as sign-up, sign-in, and sign-out. Browsers send it for you, and so does the `@neon/auth` Next.js handler. Seed scripts, tests, and server code that call `NEON_AUTH_BASE_URL` directly have to send it themselves. Without a trusted `Origin`, the request fails:
+
+| Response                       | Cause                                                         |
+| ------------------------------ | ------------------------------------------------------------- |
+| `403` `MISSING_OR_NULL_ORIGIN` | No `Origin` header (or `Origin: null`) on sign-in or sign-out |
+| `400` `MISSING_ORIGIN`         | No `Origin` header on sign-up                                 |
+| `403` `INVALID_ORIGIN`         | The `Origin` isn't a trusted domain                           |
+
+Set `Origin` to a trusted domain:
+
+```typescript
+const res = await fetch(`${process.env.NEON_AUTH_BASE_URL}/sign-in/email`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Origin: 'http://localhost:3000',
+  },
+  body: JSON.stringify({ email: 'alex@example.com', password: 'AbC123dEf' }),
+});
+```
+
+Any `localhost` origin is trusted while [localhost access](/docs/auth/production-checklist#localhost-access) is on, which it is by default. Add any other origin as a [trusted domain](/docs/auth/guides/configure-domains), for example with `neon neon-auth domain add https://myapp.com`.
+
 ## Cookies blocked in iframe or cross-site embeds
 
-Neon Auth cookies default to **`SameSite=Strict`**. If your app runs inside another site's **iframe**, or needs cookies on top-level cross-site navigations, sessions may not persist.
+Managed Better Auth cookies default to **`SameSite=Strict`**. If your app runs inside another site's **iframe**, or needs cookies on top-level cross-site navigations, sessions may not persist.
 
 Set an explicit SameSite mode when creating the auth instance:
 
@@ -89,11 +115,11 @@ If you are upgrading from v0.1, use `createNeonAuth()` + `auth.handler()` instea
 
 ## Using useSession() without adapter in React SPA
 
-In a React SPA, `createAuthClient(url)` without an adapter returns a vanilla client with no React hooks. Calling `useSession()` on this client will fail. Either pass `BetterAuthReactAdapter()` or use UI components (`SignedIn`, `SignedOut`, `UserButton`) which do not require an adapter.
+In a React SPA, `createAuthClient(url)` without an adapter returns a vanilla client with no React hooks. Calling `useSession()` on this client will fail. Either pass `BetterAuthReactAdapter()`, or read the session with `useSession(authClient)` from `@better-auth-ui/react`, which takes any Managed Better Auth client. It reads the session through TanStack Query, so wrap your app in a `QueryClientProvider` (or pass a `queryClient` as the third argument).
 
 ```typescript
-import { createAuthClient } from '@neondatabase/neon-js/auth';
-import { BetterAuthReactAdapter } from '@neondatabase/neon-js/auth/react';
+import { createAuthClient } from '@neon/auth';
+import { BetterAuthReactAdapter } from '@neon/auth/react/adapters';
 
 const authClient = createAuthClient(url, {
   adapter: BetterAuthReactAdapter(),
@@ -108,19 +134,16 @@ The adapter must be imported from a subpath and called as a function:
 
 ```typescript
 // Wrong
-import { BetterAuthReactAdapter } from '@neondatabase/neon-js';
+import { BetterAuthReactAdapter } from '@neon/auth';
 
 // Correct
-import { BetterAuthReactAdapter } from '@neondatabase/neon-js/auth/react';
+import { BetterAuthReactAdapter } from '@neon/auth/react/adapters';
 const client = createAuthClient(url, { adapter: BetterAuthReactAdapter() });
 ```
 
-## CSS import conflicts
+## Auth UI components are unstyled
 
-Choose one CSS import method. Never use both, as this causes duplicate styles:
-
-- **Without Tailwind:** `import '@neondatabase/auth-ui/css'`
-- **With Tailwind v4:** `@import '@neondatabase/auth-ui/tailwind'`
+Better Auth UI's components are compiled by your app's Tailwind build. If they render without styles, check that your global CSS imports the shadcn/ui theme that `npx shadcn@latest init` adds (`tw-animate-css` and `shadcn/tailwind.css`, plus the theme variables), and that Tailwind scans the folder the components were copied to.
 
 See the [UI Components reference](/docs/auth/reference/ui-components) for complete setup instructions.
 
@@ -133,13 +156,13 @@ In Next.js, any component that uses `useSession()` or other React hooks must inc
 The `createAuthClient` function has different signatures depending on the import path:
 
 ```typescript
-// React SPA — import from @neondatabase/neon-js/auth
-import { createAuthClient } from '@neondatabase/neon-js/auth';
+// React SPA — import from @neon/auth
+import { createAuthClient } from '@neon/auth';
 createAuthClient(url);
 createAuthClient(url, { adapter: BetterAuthReactAdapter() });
 
-// Next.js — import from @neondatabase/auth/next (no arguments, uses proxy)
-import { createAuthClient } from '@neondatabase/auth/next';
+// Next.js — import from @neon/auth/next (no arguments, uses proxy)
+import { createAuthClient } from '@neon/auth/next';
 createAuthClient();
 ```
 
@@ -149,7 +172,7 @@ See the [Next.js quick start](/docs/auth/quick-start/nextjs-api-only) and the [R
 
 **`redirect_uri_mismatch` from Google (or another provider)**
 
-The authorized redirect URI in the provider's dashboard must match Neon Auth's callback route exactly: **`{NEON_AUTH_BASE_URL}/callback/{provider}`** (for example `.../callback/google`). See [Production setup](/docs/auth/guides/setup-oauth#production-setup).
+The authorized redirect URI in the provider's dashboard must match Managed Better Auth's callback route exactly: **`{NEON_AUTH_BASE_URL}/callback/{provider}`** (for example `.../callback/google`). See [Production setup](/docs/auth/guides/setup-oauth#production-setup).
 
 Common mistakes:
 
@@ -158,11 +181,11 @@ Common mistakes:
 
 **OAuth succeeds but the user never reaches your app**
 
-Neon Auth only redirects to [trusted domains](/docs/auth/guides/configure-domains). Add every origin you use in **`callbackURL`** (including `https://www.example.com` separately if you use www).
+Managed Better Auth only redirects to [trusted domains](/docs/auth/guides/configure-domains). Add every origin you use in **`callbackURL`** (including `https://www.example.com` separately if you use www).
 
 **Google consent screen shows an unexpected hostname**
 
-That hostname comes from the OAuth redirect URI (your app vs Neon Auth). See [Google OAuth branding](/docs/auth/guides/setup-oauth#google-oauth-branding).
+That hostname comes from the OAuth redirect URI (your app vs Managed Better Auth). See [Google OAuth branding](/docs/auth/guides/setup-oauth#google-oauth-branding).
 
 **Google says the app is in Testing / users outside test accounts cannot sign in**
 

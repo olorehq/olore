@@ -11,7 +11,7 @@ enableTableOfContents: true
 redirectFrom:
   - /docs/security/security
   - /docs/security
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-05T15:33:57.188Z'
 ---
 
 At Neon, security is our highest priority. We are committed to implementing best practices and earning the trust of our users. A key aspect of earning this trust is by ensuring that every touchpoint in our system, from connections, to data storage, to our internal processes, adheres to the highest security standards.
@@ -120,11 +120,33 @@ To avoid leaking secrets, follow these security best practices:
 - Store sensitive information in secret management tools like AWS Secrets Manager or HashiCorp Vault.
 - Regularly rotate database credentials and API keys.
 
-If you have questions about this integration or need help securing your credentials, contact us at `security@neon.tech`.
+If you have questions about this integration or need help securing your credentials, reach out on our [Discord server](/discord) or [submit a support ticket](/docs/introduction/support).
+
+## Rotate credentials
+
+Rotate your database credentials regularly, and immediately if one is exposed. A Neon connection string is built from a role and its password, so you rotate it by resetting the role's password. See [Reset a password](/docs/manage/roles#reset-a-password) for the Console, CLI, API, and SQL methods.
+
+After you reset a password, the old one stops working on the next connection. Copy the new connection string from the **Connect** modal (**Connect** in the Console nav) and roll it out everywhere it is stored, including deployment platform environment variables, CI/CD secrets, secret managers, and local `.env` files, before clients reconnect.
+
+### Rotate after a leak or breach
+
+If a credential is exposed, for example through a leaked `.env` file, a compromised deployment target, or a stolen device, rotate every affected credential rather than just one:
+
+1. Reset the password for every role that can log in, starting with the default role (often `neondb_owner`). Roles are branch-scoped, so reset the role on every branch where it can log in.
+2. Roll the new connection strings out to every secret store, then watch your application logs for `password authentication failed` errors, which flag a location you missed.
+3. Revoke any exposed Neon API keys and create new ones. See [Manage API keys](/docs/manage/api-keys).
+4. Tighten your [IP allowlist](#ip-allowlist-support) to limit which addresses can connect.
+5. Audit your roles and remove any you do not recognize.
+
+Neon has no single command to rotate everything at once. To rotate many roles, list every project, branch, and role, then loop the [reset-password API](/docs/manage/roles#reset-a-password).
+
+### Rotate without downtime
+
+Resetting a password cuts over all consumers at once. To rotate gradually, create a parallel role, grant it the access the old role had, and migrate consumers one service at a time, since both connection strings keep working during the migration. Reset the old role's password at the end to invalidate it. In most projects the original role owns database objects and cannot be dropped while it does, so resetting its password is what closes the leak. To remove the role later, [reassign ownership](https://www.postgresql.org/docs/current/sql-reassign-owned.html) of its objects, then [delete the role](/docs/manage/roles#delete-a-role).
 
 ## Abuse of resources
 
-Users must not engage in activities that result in unintended or non-permitted use of Neon resources, or that disrupt or degrade the service for other users. Prohibited activities include, but are not limited to, intentional or unintentional denial-of-service attacks, exceeding [rate limits](/docs/reference/api-reference#rate-limiting), using Neon for distributed computing projects, using Neon as general-purpose file storage, or other usage that falls outside the intended resource usage and limits of the applicable [Neon plan](/docs/introduction/plans).
+Users must not engage in activities that result in unintended or non-permitted use of Neon resources, or that disrupt or degrade the service for other users. Prohibited activities include, but are not limited to, intentional or unintentional denial-of-service attacks, exceeding [rate limits](/docs/reference/api#rate-limiting), using Neon for distributed computing projects, using Neon as general-purpose file storage, or other usage that falls outside the intended resource usage and limits of the applicable [Neon plan](/docs/introduction/plans).
 
 ## Unauthorized modifications
 
@@ -138,4 +160,4 @@ Neon also has a [public bug bounty program with HackerOne](/docs/security/securi
 
 ## Questions about our security measures?
 
-If you have any questions about our security protocols or would like a deeper dive into any aspect, our team is here to help. You can reach us at [security@neon.tech](mailto:security@neon.tech).
+If you have any questions about our security protocols or would like a deeper dive into any aspect, our team is here to help. Explore our documentation in the [Neon Trust Center](https://trust.neon.com/), or [submit a support ticket](/docs/introduction/support).

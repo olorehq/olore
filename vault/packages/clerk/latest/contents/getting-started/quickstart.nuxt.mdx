@@ -4,23 +4,15 @@ description: Add authentication and user management to your Nuxt app with Clerk.
 sdk: nuxt
 ---
 
-<TutorialHero
-  exampleRepo={[
-    {
-      title: "Nuxt Quickstart Repo",
-      link: "https://github.com/clerk/clerk-nuxt-quickstart",
-    }
-  ]}
-  beforeYouStart={[
-    {
-      title: "Set up a Clerk application",
-      link: "/docs/getting-started/quickstart/setup-clerk",
-      icon: "clerk",
-    },
-  ]}
-/>
+<PromptOnly>
+  Hand this prompt to your agent to add auth to your app with the [Clerk CLI](/docs/cli). No need to leave your terminal or copy and paste API keys.
 
-<Steps>
+  <Prompt variant="card" src="prompts/cli-setup.md" title="Add Clerk to Nuxt" output="replace" framework="nuxt" />
+
+  Or set up Clerk yourself by following the step-by-step instructions.
+</PromptOnly>
+
+<ManualSteps>
   ## Create a new Nuxt app
 
   If you don't already have a Nuxt app, run the following commands to [create a new one](https://nuxt.com/docs/4.x/getting-started/installation).
@@ -28,7 +20,6 @@ sdk: nuxt
   ```npm
   npm create nuxt@latest clerk-nuxt
   cd clerk-nuxt
-  npm install
   ```
 
   ## Install `@clerk/nuxt`
@@ -62,7 +53,7 @@ sdk: nuxt
 
   ## Create a header with Clerk components
 
-  Nuxt 3 automatically imports and makes all components in the `components/` directory globally available without requiring explicit imports. See the [Nuxt docs](https://nuxt.com/docs/guide/concepts/auto-imports) for details.
+  Nuxt automatically imports and makes all components in the `components/` directory globally available without requiring explicit imports. See the [Nuxt docs](https://nuxt.com/docs/guide/concepts/auto-imports) for details.
 
   You can control which content signed-in and signed-out users can see with Clerk's [prebuilt control components](/docs/reference/components/overview#control-components).
 
@@ -95,28 +86,8 @@ sdk: nuxt
   <Include src="_partials/quickstarts/run-project-step" />
 
   <Include src="_partials/quickstarts/create-first-user-step" />
-</Steps>
+</ManualSteps>
 
 ## Next steps
 
-Learn more about Clerk components, route protection, and how to use Clerk's client-side helpers using the following guides.
-
-<Cards>
-  - [Prebuilt components](/docs/reference/components/overview)
-  - Learn how to quickly add authentication to your app using Clerk's suite of components.
-
-  ---
-
-  - [Protect routes using clerkMiddleware()](/docs/reference/nuxt/clerk-middleware)
-  - Learn how to protect specific routes from unauthenticated users.
-
-  ---
-
-  - [Protect content and read user data](/docs/nuxt/guides/users/reading)
-  - Learn how to use Clerk's composables and helpers to protect content and read user data in your Nuxt app.
-
-  ---
-
-  - [Get started with Organizations](/docs/nuxt/guides/organizations/getting-started)
-  - Learn how to create and manage Organizations in your Nuxt app.
-</Cards>
+<Include src="_partials/quickstarts/next-steps/frontend-sdks" />

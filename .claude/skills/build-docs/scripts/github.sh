@@ -63,7 +63,14 @@ should_exclude() {
         # Handle glob patterns with **
         if [[ "$pattern" == *"**"* ]]; then
             # Convert ** glob to regex-friendly pattern
-            local regex_pattern=$(echo "$pattern" | sed 's/\*\*/.*/g' | sed 's/\*/[^\/]*/g')
+            # A leading "**/" must also match zero directories (top-level paths),
+            # so "**/test/**" excludes both "test/x" and "src/test/x".
+            local glob_body="$pattern" regex_prefix=""
+            if [[ "$glob_body" == "**/"* ]]; then
+                glob_body="${glob_body#\*\*/}"
+                regex_prefix="(^|/)"
+            fi
+            local regex_pattern="${regex_prefix}$(echo "$glob_body" | sed 's/\*\*/.*/g' | sed 's/\*/[^\/]*/g')"
             if [[ "$rel_path" =~ $regex_pattern ]]; then
                 return 0
             fi
@@ -260,7 +267,8 @@ download_from_github() {
     local manifest_file="$1"
     local output_dir="$2"
     local target_version="$3"  # Optional: specific version to build
-    local force="$4"           # --force to re-download
+    local force="$4"           # "true" or "--force" to re-download
+    [ "$force" = "--force" ] && force="true"
     local manifest_name=$(basename "$manifest_file" .json)
 
     # Check if manifest is disabled

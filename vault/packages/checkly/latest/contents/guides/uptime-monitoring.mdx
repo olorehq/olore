@@ -1,123 +1,237 @@
 ---
-title: Use Uptime Monitoring as Your First Line of Defense
-displayTitle: Uptime Monitoring as Your First Line of Defense
-description: >-
-  The three main components of uptime monitors.
-author: Nočnica Mellifera
-date: 2025-07-12
-avatar: 'images/avatars/nica-mellifera.png'
-tags:
-  - FAQ
-sidebarTitle: A Guide to Uptime Monitoring
+title: Cover every endpoint with uptime monitors
+sidebarTitle: Growing Monitoring Coverage
+description: Turn a list of public pages into URL monitors, tell slow from down, and watch the certificate every one of them depends on, all from a few lines of code.
+canonical: 'https://www.checklyhq.com/docs/guides/uptime-monitoring/'
 ---
 
-Uptime Monitoring is part of a ‘[reliability in depth](https://www.checklyhq.com/blog/the-defense-in-depth-approach-to-app-monitoring/)’ strategy of guaranteeing that your services maintain available and performant while allowing you to meet your Service Level Agreements (SLAs) with your customers. You can combine Uptime Monitoring with [Synthetinc Monitoring](https://www.checklyhq.com/learn/monitoring/synthetic-monitoring/) and full-stack traces for a deep, 360 degree view into your applications health. The following guide will focus on your first layer of defense, Uptime Monitoring, and show you how to monitor every endpoint, service, and URL that your service supports. As an extension, you may consider monitoring third-party services that your service relies on. This guide will cover the three types of uptime monitors we have at Checkly:
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
 
-- URL Monitors
-- TCP Monitors
-- Heartbeat Monitors
+By the end of this guide, you have a URL monitor for every page a customer can land on, generated from one list, with thresholds that separate slow from down, and an SSL monitor that warns you two weeks before the certificate under all of them expires.
 
-## URL Monitors
+<Frame>
+  <img src="/images/guides/uptime-coverage/group.png" alt="A Checkly group page named Shop uptime with seven passing monitors: five URL monitors for the shop's pages, one for a deliberately slow page, and one SSL monitor, with run results from N. Virginia and Ireland" />
+</Frame>
 
-While Synthetic Monitoring can simulate complex user behaviors in a browser and alert you if performance or functionality degrades, Uptime Monitoring excels at continous validation that URLs and Services are available. URL monitoring sends high-frequency requests and can alert you of failures within seconds.
+To follow along without your own app, clone the [sample project](https://github.com/checkly/docs/tree/main/samples/guides/uptime-coverage). It monitors the [Danube demo shop](https://danube-web.shop) and one deliberately slow page on httpbin.org.
 
-This can be useful for monitoring your homepage, landing pages, product pages, and even blog and docs. Our scalable, affordable approach of implementing monitors as code makes Checkly perfect for applying blanketed monitor coverage across your entire digitial footprint.
+<Accordion title="Let your agent do it" icon="sparkles">
 
-It’s easy to create a URL Monitor from your IDE with Checkly CLI, just create a check file in your project with the `URLMonitor` type:
+<GuideAgentIntro />
 
-```tsx UptimeMonitoring.check.ts
-//urlPinger.check.js
-import { Frequency, UrlMonitor, UrlAssertionBuilder } from 'checkly/constructs'
+<div id="ai-setup-prompt">
 
-new UrlMonitor('url-pinger-1', {
-  frequency: Frequency.EVERY_60S,
-  name: 'URL pinger 1',
-  activated: true,
-  request: {
-    url: 'https://httpbin.org/get',
-    skipSSL: false,
-    followRedirects: true,
-    assertions: [
-      UrlAssertionBuilder.statusCode().equals(200),
-    ]
-  }
-})
+```txt Prompt
+Set up uptime monitoring for this project with Checkly so that every public page is covered from one list.
+
+Success criteria:
+1. Create `__checks__/group.ts` with a `CheckGroupV2` that runs in parallel from 2 locations, alerts after 1 failed run, and has retries disabled. Export a shared `responseTimes` object with `degradedResponseTime: 3000` and `maxResponseTime: 5000`.
+2. Ask me for the public pages of my site. Create `__checks__/pages.check.ts` with an array of `{ id, path }` entries and a loop that creates one `UrlMonitor` per entry, in the group, spreading `responseTimes`, following redirects, and asserting HTTP 200. Use the `id` in the logical ID so it stays stable when I reorder the list.
+3. Create `__checks__/certificate.check.ts` with an `SslMonitor` for my hostname in the same group, alerting 14 days before expiry.
+4. Tell me which of my pages need more than a status code, and why an API check would be the next step for those.
+5. Run `npx checkly test --record` and show me the session link.
+6. Show me `npx checkly deploy --preview` and wait for my confirmation before deploying.
+
+Explain each file you changed and why.
 ```
 
-*Note that this check is set to run every 60 seconds!*
+</div>
 
-And deploy your check with the `npx checkly deploy` command. 
+<CopyPromptButton />
 
-Along with monitoring your own services, both URL monitors and synthetics checks can monitor third party services. With the high frequency and low cost of URL monitors, they’re an easy way to ensure the services you rely on are up and running.
+The steps below are what the agent does, in the open.
 
-## TCP requests for TCP services
+</Accordion>
 
-While URL checks will send regular HTTP requests, we all still have services that will only respond to TCP requests, for example mail services and ftp services. For these there’s TCP checks. Just like the other checks in this guide, you can create monitors from your IDE with Monitoring as code. Here’s an example:
+## Step 1: Decide what every monitor shares
 
-```tsx UptimeMonitoring.check.ts
-import { TcpMonitor, TcpAssertionBuilder } from 'checkly/constructs'
+A shop has a handful of pages a customer can land on, and they all deserve the same treatment: the same locations, the same alert rule, the same idea of what "slow" means. Put those decisions in one place before you write a single monitor, so adding the tenth page costs the same as adding the first.
 
-new TcpMonitor('hello-tcp-1', {
-  name: 'Hello TCP',
-  activated: true,
+```ts __checks__/group.ts
+import { AlertEscalationBuilder, CheckGroupV2, RetryStrategyBuilder } from 'checkly/constructs'
+
+// Every monitor in this guide joins this group and inherits its locations
+// and alert policy. Retries are off so a failure shows on the first run.
+export const shopGroup = new CheckGroupV2('shop-uptime', {
+  name: 'Shop uptime',
+  locations: ['us-east-1', 'eu-west-1'],
+  runParallel: true,
+  alertEscalationPolicy: AlertEscalationBuilder.runBasedEscalation(1),
+  retryStrategy: RetryStrategyBuilder.noRetries(),
+})
+
+// Slow is not down: over 3 seconds is degraded, over 5 seconds fails.
+export const responseTimes = {
+  degradedResponseTime: 3000,
   maxResponseTime: 5000,
-  degradedResponseTime: 4000,
+}
+```
+
+The group carries locations and the alert policy, because those belong to the group. Response-time thresholds belong to each monitor, so they live in an exported object that every monitor spreads in. Retries are off in this guide so you can see a failure land on the first run. For real monitoring, [Alerting that doesn't wake you up for nothing](/guides/alerting) shows how to turn them back on.
+
+The project config sets the frequency and tag for everything the group does not cover:
+
+```ts checkly.config.ts
+import { defineConfig } from 'checkly'
+import { Frequency } from 'checkly/constructs'
+
+export default defineConfig({
+  projectName: 'Docs guide: Cover every endpoint with uptime monitors',
+  logicalId: 'docs-guide-uptime-coverage',
+  repoUrl: 'https://github.com/checkly/docs',
+  checks: {
+    activated: true,
+    frequency: Frequency.EVERY_1M,
+    tags: ['guide-uptime-coverage'],
+    checkMatch: '**/__checks__/**/*.check.ts',
+  },
+  cli: { runLocation: 'us-east-1' },
+})
+```
+
+## Step 2: Turn the list of pages into monitors
+
+Now write down the pages. Not the monitors, the pages. The home page, a product page, the cart, the checkout, and the API the storefront calls. A loop turns each line into a URL monitor that inherits everything from Step 1.
+
+```ts __checks__/pages.check.ts
+import { UrlAssertionBuilder, UrlMonitor } from 'checkly/constructs'
+import { responseTimes, shopGroup } from './group'
+
+// Every page a customer can land on. Add a line here to add a monitor.
+// The id becomes part of the logical ID, so keep it stable when you reorder.
+const pages = [
+  { id: 'home', path: '/' },
+  { id: 'book', path: '/books/1' },
+  { id: 'cart', path: '/cart' },
+  { id: 'checkout', path: '/checkout' },
+  { id: 'books-api', path: '/api/books' },
+]
+
+for (const { id, path } of pages) {
+  new UrlMonitor(`shop-${id}`, {
+    name: `Shop ${path}`,
+    group: shopGroup,
+    ...responseTimes,
+    request: {
+      url: `https://danube-web.shop${path}`,
+      followRedirects: true,
+      assertions: [UrlAssertionBuilder.statusCode().equals(200)],
+    },
+  })
+}
+```
+
+When a new page ships, someone adds one line and deploys. When a page is retired, someone deletes one line and the monitor goes with it. The `id` matters more than it looks: Checkly matches a monitor to its history by logical ID, so `shop-cart` keeps its uptime record no matter where it sits in the array. Generate IDs from array positions and a reorder silently creates five new monitors and deletes five old ones.
+
+<Note>
+A URL monitor answers one question: did this URL return the status code you expect, fast enough? It does not read the response body. The Danube shop is a single-page app that answers 200 for any path, so a monitor for `/api/books` proves the API is reachable, not that it returns books. When you need to check the body, a header, or an authenticated request, that page gets an [API check](/detect/synthetic-monitoring/api-checks/overview) instead.
+</Note>
+
+## Step 3: Tell slow from down
+
+Every monitor above spreads `responseTimes`, so every one already knows the difference between slow and down. To see where the lines sit, add a page that is always slow. httpbin.org waits one second before answering, and the network adds a little on top.
+
+```ts __checks__/slow.check.ts
+import { UrlAssertionBuilder, UrlMonitor } from 'checkly/constructs'
+import { responseTimes, shopGroup } from './group'
+
+// A page that always takes about a second, so you can see where the
+// degraded and failed thresholds sit relative to a real response time.
+new UrlMonitor('shop-slow-page', {
+  name: 'Slow page (httpbin delay)',
+  group: shopGroup,
+  ...responseTimes,
   request: {
-    hostname: 'tcpbin.com',
-    port: 4242,
-    data: 'ping\n',
-    ipFamily: 'IPv6',
-    assertions: [
-        TcpAssertionBuilder.responseTime().lessThan(1000),
-        TcpAssertionBuilder.responseData().contains('ping')
-    ]
-  }
+    url: 'https://httpbin.org/delay/1',
+    assertions: [UrlAssertionBuilder.statusCode().equals(200)],
+  },
 })
 ```
 
-*A basic URL monitor ready to deploy*
+That page passes at just over a second. Past three seconds the result is degraded, which shows up in the app and reaches any alert channel that opts in to degraded results, but does not count as downtime. Past five seconds the run fails. The shop pages answer in under 300 milliseconds from both locations, so the same thresholds leave them room to slow down tenfold before anyone is bothered. Set thresholds from what you measure, then tighten them for the pages where speed is the product.
 
-TCP monitors offer similar options to URL monitors, with the addition of assertions to evaluate the responses. Read more about [TCP check assertions on our docs site](https://www.checklyhq.com/cli/overviewconstructs-reference/#tcpassertionbuilder). 
+## Step 4: Watch the certificate underneath
 
-![A TCP check dashboard](/images/guides/images/uptime-01.png)
+Every monitor so far speaks HTTPS, and every HTTPS request starts with the same TLS handshake against the same certificate. A URL monitor fails the moment that certificate expires. That is one layer too late: you want to hear about it while there is still time to renew.
 
-*Results for TCP checks include the status of your SSL certification, and can send alerts if your certs are close to expiring.*
+```ts __checks__/certificate.check.ts
+import { SslMonitor } from 'checkly/constructs'
+import { shopGroup } from './group'
 
-TCP checks are also helpful at identifying any DNS issues, as these request will also perform DNS lookup if you provide a hostname and, like the other checks in this guide, [the results for a TCP check](https://www.checklyhq.com/docs/monitoring/check-results/#tcp-monitor-results) will include DNS lookup time.
-
-## The Heartbeat Monitor, for services that don’t accept incoming requests
-
-Another type of service you’ll want to monitor is one that doesn’t accept any kind of incoming requests. 
-
-There’s really not much to getting one to work, just set up a heartbeat in the Checkly UI or with the Checkly CLI. For example, the following code 
-
-```tsx UptimeMonitoring.check.ts
-//heartbeat.check.ts
-import { HeartbeatMonitor } from 'checkly/constructs'
-
-new HeartbeatMonitor('heartbeat-check-1', {
-  name: 'Send weekly newsletter job',
-  period: 7,
-  periodUnit: 'days',
-  grace: 2,
-  graceUnit: 'hours',
+// Every HTTPS page above depends on this one certificate.
+// Alert two weeks before it expires, while there is still time to renew.
+new SslMonitor('shop-certificate', {
+  name: 'Shop certificate',
+  group: shopGroup,
+  request: {
+    hostname: 'danube-web.shop',
+    port: 443,
+    sslConfig: { alertDaysBeforeExpiry: 14 },
+  },
 })
 ```
 
-will create a new Heartbeat monitor called ‘Send Weekly Newsletter job’ that expects a ping every 7 days, and will alert if 7 days and 2 hours pass without a request. After saving `hearbeatDemo.check.ts` to your project file, you can create this check with `npx checkly deploy`
+The SSL monitor connects to the host, completes a handshake, and inspects what comes back: expiry, hostname match, chain trust, and the negotiated protocol. It turns degraded when the certificate has fewer than 14 days left, which reaches any alert channel that opts in to degraded results. It fails once the certificate has expired, and also when the chain is broken or the hostname does not match, which are the same failures a browser would show your users.
 
-![The Checkly deploy command returning to the CLI](/images/guides/images/uptime-02.png)
+Test everything, then deploy:
 
-*The deploy command will return the URL for your heartbeat*
+```bash Terminal
+npx checkly test --record
+```
 
-The heartbeat monitor expects a HTTP request (GET or POST) to the ping URL once per period. Configure your monitored task to ping the URL when successful. Even this simplest of monitors still has a helpful dashboard of results.
+```text Terminal
+Running 7 checks in us-east-1.
 
-![A Heartbeat check dashboard](/images/guides/images/uptime-03.png)
+__checks__/certificate.check.ts
+  ✔ Shop certificate (11ms)
+__checks__/pages.check.ts
+  ✔ Shop / (15ms)
+  ✔ Shop /api/books (22ms)
+  ✔ Shop /books/1 (16ms)
+  ✔ Shop /cart (15ms)
+  ✔ Shop /checkout (16ms)
+__checks__/slow.check.ts
+  ✔ Slow page (httpbin delay) (2s)
 
-### Conclusion
+7 passed, 7 total
+```
 
-Uptime monitoring is a critical component of maintaining reliable services and meeting SLAs, and Checkly provides versatile tools to ensure your systems—and the third-party services they depend on—remain operational. 
+```bash Terminal
+npx checkly deploy
+```
 
-By integrating these monitors into your workflow—either through the Checkly CLI or UI—you can proactively detect and resolve issues before they impact users. With URL monitors for simple HTTP checks, TCP monitors for specialized services, and heartbeat monitors for background jobs, you’ll have full visibility into your system’s health.
+After the first runs, the certificate monitor shows a handshake from each location:
 
-Start implementing these uptime monitoring strategies today to strengthen your "[defense in depth](https://www.checklyhq.com/blog/the-defense-in-depth-approach-to-app-monitoring/)" approach and keep your services running smoothly. For more details on configuring checks, explore [Checkly’s documentation](https://www.checklyhq.com/docs/) and take control of your reliability monitoring.
+<Frame>
+  <img src="/images/guides/uptime-coverage/ssl.png" alt="A Checkly SSL monitor detail page for Shop certificate, passing, running every minute from N. Virginia and Ireland, with a 9 millisecond and a 141 millisecond handshake" />
+</Frame>
+
+## Verify it works
+
+Break both layers on purpose. In `__checks__/slow.check.ts`, change the URL to `https://httpbin.org/status/503`, a page that always answers with a server error. In `__checks__/certificate.check.ts`, change the hostname to `expired.badssl.com`, a host that serves an expired certificate on purpose. Deploy.
+
+Within a minute, the slow page monitor fails from both locations. Its error groups show both what happened and which assertion it broke: a 503 that was expected to equal 200.
+
+<Frame>
+  <img src="/images/guides/uptime-coverage/verify-url.png" alt="A Checkly URL monitor detail page for Slow page, failing, with failed runs from Ireland and N. Virginia after four passing ones, and error groups reading Expected 503 to be equal to 200 and HTTP 503 Service Unavailable" />
+</Frame>
+
+The certificate monitor fails too. There is no status code at this layer, so the error names the handshake step that broke:
+
+<Frame>
+  <img src="/images/guides/uptime-coverage/verify-ssl.png" alt="A Checkly SSL monitor detail page for Shop certificate, failing, with failed runs from N. Virginia and Ireland after four passing ones, and one error group reading chain verification failed" />
+</Frame>
+
+Change both values back and deploy again. The next run from each location recovers both monitors. Nothing else in the group changed, because everything else was generated from the same list and the same defaults.
+
+## Next
+
+[Monitor the content your customers need to see](/guides/keyword-monitoring): a URL monitor proves a page answered, not what it shows. Assert that the text that sells is on the page, in the right place.
+
+## Reference
+
+- [URL monitors](/detect/uptime-monitoring/url-monitors/overview) and [SSL monitors](/detect/uptime-monitoring/ssl-monitors/overview)
+- [API checks](/detect/synthetic-monitoring/api-checks/overview), for when a status code is not enough
+- [`UrlMonitor`](/constructs/url-monitor), [`SslMonitor`](/constructs/ssl-monitor), and [`CheckGroupV2`](/constructs/check-group-v2)
+- [Checkly Skills](/ai/skills)

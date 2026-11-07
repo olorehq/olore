@@ -2,6 +2,7 @@
 title: 'Alert Configuration'
 description: 'Complete guide to configuring alert settings, escalation strategies, retry mechanisms, and threshold alerting in Checkly for optimal incident response.'
 sidebarTitle: 'Configuration'
+canonical: 'https://www.checklyhq.com/docs/communicate/alerts/configuration/'
 ---
 
 
@@ -37,10 +38,11 @@ Checkly provides a three-tier configuration system that allows for flexible aler
 ### Configuration Inheritance
 Understanding how settings cascade through the hierarchy:
 
-1. **Check-level settings** always take highest precedence
-2. **Group-level settings** override account defaults for member checks
-3. **Account-level settings** provide the baseline for all other configurations
-4. **Explicit overrides** can be enabled/disabled at group level
+1. **Group-level settings** take highest precedence when the group has **Group override for alert settings** enabled. They replace the alert settings of every check in the group.
+2. **Check-level settings** apply when the check is not in a group, or its group does not override alert settings.
+3. **Account-level settings** apply to checks and groups that use the global account notification settings.
+
+Groups created with the public API `/v1/check-groups` endpoint or the CLI `CheckGroupV1` construct override alert settings by default.
 
 </Note>
 
@@ -52,7 +54,7 @@ Runs you [cancel](/concepts/cancellation) never trigger alerts. No failure, degr
 
 ### Account-Level
 
-Configure organization-wide defaults that apply to all checks:
+Configure organization-wide defaults that apply to all checks. Open the [alert settings](https://app.checklyhq.com/alerts/settings) to set escalation and reminders for every check in the account.
 
 <Frame>
 ![Account-level alert settings](/images/docs/images/alerting/alert-settings.png)
@@ -69,7 +71,7 @@ Configure organization-wide defaults that apply to all checks:
 
 ### Group-Level
 
-Configure alerts for teams and service categories:
+Configure alerts for teams and service categories. Open the group, then edit its **Retries & Alerting** tab to override the account defaults for every check in that group.
 
 ![Group-level alert settings](/images/docs/images/alerting/alert-settings-group.png)
 
@@ -93,7 +95,7 @@ Configure how group settings interact with individual checks:
 
 ### Check-Level
 
-Fine-tune alerting for specific checks with unique requirements:
+Fine-tune alerting for specific checks with unique requirements. Open the check, click **Edit**, and change the escalation, reminders, or retries on the **Retries & Alerting** tab for that check only.
 
 <Frame>
 ![Check-level alert settings](/images/docs/images/alerting/alert-settings-check.png)
@@ -109,7 +111,7 @@ Start with conservative alert settings and gradually tune based on your team's r
 **Monitoring as Code**: Learn more about [configuring escalation strategies for your Checkly constructs](/constructs/alert-escalation-policy).
 </Tip>
 
-The escalation box allows you to decide when an alert should be triggered. We give you three options that are applied to all checks:
+The escalation box allows you to decide when an alert should be triggered. We give you two options, run-based and time-based. You can combine either one with a location-based threshold:
 
 
 <Frame>
@@ -178,7 +180,7 @@ This option should mostly be used when checks are run very regularly, i.e. once 
 **How it works:**
 - Monitors failure duration, not count
 - Ideal for high-frequency checks
-- Ignores individual run results
+- Resets when a run passes
 - Focuses on sustained problems
 
 **Best for: High-Frequency Monitoring**
@@ -248,10 +250,6 @@ Follow-up alerts sent at configured intervals
 
 <Step title="Automatic Cancellation">
 All pending reminders cancelled when check recovers
-</Step>
-
-<Step title="Escalation Handling">
-Optional escalation to different teams/channels after maximum reminders
 </Step>
 </Steps>
 

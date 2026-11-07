@@ -1,15 +1,16 @@
---- 
-title: 'Browser Check Structure'
-description: 'Learn how to structure your Browser Checks with Monitoring as Code.'
+---
+title: 'Browser check structure'
+description: 'Learn how to structure your Browser checks with Monitoring as Code.'
 sidebarTitle: MaC Structure
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/mac-structure/'
 ---
 
 import GenericRuntimeVariablesTable from '/snippets/generic-runtime-variables-table.mdx';
 
-Monitoring as Code works by connecting Playwrighttest files with Checkly constructs to handle the end-to-endconfiguration of your Browser Check. 
+Monitoring as Code works by connecting Playwrighttest files with Checkly constructs to handle the end-to-endconfiguration of your Browser check.
 
-## Browser Check Construct
-The Browser Check construct is used to configure your monitoring settings, such as frequency, locations, and tags. Learn more about the [Browser Check Construct](/constructs/browser-check)
+## Browser check construct
+The Browser check construct is used to configure your monitoring settings, such as frequency, locations, and tags. Learn more about the [Browser check construct](/constructs/browser-check)
 
 ```ts browser-check.ts
 import { BrowserCheck, Frequency } from 'checkly/constructs'
@@ -27,7 +28,7 @@ new BrowserCheck('browser-check-1', {
 
 ## Test Script Structure
 
-Checkly uses Playwright to power Browser Checks. [Playwright](https://playwright.dev/docs/intro) is a robust, open-source framework for browser automation and end-to-end web application testing. It enables you to write atomic, reliable tests and easily control interactions within a web page. Browser checks execute automated test scripts in real browsers. 
+Checkly uses Playwright to power Browser checks. [Playwright](https://playwright.dev/docs/intro) is a robust, open-source framework for browser automation and end-to-end web application testing. It enables you to write atomic, reliable tests and easily control interactions within a web page. Browser checks execute automated test scripts in real browsers.
 
 ```typescript login.spec.ts
 // Use environment-specific URLs and credentials

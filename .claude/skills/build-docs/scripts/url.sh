@@ -30,7 +30,8 @@ download_from_urls() {
     local config_file="$1"
     local output_dir="$2"
     local library_version="$3"  # Version to build (required)
-    local force="$4"            # --force to re-download existing
+    local force="$4"            # "true" or "--force" to re-download existing
+    [ "$force" = "--force" ] && force="true"
     local config_name=$(basename "$config_file" .json)
     local success_count=0
     local fail_count=0

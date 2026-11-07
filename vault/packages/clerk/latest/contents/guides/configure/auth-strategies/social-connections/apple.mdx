@@ -1,6 +1,6 @@
 ---
 title: Add Apple as a social connection
-description: Learn how to allow users to sign up and sign in to your Clerk app with their Apple ID using OAuth.
+description: Learn how to allow users to sign up and sign in to your Clerk application with their Apple ID using OAuth.
 ---
 
 <TutorialHero
@@ -18,10 +18,14 @@ description: Learn how to allow users to sign up and sign in to your Clerk app w
   ]}
 />
 
-Enabling OAuth via [Sign in with Apple](https://developer.apple.com/sign-in-with-apple/) allows your users to sign in and sign up to your Clerk app with their Apple ID.
+Enabling OAuth via [Sign in with Apple](https://developer.apple.com/sign-in-with-apple/) allows your users to sign up and sign in to your Clerk app with their Apple ID.
 
 > [!IMPORTANT]
 > This guide explains how to configure Sign in with Apple for web-based flows. To configure Sign in with Apple on native applications (such as iOS or Expo apps), see the [dedicated guide](/docs/guides/configure/auth-strategies/sign-in-with-apple).
+
+<If is="llm">
+  **For AI agents:** Instead of enabling the connection in the Dashboard, run `npx -y clerk@latest config patch --json '{"connection_oauth_apple":{"enabled":true}}'` for a development instance (shared credentials). For production, follow the Apple guidance in the JSON output of `npx -y clerk@latest deploy status --mode agent` (see [Deploy to production](/docs/guides/development/deployment/production)). If the report's `state` is `not_started` or `domain_provisioning`, follow its `nextAction` and rerun `npx -y clerk@latest deploy status --mode agent` once the production domain is available. If the report has an Apple `oauth.setup` entry for web credentials, have the user run `npx -y clerk@latest deploy --mode human` in their own terminal, from the project directory, because the wizard reads the private key file. Do not read the private key or put it in an agent-managed file. For native-only Apple or while `nativeAppleReadinessIssue` is present, follow the report's `nextAction`. If web credentials are still needed after the production domain is available and any native Apple readiness issue is resolved, but no Apple `oauth.setup` entry exists, have the user enter them in the Dashboard using the steps below. The Apple Developer portal steps still require a human. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
 
 ## Configure for your development instance
 
@@ -39,10 +43,10 @@ For _production instances_, you must provide custom credentials.
 
 You must generate and provide your own **Apple Services ID**, **Apple Private Key**, **Apple Team ID**, and **Apple Key ID** using your Apple Developer account.
 
-To make the setup process easier, it's recommended to keep two browser tabs open: one for your [Clerk Dashboard](https://dashboard.clerk.com/~/user-authentication/sso-connections) and one for your [Apple Developer dashboard](https://developer.apple.com/account).
+Keep two browser tabs open during setup: one for your [Clerk Dashboard](https://dashboard.clerk.com/~/user-authentication/sso-connections) and one for your [Apple Developer dashboard](https://developer.apple.com/account).
 
 <Steps>
-  ### Enable Apple as a social connection
+  ### Enable Apple as a social connection in Clerk
 
   1. In the Clerk Dashboard, navigate to the [**SSO connections**](https://dashboard.clerk.com/~/user-authentication/sso-connections) page.
   1. Select **Add connection** and select **For all users**.
@@ -50,19 +54,22 @@ To make the setup process easier, it's recommended to keep two browser tabs open
   1. Ensure that both **Enable for sign-up and sign-in** and **Use custom credentials** are toggled on.
   1. Save the **Email Source for Apple Private Email Relay** and **Return URL** values somewhere secure, as you'll need to provide them to Apple later. Keep this page open.
 
-  ### Get your Apple Team ID
+  ### Get or create your app's Apple App ID
 
-  To get your **Apple Team ID**, create a new **App ID** in the Apple Developer portal by following these steps:
+  Sign in with Apple requires an **App ID** with the capability enabled. If you already have one, select it under **Identifiers**, confirm that **Sign In with Apple** is enabled, and continue to the next step. Otherwise, create one:
 
   1. On a separate page, navigate to the [Apple Developer dashboard](https://developer.apple.com/account).
   1. Under **Certificates, IDs and Profiles**, select [**Identifiers**](https://developer.apple.com/account/resources/identifiers/list).
   1. In the top-right, select the dropdown and select **App IDs**.
   1. Next to **Identifiers** at the top of the page, select the plus icon (+) to register a new identifier. You'll be redirected to the **Register a new identifier** page.
   1. Select **App IDs**, then select **Continue**.
-  1. On the next page, you'll be prompted to **Select a type** for your app. Choose **App** and select **Continue**. You will be redirected to the **Register an App ID** page.
+  1. On the next page, you'll be prompted to **Select a type** for your app. Select **App**, then select **Continue**. You will be redirected to the **Register an App ID** page.
   1. Fill in a description for your **App ID** and a **Bundle ID**. Under **Capabilities**, ensure that **Sign In with Apple** is enabled. Then select **Continue**. You'll be redirected to the **Confirm your App ID** page.
-  1. At the top of the page, you'll see your **App ID Prefix**. Save this value somewhere secure. This is your **Apple Team ID** in Clerk.
-  1. Finally, select **Register**. You'll be redirected to the **Identifiers** page.
+  1. Review the App ID details, then select **Register**. You'll be redirected to the **Identifiers** page.
+
+  ### Get your Apple Team ID
+
+  In your [Apple Developer account](https://developer.apple.com/account), open **Membership details** and copy your **Team ID**. This is the **Apple Team ID** you'll enter in Clerk.
 
   ### Get your Apple Services ID
 
@@ -74,7 +81,7 @@ To make the setup process easier, it's recommended to keep two browser tabs open
   1. Add a description for your **Services ID**, and set an **Identifier**. Save the **Identifier** value somewhere secure. This is your **Apple Services ID** in Clerk. Finally, select **Continue**.
   1. In the confirmation view, select **Register**.
   1. After the registration is finished, select the newly-created **Services ID**. Ensure the **Sign In with Apple** box is enabled and select **Configure**.
-  1. Under **Primary App ID**, select the **App ID** you created in the previous step.
+  1. Under **Primary App ID**, select your app's **App ID**.
   1. Under **Domains and Subdomains**, add your Clerk [Frontend API URL](!frontend-api-url) **without the protocol**. For example, if your domain is `https://myapp.com`, then your Frontend API URL is `https://clerk.myapp.com`, and you would add `clerk.myapp.com` to **Domains and Subdomains**.
   1. Under **Return URLS**, add the **Return URL** value you saved from the Clerk Dashboard.
   1. Select **Next**. You'll be redirected to the **Confirm your web authentication configuration** screen.
@@ -89,7 +96,7 @@ To make the setup process easier, it's recommended to keep two browser tabs open
   1. On the **Identifiers** page, in the sidenav, select **Keys**.
   1. Next to **Keys** at the top of the page, select the plus icon (+) to register a new key. You'll be redirected to the **Register a New Key** page.
   1. Add a **Key Name** and ensure the **Sign In with Apple** box is enabled and select **Configure**. You'll be redirected to the **Configure Key** page.
-  1. Under **Primary App ID**, select the **App ID** you created in the first step of this guide. Then select **Save**. You'll be redirected to the previous **Register a New Key** page.
+  1. Under **Primary App ID**, select your app's **App ID**. Then select **Save**. You'll be redirected to the previous **Register a New Key** page.
   1. Select **Continue** and you'll be presented with the final confirmation screen. Verify that **Sign in with Apple** is checked. Select **Register**. You'll be redirected to the **Download Your Key** page.
   1. Save the **Key ID** value somewhere secure. This is your **Apple Key ID** in Clerk.
   1. Download the private key file. This is your **Apple Private Key** in Clerk. Ensure you back up the key in a secure location, as it cannot be downloaded again later.
@@ -102,7 +109,7 @@ To make the setup process easier, it's recommended to keep two browser tabs open
   >
   > If you'd like to know more about this, see the [Apple documentation](https://support.apple.com/en-au/105034).
 
-  Apple provides a privacy feature called [Hide My Email](https://support.apple.com/en-us/HT210425#hideemail), allowing users to sign in to your app with Apple without disclosing their actual email addresses. Instead, your instance receives an app-specific email address that forwards any emails to the user real's address.
+  Apple provides a privacy feature called [Hide My Email](https://support.apple.com/en-us/HT210425#hideemail), allowing users to sign in to your app with Apple without disclosing their actual email addresses. Instead, your instance receives an app-specific email address that forwards email from registered senders to the user's real address.
 
   To be able to send emails properly to users with hidden addresses, you must configure an additional setting in the Apple Developer portal.
 

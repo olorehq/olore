@@ -1,11 +1,13 @@
 ---
 title: 'CheckGroup Construct'
 description: 'Learn how to configure check groups with the Checkly CLI.'
-sidebarTitle: 'Check Group (deprecated)'
+sidebarTitle: 'Check group (deprecated)'
+canonical: 'https://www.checklyhq.com/docs/constructs/check-group/'
+mode: "wide"
 ---
 
 <Tip>
-Learn more about Check Groups in [the Groups overview](/platform/groups).
+Learn more about check groups in [the Groups overview](/platform/groups).
 </Tip>
 
 <Warning>`CheckGroup` is deprecated. Please use `CheckGroupV2` instead. See [CheckGroupV2 documentation](/constructs/check-group-v2) for details.</Warning>
@@ -43,6 +45,7 @@ import {
   EmailAlertChannel,
   Frequency,
 } from "checkly/constructs"
+import { secret } from "checkly/util"
 
 const emailChannel = new EmailAlertChannel("team-email", {
   address: "team@example.com",
@@ -58,7 +61,7 @@ const group = new CheckGroup("comprehensive-group", {
   concurrency: 5,
   environmentVariables: [
     { key: "API_BASE_URL", value: "https://api.example.com" },
-    { key: "API_KEY", value: "{{SECRET_API_KEY}}", secret: true },
+    { key: "API_KEY", value: secret("API_KEY"), secret: true },
   ],
   alertChannels: [emailChannel],
   browserChecks: {
@@ -86,22 +89,22 @@ new ApiCheck("api-check-1", {
 | `name` | `string` | ✅ | - | Friendly name for your check group |
 | `activated` | `boolean` | ❌ | `true` | Whether checks in the group are running |
 | `apiCheckDefaults` | `object` | ❌ | - | Default settings for API checks in the group |
-| `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert escalation settings |
+| `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | Global account alert settings | Advanced alert escalation settings |
 | `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Alert channels for all checks in the group |
 | `environmentVariables` | `object[]` | ❌ | `[]` | Group-level environment variables |
-| `concurrency` | `number` | ❌ | `10` | Number of concurrent Checks to run when a group is triggered |
+| `concurrency` | `number` | ❌ | `3` | Number of concurrent Checks to run when a group is triggered |
 | `frequency` | `Frequency` | ❌ | - | How often to run checks within the group |
 | `localSetupScript` (deprecated) | `string` | ❌ | - | Code to run before each check/monitor in this group |
 | `localTearDownScript` (deprecated) | `string` | ❌ | - | Code to run after each check/monitor in this group |
 | `locations` | `string[]` | ❌ | - | Public locations for all checks in the group |
 | `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted |
-| `privateLocations` | `string[]` | ❌ | - | Private Location slugs |
-| `retryStrategy` | `RetryStrategy` | ❌ | - | Strategy for configured retries |
+| `privateLocations` | `string[]` | ❌ | - | Private location slugs |
+| `retryStrategy` | `RetryStrategy` | ❌ | [`singleRetry()`](/constructs/retry-strategy#default-retry-strategy) | Strategy for configured retries |
 | `runtimeId` | `string` | ❌ | - | Runtime ID for all checks in the group |
-| `runParallel` | `boolean` | ❌ | - | Whether to run checks in parallel across locations |
+| `runParallel` | `boolean` | ❌ | `false` | Whether to run checks in parallel across locations |
 | `tags` | `string[]` | ❌ | `[]` | Tags to organize all checks in the group |
-| `browserChecks` | `object` | ❌ | - | Settings for Browser Checks in the group |
-| `multistepChecks` | `object` | ❌ | - | Settings for Multistep Checks in the group |
+| `browserChecks` | `object` | ❌ | - | Settings for Browser checks in the group |
+| `multiStepChecks` | `object` | ❌ | - | Settings for Multistep checks in the group |
 
 ### Group Options
 
@@ -110,6 +113,7 @@ Friendly name for your check group that will be displayed in the Checkly dashboa
 
 **Usage:**
 
+{/* typecheck-wrap: CheckGroup */}
 ```ts highlight={2}
 const group = new CheckGroup("api-monitoring-group", {
   name: "API Monitoring Group",
@@ -124,6 +128,7 @@ Whether checks in the group are running. When false, all checks in the group are
 
 **Usage:**
 
+{/* typecheck-wrap: CheckGroup */}
 ```ts highlight={3}
 const group = new CheckGroup("api-monitoring-group", {
   name: "API Monitoring Group",
@@ -140,6 +145,7 @@ Whether to mute alerts for all checks in the group. Checks will still run but wo
 
 **Usage:**
 
+{/* typecheck-wrap: CheckGroup */}
 ```ts highlight={3}
 const group = new CheckGroup("api-monitoring-group", {
   name: "API Monitoring Group",
@@ -157,7 +163,7 @@ How often to run checks within the group. This frequency applies to all checks i
 **Usage:**
 
 ```ts highlight={5}
-import { Frequency } from 'checkly/constructs'
+import { CheckGroup, Frequency } from 'checkly/constructs'
 
 const group = new CheckGroup("api-monitoring-group", {
   name: "API Monitoring Group",
@@ -165,16 +171,17 @@ const group = new CheckGroup("api-monitoring-group", {
 })
 ```
 
-**Available frequencies**: `EVERY_10S`, `EVERY_20S`, `EVERY_30S`, `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+**Available frequencies**: `EVERY_10S`, `EVERY_20S`, `EVERY_30S`, `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_3H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
 
-<Tip>Generally, Check Groups support all available frequencies, but if a group includes a check type that doesn't support high frequencies, `npx checkly deploy` will fail. We recommend separating high-frequency ones into their own groups.</Tip>
+<Tip>Generally, check groups support all available frequencies, but if a group includes a check type that doesn't support high frequencies, `npx checkly deploy` will fail. We recommend separating high-frequency ones into their own groups.</Tip>
 </ResponseField>
 
 <ResponseField name="locations" type="string[]" default="[]">
-Public locations for all checks in the group. Checks inherit these locations unless they specify their own.
+Public locations for all checks in the group. If this or `privateLocations` is set to a non-empty value, the group's locations and private locations replace those of every check in the group.
 
 **Usage:**
 
+{/* typecheck-wrap: CheckGroup */}
 ```ts highlight={3}
 const group = new CheckGroup("api-monitoring-group", {
   name: "API Monitoring Group",
@@ -187,10 +194,11 @@ const group = new CheckGroup("api-monitoring-group", {
 
 <ResponseField name="browserChecks" type="object">
 
-Setting to automatically create and apply Browser Checks to a group.
+Setting to automatically create and apply Browser checks to a group.
 
 **Usage:**
 
+{/* typecheck-wrap: CheckGroup */}
 ```ts highlight={3-5}
 const group = new CheckGroup("api-monitoring-group", {
   name: "API Monitoring Group",
@@ -205,10 +213,11 @@ const group = new CheckGroup("api-monitoring-group", {
 
 <ResponseField name="multiStepChecks" type="object">
 
-Setting to automatically create and apply MultiStep Checks to a group.
+Setting to automatically create and apply Multistep checks to a group.
 
 **Usage:**
 
+{/* typecheck-wrap: CheckGroup */}
 ```ts highlight={3-5}
 const group = new CheckGroup("api-multistep-group", {
   name: "API Multistep Monitoring Group",
@@ -225,6 +234,7 @@ const group = new CheckGroup("api-multistep-group", {
 
 <Tabs>
   <Tab title="API Monitoring Group">
+    {/* typecheck-wrap: CheckGroup */}
     ```ts
     const apiGroup = new CheckGroup("api-monitoring-group", {
       name: "API Monitoring",
@@ -260,6 +270,7 @@ const group = new CheckGroup("api-multistep-group", {
   </Tab>
 
   <Tab title="Multi-Service Group">
+    {/* typecheck-wrap: CheckGroup */}
     ```ts
     const servicesGroup = new CheckGroup("services-monitoring", {
       name: "Core Services Monitoring",
@@ -307,6 +318,7 @@ const group = new CheckGroup("api-multistep-group", {
   </Tab>
 
   <Tab title="Regional Group">
+    {/* typecheck-wrap: CheckGroup */}
     ```ts
     const regionalGroup = new CheckGroup("us-east-monitoring", {
       name: "US East Region Monitoring",
@@ -314,7 +326,7 @@ const group = new CheckGroup("api-multistep-group", {
       frequency: Frequency.EVERY_2M,
       locations: ["us-east-1"], // Single region focus
       tags: ["us-east", "regional"],
-      runParallel: false, // Sequential execution
+      runParallel: false, // Round-robin scheduling
       alertEscalationPolicy: AlertEscalationBuilder.runBasedEscalation(2, {
         interval: 5,
         amount: 2,

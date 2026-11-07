@@ -43,7 +43,7 @@ await page.Clock.FastForwardAsync("30:00");
 * since: v1.45
 - `ticks` <[long]|[string]>
 
-Time may be the number of milliseconds to advance the clock by or a human-readable string. Valid string formats are "08" for eight seconds, "01:00" for one minute and "02:34:10" for two hours, 34 minutes and ten seconds.
+Time may be a finite number of milliseconds to advance the clock by or a human-readable string. Valid string formats are "08" for eight seconds, "01:00" for one minute and "02:34:10" for two hours, 34 minutes and ten seconds.
 
 ## async method: Clock.install
 * since: v1.45
@@ -51,6 +51,7 @@ Time may be the number of milliseconds to advance the clock by or a human-readab
 Install fake implementations for the following time-related functions:
 
 * `Date`
+* `Temporal.Now`
 * `setTimeout`
 * `clearTimeout`
 * `setInterval`
@@ -75,7 +76,7 @@ Time to initialize with, current system time by default.
 * since: v1.45
 - `time` <[float]|[string]|[Date]>
 
-Time to initialize with, current system time by default.
+Time to initialize with, current system time by default. Numeric values are Unix time in seconds.
 
 ### option: Clock.install.time
 * langs: csharp
@@ -120,7 +121,7 @@ await page.Clock.RunForAsync("30:00");
 * since: v1.45
 - `ticks` <[long]|[string]>
 
-Time may be the number of milliseconds to advance the clock by or a human-readable string. Valid string formats are "08" for eight seconds, "01:00" for one minute and "02:34:10" for two hours, 34 minutes and ten seconds.
+Time may be a finite number of milliseconds to advance the clock by or a human-readable string. Valid string formats are "08" for eight seconds, "01:00" for one minute and "02:34:10" for two hours, 34 minutes and ten seconds.
 
 
 ## async method: Clock.pauseAt
@@ -208,7 +209,7 @@ Time to pause at.
 * since: v1.45
 - `time` <[float]|[string]|[Date]>
 
-Time to pause at.
+Time to pause at. Numeric values are Unix time in seconds.
 
 ### param: Clock.pauseAt.time
 * langs: csharp
@@ -274,7 +275,7 @@ Time to be set in milliseconds.
 * since: v1.45
 - `time` <[float]|[string]|[Date]>
 
-Time to be set.
+Time to be set. Numeric values are Unix time in seconds.
 
 ### param: Clock.setFixedTime.time
 * langs: csharp
@@ -332,7 +333,7 @@ Time to be set in milliseconds.
 * since: v1.45
 - `time` <[float]|[string]|[Date]>
 
-Time to be set.
+Time to be set. Numeric values are Unix time in seconds.
 
 ### param: Clock.setSystemTime.time
 * langs: csharp

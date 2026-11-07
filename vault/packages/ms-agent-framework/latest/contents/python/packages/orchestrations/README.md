@@ -5,7 +5,7 @@ Orchestration patterns for Microsoft Agent Framework. This package provides high
 ## Installation
 
 ```bash
-pip install agent-framework-orchestrations --pre
+pip install agent-framework-orchestrations
 ```
 
 ## Orchestration Patterns
@@ -47,6 +47,19 @@ workflow = (
     HandoffBuilder()
     .participants([triage, billing, support])
     .with_start_agent(triage)
+    .build()
+)
+```
+
+By default, each user response returns to the agent that requested it. To have the start agent re-evaluate every user
+turn, disable return-to-previous routing:
+
+```python
+workflow = (
+    HandoffBuilder()
+    .participants([triage, billing, support])
+    .with_start_agent(triage)
+    .enable_return_to_previous(False)
     .build()
 )
 ```

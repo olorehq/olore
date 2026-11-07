@@ -1,0 +1,24 @@
+---
+id: ColumnDefBase
+title: ColumnDefBase
+---
+
+```ts
+type ColumnDefBase<TFeatures, TData, TValue> = ColumnDefBase_Core<TFeatures, TData, TValue> & ExtractFeatureMapTypes<TFeatures, ColumnDef_FeatureMap<TFeatures, TData, TValue>>;
+```
+
+Defined in: [types/ColumnDef.ts:150](https://github.com/TanStack/table/blob/main/packages/table-core/src/types/ColumnDef.ts#L150)
+
+## Type Parameters
+
+### TFeatures
+
+`TFeatures` *extends* [`TableFeatures`](../interfaces/TableFeatures.md)
+
+### TData
+
+`TData` *extends* [`RowData`](RowData.md)
+
+### TValue
+
+`TValue` *extends* [`CellData`](CellData.md) = [`CellData`](CellData.md)

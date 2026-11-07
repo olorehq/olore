@@ -1,0 +1,587 @@
+---
+title: Electric Collection
+---
+
+Electric collections provide seamless integration between TanStack DB and ElectricSQL, enabling real-time data synchronization with your Postgres database through Electric's sync engine.
+
+## Overview
+
+The `@tanstack/electric-db-collection` package allows you to create collections that:
+- Automatically sync data from Postgres via Electric shapes
+- Support optimistic updates with transaction matching and automatic rollback on errors
+- Handle persistence through customizable mutation handlers
+
+## Installation
+
+```bash
+npm install @tanstack/electric-db-collection @tanstack/react-db
+```
+
+## Basic Usage
+
+```typescript
+import { createCollection } from '@tanstack/react-db'
+import { electricCollectionOptions } from '@tanstack/electric-db-collection'
+
+const todosCollection = createCollection(
+  electricCollectionOptions({
+    shapeOptions: {
+      url: '/api/todos',
+    },
+    getKey: (item: { id: string }) => item.id,
+  })
+)
+```
+
+## Configuration Options
+
+The `electricCollectionOptions` function accepts the following options:
+
+### Required Options
+
+- `shapeOptions`: Configuration for the ElectricSQL ShapeStream
+  - `url`: The URL of your proxy to Electric
+
+- `getKey`: Function to extract the unique key from an item
+
+### Optional
+
+- `id`: Unique identifier for the collection
+- `schema`: Schema for validating items. Any Standard Schema compatible schema
+- `sync`: Custom sync configuration
+
+### Persistence Handlers
+
+Handlers are called before mutations to persist changes to your backend:
+
+- `onInsert`: Handler called before insert operations
+- `onUpdate`: Handler called before update operations
+- `onDelete`: Handler called before delete operations
+
+Each handler should call `await collection.utils.awaitTxId(txid)` to wait for synchronization. For cases where your API cannot return txids, use the `awaitMatch` utility function.
+
+## Persistence Handlers & Synchronization
+
+Handlers persist mutations to the backend and wait for Electric to sync the changes back. This prevents UI glitches where optimistic updates would be removed and then re-added. TanStack DB blocks sync data until the mutation is confirmed, ensuring smooth user experience.
+
+### 1. Using Txid (Recommended)
+
+The recommended approach uses PostgreSQL transaction IDs (txids) for precise matching. The backend returns a txid, and the client waits for that specific txid to appear in the Electric stream.
+
+```typescript
+const todosCollection = createCollection(
+  electricCollectionOptions({
+    id: 'todos',
+    schema: todoSchema,
+    getKey: (item) => item.id,
+    shapeOptions: {
+      url: '/api/todos',
+      params: { table: 'todos' },
+    },
+
+    onInsert: async ({ transaction, collection }) => {
+      const newItem = transaction.mutations[0].modified
+      const response = await api.todos.create(newItem)
+
+      // Wait for txid to sync
+      await collection.utils.awaitTxId(response.txid)
+    },
+
+    onUpdate: async ({ transaction, collection }) => {
+      const { original, changes } = transaction.mutations[0]
+      const response = await api.todos.update({
+        where: { id: original.id },
+        data: changes
+      })
+
+      // Wait for txid to sync
+      await collection.utils.awaitTxId(response.txid)
+    }
+  })
+)
+```
+
+### 2. Using Custom Match Functions
+
+For cases where txids aren't available, use the `awaitMatch` utility function to wait for synchronization with custom matching logic:
+
+```typescript
+import { isChangeMessage } from '@tanstack/electric-db-collection'
+
+const todosCollection = createCollection(
+  electricCollectionOptions({
+    id: 'todos',
+    getKey: (item) => item.id,
+    shapeOptions: {
+      url: '/api/todos',
+      params: { table: 'todos' },
+    },
+
+    onInsert: async ({ transaction, collection }) => {
+      const newItem = transaction.mutations[0].modified
+      await api.todos.create(newItem)
+
+      // Use awaitMatch utility for custom matching
+      await collection.utils.awaitMatch(
+        (message) => {
+          return isChangeMessage(message) &&
+                 message.headers.operation === 'insert' &&
+                 message.value.text === newItem.text
+        },
+        5000 // timeout in ms (optional, defaults to 15000)
+      )
+    }
+  })
+)
+```
+
+### 3. Using Simple Timeout
+
+For quick prototyping or when you're confident about timing, you can use a simple timeout. This is crude but works as almost always the data will be synced back in under 2 seconds:
+
+```typescript
+const todosCollection = createCollection(
+  electricCollectionOptions({
+    id: 'todos',
+    getKey: (item: { id: string }) => item.id,
+    shapeOptions: {
+      url: '/api/todos',
+      params: { table: 'todos' },
+    },
+
+    onInsert: async ({ transaction }) => {
+      const newItem = transaction.mutations[0].modified
+      await api.todos.create(newItem)
+
+      // Simple timeout approach
+      await new Promise(resolve => setTimeout(resolve, 2000))
+    }
+  })
+)
+```
+
+On the backend, you can extract the `txid` for a transaction by querying Postgres directly.
+
+```ts
+async function generateTxId(tx) {
+  // The ::xid cast strips off the epoch, giving you the raw 32-bit value
+  // that matches what PostgreSQL sends in logical replication streams
+  // (and then exposed through Electric which we'll match against
+  // in the client).
+  const result = await tx.execute(
+    sql`SELECT pg_current_xact_id()::xid::text as txid`
+  )
+  const txid = result.rows[0]?.txid
+
+  if (txid === undefined) {
+    throw new Error(`Failed to get transaction ID`)
+  }
+
+  return parseInt(txid as string, 10)
+}
+```
+
+### Electric Proxy Example
+
+Electric is typically deployed behind a proxy server that handles shape configuration, authentication and authorization. This provides better security and allows you to control what data users can access without exposing Electric to the client.
+
+
+Here is an example proxy implementation using TanStack Start:
+
+```typescript
+import { createServerFileRoute } from "@tanstack/react-start/server"
+import { ELECTRIC_PROTOCOL_QUERY_PARAMS } from "@electric-sql/client"
+
+// Electric URL
+const baseUrl = 'http://.../v1/shape'
+
+const serve = async ({ request }: { request: Request }) => {
+  // ...check user authorization  
+  const url = new URL(request.url)
+  const originUrl = new URL(baseUrl)
+
+  // passthrough parameters from electric client
+  url.searchParams.forEach((value, key) => {
+    if (ELECTRIC_PROTOCOL_QUERY_PARAMS.includes(key)) {
+      originUrl.searchParams.set(key, value)
+    }
+  })
+
+  // set shape parameters 
+  // full spec: https://github.com/electric-sql/electric/blob/main/website/electric-api.yaml
+  originUrl.searchParams.set("table", "todos")
+  // Where clause to filter rows in the table (optional).
+  // originUrl.searchParams.set("where", "completed = true")
+  
+  // Select the columns to sync (optional)
+  // originUrl.searchParams.set("columns", "id,text,completed")
+
+  const response = await fetch(originUrl)
+  const headers = new Headers(response.headers)
+  headers.delete("content-encoding")
+  headers.delete("content-length")
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
+
+export const ServerRoute = createServerFileRoute("/api/todos").methods({
+  GET: serve,
+})
+```
+
+## Optimistic Updates with Explicit Transactions
+
+For more advanced use cases, you can create custom actions that can do multiple mutations across collections transactionally. You can use the utility methods to wait for synchronization with different strategies:
+
+### Using Txid Strategy
+
+```typescript
+const addTodoAction = createOptimisticAction({
+  onMutate: ({ text }) => {
+    // optimistically insert with a temporary ID
+    const tempId = crypto.randomUUID()
+    todosCollection.insert({
+      id: tempId,
+      text,
+      completed: false,
+      created_at: new Date(),
+    })
+    
+    // ... mutate other collections
+  },
+  
+  mutationFn: async ({ text }) => {
+    const response = await api.todos.create({
+      data: { text, completed: false }
+    })
+    
+    // Wait for the specific txid
+    await todosCollection.utils.awaitTxId(response.txid)
+  }
+})
+```
+
+### Using Custom Match Function
+
+```typescript
+import { isChangeMessage } from '@tanstack/electric-db-collection'
+
+const addTodoAction = createOptimisticAction({
+  onMutate: ({ text }) => {
+    const tempId = crypto.randomUUID()
+    todosCollection.insert({
+      id: tempId,
+      text,
+      completed: false,
+      created_at: new Date(),
+    })
+  },
+  
+  mutationFn: async ({ text }) => {
+    await api.todos.create({
+      data: { text, completed: false }
+    })
+    
+    // Wait for matching message
+    await todosCollection.utils.awaitMatch(
+      (message) => {
+        return isChangeMessage(message) && 
+               message.headers.operation === 'insert' &&
+               message.value.text === text
+      }
+    )
+  }
+})
+```
+
+## Utility Methods
+
+The collection provides these utility methods via `collection.utils`:
+
+### `awaitTxId(txid, timeout?)`
+
+Wait for a specific transaction ID to be synchronized:
+
+```typescript
+// Wait for specific txid
+await todosCollection.utils.awaitTxId(12345)
+
+// With custom timeout (default is 15 seconds)
+await todosCollection.utils.awaitTxId(12345, 10000)
+```
+
+This is useful when you need to ensure a mutation has been synchronized before proceeding with other operations.
+
+For a collection wrapped with SQLite persistence, `awaitTxId` observes the
+transaction in the Electric stream. It can resolve before the local SQLite
+write completes. Do not use it as a local durability acknowledgment: if the
+page closes in that gap, reopening may need Electric to recover the row.
+
+### `awaitMatch(matchFn, timeout?)`
+
+Wait for a custom match function to find a matching message:
+
+```typescript
+import { isChangeMessage } from '@tanstack/electric-db-collection'
+
+// Wait for a specific message pattern
+await todosCollection.utils.awaitMatch(
+  (message) => {
+    return isChangeMessage(message) &&
+           message.headers.operation === 'insert' &&
+           message.value.text === 'New Todo'
+  },
+  5000 // timeout in ms
+)
+```
+
+### Cleanup and resume safety
+
+Pending `awaitTxId`/`awaitMatch` calls belong to one collection lifecycle.
+Explicit cleanup and automatic garbage collection reject pending waits with
+`StreamAbortedError`; callbacks from the retired stream cannot settle waits in
+a restarted collection. A txid the retired stream delivered still counts after
+a restart or reload, but only once the restarted collection is ready again,
+because its rows are read after that txid; until then `awaitTxId` waits. When
+the stream fails or gives up, pending waits reject with the failure, and a
+later `awaitTxId` or `awaitMatch` rejects unless its evidence was already
+seen. Observe these promises even when the component or collection may be
+disposed before they settle.
+
+An on-demand Collection with managed SQLite persistence can also replace its
+Electric provider session within the same Collection sync run when its cached
+resume evidence becomes invalid or its cache claim expires. This replacement
+rejects pending `awaitTxId` and `awaitMatch` waits with `StreamAbortedError`.
+A mutation handler waiting on one of them rejects; a later handler can wait for
+evidence from the replacement session. The replacement reloads demanded
+subsets and does not treat acknowledgements from the retired session as current.
+
+Before constructing a replacement `ShapeStream`, Electric releases the
+adapter-owned resources of the retired provider session, including its
+subscriptions and host lifecycle listeners. The replacement starts after cache
+rotation completes. An HTTP request that ignores cancellation may still finish
+later; its response cannot publish rows or settle waits for the replacement
+session.
+
+Persisted resumes wait for the cached row baseline to finish hydrating. If the
+persistence wrapper cannot verify hydration completion, Electric starts a fresh
+snapshot instead of using the saved offset and handle. It warns once per options
+descriptor; update the persistence adapter alongside Electric to enable safe resume.
+Fresh eager snapshots wait for hydration, then replace the cached rows at the
+snapshot's commit boundary. Rows omitted from that snapshot do not survive in
+the collection or its persisted cache, even when the fresh snapshot is empty.
+
+Tag membership is kept in memory, not restored from cached row headers. A cold
+restart cannot use a saved cursor that needs tags or comes from an older version
+that did not record whether tags were used. A changed shape, malformed saved
+state, or incomplete key-set evidence also invalidates the saved cursor.
+Untagged shapes with complete resume evidence can still resume from their saved
+offset.
+
+An eager persisted resume also needs compatible source progress when its adapter
+supplies that capability. Missing or incompatible progress requires a fresh
+snapshot, even with an explicit offset or handle. Those options do not certify
+the cached rows.
+An interrupted eager recovery keeps its durable reset marker. The next start
+also requires a fresh snapshot, even with an explicit offset or handle.
+
+Eager and progressive recovery fetch a full snapshot. Cached rows remain visible
+until that replacement completes; a partial batch or subset completion cannot
+publish it early. An on-demand collection with the current SQLite persistence
+wrapper instead retires the persisted cache generation and clears the source
+Collection's uncertified rows. A run with a valid claim can continue using the
+retired generation; new runs claim an empty generation. That local clear does
+not mark the Collection ready. Electric source evidence supplies readiness. It
+starts a changes-only stream at the current position and
+requests snapshots for active subset demands. Each demand completes after its
+snapshot rows apply, including an empty snapshot. Later demands cannot rehydrate
+old cache rows without a fresh source snapshot. With no active demand, recovery
+does not read all cached rows or download the full shape. The durable reset marker
+remains until a complete baseline can justify a global resume cursor. A cache
+generation created after claim expiry can lack that marker; its incompatible
+key-set evidence also requires scoped recovery on the next cold start, even
+when the caller supplies an explicit Electric offset or handle. Those source
+cursor options do not certify cached rows. A wrapper
+without scoped recovery support continues to use full-shape recovery. An
+interrupted recovery keeps the reset marker for the next start.
+Until a complete baseline is certified, each later cold start repeats scoped
+recovery. Uncertified cached rows from earlier starts are not shown offline.
+Retired new-format storage is reclaimed by the next cache-claim collection
+operation after its claims release or expire; clock passage alone does not
+run SQLite work. A paused run whose claim expires must reload its demanded
+subsets from the source when it resumes. Pre-upgrade on-demand storage is
+isolated but needs a separate cross-version cleanup policy while older tabs
+may still use it. Scoped recovery
+does not certify the new generation for offline reuse.
+
+With `initialRender: { strategy: 'network-first' }`, an on-demand or
+progressive Collection can render a demand offline from SQLite after that exact
+demand settled online in an earlier session. Each demand keeps its own
+coverage in the current persisted cache generation. Scoped recovery, cache-claim
+expiry, and a must-refetch end it, so after any of them a demand waits for the
+network again. A demand that loads during the rest of a scoped-recovery sync
+run records no coverage. See [On-demand Collections offline](../guides/sqlite-persistence.md#on-demand-collections-offline).
+
+During scoped recovery, coordinator notifications about SQLite changes do not
+hydrate, truncate, or replace public source rows. The Electric change stream
+and demanded source snapshots own those rows until the sync run ends. A change
+made in another tab may therefore become public when Electric delivers it,
+rather than when its durable-cache notification arrives. Outside scoped
+recovery, coordinator invalidation retains its normal behavior.
+
+An eager or progressive resume cannot apply a partial update to an unknown row.
+The adapter rejects that batch, stops the stream, and records a reset so the
+next sync starts from a full snapshot. Before the Collection is ready, this
+fails the first load (`status: 'error'`); after it, the rows stay and the
+source node shows an `error` in `collection.health` and in each live query's
+`health` tree. This does not silently retry the failed stream;
+`collection.reload()` refetches.
+
+While the Electric stream retries a failed request, the Collection stays
+`loading` before its first up-to-date. After it, a short outage leaves the
+health tree unchanged, so a blip does not flap it. Once five requests to the
+shape log in a row have failed, whether the client retried them or your
+`onError` returned a retry, the source node shows the outage as its
+`failureReason`, with the error of the fifth attempt; the next applied
+up-to-date clears it. Any response the client accepts, such as a
+`must-refetch`, starts the count again. With the default backoff, five failed
+attempts take from under a second to about 15 seconds, because each retry
+waits a random part of a doubling delay. A source that keeps failing five
+times and then succeeding once shows and clears the outage each time. A
+subset snapshot request that the client retries does not count: its failure
+belongs to the live query that requested it. While the stream catches up on
+a log that spans several responses, such as after a `must-refetch`, the
+client also prefetches the next responses, and each failed prefetch attempt
+counts too, so the outage can show sooner than five rounds of retries. When the stream gives up, it
+calls `fail()` with the error, or with the error your `onError` threw: a
+failed first load before readiness, or the source node's `error` after it. A give-up while a persistence wrapper is
+still accepting the first snapshot fails the Collection once that acceptance
+makes it ready. Aborting `shapeOptions.signal` stops the stream for
+good: before readiness the first load fails, and after it the source node
+shows an `error`, because the Collection no longer syncs, whether or not the
+abort was deliberate. Complete updates from an explicit `replica: 'full'` stream remain valid.
+On-demand streams can observe updates outside their loaded subsets; unknown
+partial rows are ignored, while transaction acknowledgement evidence is retained.
+Outside scoped recovery, complete rows published by persistence reloads or
+another tab are valid baselines for subsequent partial updates. Uncertified
+cached rows in scoped recovery are not. Pending deletions and resets still take
+precedence over an older row that remains publicly visible.
+
+Reusing Electric collection options, including a spread of those options, does
+not share transaction waiters or tag visibility between collections. Tag state
+survives a compatible resume of the same collection and clears on a fresh
+snapshot or `must-refetch`.
+
+### Helper Functions
+
+The package exports helper functions for use in custom match functions:
+
+- `isChangeMessage(message)`: Check if a message is a data change (insert/update/delete)
+- `isControlMessage(message)`: Check if a message is a control message (up-to-date, must-refetch)
+
+```typescript
+import { isChangeMessage, isControlMessage } from '@tanstack/electric-db-collection'
+
+// Use in custom match functions
+const matchFn = (message) => {
+  if (isChangeMessage(message)) {
+    return message.headers.operation === 'insert'
+  }
+  return false
+}
+```
+
+## Debugging
+
+### Common Issue: awaitTxId Stalls or Times Out
+
+A frequent issue developers encounter is that `awaitTxId` (or the transaction's `when('settled')`) stalls indefinitely, eventually timing out with no error messages. The data persists correctly to the database, but the optimistic mutation never resolves.
+
+**Root Cause:** This happens when the transaction ID (txid) returned from your API doesn't match the actual transaction ID of the mutation in Postgres. This mismatch occurs when you query `pg_current_xact_id()` **outside** the same transaction that performs the mutation.
+
+### Enable Debug Logging
+
+To diagnose txid issues, enable debug logging in your browser console:
+
+```javascript
+localStorage.debug = 'ts/db:electric'
+```
+
+This will show you when mutations start waiting for txids and when txids arrive from Electric's sync stream.
+
+This is powered by the [debug](https://www.npmjs.com/package/debug) package.
+
+**When txids DON'T match (common bug):**
+```
+ts/db:electric awaitTxId called with txid 124
+ts/db:electric new txids synced from pg [123]
+// Stalls forever - 124 never arrives!
+```
+
+In this example, the mutation happened in transaction 123, but you queried `pg_current_xact_id()` in a separate transaction (124) that ran after the mutation. The client waits for 124 which will never arrive.
+
+**When txids DO match (correct):**
+```
+ts/db:electric awaitTxId called with txid 123
+ts/db:electric new txids synced from pg [123]
+ts/db:electric awaitTxId found match for txid 123
+// Resolves immediately!
+```
+
+### The Solution: Query txid Inside the Transaction
+
+You **must** call `pg_current_xact_id()` inside the same transaction as your mutation:
+
+**❌ Wrong - txid queried outside transaction:**
+```typescript
+// DON'T DO THIS
+async function createTodo(data) {
+  const txid = await generateTxId(sql) // Wrong: separate transaction
+
+  await sql.begin(async (tx) => {
+    await tx`INSERT INTO todos ${tx(data)}`
+  })
+
+  return { txid } // This txid won't match!
+}
+```
+
+**✅ Correct - txid queried inside transaction:**
+```typescript
+// DO THIS
+async function createTodo(data) {
+  let txid!: Txid
+
+  const result = await sql.begin(async (tx) => {
+    // Call generateTxId INSIDE the transaction
+    txid = await generateTxId(tx)
+
+    const [todo] = await tx`
+      INSERT INTO todos ${tx(data)}
+      RETURNING *
+    `
+    return todo
+  })
+
+  return { todo: result, txid } // txid matches the mutation
+}
+
+async function generateTxId(tx: any): Promise<Txid> {
+  const result = await tx`SELECT pg_current_xact_id()::xid::text as txid`
+  const txid = result[0]?.txid
+
+  if (txid === undefined) {
+    throw new Error(`Failed to get transaction ID`)
+  }
+
+  return parseInt(txid, 10)
+}
+```
+
+See working examples in:
+- `examples/react/todo/src/routes/api/todos.ts`
+- `examples/react/todo/src/api/server.ts`

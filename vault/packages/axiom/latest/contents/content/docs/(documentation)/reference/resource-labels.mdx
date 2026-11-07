@@ -1,0 +1,87 @@
+---
+title: 'Organize resources with labels'
+description: 'Create organization-wide labels, assign them to Axiom resources, and filter resource lists.'
+sidebarTitle: 'Labels'
+keywords: ['axiom', 'resource labels', 'labels', 'datasets', 'dashboards', 'monitors', 'notifiers', 'organization']
+---
+
+Resource labels help you organize related resources in an Axiom organization. For example, you can use labels such as `production`, `payments`, or `team-platform` to group resources by environment, service, or owner.
+
+You can assign labels to the following resources:
+
+- Datasets
+- Saved and integration dashboards
+- Monitors
+- Notifiers
+
+Labels are organization-wide definitions. Renaming a label or changing its color updates it everywhere it's assigned. Deleting a label removes the label from every assigned resource without deleting the resources.
+
+<Note>
+Label assignments are explicit. Assigning a label to a dataset doesn't assign it to dashboards, monitors, or notifiers that use the dataset.
+</Note>
+
+## Create label
+
+To create a label for your organization:
+
+1. Click **Settings > Labels**.
+1. Click **Create label**.
+1. Enter a unique name of up to 128 characters.
+1. Optional: Enter a description of up to 512 characters.
+1. Select a color. The color helps distinguish labels visually and doesn't change how filtering works.
+1. Click **Create label**.
+
+You can also create a label while assigning labels to a resource. In the label panel, enter the new label name, choose a color, and click **Create new label**. A label created this way remains available to the organization even if you cancel the resource form.
+
+## Edit label
+
+To change the name, description, or color of a label:
+
+1. Click **Settings > Labels**.
+1. Find the label, and then click **Edit label**.
+1. Make your changes.
+1. Click **Save changes**.
+
+## Delete label
+
+<Warning>
+Deleting a label removes it from all assigned resources. You can't undo this action.
+</Warning>
+
+To delete a label:
+
+1. Click **Settings > Labels**.
+1. Find the label, and then click **Delete label**.
+1. Click **Delete label** to confirm.
+
+## Assign labels to a resource
+
+To change the labels assigned to an existing resource:
+
+1. Open **Datasets**, **Dashboards**, **Monitors**, or **Notifiers**.
+1. Open the resource's context menu. For example, right-click the resource row.
+1. Select **Labels**.
+1. Select labels to assign them, or clear selected labels to remove them. Changes save immediately.
+
+The label panel lists assigned labels first. Use its search field to find labels by name. Click **Manage labels** to open **Settings > Labels** in a new tab.
+
+When you create or edit a dataset, dashboard, or monitor, you can also change its labels in the form. These changes take effect when you save the resource. If you duplicate, fork, or clone a supported resource, Axiom copies its label assignments to the new resource. Later changes to either resource's assignments are independent.
+
+## Filter resources by label
+
+The **Datasets**, **Dashboards**, **Monitors**, and **Notifiers** pages have a **Labels** section in the left sidebar.
+
+Select a label to show resources assigned that label. If you select several labels, Axiom shows only resources assigned all of them. The number next to each label counts resources that also match the page's other active filters.
+
+Selected labels move to the top of the section. Click **Clear** to remove all label filters. Your selection is stored in the page URL, so reloading or sharing the URL preserves the filter.
+
+## Label permissions
+
+Label definitions and label assignments use separate permissions:
+
+- The **Labels** capability controls whether you can read, create, update, or delete organization-wide label definitions.
+- The update capability for a resource controls whether you can change that resource's label assignments. For example, assigning labels to a monitor requires **Monitors: Update**.
+
+You can't change label assignments on a reserved dataset, a dataset shared from another organization, or a dataset you can't write to. If you can view a resource but can't update it, its labels remain visible and the label assignment control isn't available.
+
+For more information, see [Role-Based Access Control](/reference/settings#assign-capabilities-to-roles).

@@ -1,14 +1,14 @@
 ---
-title: Connect an Elixir application to Neon Postgres
+title: Connect an Elixir application to Lakebase Postgres
 subtitle: Learn how to run SQL queries in Neon from Elixir using Postgrex
 summary: >-
-  Postgrex-based guide for connecting an Elixir app to a Neon serverless
+  Postgrex-based guide for connecting an Elixir app to a Lakebase serverless
   Postgres database using raw SQL over SSL, covering project setup with mix,
   credential configuration in config.exs, and CRUD operations. Use this page
   when you want direct Postgrex access without an ORM; for Ecto-based
   integration see the Elixir Ecto guide.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
 
 <CopyPrompt src="/prompts/elixir-prompt.md" 
@@ -16,7 +16,7 @@ description="Pre-built prompt for connecting Elixir applications to Neon"/>
 
 This guide describes how to create a Neon project and connect to it from an Elixir application using [Postgrex](https://hex.pm/packages/postgrex), a high-performance, concurrent, and robust PostgreSQL driver for Elixir.
 
-You'll learn how to connect to your Neon database from an Elixir application, and perform basic Create, Read, Update, and Delete (CRUD) operations.
+You'll learn how to connect to your database from an Elixir application, and perform basic Create, Read, Update, and Delete (CRUD) operations.
 
 ## Prerequisites
 
@@ -68,8 +68,8 @@ For your Elixir project, create a project directory using `mix` and add the requ
 
 You'll configure your application to connect to Neon using the `config/config.exs` file. This method securely separates your credentials from your source code.
 
-1.  In the [Neon Console](https://console.neon.tech), select your project on the **Dashboard**.
-2.  Click **Connect** on your **Project Dashboard** to open the **Connect to your database** modal.
+1.  In the [Neon Console](https://console.neon.tech), open your project.
+2.  Click **Connect** in the Console nav to open the **Connect to your branch** modal.
 3.  Select the **Parameters only** tab to view the connection string parameters.
     ![Connection modal](/docs/connect/connection_details_parameters_only.png)
 4.  Copy the connection string parameters (user, password, host, and database name).
@@ -365,6 +365,11 @@ While this guide demonstrates how to connect to Neon using raw SQL queries, for 
 Explore the following resources to learn how to integrate ORMs with Neon:
 
 - [Connect an Elixir Ecto application to Neon](/docs/guides/elixir-ecto)
+
+## Next steps: Neon backend services
+
+- [Add Object Storage](/docs/storage/overview): S3-compatible file storage that branches with your database
+- [Call an LLM with AI Gateway](/docs/ai-gateway/overview): Access foundation models from Anthropic, OpenAI, Google, and more with one credential
 
 ## Resources
 

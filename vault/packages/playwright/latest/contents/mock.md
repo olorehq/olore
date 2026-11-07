@@ -76,12 +76,12 @@ await page.RouteAsync("*/**/api/v1/fruits", async route => {
 await page.GotoAsync("https://demo.playwright.dev/api-mocking");
 
 // Assert that the Strawberry fruit is visible
-await Expect(page.GetByTextAsync("Strawberry")).ToBeVisibleAsync();
+await Expect(page.GetByText("Strawberry")).ToBeVisibleAsync();
 ```
 
 ```java
 // Intercept the route to the fruit API
-page.route("https://fruit.ceo/api/breeds/image/random", route -> {
+page.route("*/**/api/v1/fruits", route -> {
     List<Dictionary<String, Object>> data = new ArrayList<Dictionary<String, Object>>();
     Hashtable<String, Object> dict = new Hashtable<String, Object>();
     dict.put("name", "Strawberry");
@@ -188,7 +188,7 @@ await page.RouteAsync("*/**/api/v1/fruits", async (route) => {
 await page.GotoAsync("https://demo.playwright.dev/api-mocking");
 
 // Assert that the Loquat fruit is visible
-await Expect(page.GetByTextAsync("Loquat", new () { Exact = true })).ToBeVisibleAsync();
+await Expect(page.GetByText("Loquat", new () { Exact = true })).ToBeVisibleAsync();
 ```
 
 ```java

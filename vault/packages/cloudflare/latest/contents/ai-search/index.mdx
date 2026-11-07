@@ -14,6 +14,7 @@ products:
   - ai-search
 ---
 
+import AiSearchOverviewDiagram from "~/components/AiSearchOverviewDiagram.astro";
 import {
 	CardGrid,
 	Description,
@@ -32,11 +33,13 @@ import {
 
 AI Search lets you add search to any application or agent without having to build an entire retrieval infrastructure. Create an instance, give it your data, and search it with natural language.
 
+<AiSearchOverviewDiagram />
+
 You can use AI Search for:
 
 - Documentation and knowledge base search
-- AI agent tool use and memory
-- Per-tenant or per-agent file search
+- AI agents that perform research over your internal knowledge
+- Let each tenant or agent upload and search their own files
 
 <div>
 	<LinkButton href="/ai-search/get-started/">Get started</LinkButton>
@@ -50,10 +53,6 @@ You can use AI Search for:
 	</LinkButton>
 </div>
 
-:::note[Latest update]
-New AI Search instances created after April 16, 2026 include [managed storage](/ai-search/configuration/data-source/built-in-storage/), vector index, and web crawling. [View limits and pricing](/ai-search/platform/limits-pricing/).
-:::
-
 ---
 
 ## Features
@@ -64,7 +63,7 @@ Automatically and continuously index your data source, keeping your content fres
 
 </Feature>
 
-<Feature header="Metadata filtering" href="/ai-search/configuration/indexing/metadata/" cta="Add filters">
+<Feature header="Metadata filtering" href="/ai-search/configuration/retrieval/filtering/" cta="Add filters">
 
 Define custom metadata fields and filter search results by category, version, language, or any attribute you define.
 
@@ -72,7 +71,19 @@ Define custom metadata fields and filter search results by category, version, la
 
 <Feature header="Hybrid search" href="/ai-search/configuration/indexing/hybrid-search/" cta="Configure hybrid search">
 
-Combine semantic and keyword matching in the same query for more accurate results.
+Combine semantic and keyword matching in the same query. Hybrid search is on by default.
+
+</Feature>
+
+<Feature header="Image search" href="/ai-search/configuration/models/supported-models/" cta="View embedding models">
+
+Use a multimodal embedding model to search with images and find relevant image content.
+
+</Feature>
+
+<Feature header="Optical character recognition" href="/ai-search/configuration/data-source/#images-and-optical-character-recognition" cta="Configure indexing">
+
+Use optical character recognition (OCR) to extract searchable text from scanned PDFs and images.
 
 </Feature>
 

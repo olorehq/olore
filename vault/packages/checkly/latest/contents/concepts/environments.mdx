@@ -1,109 +1,235 @@
 ---
-title: 'Environments in Checkly'
-description: 'Learn about the environments of Checkly'
+title: 'Monitor multiple environments'
+description: 'Choose how to test and continuously monitor development, staging, and production environments with Checkly.'
 sidebarTitle: 'Environments'
+canonical: 'https://www.checklyhq.com/docs/concepts/environments/'
 ---
 
-**Environments** in Checkly represent the different stages and contexts where your applications run—from development and staging to production and beyond. Using the CLI, you can run your commands from your CI/CD pipeline and target different environments like staging and production.
+Checkly does not create a separate Environment resource. Instead, you combine CLI projects, environment variables, and your CI/CD pipeline to target each application environment.
 
-Think of **Environments** as the different places your application lives throughout its lifecycle. Each **Environment** represents a distinct deployment context with its own domain, configurations, database connections, and operational characteristics. Checkly's approach to environments ensures that your monitoring strategy adapts seamlessly as your code moves from development through to production.
+Use a separate Checkly CLI project for every long-lived environment that you want to monitor continuously. Use `checkly test` without deploying a project when you only need to validate an ephemeral environment, such as a pull request preview.
 
-The power of Checkly lies in consistency with flexibility—you can define the same monitoring logic once and apply it across multiple **Environments**, while still allowing for environment-specific customizations like different URLS, assertions, authentication credentials, or performance thresholds.
+## Choose an approach
 
-## In Practice
-For instance, we can infer the hostname by setting the ENVIRONMENT_URL to determine the staging or production hostname. This approach allows you to write monitoring code that automatically adapts to different environments without requiring separate configurations for each deployment stage.
+| What you want to do | Recommended approach |
+|---|---|
+| Test an ephemeral preview deployment | Run `checkly test` with temporary environment variables. Do not deploy it as a scheduled monitor. |
+| Continuously monitor the same checks in development, staging, and production | Deploy the same check code as a separate CLI project for each environment. Give every project a unique, stable `logicalId`. |
+| Continuously monitor different checks in each environment | Use a separate project for each environment and select shared and environment-specific check files in the project configuration. |
 
-You test your checks locally, or inside your CI/CD pipeline to make sure they run reliably against your staging and production environments. You deploy your checks to Checkly, so we can run them around the clock as monitors and alert you when things break.
+<Note>
+  A Checkly CLI project is a deployment boundary, not the same thing as a Git branch or application environment. Your pipeline decides which branch deploys which project.
+</Note>
 
-## Configuration Management Across Environments
-<Note>Checkly supports **environment variables** to manage configuration differences between environments. You can define environment variables in the Checkly dashboard and reference them in your test scripts.</Note>
+## Test an ephemeral environment
 
-Environment management in Checkly integrates with modern development practices. This is very powerful when combined with passing environment variables using one of the flags --env or --env-file as you can target staging, test and preview environment with specific URLs, credentials and other common variables that differ between environments. 
+Pass runtime values to `checkly test` with `--env` (`-e`) or `--env-file`. The values apply only to that test session and do not update your scheduled monitors.
 
-You can maintain separate configuration files for different environments, allowing the same monitoring code to behave appropriately whether it's testing your local development setup, validating a staging deployment, or monitoring production services.
-
-## Real-World Environment Examples
-Here's how you might structure monitoring across environments:
-
-
-### Development Environment Example:
-
-```typescript
-// checkly.dev.config.ts
-import { defineConfig } from 'checkly'
-
-export default defineConfig({
-  projectName: 'My App - Development',
-  checks: {
-    frequency: Frequency.EVERY_1M, // More frequent testing in dev
-    locations: ['us-east-1'], // Single location for dev
-    activated: true,
-  },
-  cli: {
-    runLocation: 'us-east-1'
-  }
-})
+```bash Terminal
+npx checkly test \
+  --env ENVIRONMENT_URL="https://preview-123.example.com" \
+  --env API_TOKEN="$PREVIEW_API_TOKEN"
 ```
 
-### Production Environment Example:
+This approach works well for pull request previews and other short-lived deployments. See [CI/CD](/integrations/ci-cd/overview) for the recommended test-before-deploy workflow.
 
-```typescript
-// checkly.prod.config.ts
-import { defineConfig } from 'checkly'
+## Continuously monitor multiple environments
 
-export default defineConfig({
-  projectName: 'My App - Production',
-  checks: {
-    frequency: Frequency.EVERY_5M, // Less frequent in production
-    locations: ['us-east-1', 'eu-west-1', 'ap-south-1'], // Global coverage
-    activated: true,
-  },
-  cli: {
-    runLocation: 'us-east-1'
-  }
-})
-```
+The following example deploys one shared API check to development, staging, and production. Each deployment has:
 
-### Using Environment Variables in Checks:
+- A unique project identity and separate deployment history
+- The same project-scoped check and group logical IDs
+- Its own URL and secret API token
+- Its own schedule, locations, and tags
 
-```typescript
-import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
+<Accordion title="Prerequisites">
+  - A Checkly account and a Checkly CLI project
+  - `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID` configured in your CI provider
+  - A persistent deployment URL and credentials for each environment
+  - A CI branch or deployment event that identifies the target environment
+</Accordion>
 
-new ApiCheck('api-health-check', {
-  name: 'API Health Check',
-  request: {
-    method: 'GET',
-    // Uses different URLs based on environment
-    url: process.env.ENVIRONMENT_URL || 'https://api.example.com',
-    headers: {
-      'Authorization': `Bearer ${process.env.API_TOKEN}`
-    },
-    assertions: [
-      AssertionBuilder.statusCode().equals(200),
-      // Different response time expectations per environment
-      AssertionBuilder.responseTime().lessThan(
-        process.env.NODE_ENV === 'production' ? 500 : 2000
+<Steps>
+  <Step title="Define a stable project identity for each environment">
+    Read the target environment from your CI pipeline and map it to a unique project `logicalId`.
+
+    ```typescript checkly.config.ts
+    import { defineConfig, type Region } from "checkly"
+    import { Frequency } from "checkly/constructs"
+
+    type Environment = "development" | "staging" | "production"
+
+    const environments: Record<Environment, {
+      projectName: string
+      logicalId: string
+      frequency: Frequency
+      locations: (keyof Region)[]
+    }> = {
+      development: {
+        projectName: "My app - Development",
+        logicalId: "my-app-development",
+        frequency: Frequency.EVERY_30M,
+        locations: ["us-east-1"],
+      },
+      staging: {
+        projectName: "My app - Staging",
+        logicalId: "my-app-staging",
+        frequency: Frequency.EVERY_10M,
+        locations: ["us-east-1"],
+      },
+      production: {
+        projectName: "My app - Production",
+        logicalId: "my-app-production",
+        frequency: Frequency.EVERY_5M,
+        locations: ["us-east-1", "eu-west-1"],
+      },
+    }
+
+    const environment = process.env.CHECKLY_ENVIRONMENT as Environment | undefined
+
+    if (!environment || !environments[environment]) {
+      throw new Error(
+        "Set CHECKLY_ENVIRONMENT to development, staging, or production"
       )
-    ]
-  }
+    }
+
+    const target = environments[environment]
+
+    export default defineConfig({
+      projectName: target.projectName,
+      logicalId: target.logicalId,
+      checks: {
+        activated: true,
+        checkMatch: "**/__checks__/**/*.check.ts",
+        frequency: target.frequency,
+        locations: target.locations,
+        tags: [environment],
+      },
+    })
+    ```
+
+    Keep each project `logicalId` stable. Changing it creates a different project instead of updating the existing environment's monitors.
+  </Step>
+
+  <Step title="Store environment-specific runtime values with the checks">
+    Define values on a check or group when scheduled runs need them. In this example, the CLI reads the values from CI while deploying and stores them on the environment's check group.
+
+    ```typescript __checks__/api.check.ts
+    import {
+      ApiCheck,
+      AssertionBuilder,
+      CheckGroupV2,
+    } from "checkly/constructs"
+
+    const environment = process.env.CHECKLY_ENVIRONMENT
+    const environmentUrl = process.env.ENVIRONMENT_URL
+    const apiToken = process.env.API_TOKEN
+
+    if (!environment || !environmentUrl || !apiToken) {
+      throw new Error(
+        "Set CHECKLY_ENVIRONMENT, ENVIRONMENT_URL, and API_TOKEN"
+      )
+    }
+
+    const environmentGroup = new CheckGroupV2("application", {
+      name: `My app - ${environment}`,
+      tags: [environment],
+      environmentVariables: [
+        { key: "ENVIRONMENT_URL", value: environmentUrl },
+        { key: "API_TOKEN", value: apiToken, secret: true },
+      ],
+    })
+
+    new ApiCheck("api-health", {
+      name: `API health - ${environment}`,
+      group: environmentGroup,
+      request: {
+        method: "GET",
+        url: "{{{ENVIRONMENT_URL}}}/health",
+        headers: [
+          { key: "Authorization", value: "Bearer {{{API_TOKEN}}}" },
+        ],
+        assertions: [AssertionBuilder.statusCode().equals(200)],
+      },
+    })
+    ```
+
+    The `application` and `api-health` logical IDs can stay the same because resource logical IDs are scoped to their CLI project. Setting `secret: true` prevents Checkly from exposing the token after it is saved.
+  </Step>
+
+  <Step title="Deploy the project that matches the application environment">
+    Map each persistent application environment to one Checkly project in your pipeline. Run the matching command after that environment's application deployment succeeds.
+
+    | Application branch | `CHECKLY_ENVIRONMENT` | Checkly project `logicalId` |
+    |---|---|---|
+    | `develop` | `development` | `my-app-development` |
+    | `staging` | `staging` | `my-app-staging` |
+    | `main` | `production` | `my-app-production` |
+
+    For example, the staging deployment job would run:
+
+    ```bash Terminal
+    CHECKLY_ENVIRONMENT=staging \
+    ENVIRONMENT_URL="https://staging-api.example.com" \
+    API_TOKEN="$STAGING_API_TOKEN" \
+    npx checkly deploy
+    ```
+
+    The production job uses the same source files but supplies production values:
+
+    ```bash Terminal
+    CHECKLY_ENVIRONMENT=production \
+    ENVIRONMENT_URL="https://api.example.com" \
+    API_TOKEN="$PRODUCTION_API_TOKEN" \
+    npx checkly deploy
+    ```
+
+    Review the deployment changes before confirming them. After you have verified the mapping, a non-interactive CI job can use `--force` to skip the confirmation prompt.
+  </Step>
+</Steps>
+
+<Warning>
+  A deploy reconciles only the project selected by its `logicalId`, but resources removed from that project are deleted by default. Run [`checkly deploy --preview`](/cli/checkly-deploy#command-options) when changing branch mappings or environment-specific check selection.
+</Warning>
+
+## Run different checks in each environment
+
+When an environment needs additional or different checks, keep shared checks in one directory and select the environment-specific directory from your configuration:
+
+{/* typecheck-wrap */}
+```typescript checkly.config.ts
+const sharedChecks = "**/__checks__/shared/**/*.check.ts"
+const environmentChecks = `**/__checks__/${environment}/**/*.check.ts`
+
+export default defineConfig({
+  projectName: target.projectName,
+  logicalId: target.logicalId,
+  checks: {
+    checkMatch: [sharedChecks, environmentChecks],
+    frequency: target.frequency,
+    locations: target.locations,
+    tags: [environment],
+  },
 })
 ```
-### Running Against Different Environments:
 
-```bash
-# Test against staging
-ENVIRONMENT_URL=https://staging-api.example.com \
-API_TOKEN=staging_token_123 \
-npx checkly test --config checkly.staging.config.ts
+For example, `__checks__/shared/` can contain health and login checks, while `__checks__/production/` contains production-only purchase checks. Each environment remains authoritative for its own deployed project.
 
-# Deploy to production monitoring
-ENVIRONMENT_URL=https://api.example.com \
-API_TOKEN=prod_token_456 \
-npx checkly deploy --config checkly.prod.config.ts
-```
+## Understand environment variable behavior
 
+| Variable source | Available when | Persists for scheduled monitoring |
+|---|---|---|
+| Shell or CI environment | The CLI parses your config and constructs | Only when the value is written into a deployed construct, such as a group environment variable |
+| `checkly test --env` or `--env-file` | That test session runs in Checkly | No |
+| Check- or group-level variable | A deployed check runs | Yes, for that check or group |
+| Global variable | Any check in the account runs | Yes, account-wide |
 
-## Environments in the Development Lifecycle
-Automate regional monitoring setups, ensuring every environment, from staging to production, is monitored uniformly. Create a check group | Checkly Public API This ensures that the monitoring you develop and test in lower environments translates directly to production monitoring, reducing the gap between what you test and what you monitor.
+Prefer check- or group-level variables when the same key needs a different value in each environment. A global `ENVIRONMENT_URL`, for example, can hold only one account-wide value and is therefore not a good fit for separate development, staging, and production targets.
 
-The Environment concept enables a true "shift-left" approach to monitoring, where monitoring considerations become part of the development process rather than an afterthought. You can validate that your monitoring works correctly before your application reaches production, ensuring comprehensive coverage from day one of any deployment.
+Use [secrets](/platform/secrets) for credentials, tokens, and other sensitive values. For more detail about build-time and runtime values, see [CLI environment variables](/cli/environment-variables) and [environment variables and secrets](/platform/variables).
+
+## Playwright Check Suites
+
+For Playwright Check Suites, keep URLs and credentials in runtime environment variables and read them from `process.env` in your Playwright configuration or fixtures. The project-per-environment model remains the same.
+
+See [Turn your Playwright tests into monitors](/guides/playwright-testing-to-monitoring#step-1-pick-the-tests-that-become-monitors) for switching `baseURL` between local and Checkly runs, and the [built-in environment variables](/detect/synthetic-monitoring/playwright-checks/environment-variables) for finer control.

@@ -1,0 +1,68 @@
+---
+id: ChangeListener
+title: ChangeListener
+---
+
+```ts
+type ChangeListener<T, TKey> = (changes) => void;
+```
+
+Defined in: [packages/db/src/types.ts:1367](https://github.com/TanStack/db/blob/main/packages/db/src/types.ts#L1367)
+
+Function type for listening to collection changes
+Changes to the same key retain their causal order within a callback.
+Changes to different keys have no promised order within a callback.
+
+## Type Parameters
+
+### T
+
+`T` *extends* `object` = `Record`\<`string`, `unknown`\>
+
+### TKey
+
+`TKey` *extends* `string` \| `number` = `string` \| `number`
+
+## Parameters
+
+### changes
+
+[`ChangeMessage`](../interfaces/ChangeMessage.md)\<[`WithVirtualProps`](WithVirtualProps.md)\<`T`, `TKey`\>, `TKey`\>[]
+
+Array of change messages describing what happened
+
+## Returns
+
+`void`
+
+## Examples
+
+```ts
+// Basic change listener
+const listener: ChangeListener = (changes) => {
+  changes.forEach(change => {
+    console.log(`${change.type}: ${change.key}`, change.value)
+  })
+}
+
+collection.subscribeChanges(listener)
+```
+
+```ts
+// Handle different change types
+const listener: ChangeListener<Todo> = (changes) => {
+  for (const change of changes) {
+    switch (change.type) {
+      case 'insert':
+        addToUI(change.value)
+        break
+      case 'update':
+        updateInUI(change.key, change.value, change.previousValue)
+        break
+      case 'delete':
+        removeFromUI(change.key)
+        break
+    }
+  }
+}
+```

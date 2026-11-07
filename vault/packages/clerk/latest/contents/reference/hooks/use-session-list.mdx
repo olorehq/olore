@@ -1,7 +1,7 @@
 ---
-title: useSessionList()
+title: '`useSessionList()`'
 description: Access and manage the current user's session list in your React application with Clerk's useSessionList() hook.
-sdk: chrome-extension, expo, nextjs, react, react-router, tanstack-react-start
+sdk: chrome-extension, electron, expo, nextjs, react, react-router, tanstack-react-start
 ---
 
 The `useSessionList()` hook returns an array of [`Session`](/docs/reference/objects/session) objects that have been registered on the client device.
@@ -17,6 +17,25 @@ The following example uses `useSessionList()` to get a list of sessions that hav
 <If sdk="react">
   ```tsx {{ filename: 'src/pages/Home.tsx' }}
   import { useSessionList } from '@clerk/react'
+
+  export default function Home() {
+    const { isLoaded, sessions } = useSessionList()
+
+    // Handle loading state
+    if (!isLoaded) return <div>Loading...</div>
+
+    return (
+      <div>
+        <p>Welcome back. You've been here {sessions.length} times before.</p>
+      </div>
+    )
+  }
+  ```
+</If>
+
+<If sdk="electron">
+  ```tsx {{ filename: 'src/App.tsx' }}
+  import { useSessionList } from '@clerk/electron/react'
 
   export default function Home() {
     const { isLoaded, sessions } = useSessionList()
@@ -93,7 +112,7 @@ The following example uses `useSessionList()` to get a list of sessions that hav
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/index.tsx' }}
+  ```tsx {{ filename: 'src/routes/index.tsx' }}
   import { useSessionList } from '@clerk/tanstack-react-start'
   import { createFileRoute } from '@tanstack/react-router'
 
@@ -125,7 +144,12 @@ The following example uses `useSessionList()` to get a list of sessions that hav
     const { isLoaded, sessions } = useSessionList()
 
     // Handle loading state
-    if (!isLoaded) return <View>Loading...</View>
+    if (!isLoaded)
+      return (
+        <View>
+          <Text>Loading...</Text>
+        </View>
+      )
 
     return (
       <View>

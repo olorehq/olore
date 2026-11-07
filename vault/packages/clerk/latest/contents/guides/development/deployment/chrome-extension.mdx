@@ -5,7 +5,7 @@ sdk: chrome-extension
 ---
 
 > [!WARNING]
-> This guide assumes you are using the Plasmo framework. If you need help applying these concepts to another framework, [contact support](https://clerk.com/contact/support).
+> This guide assumes you are using the Plasmo framework. If you need help applying these concepts to another framework, [contact support](/contact/support).
 
 ## Create a production instance
 
@@ -22,7 +22,7 @@ For Clerk production instances, there must be a domain associated with the insta
 <SignedOut>
   1. At the top of the Clerk Dashboard, in the instance selection dropdown, ensure that your production instance is selected.
   1. In the navigation sidenav, select [**API keys**](https://dashboard.clerk.com/~/api-keys).
-  1. In the **Quick Copy** section, select **Chrome Extension** and copy your Clerk Publishable and Frontend API keys.
+  1. In the **Quick copy** section, select **Chrome Extension** and copy your Clerk Publishable and Frontend API keys.
   1. Paste your keys into your `.env.production` file.
   1. If you are using [the Sync Host feature](/docs/guides/sessions/sync-host), you will also need to set the `PLASMO_PUBLIC_CLERK_SYNC_HOST` environment variable. The value should be the domain your web app's production server runs on. For example, `https://clerk.com`.
 
@@ -67,9 +67,7 @@ The following example shows how to configure `host_permissions` for production:
 </SignedIn>
 
 <SignedOut>
-  1. At the top of the Clerk Dashboard, in the instance selection dropdown, ensure that your production instance is selected.
-  1. In the navigation sidenav, select [**API keys**](https://dashboard.clerk.com/~/api-keys).
-  1. Copy your [Secret Key](!secret-key). It should begin with `sk_live_`.
+  1. Copy your production [Secret Key](!secret-key). It should begin with `sk_live_`. If you don't have a copy, at the top of the Clerk Dashboard, select your production instance, then add a new one on the [**API keys**](https://dashboard.clerk.com/~/api-keys) page. That page only shows it once.
   1. In your terminal, paste the following command. Replace `YOUR_SECRET_KEY` with your Clerk Secret Key and the `<CHROME_EXTENSION_KEY>` with your extension's ID.
 
   The final result should resemble the following:

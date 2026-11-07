@@ -22,10 +22,14 @@ For most B2B and multi-tenant applications, requiring Organization membership is
 
 To enable Organizations:
 
-1. In the Clerk Dashboard, navigate to the [**Organizations Settings**](https://dashboard.clerk.com/~/organizations-settings) page.
+1. In the Clerk Dashboard, navigate to the [**Organization settings**](https://dashboard.clerk.com/~/organizations-settings) page.
 1. Select **Enable Organizations**.
-1. In the modal, choose between **Membership required** or **Membership optional** based on your decision above.
+1. In the modal, select **Membership required** or **Membership optional** based on your decision above.
 1. Select **Enable**.
+
+<If is="llm">
+  **For AI agents:** Instead of enabling Organizations in the Dashboard, run `npx clerk@latest enable orgs` — its flags cover this page's settings: `--force-selection` (force Organization selection on login, i.e. membership required), `--auto-create` (create first organization automatically; also requires `organization_creation_defaults.enabled` to be true — inspect with `npx clerk@latest config pull --keys organization_settings` and, if disabled, enable it with `npx clerk@latest config patch --json '{"organization_settings":{"organization_creation_defaults":{"enabled":true}}}'`), `--max-members <n>` (default membership limit), and `--domains` (Verified Domains); add `--dry-run` to preview the change. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
 
 Clerk measures Organizations by Monthly Retained Organizations (MROs). Refer to the [overview page](/docs/guides/organizations/overview#how-do-organizations-work) for pricing details and limits.
 
@@ -41,8 +45,8 @@ Each Organization allows a maximum of 5 members by default. You can increase thi
 
 To change the membership limit for all Organizations in your application:
 
-1. In the Clerk Dashboard, navigate to the [**Organizations Settings**](https://dashboard.clerk.com/~/organizations-settings) page.
-1. In the **Default membership limit** section, update the membership limit.
+1. In the Clerk Dashboard, navigate to the [**Organization settings**](https://dashboard.clerk.com/~/organizations-settings) page.
+1. In the **Membership limit** section, update the membership limit.
    - **Without B2B Authentication add-on**: Allows a maximum of 20 members in an Organization
    - **With B2B Authentication add-on**: Allows unlimited members in an Organization
 
@@ -75,8 +79,8 @@ Most B2B and multi-tenant applications should leave Personal Accounts disabled. 
 
 **Changing this setting:**
 
-1. In the Clerk Dashboard, navigate to the [**Organizations Settings**](https://dashboard.clerk.com/~/organizations-settings) page.
-1. Choose **Membership optional**.
+1. In the Clerk Dashboard, navigate to the [**Organization settings**](https://dashboard.clerk.com/~/organizations-settings) page.
+1. Select **Membership optional**.
 
 ### Verified Domains
 
@@ -99,7 +103,7 @@ Clerk can automatically create the user's first Organization. This is useful if 
 
 This setting is disabled by default. To enable it:
 
-1. In the Clerk Dashboard, navigate to the [**Organizations Settings**](https://dashboard.clerk.com/~/organizations-settings) page.
+1. In the Clerk Dashboard, navigate to the [**Organization settings**](https://dashboard.clerk.com/~/organizations-settings) page.
 1. Toggle **Create first organization automatically**.
 
 ### Default naming rules
@@ -119,13 +123,18 @@ Rules are applied in this order:
 
 This setting is disabled by default. To enable it:
 
-1. In the Clerk Dashboard, navigate to the [**Organizations Settings**](https://dashboard.clerk.com/~/organizations-settings) page.
+1. In the Clerk Dashboard, navigate to the [**Organization settings**](https://dashboard.clerk.com/~/organizations-settings) page.
 1. Toggle **Default naming rules**.
 1. Under **Default naming rules**, you can disable email domain detection or member personalization rules individually. This will skip those rules when suggesting an Organization name.
 
 ### Allow user-created Organizations
 
 By default, users can create Organizations in your application. You can restrict this if you prefer to manually provision Organizations.
+
+To disable user-created Organizations:
+
+1. In the Clerk Dashboard, navigate to the [**Organization settings**](https://dashboard.clerk.com/~/organizations-settings) page.
+1. Toggle off **Allow user-created organizations**.
 
 You can also override this Permission for specific users in their profile page under **User permissions**.
 
@@ -139,12 +148,12 @@ When user-created Organizations are enabled, each user can create up to 100 Orga
 
 To change the default limit:
 
-1. In the Clerk Dashboard, navigate to the [**Organizations Settings**](https://dashboard.clerk.com/~/organizations-settings) page.
-1. In the **Organization limit** section, choose between:
-   - **Users can create unlimited organizations**
-   - **Users can create a limited number of organizations** (specify the limit)
+1. In the Clerk Dashboard, navigate to the [**Organization settings**](https://dashboard.clerk.com/~/organizations-settings) page.
+1. In the **Organization limit** section, select one of the following:
+   - **Unlimited organizations**
+   - **Custom limit** (specify the limit)
 
-If you need users to create more than 100 Organizations, [contact support](https://clerk.com/contact/support){{ target: '_blank' }} to have the limit raised.
+If you need users to create more than 100 Organizations, [contact support](/contact/support) to have the limit raised.
 
 To override this limit for a specific user:
 
@@ -169,8 +178,8 @@ This Role is used:
 To change the default Role:
 
 1. In the Clerk Dashboard, navigate to the [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles) page.
-1. Select the three dots next to the Role you want to set as default.
-1. Choose **Set as Default role**.
+1. Open the three-dot menu next to the Role you want to set as default.
+1. Select **Set as default role**.
 
 Learn more about [Roles and Permissions](/docs/guides/organizations/control-access/roles-and-permissions).
 
@@ -194,11 +203,13 @@ By default, any member with the [`org:sys_profile:delete` System Permission](/do
 
 To change this setting:
 
-1. In the Clerk Dashboard, navigate to the [**Organizations Settings**](https://dashboard.clerk.com/~/organizations-settings) page.
-1. Toggle **Allow new members to delete organizations**.
+1. In the Clerk Dashboard, navigate to the [**Organization settings**](https://dashboard.clerk.com/~/organizations-settings) page.
+1. Under **Allow user-created organizations**, toggle **Allow new members to delete organizations**.
 
 > [!IMPORTANT]
 > This setting only applies to newly created Organizations. Existing Organizations retain their current deletion settings.
+>
+> The **Allow new members to delete organizations** toggle only appears when **Allow user-created organizations** is enabled. If it's disabled, enable it to change this setting. Your change is kept if you disable it again afterward.
 
 ## Next steps
 

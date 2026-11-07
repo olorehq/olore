@@ -1,22 +1,27 @@
 ---
 title: 'Agent Configuration'
+description: "Configure the Checkly Agent for a private location with environment variables for API keys, proxies, job concurrency, log level, dependency caching, and health probes."
+canonical: 'https://www.checklyhq.com/docs/platform/private-locations/agent-configuration/'
 ---
 
-The Checkly Agent is a container that you need to deploy to run a Private Location in Checkly. The agent needs to be deployed on your infrastructure and executes checks on behalf of the Checkly application. For installation details, [check the getting started guide](/platform/private-locations/overview).
+The Checkly Agent is a container that you need to deploy to run a private location in Checkly. The agent needs to be deployed on your infrastructure and executes checks on behalf of the Checkly application. For installation details, [check the getting started guide](/platform/private-locations/overview).
 
 The Checkly Agent has several environment variables that can be configured:
 
 Variable|Description
 ---|---
-`API_KEY`|API key for the Private Location in which the agent will serve. The API key is shown in the web app once, when initially creating a Private Location.
+`API_KEY`|API key for the private location in which the agent will serve. The API key is shown in the web app once, when initially creating a private location.
 `HTTPS_PROXY`|HTTPS proxy configuration for the outbound connection to the Checkly API, used for agent management and monitoring. `https://user:password@127.0.0.1:8080`
 `HTTP_PROXY`|HTTP proxy configuration for the outbound connection to the Checkly API, used for agent management and monitoring. Used if the proxy server does not accept HTTPS connections. `http://user:password@127.0.0.1:8080`
-`JOB_CONCURRENCY`|(Default: 1, max: 10) Number of concurrent checks that are run by the agent.
-`LOG_LEVEL`|(Default: `INFO`) Set the log level of the agent. Can be one of `DEBUG`, `LOG`, `INFO`, `WARN` or `ERROR`.
-`USE_OS_DNS_RESOLVER`|When set to true, TCP monitors will resolve DNS using `getaddrinfo` C function, instead of using the network. This enables easier DNS resolution for internal services e.g. services running in the same Kubernetes cluster.
-`DEPENDENCY_CACHE`|(Default: `OFF`) Set to `CHECKLY_S3` to enable dependency caching for [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview). Caches installed dependencies between runs to speed up check execution. Learn more about [dependency caching](/detect/synthetic-monitoring/playwright-checks/custom-dependencies#dependency-caching).
-`AGENT_HEALTH_PORT`|(Default: `8081`) Port for the HTTP [health probe endpoints](#health-probe-endpoints).
+`JOB_CONCURRENCY`|(Default: 1, recommended: up to 10) Number of concurrent Browser, Multistep and Playwright checks that are run by the agent. Not used by the [uptime image](/platform/private-locations/agent-images#uptime-image).
+`AGENT_WORKER_COUNT`|(Default: 10, max: 50) Number of concurrent API checks and uptime monitors (URL, TCP, DNS, ICMP) that are run by the agent. Applies to agent v7.0.0 and later. Values above 50 are capped to 50.
+`LOG_LEVEL`|(Default: `INFO`) Set the log level of the agent. Can be one of `DEBUG`, `INFO`, `WARN` or `ERROR`.
+`DEPENDENCY_CACHE`|(Default: `OFF`) Set to `CHECKLY_S3` to enable dependency caching for [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview). Caches installed dependencies between runs to speed up check execution. Learn more about [dependency caching](/detect/synthetic-monitoring/playwright-checks/dependencies#dependency-caching).
+`AGENT_SERVER_PORT`|(Default: `8080`) Port for the HTTP [health probe endpoints](#health-probe-endpoints) and the [Prometheus metrics endpoint](/platform/private-locations/agent-metrics). Applies to agent v8.12.0 and later. Earlier agents use `AGENT_HEALTH_PORT` (default `8081`) for health probes.
+`AGENT_METRICS_PER_CHECK`|(Default: `false`) Set to `true` to expose [check-level metrics](/platform/private-locations/agent-metrics#check-level-metrics) with `check_id`, `name`, `check_type` and `tags` labels. Each check adds its own set of series, so metric cardinality grows with the number of checks the agent runs. Applies to agent v8.13.0 and later.
+`AGENT_METRICS_IDLE_TTL_SECONDS`|(Default: `3600`) Time after which the agent drops the check-level series of a check that has no schedule, such as a test session, when it recorded no result. Scheduled checks expire after three missed runs of their own frequency. Lower the value if you run many test sessions or CI triggers on the agent, so their series do not pile up in memory and in your scrape. Raise it if you want a test session's last result to stay visible for longer, for example to alert on it.
 `EXTERNAL_OBSERVABILITY`| Enabled by default. Set to `off` to disable [external observability](#external-observability) reporting of agent runtime errors to Checkly.
+`CHECKLY_RUN_FILE_MAX_BYTES`|(Default and maximum: 2147483647 bytes, just under 2 GiB) Largest file, in bytes, that the agent reads from a Browser or Multistep check run and uploads, such as the Playwright report. A larger file is left out of the check result, not truncated. For the Playwright report, the check log says `Report omitted because it is larger than <limit> MiB`. A value that is not a positive integer is ignored with a warning in the agent log, and the limit is then 14 MiB. Applies to agent v8.12.0 and later.
 
 For example, you can add these variables to the standard docker run command like this:
 
@@ -26,10 +31,10 @@ docker run -e API_KEY="pl_...." -d checkly/agent:latest
 
 Here are some more usage examples:
 
-1. Set the `JOB_CONCURRENCY` to the appropriate value (1-10) based on your scaling calculations:
+1. Set the `JOB_CONCURRENCY` (recommended: 1-10) and `AGENT_WORKER_COUNT` (1-50) to the appropriate values based on your [scaling calculations](/platform/private-locations/scaling-redundancy):
 
 ```bash Terminal
--e JOB_CONCURRENCY=10
+-e JOB_CONCURRENCY=4 -e AGENT_WORKER_COUNT=20
 ```
 
 2. Configure an HTTPS or HTTP proxy if one is required for your environment:
@@ -112,16 +117,16 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtow
 
 ## Rotating API keys
 
-API keys can be rotated as necessary in order to maintain good security practices or in case a key is lost or compromised. A Private Location can have two active API keys. To rotate the API keys:
+API keys can be rotated as necessary in order to maintain good security practices or in case a key is lost or compromised. A private location can have two active API keys. To rotate the API keys:
 
-1. Navigate to Private Locations in your Account Settings.
-2. Click the edit icon on the Private Location you want to update.
-3. There will only be a single API key in place on a new Private Location. Click Add new API key to add the second key.
+1. Click **Private locations** in the left sidebar (under **Configuration**) to open the [Private locations page](https://app.checklyhq.com/accounts/private-locations).
+2. Click the edit icon on the private location you want to update.
+3. There will only be a single API key in place on a new private location. Click Add new API key to add the second key.
 4. The new API key will appear. Click the copy icon to copy it to your clipboard and save it somewhere secure.
 
    ![new key](/images/docs/images/private-locations/new_key.png)
 
-5. Click Save to close the dialog. You can now see the trailing characters of the two defined API keys in the list of Private Locations.
+5. Click Save to close the dialog. You can now see the trailing characters of the two defined API keys in the list of private locations.
 
    ![two keys](/images/docs/images/private-locations/two_keys.png)
 
@@ -131,7 +136,7 @@ API keys can be rotated as necessary in order to maintain good security practice
 docker run -e API_KEY="pl_...." -d checkly/agent:latest
 ```
 
-7. Make sure the new agents are running properly. You can check the agent count on the Private Locations page, or check your container logs. Remove the old agent containers:
+7. Make sure the new agents are running properly. You can check the agent count on the Private locations page, or check your container logs. Remove the old agent containers:
 
 ```bash Terminal
 docker stop <old container name or ID>
@@ -139,29 +144,36 @@ docker stop <old container name or ID>
 
 If you lose track of which agent containers are using the old API key, you can use the `docker inspect <container name or ID>` command and look for the `API_KEY` variable in the output.
 
-8. Now that your new agents are in place, remove the old API key. Click the edit icon in the Private Location again.
+8. Now that your new agents are in place, remove the old API key. Click the edit icon in the private location again.
 9. Click the delete icon next to the old API key (verified by the shown trailing characters) then click the confirmation.
-10. Click Save to close the dialog. You will now only see the new API key listed for the Private Location.
+10. Click Save to close the dialog. You will now only see the new API key listed for the private location.
 
 ## Trusting Enterprise TLS Certificates
 
 Some enterprise environments may use internal certificates for TLS connections. These certificates need to be trusted by the agent; otherwise, the agent's TLS connection to the Checkly platform will fail.
 
-To configure the agent to trust the certificate, first copy the certificate as a PEM file onto the host. The Docker run command should then be updated to mount the certificate as a volume and pass the path to the certificate in the `NODE_EXTRA_CA_CERTS` environment variable. For a certificate stored at the path `~/certificate.pem`, the Docker run command will be:
+The agent container runs two processes that each make outbound TLS connections to Checkly: the main agent process and a Node.js worker. Each uses its own trust store, so you typically need to configure both.
+
+First, add your Certificate Authority's (CA) root certificate to the system's CA store. On Debian, and related Linux distributions, you can do this by copying your `*.crt` certificate to `/usr/local/share/ca-certificates/` and running `sudo update-ca-certificates`. This is required for the main agent process.
+
+Then, configure the Node.js worker to trust the certificate. Copy the certificate as a PEM file onto the host, then update the Docker run command to mount the certificate as a volume and pass the path to the certificate in the `NODE_EXTRA_CA_CERTS` environment variable. For a certificate stored at the path `~/certificate.pem`, the Docker run command will be:
 
 ```bash Terminal
 docker run -v ~/certificate.pem:/checkly/certificate.pem -e NODE_EXTRA_CA_CERTS=/checkly/certificate.pem -e API_KEY="pl_...." -d checkly/agent:latest
 ```
 
+Alternatively, you can tell the Node.js worker to accept unauthorized certificates with the environment variable `NODE_TLS_REJECT_UNAUTHORIZED=0`. This can be appended to your `docker run ..` command with the `-e` flag.
+
 ## Health Probe Endpoints
 
-The Checkly Agent exposes HTTP health probe endpoints on port `8081` by default. You can change this port using the `AGENT_HEALTH_PORT` environment variable.
+The Checkly Agent exposes HTTP health probe endpoints and Prometheus metrics on port `8080` by default. You can change this port using the `AGENT_SERVER_PORT` environment variable. Agents before v8.12.0 serve health probes on port `8081` (set with `AGENT_HEALTH_PORT`) and metrics on port `8082`.
 
 Endpoint|Description
 ---|---
-`GET /-/readiness`|Returns `200 OK` when the agent is ready to accept work. Returns `503 Service Unavailable` during shutdown.
+`GET /-/readiness`|Returns `200 OK` when the agent is ready to accept work.
 `GET /-/liveness`|Returns `200 OK` to indicate the agent process is running.
 `GET /health`|Returns `200 OK` as a general health check.
+`GET /metrics`|[Prometheus metrics](/platform/private-locations/agent-metrics) for every check type the agent runs. Use the `component` label to separate uptime from synthetics metrics.
 
 These endpoints are useful for configuring [Kubernetes readiness and liveness probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) or any other container orchestration health checks.
 
@@ -201,13 +213,6 @@ Each Checkly Agent only supports specific [runtimes](/platform/runtimes/overview
 As each agent version only supports specific runtimes, we recommend pinning agent versions used in production.
 
 ## Troubleshooting
-
-<Accordion title="Self-signed proxy certificate not trusted">
-If you're using a self-signed certificate for your proxy, the Agent's HTTP client will not trust it by default. There are two ways to fix this.
-
-1. Add your Certificate Authority's (CA) root certificate to the system's CA store. On Debian, and related Linux distributions, you can do this by copying your `*.crt` certificate to `/usr/local/share/ca-certificates/` and running `sudo update-ca-certificates`.
-2. Alternatively, you can tell the node process in the Agent's container to accept unauthorized certificates with the following environment variable, `NODE_TLS_REJECT_UNAUTHORIZED=0`. This can be appended to your `docker run ..` command with the `-e` flag.
-</Accordion>
 
 <Accordion title="Raw socket permission denied for Traceroute or Packet Capture on private locations">
 Container runtimes drop `NET_RAW` by default. Traceroute and Packet Capture need raw sockets, so the Checkly Agent needs this capability explicitly granted.

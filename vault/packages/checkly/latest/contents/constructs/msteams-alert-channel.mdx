@@ -2,6 +2,7 @@
 title: 'MSTeamsAlertChannel Construct'
 description: 'Learn how to configure Microsoft Teams alert channels with the Checkly CLI.'
 sidebarTitle: 'Microsoft Teams'
+canonical: 'https://www.checklyhq.com/docs/constructs/msteams-alert-channel/'
 ---
 
 import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
@@ -160,7 +161,7 @@ const msTeamsAlertChannel = new MSTeamsAlertChannel('msteams-channel-01', {
 
 ## Configuration
 
-### Microsoft Teams Alert Channel Options
+### Microsoft Teams alert channel options
 
 <ResponseField name="url" type="string" required>
 The target URL created by [creating a Workflow in Microsoft Teams](/integrations/alerts/msteams).
@@ -177,6 +178,7 @@ We have [handlebar helpers and variables](/integrations/alerts/webhooks/#using-v
 
 Here's an example payload, using the default one that we provide:
 
+{/* typecheck-wrap: MSTeamsAlertChannel */}
 ```ts highlight={4-120} expandable
 new MSTeamsAlertChannel('msteams-channel-01', {
   name: 'ACME alerts',
@@ -302,6 +304,6 @@ new MSTeamsAlertChannel('msteams-channel-01', {
 ```
 </ResponseField>
 
-### General Alert Channel Options
+### General alert channel options
 
 <AlertChannelOptionsText />

@@ -10,12 +10,12 @@ React Native Skia offers an API to perform text layouts using the Skia Paragraph
 ## Hello World
 
 In the example below, we create a simple paragraph based on custom fonts.
-The emojis will be renderer using the emoji font available on the platform.
+The emojis will be rendered using the emoji font available on the platform.
 Other system fonts are available as well.
 
 ```tsx twoslash
 import { useMemo } from "react";
-import { Paragraph, Skia, useFonts, TextAlign, Canvas } from "@shopify/react-native-skia";
+import { Paragraph, Skia, useFonts, TextAlign, Canvas } from "react-native-skia";
 
 const MyParagraph = () => {
   const customFontMgr = useFonts({
@@ -63,7 +63,7 @@ Below is the result on Android (left) and iOS (right).
 On Web, you will need to provide you own emoji font ([NotoColorEmoji](https://fonts.google.com/noto/specimen/Noto+Color+Emoji) for instance) and add it to the list of font families.
 
 ```tsx twoslash
-import { useFonts, Skia } from "@shopify/react-native-skia";
+import { useFonts, Skia } from "react-native-skia";
 
 const customFontMgr = useFonts({
   Roboto: [
@@ -94,7 +94,7 @@ Below we use a foreground and a background paint on a text style:
 
 ```tsx twoslash
 import { useMemo } from "react";
-import { Paragraph, Skia, useFonts, Canvas, Rect, TileMode } from "@shopify/react-native-skia";
+import { Paragraph, Skia, useFonts, Canvas, Rect, TileMode } from "react-native-skia";
 
 // Our background shader
 const source = Skia.RuntimeEffect.Make(`
@@ -173,7 +173,7 @@ For instance, in the example below, we apply a blur image filter.
 
 ```tsx twoslash
 import React from "react";
-import { Canvas, Skia, Group, Paint, Blur, Paragraph } from "@shopify/react-native-skia";
+import { Canvas, Skia, Group, Paint, Blur, Paragraph } from "react-native-skia";
 
 const width = 256;
 const height = 256;
@@ -207,7 +207,7 @@ Before getting the paragraph height and width, you need to compute its layout us
 
 ```tsx twoslash
 import { useMemo } from "react";
-import { Paragraph, Skia, useFonts, Canvas, Rect } from "@shopify/react-native-skia";
+import { Paragraph, Skia, useFonts, Canvas, Rect } from "react-native-skia";
 
 const MyParagraph = () => {
   const paragraph = useMemo(() => {
@@ -236,6 +236,61 @@ const MyParagraph = () => {
 
 <img src={require("/static/img/paragraph/boundingbox-node.png").default} width="256" height="256" />
 
+### Glyph-Tight Bounds
+
+:::info
+
+`getPath()` and `extendedVisit()` are not available on Web.
+
+:::
+
+`getHeight()`, `getLineMetrics()`, and `getRectsForRange()` are all based on font metrics: they reserve the full ascent and descent of the fonts on each line, regardless of the glyphs actually present. For instance, `"Hello"` and `"Typography"` report the same height even though only the latter has descenders.
+
+<img src={require("/static/img/paragraph/metrics-bounds.png").default} width="384" />
+
+To measure the exact ink bounds of the rendered text (with font fallbacks already applied), convert a line into a path with `getPath(lineNumber)` and compute its tight bounds. Note that color glyphs (e.g. emojis) cannot be converted to a path and are skipped.
+
+```tsx twoslash
+import { Skia } from "react-native-skia";
+
+const paragraph = Skia.ParagraphBuilder.Make()
+  .addText("Hello")
+  .build();
+paragraph.layout(200);
+// The metrics-based height (reserves ascent + descent)
+const height = paragraph.getHeight();
+// The exact bounds of the glyphs on the first line
+const inkBounds = paragraph.getPath(0)!.computeTightBounds();
+```
+
+For full access to the computed layout, `extendedVisit(visitor)` invokes the visitor once for every run of glyphs with the resolved font (after fallback), glyph ids, positions and per-glyph tight ink bounds, and once with a `null` info to signal the end of each line.
+
+```tsx twoslash
+import { Skia } from "react-native-skia";
+
+const paragraph = Skia.ParagraphBuilder.Make()
+  .addText("Hello你好")
+  .build();
+paragraph.layout(200);
+paragraph.extendedVisit((lineNumber, info) => {
+  if (info === null) {
+    // End of the line
+    return;
+  }
+  // The index of the line this run belongs to
+  const line = lineNumber;
+  // The font resolved for this run (e.g. a fallback font for CJK glyphs)
+  const font = info.font;
+  // Per-glyph ids, positions and tight ink bounds.
+  // Positions are relative to the run origin: add info.origin to get
+  // paragraph coordinates (fallback runs carry their placement in origin).
+  const { glyphs, positions, bounds } = info;
+});
+```
+
+Below, the tight ink bounds of every glyph are drawn on top of the paragraph, including the CJK glyphs resolved via font fallback.
+
+<img src={require("/static/img/paragraph/glyph-tight-bounds.png").default} width="384" />
 
 ## Fonts
 
@@ -247,7 +302,7 @@ The font files should be organized by family names.
 For example:
 
 ```tsx twoslash
-import {useFonts} from "@shopify/react-native-skia";
+import {useFonts} from "react-native-skia";
 
 const fontMgr = useFonts({
   Roboto: [
@@ -286,7 +341,7 @@ Below is an example to center text with `textAlign` property:
 
 ```tsx twoslash
 import { useMemo } from "react";
-import { Paragraph, Skia, TextAlign, Canvas, Rect } from "@shopify/react-native-skia";
+import { Paragraph, Skia, TextAlign, Canvas, Rect } from "react-native-skia";
 
 const MyParagraph = () => {
   const paragraph = useMemo(() => {
@@ -325,8 +380,8 @@ These properties are used to style specific segments of text within a paragraph.
 | `fontStyle`           | Font style (weight, width, slant).                                                  |
 | `fontVariations`      | Font variations.                                                                    |
 | `foregroundColor`     | Foreground color (for effects like gradients).                                      |
-| `heightMultiplier`    | Multiplier for line height.                                                         |
-| `halfLeading`         | Controls half-leading value.                                                        |
+| `heightMultiplier`    | Line height as a multiple of the font size (see [Line Height](#line-height)).       |
+| `halfLeading`         | Distributes the extra line height evenly above and below the text.                  |
 | `letterSpacing`       | Space between characters.                                                           |
 | `locale`              | Locale for the text (affects things like sorting).                                  |
 | `shadows`             | List of text shadows.                                                               |
@@ -338,7 +393,7 @@ Below is an example using different font styling:
 
 ```tsx twoslash
 import { useMemo } from "react";
-import { Paragraph, Skia, useFonts, FontStyle } from "@shopify/react-native-skia";
+import { Paragraph, Skia, useFonts, FontStyle } from "react-native-skia";
 
 const MyParagraph = () => {
   const customFontMgr = useFonts({
@@ -382,3 +437,66 @@ const MyParagraph = () => {
 #### Result
 
 <img src={require("/static/img/paragraph/font-style-node.png").default} width="256" height="256" />
+
+## Line Height
+
+Skia has no absolute `lineHeight` property like CSS or React Native.
+Instead, the text style has a `heightMultiplier` property: the line height is exactly `heightMultiplier * fontSize` pixels.
+This means you can emulate `lineHeight` with the following formula:
+
+```tsx
+heightMultiplier = lineHeight / fontSize
+```
+
+For instance, `fontSize: 24` with `heightMultiplier: 40 / 24` produces lines that are exactly 40 pixels tall.
+When `heightMultiplier` is not set, the line height comes from the font metrics (ascent + descent), which is usually larger than the font size and differs from font to font.
+
+Since `heightMultiplier` is a text style property, it can also be used to normalize line heights when mixing fonts or font sizes: give each style a `heightMultiplier` of `lineHeight / fontSize` and every line will have the same height, regardless of the natural metrics of each font.
+
+```tsx twoslash
+import { useMemo } from "react";
+import { Paragraph, Skia, useFonts, Canvas } from "react-native-skia";
+
+const MyParagraph = () => {
+  const customFontMgr = useFonts({
+    Roboto: [require("path/to/Roboto-Regular.ttf")],
+    "Noto Sans SC": [require("path/to/NotoSansSC-Regular.otf")],
+  });
+
+  const paragraph = useMemo(() => {
+    if (!customFontMgr) {
+      return null;
+    }
+    // Every line will be exactly 40px tall, like lineHeight: 40 in CSS
+    const lineHeight = 40;
+    const paragraphBuilder = Skia.ParagraphBuilder.Make({}, customFontMgr);
+    paragraphBuilder
+      .pushStyle({
+        color: Skia.Color("black"),
+        fontFamilies: ["Roboto"],
+        fontSize: 24,
+        heightMultiplier: lineHeight / 24,
+      })
+      .addText("Hello\n")
+      .pop()
+      .pushStyle({
+        color: Skia.Color("black"),
+        fontFamilies: ["Noto Sans SC"],
+        fontSize: 16,
+        heightMultiplier: lineHeight / 16,
+      })
+      .addText("你好")
+      .pop();
+    return paragraphBuilder.build();
+  }, [customFontMgr]);
+
+  return (
+    <Canvas style={{ width: 256, height: 256 }}>
+      <Paragraph paragraph={paragraph} x={0} y={0} width={256} />
+    </Canvas>
+  );
+};
+```
+
+By default, the extra space added by `heightMultiplier` is distributed proportionally to the font's ascent and descent.
+Setting `halfLeading: true` splits the extra space evenly above and below the text instead (like CSS half-leading); the line height stays the same but the text sits higher within the line.

@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Text.Json;
+using AGUI.Client;
 using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.AGUI;
 using Microsoft.Extensions.AI;
 
 string serverUrl = Environment.GetEnvironmentVariable("AGUI_SERVER_URL") ?? "http://localhost:5100";
@@ -13,18 +13,13 @@ using HttpClient httpClient = new()
     Timeout = TimeSpan.FromSeconds(60)
 };
 
-AGUIChatClient chatClient = new(httpClient, serverUrl);
+AGUIChatClient chatClient = new(new(httpClient, serverUrl));
 
-// Create agent
-ChatClientAgent baseAgent = chatClient.AsAIAgent(
+// Create agent. No custom approval agent is required: the loop below handles the approval interrupt
+// directly, and AGUIChatClient transports the decision back to the server via the AG-UI resume mechanism.
+AIAgent agent = chatClient.AsAIAgent(
     name: "AGUIAssistant",
     instructions: "You are a helpful assistant.");
-
-// Use default JSON serializer options
-JsonSerializerOptions jsonSerializerOptions = JsonSerializerOptions.Default;
-
-// Wrap the agent with ServerFunctionApprovalClientAgent
-ServerFunctionApprovalClientAgent agent = new(baseAgent, jsonSerializerOptions);
 
 List<ChatMessage> messages = [];
 AgentSession? session = null;
@@ -44,7 +39,6 @@ while ((input = Console.ReadLine()) != null && !input.Equals("exit", StringCompa
     messages.Add(new ChatMessage(ChatRole.User, input));
     Console.WriteLine();
 
-#pragma warning disable MEAI001
     List<AIContent> approvalResponses = [];
 
     do
@@ -66,16 +60,10 @@ while ((input = Console.ReadLine()) != null && !input.Equals("exit", StringCompa
                         string? userInput = Console.ReadLine();
                         bool approved = userInput?.ToUpperInvariant() is "YES" or "Y";
 
-                        ToolApprovalResponseContent approvalResponse = approvalRequest.CreateResponse(approved);
-
-                        if (approvalRequest.AdditionalProperties != null)
-                        {
-                            approvalResponse.AdditionalProperties = [];
-                            foreach (var kvp in approvalRequest.AdditionalProperties)
-                            {
-                                approvalResponse.AdditionalProperties[kvp.Key] = kvp.Value;
-                            }
-                        }
+                        // When rejecting, tell the model not to retry the call.
+                        ToolApprovalResponseContent approvalResponse = approved
+                            ? approvalRequest.CreateResponse(approved: true)
+                            : approvalRequest.CreateResponse(approved: false, reason: "The user rejected this tool call. Do not retry it.");
 
                         approvalResponses.Add(approvalResponse);
                         break;
@@ -115,11 +103,10 @@ while ((input = Console.ReadLine()) != null && !input.Equals("exit", StringCompa
         messages.AddRange(response.Messages);
         foreach (AIContent approvalResponse in approvalResponses)
         {
-            messages.Add(new ChatMessage(ChatRole.Tool, [approvalResponse]));
+            messages.Add(new ChatMessage(ChatRole.User, [approvalResponse]));
         }
     }
     while (approvalResponses.Count > 0);
-#pragma warning restore MEAI001
 
     Console.WriteLine("\n");
     Console.ForegroundColor = ConsoleColor.White;
@@ -127,7 +114,6 @@ while ((input = Console.ReadLine()) != null && !input.Equals("exit", StringCompa
     Console.ResetColor();
 }
 
-#pragma warning disable MEAI001
 static void DisplayApprovalRequest(ToolApprovalRequestContent approvalRequest, FunctionCallContent fcc)
 {
     Console.ForegroundColor = ConsoleColor.Yellow;
@@ -149,4 +135,3 @@ static void DisplayApprovalRequest(ToolApprovalRequestContent approvalRequest, F
     Console.WriteLine("============================================================");
     Console.ResetColor();
 }
-#pragma warning restore MEAI001

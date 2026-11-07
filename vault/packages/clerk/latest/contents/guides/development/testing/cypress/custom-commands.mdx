@@ -16,11 +16,12 @@ export {}
 
 ### `cy.clerkSignIn`
 
-The `cy.clerkSignIn` command is used to sign in a user using Clerk. This custom command supports only the following [first factor](!first-factor-verification) strategies:
+The `cy.clerkSignIn` command is used to sign in a user using Clerk. This custom command supports only the following sign-in strategies:
 
 - Password
 - Phone code
 - Email code
+- Sign-in token (requires `@clerk/testing` 1.11.0 or later)
 
 [Multi-factor authentication](!second-factor-verification) is not supported.
 
@@ -37,21 +38,10 @@ The `cy.clerkSignIn` command is used to sign in a user using Clerk. This custom 
 `cy.clerkSignIn` accepts an object with the following properties:
 
 <Properties>
-  - `strategy`
-  - `'password' | 'phone_code' | 'email_code'`
-
-  The sign-in strategy. Supported strategies are:
-
-  - `password`: The command will sign in the user using the provided password and identifier.
-  - `phone_code`: You must have a user with a test phone number as an identifier (e.g., `+15555550100`).
-  - `email_code`: You must have a user with a test email as an identifier (e.g., `your_email+clerk_test@example.com`).
-
-  ---
-
   - `identifier`
   - `string`
 
-  The user's identifier. This could be a username, a phone number, or an email.
+  The user's identifier. This could be a username, a phone number, or an email. This is required unless the `strategy` is set to `'ticket'`.
 
   ---
 
@@ -59,6 +49,25 @@ The `cy.clerkSignIn` command is used to sign in a user using Clerk. This custom 
   - `string`
 
   The user's password. This is required only if the `strategy` is set to `'password'`.
+
+  ---
+
+  - `strategy`
+  - `'password' | 'phone_code' | 'email_code' | 'ticket'`
+
+  The sign-in strategy. Supported strategies are:
+
+  - `password`: The command will sign in the user using the provided password and identifier.
+  - `phone_code`: You must have a user with a test phone number as an identifier (e.g., `+15555550100`).
+  - `email_code`: You must have a user with a test email as an identifier (e.g., `your_email+clerk_test@example.com`).
+  - `ticket`: The command will sign in the user using the provided sign-in token.
+
+  ---
+
+  - `ticket`
+  - `string`
+
+  A [sign-in token](/docs/reference/backend/sign-in-tokens/create-sign-in-token). This is required only if the `strategy` is set to `'ticket'`.
 </Properties>
 
 #### Example
@@ -88,17 +97,17 @@ The `cy.clerkSignOut` command is used to sign out the current user using Clerk.
 `cy.clerkSignOut` accepts an optional parameter `signOutOptions`, which includes the following properties:
 
 <Properties>
-  - `sessionId?`
-  - `string`
-
-  The ID of a specific session to sign out of. Useful for multi-session applications.
-
-  ---
-
   - `redirectUrl?`
   - `string`
 
   The full URL or path to navigate to after sign-out is complete.
+
+  ---
+
+  - `sessionId?`
+  - `string`
+
+  The ID of a specific session to sign out of. Useful for multi-session applications.
 </Properties>
 
 #### Example

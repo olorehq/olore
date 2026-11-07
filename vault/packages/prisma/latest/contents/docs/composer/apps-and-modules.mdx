@@ -1,0 +1,183 @@
+---
+title: Apps and Modules
+description: How services, resources, and Modules compose into a Prisma App, and how provision() wires them together.
+url: /composer/apps-and-modules
+metaTitle: Apps and Modules | Prisma Composer
+metaDescription: Understand the Prisma App tree, how provision() wires services and resources together, and how to package a service and its database as a reusable Module.
+---
+
+A **Prisma App** is a tree of Modules composed in TypeScript. At the leaves are **services**, the units that run your code, and **resources**, stateful things like a Postgres database. A parent Module wires them together; your code never participates in the wiring, it only receives the results.
+
+For example, a store app might be one root module containing a `catalog` Module (an API service plus its own database), an `orders` Module, and a `storefront` Next.js service that calls both. Each piece declares what it needs, and the root wires the pieces together.
+
+This matters because the wiring is data the compiler can check. A dependency wired to the wrong producer, or a missing one, fails `tsc` and fails the deploy, instead of failing at runtime in production.
+
+## The service declaration
+
+A service declares everything about itself in one `compute()` call. It is pure data, with no behavior:
+
+```ts
+compute({
+  name: 'auth',                  // the service's name in the app graph
+  deps: { db: rawPostgres() },   // what it needs         -> read via service.load()
+  input: authInput,              // its incoming config   -> read via service.input()
+  build: node({ module: import.meta.url, entry: '../dist/server.mjs' }),
+  expose: { rpc: authContract }, // what it offers to other services
+});
+```
+
+Dependencies and input are two deliberately separate channels with two separate accessors. A dependency is a live connection to another node; input is data, plain values and credentials together, declared as one schema (see [Service input](/composer/service-input)). Your code contains no configuration reads and no URLs, which is what makes every environment (production, staging, a test) a different set of injected values and nothing more.
+
+## The root module
+
+The root module is the app. The Composer CLI loads its default export:
+
+```ts title="module.ts"
+import { module } from '@prisma/composer';
+import authModule from './src/auth/module.ts';
+import storefrontService from './src/storefront/service.ts';
+
+export default module('my-app', ({ provision }) => {
+  const auth = provision(authModule);
+  provision(storefrontService, { deps: { auth: auth.rpc } });
+});
+```
+
+`provision(node, opts?)` places a node in the graph and returns a ref carrying one port per exposed contract. Its options:
+
+- `id`: the node's name in the graph, defaulting to its own `name`. Set it explicitly when the default stutters; a service named `auth` inside a module named `auth` would read as `auth.auth`.
+- `deps`: a value for each declared dependency slot, either another provisioned ref or an exposed port.
+- `input`: the service's or Module's input binding, required exactly when the node declares an input schema. See [Service input](/composer/service-input) and [A Module's input](#a-modules-input).
+
+Two naming rules the platform enforces: provision names must be at least three characters (call a database `'database'`, not `'db'`; the wiring key on the service side can still be `db`), and ids must be unique within their module.
+
+## Reusable Modules
+
+When a service and its database belong together, package them as a **Module**: a unit that owns its internals and offers only typed ports. A consumer provisions the Module and wires its exposed contract; it never sees, and can never reach, the database inside.
+
+A Module declares its boundary (what it depends on, what it exposes, and the input it takes) in the second argument, wires its internals in the builder function, and returns the ports it promised. The builder function receives `provision`, the boundary's forwarded `deps`, the Module's `input`, and `environment`:
+
+```ts title="src/auth/module.ts"
+import { module } from '@prisma/composer';
+import { secretString } from '@prisma/composer/arktype';
+import { rawPostgres } from '@prisma/composer-prisma-cloud';
+import { type } from 'arktype';
+import { authContract } from './contract.ts';
+import authService from './service.ts';
+
+export default module(
+  'auth',
+  { input: type({ signingKey: secretString() }), expose: { rpc: authContract } },
+  ({ input, provision }) => {
+    const db = provision(rawPostgres({ name: 'database' }));
+    const service = provision(authService, {
+      id: 'service',
+      deps: { db },
+      input: { signingKey: input.signingKey },
+    });
+    return { rpc: service.rpc };
+  },
+);
+```
+
+The Module declares `signingKey` as a `secretString()` field of its input and passes it on to its service without learning the platform variable's name. The root binds it:
+
+```ts title="module.ts"
+const auth = provision(authModule, { input: { signingKey: envSecret('AUTH_SIGNING_SECRET') } });
+provision(storefrontService, { deps: { auth: auth.rpc } });
+```
+
+A Module can also declare boundary `deps`: dependencies its parent must supply, wired exactly like a service's. The builder function receives them as `deps`, ready to pass into a `provision()` call. The root module you already have is the outermost Module, with no boundary at all.
+
+## A Module's input
+
+A Module declares its configuration as one `input` schema, as a service does, and whoever provisions it binds `input`. The binding takes every source a service's binding takes: a literal, `envParam()`, `envSecret()`, `serviceOrigin()`, `generatedParam()`, or a value from `resolve()`.
+
+```ts title="src/email/module.ts"
+import { module, resolve } from '@prisma/composer';
+import { field, secretString } from '@prisma/composer/arktype';
+import { type } from 'arktype';
+import emailService from './service.ts';
+
+export default module(
+  'email',
+  { input: type({ from: 'string', deliveryCredential: secretString(), 'replyTo?': field(type('string')) }) },
+  ({ input, environment, provision }) => {
+    const sender = resolve([input.from, environment.name], ([from, name]) =>
+      name === 'production' ? from : `${name}+${from}`);
+    provision(emailService, {
+      id: 'service',
+      input: { from: sender, replyTo: input.replyTo, deliveryCredential: input.deliveryCredential },
+    });
+  },
+);
+```
+
+```ts title="module.ts"
+provision(emailModule, {
+  input: { from: 'shop@example.com', deliveryCredential: envSecret('EMAIL_DELIVERY_CREDENTIAL') },
+});
+```
+
+In an app whose root module is named `shop`, `npx prisma deploy --environment staging` gives `shop.email.service` the sender `staging+shop@example.com`, and production gets `shop@example.com`. These rules apply to the body:
+
+- **Each field of `input` is a placeholder that the deploy fills in, so the body cannot read it.** Pass a field on into a `provision()` binding, or list it in a `resolve()` to compute with it. Reading it directly, with a template literal, `String()`, arithmetic, `JSON.stringify`, or `Object.keys`, fails the deploy with a message naming the field.
+- **Pass fields on by name.** `input` itself is not a value, so `provision(child, { input })` fails to compile.
+- **The Module's structure cannot depend on its input.** `if (input.enabled)` is not caught: the field is an object, so the check always passes and the branch always runs. To provision something only sometimes, let the parent decide whether to provision it.
+- **An optional field the binding leaves out is a key left out.** Above, the service's input has no `replyTo` key.
+- **The schema checks the binding when the deploy loads the graph**, so a mistake fails before anything reaches the platform.
+
+### Wrap pass-through fields with `field()`
+
+A caller may bind a field to `serviceOrigin()`, the URL of another service in the app, or to `generatedParam()`, a value the platform generates. Their values exist only once the service starts, so a plain field refuses them. `field()`, from `@prisma/composer/arktype` or `@prisma/composer/zod`, wraps one field's schema so it accepts them too:
+
+```ts
+type({ from: field(type('string')) });  // ArkType
+z.object({ from: field(z.string()) });  // Zod
+```
+
+In a reusable Module, decide field by field:
+
+- A `secretString()` field: never wrap it. The service would fail when it starts.
+- A field that a `resolve()` in the body computes with: keep it plain. `resolve()` needs a value the deploy knows, so it cannot take `serviceOrigin()`.
+- Any other field that is not an object: wrap it, so callers can pass a literal, `envParam()`, or `serviceOrigin()`.
+
+In the example above, `from` stays plain because a `resolve()` computes with it, and `replyTo` is wrapped. With ArkType, put a default outside the wrapper: `field(type('string')).default('x')`.
+
+### Upgrading from `params` and `secrets`
+
+Before Composer 0.37, a Module declared `params` with `paramNeed()` and `secrets` with `secret()`, and the parent bound them with `provision(module, { params, secrets })`. Both are gone, and `module()` and `provision()` refuse them with an error naming `input`. Declare each one as a field of the Module's `input` schema, a secret as a `secretString()` field, and bind them all with `input`:
+
+```ts
+// before
+const relay = module('relay',
+  { params: { from: paramNeed() }, secrets: { key: secret() } },
+  ({ params, secrets, provision }) => {
+    provision(relayService, { input: { from: params.from, key: secrets.key } });
+  });
+provision(relay, { params: { from: envParam('FROM') }, secrets: { key: envSecret('KEY') } });
+
+// after
+import { field, secretString } from '@prisma/composer/arktype';
+
+const relay = module('relay',
+  { input: type({ from: field(type('string')), key: secretString() }) },
+  ({ input, provision }) => {
+    provision(relayService, { input: { from: input.from, key: input.key } });
+  });
+provision(relay, { input: { from: envParam('FROM'), key: envSecret('KEY') } });
+```
+
+`@prisma/composer/arktype` needs `arktype` installed in your app.
+
+## When to reach for a Module
+
+- **Compose before you write.** Ready-made Modules for scheduled jobs, blob storage, and event streams ship with the framework; wiring one in is a couple of lines. See [Building blocks](/composer/building-blocks).
+- **Package what belongs together.** A service that owns a database, or a pair of services that only make sense as a unit, is a Module.
+- **Keep the app graph readable.** The deploy prints the module tree with dotted addresses (`auth.service`), so the structure you author is the structure you operate.
+
+## Next steps
+
+- [Services and contracts](/composer/services-and-contracts): what happens on the wire between services.
+- [Service input](/composer/service-input): configuration and secrets as one schema.
+- [Building blocks](/composer/building-blocks): the Modules that ship with the framework.

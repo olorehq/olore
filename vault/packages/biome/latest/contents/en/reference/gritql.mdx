@@ -1,0 +1,263 @@
+---
+title: GritQL
+description: Basic usage of GritQL in Biome
+---
+
+GritQL is a query language for performing structural searches on source code.
+This means that trivia such as whitespace or even the type of quotes used in
+strings will be ignored in your search query. In addition, it offers many
+features that allow you to query syntax structure such as snippets, matching,
+nesting, and variables.
+
+GritQL is [open-source](https://github.com/getgrit/gritql/) and created by [Grit.io](https://grit.io/).
+
+## Supported Languages
+
+GritQL in Biome currently supports the following target languages:
+
+- **JavaScript/TypeScript**: `language js` (with optional flavors: `typescript`, `jsx`)
+- **CSS**: `language css`
+- **JSON**: `language json`
+
+Biome uses GritQL for two purposes:
+
+- The [Analyzer Plugins](/linter/plugins).
+- The [`biome search`](/reference/cli/#biome-search) command, which we hope to
+  extend to our IDE extensions as well.
+
+When GritQL is used in analyzer plugins, patterns can also include rewrites
+(`=>`) to provide fixable diagnostics. See [Linter Plugins](/linter/plugins)
+for details about safe vs unsafe fixes and `fix_kind`.
+
+## Patterns
+
+GritQL queries work through _patterns_. The most common pattern you will see is
+the code snippet, which looks like ordinary source code wrapped in backticks:
+
+```grit
+`console.log('Hello, world!')`
+```
+
+This pattern will match any call to `console.log()` that is passed the string
+`'Hello, world!'`. But because GritQL does _structural_ matching, it doesn't
+care about formatting details. This also matches:
+
+```js
+console.log (
+    'Hello, world!'
+)
+```
+
+And so does this (note the change in quotes):
+
+```js
+console.log("Hello, world!")
+```
+
+:::note
+Most shells interpret backticks as command invocations, which conflicts with
+GritQL's code snippets. So when using the `biome search` command, it's best to
+put _single quotes_ around your Grit queries:
+
+```shell
+biome search '`console.log($message)`' # find all `console.log` invocations
+```
+:::
+
+## Variables
+
+GritQL queries can also have _variables_. The following will match any call to
+`console.log()` regardless of the message passed:
+
+```grit
+`console.log($message)`
+```
+
+This will match any of the methods on the `console` object too:
+
+```grit
+`console.$method($message)`
+```
+
+The same variable name can occur multiple times in a single snippet:
+
+```grit
+`$fn && $fn()`
+```
+
+This will match `foo && foo()`, and even `foo.bar && foo.bar()`, but not
+`foo && bar()`.
+
+## Conditions
+
+You can add conditions to patterns by using the `where` operator. This is
+commonly used together with the _match operator_, `<:`:
+
+```grit
+`console.$method($message)` where {
+    $method <: `log`
+}
+```
+
+This query is identical to the `console.log($message)` pattern we saw earlier,
+but it gets quickly more interesting when add other operators in the mix:
+
+```grit
+`console.$method($message)` where {
+    $method <: or { `log`, `info`, `warn`, `error` }
+}
+```
+
+## Matching Source Ranges
+
+Use the `range()` pattern to filter syntax nodes by their position in the source
+file. For example, this query matches calls contained entirely on line 2:
+
+```grit
+range(start_line=2, end_line=2) as $call where {
+    $call <: call_expression()
+}
+```
+
+Given this source, it matches only `second()`:
+
+```js {2}
+first();
+second();
+third();
+```
+
+`range()` accepts four optional named arguments:
+
+| Argument | Constraint |
+| --- | --- |
+| `start_line` | The node must start on or after this line. |
+| `start_column` | If the node starts on `start_line`, it must start at or after this column. Requires `start_line`. |
+| `end_line` | The node must end on or before this line. |
+| `end_column` | If the node ends on `end_line`, its end position must be at or before this column. Requires `end_line`. |
+
+Arguments must be unsigned integer literals from `0` to `4294967295`.
+Source lines and columns start at **1**. Columns count Unicode scalar values,
+so `é` counts as one column, and a tab also counts as one column.
+
+Omitting `start_line` leaves the start unbounded; omitting `end_line` leaves the
+end unbounded. An omitted column imposes no column restriction on its boundary
+line. For example, `range(start_line=2)` matches nodes starting on line 2 or
+later, and `range(end_line=2)` matches nodes ending on line 2 or earlier.
+`range()` with no arguments matches any binding that has a source position.
+
+The entire node must fit within the range, including every line of a multiline
+node. Leading and trailing whitespace and comments attached to the node do not
+count toward its range. The node's end position is immediately after its last
+character, and it may equal the specified end bound.
+
+For example, add column limits to select one call from a line with multiple calls:
+
+```grit
+call_expression() as $call where {
+    $call <: range(start_line=2, start_column=3, end_line=2, end_column=11)
+}
+```
+
+```js {2}
+first();
+  second(); third();
+fourth(
+  fifth()
+);
+```
+
+This matches only `second()`, which starts at column 3 and ends at column 11,
+just after `)`. The semicolon is outside the call expression. Setting
+`end_column=10` would exclude the call because its end position exceeds the limit.
+Column limits apply only on their respective boundary lines.
+
+You can use `range()` as a condition in searches and plugin patterns, including
+patterns with rewrites. It filters existing syntax matches; it does not extract
+arbitrary source lines or make comments independently matchable.
+
+## Matching Biome Syntax Nodes
+
+For more precise queries, you can match against Biome's internal syntax nodes directly. Each node is identified by a unique `PascalCase` name.
+
+For example, to find all JavaScript `if` statements, you can match the `JsIfStatement` node:
+
+```grit
+engine biome(1.0)
+language js(typescript,jsx)
+
+JsIfStatement() as $stmt where {
+  register_diagnostic(
+    span=$stmt,
+    message="Found an if statement"
+  )
+}
+```
+
+You can also match specific parts of a node by name. For example, this pattern captures the first branch of a ternary expression using Biome's node field names:
+
+```grit
+JsConditionalExpression(consequent = $cons) where {
+  register_diagnostic(
+    span=$cons,
+    message="Found the consequent branch of a conditional expression"
+  )
+}
+```
+
+You can discover node names and field names for your code by exploring the syntax tree in the [Biome Playground](https://biomejs.dev/playground/). A complete list of all available nodes and their fields is also available in the `.ungram` files in the [`xtask/codegen`](https://github.com/biomejs/biome/tree/main/xtask/codegen) directory of the Biome repository.
+
+:::caution
+Biome's grammar can change between versions, especially for new languages. This may cause node names to change, which could break your patterns. Be prepared to update your queries when upgrading Biome when using node/field names in your patterns.
+:::
+
+## JSON Patterns
+
+GritQL can match patterns in JSON files, useful for searching and transforming configuration files:
+
+```grit
+language json
+
+`"foo": $value`
+```
+
+This pattern matches any JSON member with the key `"foo"`.
+
+For more precise matching, you can use Biome's JSON syntax nodes directly:
+
+```grit
+language json
+
+JsonMember(name = JsonMemberName(value = `"version"`))
+```
+
+JSON GritQL also supports TreeSitter-compatible node aliases for compatibility with existing Grit patterns:
+
+| Biome AST | TreeSitter Alias |
+|-----------|------------------|
+| `JsonMember` | `pair` |
+| `JsonObjectValue` | `object` |
+| `JsonArrayValue` | `array` |
+
+## Language Documentation
+
+For more information about GritQL and its syntax, see the official
+[GritQL Language Documentation](https://docs.grit.io/language/overview).
+
+Please keep in mind that Biome doesn't support all of Grit's features (yet).
+
+## Integration Status
+
+GritQL support in Biome is actively being worked on. Many things already work,
+but bugs are still expected and some features are still outright missing.
+
+For a detailed overview of which GritQL features are supported and which are
+still in-progress, please see the GitHub issue:
+https://github.com/biomejs/biome/issues/2582.
+
+We also have a detailed RFC which guides the direction for our plugin efforts:
+https://github.com/biomejs/biome/discussions/1762
+
+**tl;dr**: We are working on supporting plugins, which can be either pure GritQL
+plugins or JS/TS plugins that use GritQL to select the code they wish to operate
+on. Stay tuned!

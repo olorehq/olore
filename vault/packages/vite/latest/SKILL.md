@@ -1,9 +1,9 @@
 ---
 name: olore-vite-latest
-description: Local Vite documentation reference (latest). Vite documentation. Use for frontend build tooling, dev server, HMR, plugins, SSR, library mode, and build configuration.
+description: Local vite documentation reference (latest). Vite documentation. Use for frontend build tooling, dev server, HMR, plugins, SSR, library mode, and build configuration.
 ---
 
-# Vite Documentation
+# vite Documentation
 
 Vite documentation. Use for frontend build tooling, dev server, HMR, plugins, SSR, library mode, and build configuration.
 
@@ -11,46 +11,36 @@ Vite documentation. Use for frontend build tooling, dev server, HMR, plugins, SS
 
 ```
 contents/
-├── guide/        # Guides, tutorials, and API references (19 files)
-├── config/       # Full configuration reference (8 files)
-├── changes/      # Breaking changes and migration docs (6 files)
-└── plugins/      # Official and community plugins list (1 file)
+├── guide/     # Guides, features, build, SSR, plugin/HMR/JS/Environment APIs (24 files)
+├── config/    # Configuration option reference (8 files)
+├── changes/   # Breaking changes and Environment API migrations (6 files)
+└── plugins/   # Plugins overview (1 file)
 ```
 
 ## Topic Guide
 
 | Topic | Key Files |
 |-------|-----------|
-| Getting started / setup | `contents/guide/index.md`, `contents/guide/features.md` |
-| CLI usage | `contents/guide/cli.md` |
+| Getting started | `contents/guide/index.md`, `contents/guide/features.md`, `contents/guide/cli.md` |
 | Config file and options | `contents/config/index.md`, `contents/config/shared-options.md` |
-| Dev server configuration | `contents/config/server-options.md` |
-| Build and bundling | `contents/guide/build.md`, `contents/config/build-options.md` |
-| HMR (Hot Module Replacement) | `contents/guide/api-hmr.md` |
-| Plugins (using / authoring) | `contents/guide/using-plugins.md`, `contents/guide/api-plugin.md`, `contents/plugins/index.md` |
-| SSR (Server-Side Rendering) | `contents/guide/ssr.md`, `contents/config/ssr-options.md` |
-| Environment API | `contents/guide/api-environment.md`, `contents/guide/api-environment-frameworks.md`, `contents/guide/api-environment-plugins.md`, `contents/guide/api-environment-runtimes.md` |
+| Dev server and proxy | `contents/config/server-options.md` |
+| Production build / library mode | `contents/guide/build.md`, `contents/config/build-options.md` |
+| Env variables and modes | `contents/guide/env-and-mode.md` |
+| Plugins | `contents/guide/using-plugins.md`, `contents/guide/api-plugin.md`, `contents/plugins/index.md` |
+| HMR | `contents/guide/api-hmr.md` |
+| SSR | `contents/guide/ssr.md`, `contents/config/ssr-options.md` |
+| Environment API | `contents/guide/api-environment.md`, `contents/guide/api-environment-plugins.md` |
 | JavaScript API | `contents/guide/api-javascript.md` |
-| Dependency pre-bundling | `contents/guide/dep-pre-bundling.md`, `contents/config/dep-optimization-options.md` |
-| Static assets | `contents/guide/assets.md` |
-| Environment variables | `contents/guide/env-and-mode.md` |
-| Static site deployment | `contents/guide/static-deploy.md` |
-| Backend integration | `contents/guide/backend-integration.md` |
-| Performance optimization | `contents/guide/performance.md` |
-| Troubleshooting | `contents/guide/troubleshooting.md` |
-| Migration / breaking changes | `contents/guide/migration.md`, `contents/changes/index.md` |
-| Web Workers | `contents/config/worker-options.md` |
+| Assets and backend integration | `contents/guide/assets.md`, `contents/guide/backend-integration.md` |
+| Migration and breaking changes | `contents/guide/migration.md`, `contents/changes/index.md` |
+| Troubleshooting and performance | `contents/guide/troubleshooting.md`, `contents/guide/performance.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Configuring Vite (`vite.config.ts/js`) for any framework or use case
-- Dev server setup, proxying, HMR, or HTTPS
-- Production builds, code splitting, library mode, or Rollup options
-- Writing or using Vite plugins
-- SSR, backend integration, or static deployment
-- Environment variables and build modes
-- Migrating between Vite major versions or adopting new Environment API
+- Configuring Vite (vite.config, server, build, resolve, css options)
+- Writing or using Vite/Rolldown plugins, HMR, and the Environment API
+- SSR, library mode, static deployment, env variables, and migration between versions
 
 ## How to find information
 

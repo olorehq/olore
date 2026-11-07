@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-troubleshooting-no-frame-found-at-position.png
+image: https://remotion.media/docs/generated/articles-docs-troubleshooting-no-frame-found-at-position.png
 id: no-frame-found-at-position
 sidebar_label: No frame found at position
 title: No frame found at position error message
@@ -18,7 +18,7 @@ It means that the cache which is kept for serving frames for [`<OffthreadVideo>`
 
 The most likely cause is that the memory available for the OffthreadVideo cache is too small and any frames that are being extracted are being evicted from the cache immediately.
 
-Consider increasing the memory available of your machine, or allowing the OffthreadVideo cache to be bigger by setting the [`offthreadVideoCacheSizeInBytes`](/docs/renderer/render-media#offthreadvideocachesizeinbytes) prop to a higher value. Only set this to a value that is lower than the memory actually available, otherwise the system might kill the process.
+Consider increasing the memory available of your machine, or allowing the OffthreadVideo cache to be bigger by setting the [`offthreadVideoCacheSizeInBytes`](/docs/options/offthreadvideo-cache-size-in-bytes) prop to a higher value. Only set this to a value that is lower than the memory actually available, otherwise the system might kill the process.
 
 ## Video has a gap
 
@@ -28,3 +28,9 @@ For example, a screen recording that does not have any movement for a few second
 OffthreadVideo currently struggles with these types of videos as the closest frame has too much of a deviation from the requested time.
 
 In this case, we recommend to consult with the Remotion team by filing an issue on [GitHub](https://remotion.dev/issue) and submitting the [video](https://remotion.dev/report).
+
+## Use `<Video>` from `@remotion/media`
+
+For new projects, [`<Video>` from `@remotion/media`](/docs/media/video) is now recommended over [`<OffthreadVideo>`](/docs/offthreadvideo).
+
+See the [comparison of video tags](/docs/video-tags) for the differences between the available video components.

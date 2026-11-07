@@ -2,25 +2,25 @@
 title: 'Neon CLI command: projects'
 subtitle: 'List, create, update, delete, recover, and get Neon projects'
 summary: >-
-  The Neon CLI `neonctl projects` command provides subcommands to list, create,
+  The Neon CLI `neon projects` command provides subcommands to list, create,
   update, delete, recover, and retrieve Neon projects from the terminal,
   including support for region selection (AWS and Azure), blocking public or VPC
   connections, and filtering shared projects. Use this page when you need CLI
   automation for project lifecycle tasks or to recover a deleted project within
   its 7-day recovery window. Projects created via the CLI default to Postgres
-  18; use the Neon Console or API to create projects on earlier Postgres
-  versions.
+  18; use `--pg-version` to select a different major version.
 enableTableOfContents: true
-updatedOn: '2026-06-12T01:42:37.157Z'
+updatedOn: '2026-10-09T15:17:33.920Z'
 redirectFrom:
   - /docs/reference/cli-projects
+  - /docs/cli/project
 ---
 
-The `projects` command lists, creates, updates, deletes, recovers, and retrieves Neon projects from the terminal. For information about projects in Neon, see [Projects](/docs/manage/projects). Subcommands that show no options table accept only the [global options](/docs/cli#global-options). If `--project-id` is omitted, the CLI resolves it from your [context file](/docs/cli/set-context), auto-selects when your account has only one project, and prompts otherwise.
+The `projects` command lists, creates, updates, deletes, recovers, and retrieves Neon projects from the terminal. For information about projects in Neon, see [Projects](/docs/manage/projects). Subcommands that show no options table accept only the [global options](/docs/cli#global-options). If `--project-id` is omitted, the CLI resolves it from your [context file](/docs/cli/link), auto-selects when your account has only one project, and otherwise asks you to pass `--project-id`.
 
 <CliSubcommands command="projects" />
 
-## neonctl projects list (#list)
+## neon projects list (#list)
 
 Lists projects that belong to your Neon account, as well as any projects that were shared with you.
 
@@ -31,50 +31,41 @@ Lists projects that belong to your Neon account, as well as any projects that we
 - List projects in your [default organization](/docs/reference/glossary#default-organization). If no organization context is set, the CLI prompts you to select one.
 
   ```bash
-  neonctl projects list
+  neon projects list
   ```
 
   ```text
   Projects
-  ┌────────────────────────┬────────────────────┬───────────────┬──────────────────────┐
-  │ Id                     │ Name               │ Region Id     │ Created At           │
-  ├────────────────────────┼────────────────────┼───────────────┼──────────────────────┤
-  │ crimson-voice-12345678 │ frontend           │ aws-us-east-2 │ 2024-04-15T11:17:30Z │
-  ├────────────────────────┼────────────────────┼───────────────┼──────────────────────┤
-  │ calm-thunder-12121212  │ backend            │ aws-us-east-2 │ 2024-04-10T15:21:01Z │
-  ├────────────────────────┼────────────────────┼───────────────┼──────────────────────┤
-  │ nameless-hall-87654321 │ billing            │ aws-us-east-2 │ 2024-04-10T14:35:17Z │
-  └────────────────────────┴────────────────────┴───────────────┴──────────────────────┘
+  ID                      Name      Region ID      Created At
+  crimson-voice-12345678  frontend  aws-us-east-2  2026-04-15T11:17:30Z
+  calm-thunder-12121212   backend   aws-us-east-2  2026-04-10T15:21:01Z
+  nameless-hall-87654321  billing   aws-us-east-2  2026-04-10T14:35:17Z
   Shared with you
-  ┌───────────────────┬────────────────────┬──────────────────┬──────────────────────┐
-  │ Id                │ Name               │ Region Id        │ Created At           │
-  ├───────────────────┼────────────────────┼──────────────────┼──────────────────────┤
-  │ noisy-fire-212121 │ API                │ aws-eu-central-1 │ 2023-04-22T18:41:13Z │
-  └───────────────────┴────────────────────┴──────────────────┴──────────────────────┘
+  ID                 Name  Region ID         Created At
+  noisy-fire-212121  API   aws-eu-central-1  2026-04-22T18:41:13Z
   ```
+
+  In the default table, your currently linked project (the one recorded in `.neon`) is marked `[current]` next to its name.
 
 List all projects belonging to a specific organization:
 
 ```bash
-neonctl projects list --org-id org-xxxx-xxxx
+neon projects list --org-id org-xxxx-xxxx
 ```
 
 List projects that can be recovered (deleted within the last 7 days):
 
 ```bash
-neonctl projects list --recoverable-only
+neon projects list --recoverable-only
 ```
 
 ```text filename="Output"
 Projects
-┌─────────────────────┬───────────┬───────────────┬──────────────────────┬──────────────────────┬──────────────────────┐
-│ Id                  │ Name      │ Region Id     │ Created At           │ Deleted At           │ Recoverable Until    │
-├─────────────────────┼───────────┼───────────────┼──────────────────────┼──────────────────────┼──────────────────────┤
-│ crimson-voice-12345 │ myproject │ aws-us-east-2 │ 2024-04-15T11:17:30Z │ 2024-04-16T14:22:15Z │ 2024-04-23T14:22:15Z │
-└─────────────────────┴───────────┴───────────────┴──────────────────────┴──────────────────────┴──────────────────────┘
+ID                   Name       Region ID      Created At            Deleted At            Recoverable Until
+crimson-voice-12345  myproject  aws-us-east-2  2026-04-15T11:17:30Z  2026-04-16T14:22:15Z  2026-04-23T14:22:15Z
 ```
 
-## neonctl projects create (#create)
+## neon projects create (#create)
 
 Creates a Neon project.
 
@@ -85,37 +76,55 @@ Creates a Neon project.
 The `--region-id` value defaults to `aws-us-east-2` if not specified. `--block-public-connections` and `--block-vpc-connections` are part of [Private Networking](/docs/guides/neon-private-networking); `--hipaa` enables [HIPAA compliance](/docs/security/hipaa) for the project.
 
 <Admonition type="note">
-Neon projects created using the CLI use the default Postgres version, which is Postgres 18. To create a project with a different Postgres version, you can use the [Neon Console](/docs/manage/projects#create-a-project) or [Neon API](https://api-docs.neon.tech/reference/createproject).
+Neon projects created using the CLI use the default Postgres version, which is Postgres 18. To create a project with a different Postgres version, pass `--pg-version`:
+
+```bash
+neon projects create --name mynewproject --pg-version 17
+```
+
+You can also enable logical replication for an existing project with `neon projects update <project-id> --enable-logical-replication` (add `--yes` to skip the confirmation prompt), and create protected branches with `neon branches create --protected`.
 </Admonition>
 
 Create a project with a user-defined name in a specific region:
 
 ```bash
-neonctl projects create --name mynewproject --region-id aws-us-west-2
+neon projects create --name mynewproject --region-id aws-us-west-2
 ```
 
 ```text filename="Output"
-┌───────────────────┬──────────────┬───────────────┬──────────────────────┐
-│ Id                │ Name         │ Region Id     │ Created At           │
-├───────────────────┼──────────────┼───────────────┼──────────────────────┤
-│ muddy-wood-859533 │ mynewproject │ aws-us-west-2 │ 2023-07-09T17:04:29Z │
-└───────────────────┴──────────────┴───────────────┴──────────────────────┘
+Project
+ID          muddy-wood-123456
+Name        mynewproject
+Region ID   aws-us-west-2
+Created At  2026-07-09T17:04:29Z
 
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│ Connection Uri                                                                       │
-├──────────────────────────────────────────────────────────────────────────────────────┤
-│ postgresql://[user]:[password]@[neon_hostname]/[dbname]                              │
-└──────────────────────────────────────────────────────────────────────────────────────┘
+Connection URIs
+Connection URI
+postgresql://[user]:[password]@[neon_hostname]/[dbname]
 ```
 
 <Admonition type="tip">
-The Neon CLI provides a `neonctl connection-string` command you can use to extract a connection URI programmatically. See [the connection-string command](/docs/cli/connection-string).
+The Neon CLI provides a `neon connection-string` command you can use to extract a connection URI programmatically. See [the connection-string command](/docs/cli/connection-string).
 </Admonition>
+
+Create a project with a specific Postgres major version:
+
+```bash
+neon projects create --name mynewproject --pg-version 17
+```
+
+Omit the connection string from the output, keeping it out of terminal scrollback and CI logs:
+
+```bash
+neon projects create --name mynewproject --no-secrets
+```
+
+Needs Neon CLI 4.9.0+; older versions ignore `--no-secrets` and still print the connection string.
 
 - Create a project with `--output json`, which returns the full project response data and is the recommended format for scripts and agents. The output below was captured on an earlier CLI version; new projects report `"pg_version": 18`.
 
   ```bash
-  neonctl projects create --output json
+  neon projects create --output json
   ```
 
   <details>
@@ -145,10 +154,10 @@ The Neon CLI provides a `neonctl connection-string` command you can use to extra
       "branch_logical_size_limit": 204800,
       "branch_logical_size_limit_bytes": 214748364800,
       "store_passwords": true,
-      "creation_source": "neonctl",
+      "creation_source": "neon",
       "history_retention_seconds": 604800,
-      "created_at": "2023-08-04T16:16:45Z",
-      "updated_at": "2023-08-04T16:16:45Z",
+      "created_at": "2026-08-04T16:16:45Z",
+      "updated_at": "2026-08-04T16:16:45Z",
       "consumption_period_start": "0001-01-01T00:00:00Z",
       "consumption_period_end": "0001-01-01T00:00:00Z",
       "owner_id": "e56ad68e-7f2f-4d74-928c-9ea25d7e9864"
@@ -173,18 +182,18 @@ The Neon CLI provides a `neonctl connection-string` command you can use to extra
 Create a project and connect to it with `psql` immediately. Arguments after `--` are passed through to psql, so you can run an `.sql` file or a query on creation:
 
 ```bash
-neonctl projects create --psql
-neonctl projects create --psql -- -f dump.sql
-neonctl projects create --psql -- -c "SELECT version()"
+neon projects create --psql
+neon projects create --psql -- -f dump.sql
+neon projects create --psql -- -c "SELECT version()"
 ```
 
 Create a project and set the Neon CLI project context to it:
 
 ```bash
-neonctl projects create --set-context
+neon projects create --set-context
 ```
 
-## neonctl projects update (#update)
+## neon projects update (#update)
 
 Updates a Neon project. The `<id>` is the project ID, which you can obtain by listing your projects or from the **Settings** page in the Neon Console.
 
@@ -197,24 +206,29 @@ Updates a Neon project. The `<id>` is the project ID, which you can obtain by li
 Update the project name:
 
 ```bash
-neonctl projects update muddy-wood-859533 --name dev_project_1
+neon projects update muddy-wood-123456 --name dev_project_1
 ```
 
 ```text filename="Output"
-┌───────────────────┬───────────────┬───────────────┬──────────────────────┐
-│ Id                │ Name          │ Region Id     │ Created At           │
-├───────────────────┼───────────────┼───────────────┼──────────────────────┤
-│ muddy-wood-859533 │ dev_project_1 │ aws-us-west-2 │ 2023-07-09T17:04:29Z │
-└───────────────────┴───────────────┴───────────────┴──────────────────────┘
+ID          muddy-wood-123456
+Name        dev_project_1
+Region ID   aws-us-west-2
+Created At  2026-07-09T17:04:29Z
 ```
 
 Block connections from the public internet (see [restrict public internet access](/docs/guides/neon-private-networking#restrict-public-internet-access)):
 
 ```bash
-neonctl projects update orange-credit-12345678 --block-public-connections=true
+neon projects update orange-credit-12345678 --block-public-connections=true
 ```
 
-## neonctl projects delete (#delete)
+Enable [logical replication](/docs/guides/logical-replication-neon) for the project. This suspends active endpoints and cannot be disabled, so `--yes` skips the confirmation prompt:
+
+```bash
+neon projects update orange-credit-12345678 --enable-logical-replication --yes
+```
+
+## neon projects delete (#delete)
 
 Deletes a Neon project. The `<id>` is the project ID.
 
@@ -223,44 +237,40 @@ Deletes a Neon project. The `<id>` is the project ID.
 <CliOptions command="projects delete" />
 
 ```bash
-neonctl projects delete muddy-wood-859533
+neon projects delete muddy-wood-123456
 ```
 
 ```text filename="Output"
-┌───────────────────┬───────────────┬───────────────┬──────────────────────┐
-│ Id                │ Name          │ Region Id     │ Created At           │
-├───────────────────┼───────────────┼───────────────┼──────────────────────┤
-│ muddy-wood-859533 │ dev_project_1 │ aws-us-west-2 │ 2023-07-09T17:04:29Z │
-└───────────────────┴───────────────┴───────────────┴──────────────────────┘
+ID          muddy-wood-123456
+Name        dev_project_1
+Region ID   aws-us-west-2
+Created At  2026-07-09T17:04:29Z
 ```
 
-Verify the deletion with `neonctl projects list`.
+Verify the deletion with `neon projects list`.
 
-## neonctl projects recover (#recover)
+## neon projects recover (#recover)
 
-<EarlyAccess />
-
-Recovers a deleted project within the deletion recovery period. The `<id>` is the project ID, which you can obtain by listing recoverable projects with `neonctl projects list --recoverable-only`.
+Recovers a deleted project within the deletion recovery period. The `<id>` is the project ID, which you can obtain by listing recoverable projects with `neon projects list --recoverable-only`.
 
 <CliUsage command="projects recover" />
 
 <CliOptions command="projects recover" />
 
 ```bash
-neonctl projects recover crimson-voice-12345678
+neon projects recover crimson-voice-12345678
 ```
 
 ```text filename="Output"
-┌────────────────────────┬───────────┬───────────────┬──────────────────────┐
-│ Id                     │ Name      │ Region Id     │ Created At           │
-├────────────────────────┼───────────┼───────────────┼──────────────────────┤
-│ crimson-voice-12345678 │ myproject │ aws-us-east-2 │ 2024-04-15T11:17:30Z │
-└────────────────────────┴───────────┴───────────────┴──────────────────────┘
+ID          crimson-voice-12345678
+Name        myproject
+Region ID   aws-us-east-2
+Created At  2026-04-15T11:17:30Z
 ```
 
 For details on what's recovered and what requires reconfiguration after recovery, see [Recover a deleted project](/docs/manage/projects#recover-a-deleted-project).
 
-## neonctl projects get (#get)
+## neon projects get (#get)
 
 Retrieves details about a Neon project. The `<id>` is the project ID.
 
@@ -269,13 +279,20 @@ Retrieves details about a Neon project. The `<id>` is the project ID.
 <CliOptions command="projects get" />
 
 ```bash
-neonctl projects get muddy-wood-859533
+neon projects get muddy-wood-123456
 ```
 
 ```text filename="Output"
-┌───────────────────┬───────────────┬───────────────┬──────────────────────┐
-│ Id                │ Name          │ Region Id     │ Created At           │
-├───────────────────┼───────────────┼───────────────┼──────────────────────┤
-│ muddy-wood-859533 │ dev_project_1 │ aws-us-west-2 │ 2023-07-09T17:04:29Z │
-└───────────────────┴───────────────┴───────────────┴──────────────────────┘
+Project
+Name               dev_project_1
+ID                 muddy-wood-123456
+Region ID          aws-us-west-2
+Postgres Version   18
+Organization       org-xxxxxxxx-xxxx
+Default Compute    0.25 CU
+History Retention  6 hours
+Created At         2026-07-09T17:04:29Z
+Updated At         2026-07-09T17:04:29Z
 ```
+
+The table shows a detail view: Postgres version, organization, default compute range, and history retention alongside the identifiers. For the complete project record, including all settings and quotas, use `--output json`.

@@ -3,18 +3,18 @@ title: Reference
 description: Go Reference for Turso
 ---
 
-Turso offers two Go packages:
+Turso offers four Go packages:
 
-| | `tursogo` | `libsql-client-go` | `go-libsql` |
-| --- | --- | --- | --- |
-| **Use case** | Local / embedded database, sync | Remote access (over-the-wire) | Existing libSQL codebases |
-| **Engine** | Turso Database (rewrite) | libSQL wire protocol | libSQL (SQLite fork) |
-| **Concurrent writes** | Yes (MVCC) | N/A (remote) | Not supported |
-| **Sync** | push/pull (local-first) | — | Embedded Replicas (writes go to cloud primary) |
-| **CGO** | Not required | Not required | Required |
-| **API** | `database/sql` | `database/sql` | `database/sql` |
+| | `tursogo` | `tursogo-serverless` | `libsql-client-go` | `go-libsql` |
+| --- | --- | --- | --- | --- |
+| **Use case** | Local / embedded database, sync | Remote Turso database (over-the-wire) | Remote libSQL database (over-the-wire) | Existing libSQL codebases |
+| **Engine** | Turso (rewrite) | Turso (rewrite) | libSQL wire protocol | libSQL (SQLite fork) |
+| **Concurrent writes** | Yes (MVCC) | Yes (MVCC) | N/A (remote) | Not supported |
+| **Sync** | push/pull (local-first) | — | — | Embedded Replicas (writes go to cloud primary) |
+| **CGO** | Not required | Not required | Not required | Required |
+| **API** | `database/sql` | `database/sql` | `database/sql` | `database/sql` |
 
-**Starting a new project?** Use `tursogo` for local/embedded use or sync. Use `libsql-client-go` for remote access. Neither requires CGO.
+**Starting a new project?** Use `tursogo` for local/embedded use or sync. For remote access, match the driver to the database engine: [`tursogo-serverless`](/sdk/go/quickstart) for Turso databases, `libsql-client-go` for libSQL databases. None of these require CGO.
 
 ## tursogo
 

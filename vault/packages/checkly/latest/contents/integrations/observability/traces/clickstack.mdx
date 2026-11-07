@@ -1,0 +1,27 @@
+---
+title: 'Export traces to ClickStack'
+description: 'Send Checkly traces to a ClickStack collector, self-hosted or with Managed ClickStack.'
+sidebarTitle: 'ClickStack'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/traces/clickstack/'
+---
+
+import OtlpVendorIntro from '/snippets/otlp-vendor-intro.mdx';
+import OtlpVendorOutro from '/snippets/otlp-vendor-outro.mdx';
+
+<OtlpVendorIntro vendor="ClickStack" />
+
+Self-hosted ClickStack and Managed ClickStack in ClickHouse Cloud end the same way. Checkly sends the spans to your collector on port 4318 with an `authorization` header.
+
+1. Get the endpoint. It is your collector at `https://<host>:4318/v1/traces`. The collector must be reachable from where your checks run. For public locations that means a public address with TLS in front. For private locations, an address reachable from the agent's network is enough.
+2. Get the key. It depends on your setup.
+   - Self-hosted ClickStack: in the HyperDX UI, open **Team Settings** > **API Keys** and copy the ingestion key.
+   - Managed ClickStack in ClickHouse Cloud: there is no hosted OTLP endpoint. Run the ClickStack collector pointed at ClickHouse Cloud, and use the `OTLP_AUTH_TOKEN` you set on it as the key.
+3. Paste the values into Checkly. On the [Traces settings page](https://app.checklyhq.com/settings/account/traces), turn on **Enable exporting traces**, paste the URL, and add the header from the table below. Use the bare key, without a `Bearer` prefix.
+4. Find the spans. In ClickStack, the spans appear under service `checkly`.
+
+| Header name | Value |
+|---|---|
+| `authorization` | `<ingestion key or OTLP_AUTH_TOKEN>` |
+
+ClickStack documents the collector for [self-hosted ClickStack](https://clickhouse.com/docs/use-cases/observability/clickstack/ingesting-data/opentelemetry) and for [Managed ClickStack](https://clickhouse.com/docs/clickstack/managed-onboarding/setting-up-your-opentelemetry-collector).
+<OtlpVendorOutro />

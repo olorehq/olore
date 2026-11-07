@@ -1,9 +1,9 @@
 ---
-title: Connect a Rust application to Neon Postgres
-subtitle: Learn how to run SQL queries in Neon from Rust using the postgres or
+title: Connect a Rust application to Lakebase Postgres
+subtitle: Learn how to run SQL queries from Rust using the postgres or
   tokio-postgres crates
 summary: >-
-  Connecting a Rust application to Neon Postgres using either the synchronous
+  Connecting a Rust application to Lakebase Postgres using either the synchronous
   `postgres` crate or the async `tokio-postgres` crate with the Tokio runtime.
   Both options require SSL/TLS via postgres-openssl. Use this page when you need
   working Rust code for each CRUD operation, including when to use `execute`,
@@ -12,13 +12,13 @@ enableTableOfContents: true
 redirectFrom:
   - /docs/quickstart/rust
   - /docs/integrations/rust
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
 
 <CopyPrompt src="/prompts/rust-prompt.md" 
-description="Pre-built prompt for connecting Rust applications to Neon"/>
+description="Pre-built prompt for connecting Rust applications to Lakebase Postgres"/>
 
-This guide describes how to create a Neon project and connect to it from a Rust application using two popular Postgres drivers: [rust-postgres](https://crates.io/crates/postgres), a synchronous driver, and [tokio-postgres](https://crates.io/crates/tokio-postgres), an asynchronous driver for use with the [Tokio](https://tokio.rs/) runtime.
+This guide describes how to create a project on Neon and connect to it from a Rust application using two popular Postgres drivers: [rust-postgres](https://crates.io/crates/postgres), a synchronous driver, and [tokio-postgres](https://crates.io/crates/tokio-postgres), an asynchronous driver for use with the [Tokio](https://tokio.rs/) runtime.
 
 ## Prerequisites
 
@@ -110,9 +110,9 @@ For your Rust project, use `cargo` to create a new project and add the required 
 
 Create a file named `.env` in your project's root directory. This file will securely store your database connection string.
 
-1.  In the [Neon Console](https://console.neon.tech), select your project on the **Dashboard**.
-2.  Click **Connect** on your **Project Dashboard** to open the **Connect to your database** modal.
-    ![Connection modal](/docs/connect/connection_details.png)
+1.  In the [Neon Console](https://console.neon.tech), open your project.
+2.  Click **Connect** in the Console nav to open the **Connect to your branch** modal.
+    ![Connection modal](/docs/connect/connect_to_branch_modal.png)
 3.  Copy the connection string, which includes your password.
 4.  Add the connection string to your `.env` file as shown below.
     ```text
@@ -674,5 +674,10 @@ ID: 4, Title: Dune, Author: Frank Herbert, Year: 1965, In Stock: true
 - [rust-postgres crate documentation](https://docs.rs/postgres/latest/postgres/)
 - [tokio-postgres crate documentation](https://docs.rs/tokio-postgres/latest/tokio_postgres/)
 - [Tokio async runtime](https://tokio.rs/)
+
+## Next steps
+
+- [Add Object Storage](/docs/storage/overview): S3-compatible file storage that branches with your database
+- [Call an LLM with AI Gateway](/docs/ai-gateway/overview): Access foundation models from Anthropic, OpenAI, Google, and more with one credential
 
 <NeedHelp/>

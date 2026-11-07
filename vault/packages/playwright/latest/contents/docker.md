@@ -196,7 +196,7 @@ For Docker and GitHub Codespaces environments, you can view and generate tests u
 
 ```json
 {
-  "image": "mcr.microsoft.com/playwright:v1.57.0",
+  "image": "mcr.microsoft.com/playwright:v%%VERSION%%-noble",
   "forwardPorts": [6080],
   "features": {
     "desktop-lite": {
@@ -216,6 +216,7 @@ We currently publish images with the following tags:
 - `:v%%VERSION%%` - Playwright v%%VERSION%% release docker image based on Ubuntu 24.04 LTS (Noble Numbat).
 - `:v%%VERSION%%-noble` - Playwright v%%VERSION%% release docker image based on Ubuntu 24.04 LTS (Noble Numbat).
 - `:v%%VERSION%%-jammy` - Playwright v%%VERSION%% release docker image based on Ubuntu 22.04 LTS (Jammy Jellyfish).
+- `:v%%VERSION%%-resolute` - Playwright v%%VERSION%% release docker image based on Ubuntu 26.04 LTS (Resolute Raccoon).
 
 :::note
 It is recommended to always pin your Docker image to a specific version if possible. If the Playwright version in your Docker image does not match the version in your project/tests, Playwright will be unable to locate browser executables.
@@ -224,6 +225,7 @@ It is recommended to always pin your Docker image to a specific version if possi
 ### Base images
 
 We currently publish images based on the following [Ubuntu](https://hub.docker.com/_/ubuntu) versions:
+- **Ubuntu 26.04 LTS** (Resolute Raccoon), image tags include `resolute`
 - **Ubuntu 24.04 LTS** (Noble Numbat), image tags include `noble`
 - **Ubuntu 22.04 LTS** (Jammy Jellyfish), image tags include `jammy`
 
@@ -246,7 +248,7 @@ curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --install-dir /
 To run Playwright inside Docker, you need to have Node.js, [Playwright browsers](./browsers.md#install-browsers) and [browser system dependencies](./browsers.md#install-system-dependencies) installed. See the following Dockerfile:
 
 ```Dockerfile
-FROM node:20-bookworm
+FROM node:26-bookworm
 
 RUN npx -y playwright@%%VERSION%% install --with-deps
 ```

@@ -1,0 +1,110 @@
+---
+title: 'Traceroute monitors overview'
+description: 'Map the network path to any host and detect routing issues, high-latency hops, and packet loss.'
+sidebarTitle: Overview
+canonical: 'https://www.checklyhq.com/docs/detect/uptime-monitoring/traceroute-monitors/overview/'
+---
+
+<Tip>
+**Monitoring as Code**: Learn more about the [Traceroute monitor construct](/constructs/traceroute-monitor).
+</Tip>
+
+## What are Traceroute monitors?
+
+Traceroute monitors map the network path between a Checkly location and your target host, recording every router hop along the way and measuring per-hop latency and packet loss. Typical use cases include:
+
+* Detecting routing anomalies or unexpected path changes between Checkly locations and your infrastructure
+* Identifying which network segment is responsible for latency spikes or packet loss
+* Verifying that the destination is reachable end-to-end, beyond just confirming that a port accepts connections
+* Continuously monitoring path stability across regions over time
+
+## How do Traceroute monitors work?
+
+A Traceroute monitor executes the following steps on each run:
+
+1. **Hostname resolution**: If a hostname is provided, Checkly resolves it to an IP address before sending any probes
+2. **Probe execution**: The runner sends probe packets using the configured protocol (TCP by default). Each probe carries a progressively higher TTL, so each router on the path in turn drops the probe whose TTL expires there and responds with an ICMP Time Exceeded message
+3. **Hop collection**: RTT statistics (avg, min, max, stddev) and packet loss are collected for each router hop along the path
+4. **Destination detection**: When the destination host responds directly, the trace is complete and `destinationReached` is set to `true`
+5. **Assertion evaluation**: Configured assertions are evaluated against the results — including final-hop latency, total hop count, and last-hop packet loss
+
+### Probe protocols
+
+| Protocol | Default port | How destination is detected |
+|----------|-------------|---------------------------|
+| **TCP** (default) | 443 | SYN-ACK or RST received from destination |
+| **UDP** | 33434 | Any ICMP Destination Unreachable from the target (port unreachable, admin-prohibited, host unreachable, etc.) |
+| **ICMP** | *(no port)* | Echo Reply from destination |
+| **SCTP** | 33434 | Any ICMP Destination Unreachable from the target (protocol unreachable, port unreachable, etc.) |
+
+<Note>
+The default port is protocol-dependent everywhere — web UI, CLI, and API: `443` for TCP and `33434` for UDP/SCTP. `33434` is a high, typically-closed port: UDP and SCTP arrival is only confirmed when the destination returns an ICMP Destination Unreachable, which requires the probed port to be closed. Avoid setting an open port (like `443`) for UDP/SCTP probes — it would never confirm arrival.
+</Note>
+
+## Traceroute monitor results
+
+Select a specific check run to inspect its results:
+
+* **Summary:** Shows the target hostname, resolved IP, monitor state (`passed`, `degraded`, or `failed`), total hop count, and whether the destination was reached
+
+* **Error details:** If the trace failed — due to a DNS resolution error, an unreachable network, or assertion failures — the error message is shown here
+
+* **Hop-by-hop table:** Each hop shows:
+  * Hop number and primary IP address, with reverse-DNS hostname when PTR lookup is enabled
+  * ASN, organization name, and country
+  * AWS region and service (where applicable)
+  * Probes sent and received, plus packet loss percentage
+  * RTT statistics: last, avg, best, worst, and stddev in milliseconds
+
+* **Final-hop latency:** RTT statistics for the destination hop. This is the value used for `Latency` assertions and the degraded/failed response-time thresholds
+
+Learn more in our documentation on [Results](/concepts/results).
+
+## Troubleshooting Common Issues
+
+<Accordion title="Destination not reached but the host is accessible via HTTP">
+**Symptom**: `destinationReached` is `false`, yet the website or API responds normally.
+
+**Root causes**:
+* The configured port is firewalled — TCP SYN probes never receive a SYN-ACK or RST
+* The target host silently drops probe packets at the network edge
+* A middle-box rewrites or discards probe traffic before it reaches the destination
+
+**How to fix**:
+1. Switch the probe protocol — try `ICMP` if the host responds to ping, or `UDP` for a connectionless probe
+2. For TCP probes, change the port to one that is explicitly open on the target (e.g. `80` or `22`). For UDP/SCTP, keep a *closed* port — arrival is only confirmed by an ICMP Destination Unreachable reply
+3. Confirm reachability at the application layer with an [API Monitor](/detect/synthetic-monitoring/overview) or [TCP monitor](/detect/uptime-monitoring/tcp-monitors/overview) targeting the same host and port
+</Accordion>
+
+<Accordion title="Many consecutive hops show 100% packet loss mid-path">
+**Symptom**: Several intermediate hops show no response, but the destination is eventually reached.
+
+**Root cause**: Routers commonly deprioritize or filter ICMP Time Exceeded replies for probe traffic without affecting real data forwarding. The hops are still routing your packets — they simply do not respond to traceroute probes.
+
+**What to do**:
+* Focus on `destinationReached` and final-hop latency rather than individual intermediate hops
+* If the trace is cut short before the destination, increase the `Max Unknown Hops` limit
+</Accordion>
+
+<Accordion title="SCTP or raw-socket errors on private locations">
+**Symptom**: SCTP probes fail with a socket permission error on a self-hosted Checkly Agent.
+
+**Root cause**: Container runtimes drop `CAP_NET_RAW` by default. Traceroute monitors always need it — hop discovery listens for ICMP replies on a raw socket regardless of probe protocol — but SCTP is the case that surfaces an explicit socket error, because SCTP probes are also *sent* over a raw socket.
+
+**How to fix** — In **Kubernetes**, update your pod spec or Helm values:
+
+```yaml
+securityContext:
+  allowPrivilegeEscalation: true
+  capabilities:
+    add: ["NET_RAW"]
+```
+
+In **Docker**:
+
+```bash
+docker run --cap-add=NET_RAW ghcr.io/checkly/agent:latest
+```
+
+`CAP_NET_RAW` only grants permission to open raw sockets. It does not escalate broader container privileges.
+</Accordion>

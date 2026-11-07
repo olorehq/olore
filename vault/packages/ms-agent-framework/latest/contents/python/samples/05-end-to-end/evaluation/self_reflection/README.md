@@ -1,6 +1,6 @@
 # Self-Reflection Evaluation Sample
 
-This sample demonstrates the self-reflection pattern using Agent Framework and Azure AI Foundry's Groundedness Evaluator. For details, see [Reflexion: Language Agents with Verbal Reinforcement Learning](https://arxiv.org/abs/2303.11366) (NeurIPS 2023).
+This sample demonstrates the self-reflection pattern using Agent Framework and Microsoft Foundry's Groundedness Evaluator. For details, see [Reflexion: Language Agents with Verbal Reinforcement Learning](https://arxiv.org/abs/2303.11366) (NeurIPS 2023).
 
 ## Overview
 
@@ -14,12 +14,12 @@ This sample demonstrates the self-reflection pattern using Agent Framework and A
 ## Prerequisites
 
 ### Azure Resources
-- **Azure AI Foundry project**: Deploy models (default: gpt-5.2 for both agent and judge)
+- **Microsoft Foundry project**: Deploy models (default: gpt-5.2 for both agent and judge)
 - **Azure CLI**: Run `az login` to authenticate
 
 ### Environment Variables
 ```bash
-FOUNDRY_PROJECT_ENDPOINT=https://<your-project>.services.ai.azure.com
+FOUNDRY_PROJECT_ENDPOINT=https://<your-account>.services.ai.azure.com/api/projects/<your-project>
 ```
 
 ## Running the Sample

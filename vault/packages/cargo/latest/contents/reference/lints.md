@@ -1,18 +1,34 @@
 # Lints
 
-Note: [Cargo's linting system is unstable](unstable.md#lintscargo) and can only be used on nightly toolchains
+> [!NOTE]
+> This chapter is about lints emitted by `cargo` itself.
 
+## Configuring Cargo lints
+
+Cargo lints can be configured in the `[lints.cargo]` table of the `Cargo.toml` manifest.
+The key is the lint name without the `cargo::` prefix.
+For example:
+
+```toml
+[lints.cargo]
+unused_dependencies = "deny"
+```
+
+See [the `[lints]` section](manifest.md#the-lints-section)
+for details about lint levels and priorities.
+
+## Lint groups
+
+Cargo has the concept of a "lint group",
+where you can toggle several warnings through one name.
 
 
 | Group                | Description                                                                         | Default level |
 |----------------------|-------------------------------------------------------------------------------------|---------------|
 | `cargo::default`     | all lints that are on by default (correctness, suspicious, style, complexity, perf) | warn/deny     |
 | `cargo::correctness` | code that is outright wrong or useless                                              | deny          |
-| `cargo::complexity`  | code that does something simple but in a complex way                                | warn          |
-| `cargo::perf`        | code that can be written to run faster                                              | warn          |
 | `cargo::style`       | code that should be written in a more idiomatic way                                 | warn          |
 | `cargo::suspicious`  | code that is most likely wrong or useless                                           | warn          |
-| `cargo::nursery`     | new lints that are still under development                                          | allow         |
 | `cargo::pedantic`    | lints which are rather strict or have occasional false positives                    | allow         |
 | `cargo::restriction` | lints which prevent the use of Cargo features                                       | allow         |
 
@@ -20,7 +36,8 @@ Note: [Cargo's linting system is unstable](unstable.md#lintscargo) and can only 
 ## Allowed-by-default
 
 These lints are all set to the 'allow' level by default.
-- [`implicit_minimum_version_req`](#implicit_minimum_version_req)
+- [`manual_readme`](#manual_readme)
+- [`non_kebab_case_bins`](#non_kebab_case_bins)
 - [`non_kebab_case_features`](#non_kebab_case_features)
 - [`non_kebab_case_packages`](#non_kebab_case_packages)
 - [`non_snake_case_features`](#non_snake_case_features)
@@ -31,9 +48,7 @@ These lints are all set to the 'allow' level by default.
 These lints are all set to the 'warn' level by default.
 - [`blanket_hint_mostly_unused`](#blanket_hint_mostly_unused)
 - [`missing_lints_inheritance`](#missing_lints_inheritance)
-- [`non_kebab_case_bins`](#non_kebab_case_bins)
 - [`redundant_homepage`](#redundant_homepage)
-- [`redundant_readme`](#redundant_readme)
 - [`unknown_lints`](#unknown_lints)
 - [`unused_dependencies`](#unused_dependencies)
 - [`unused_workspace_dependencies`](#unused_workspace_dependencies)
@@ -46,16 +61,16 @@ These lints are all set to the 'deny' level by default.
 - [`text_direction_codepoint_in_literal`](#text_direction_codepoint_in_literal)
 
 ## `blanket_hint_mostly_unused`
-Group: `suspicious`
 
-Level: `warn`
+- Group: `suspicious`
+- Level: `warn`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 Checks if `hint-mostly-unused` being applied to all dependencies.
 
-### Why it is bad
+### Why is this bad?
 `hint-mostly-unused` indicates that most of a crate's API surface will go
 unused by anything depending on it; this hint can speed up the build by
 attempting to minimize compilation time for items that aren't used at all.
@@ -77,69 +92,55 @@ hint-mostly-unused = true
 ```
 
 
-## `implicit_minimum_version_req`
-Group: `pedantic`
+## `manual_readme`
 
-Level: `allow`
+- Group: `pedantic`
+- Level: `allow`
+- Minimal [`package.rust-version`]: `1.79.0`
+
 
 ### What it does
 
-Checks for dependency version requirements
-that do not explicitly specify a full `major.minor.patch` version requirement,
-such as `serde = "1"` or `serde = "1.0"`.
+Checks for `package.readme` fields that can be inferred.
 
-This lint currently only applies to caret requirements
-(the [default requirements](specifying-dependencies.md#default-requirements)).
+See also [`package.readme` reference documentation](manifest.md#the-readme-field).
 
-### Why it is bad
+### Why is this bad?
 
-Version requirements without an explicit full version
-can be misleading about the actual minimum supported version.
-For example,
-`serde = "1"` has an implicit minimum bound of `1.0.0`.
-If your code actually requires features from `1.0.219`,
-the implicit minimum bound of `1.0.0` gives a false impression about compatibility.
-
-Specifying the full version helps with:
-
-- Accurate minimum version documentation
-- Better compatibility with `-Z minimal-versions`
-- Clearer dependency constraints for consumers
+Adds boilerplate.
 
 ### Drawbacks
 
-Even with a fully specified version,
-the minimum bound might still be incorrect if untested.
-This lint helps make the minimum version requirement explicit
-but doesn't guarantee correctness.
+It might not be obvious if they named their file correctly.
 
 ### Example
 
 ```toml
-[dependencies]
-serde = "1"
+[package]
+name = "foo"
+readme = "README.md"
 ```
 
-Should be written as a full specific version:
+Should be written as:
 
 ```toml
-[dependencies]
-serde = "1.0.219"
+[package]
+name = "foo"
 ```
 
 
 ## `missing_lints_inheritance`
-Group: `suspicious`
 
-Level: `warn`
+- Group: `suspicious`
+- Level: `warn`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 
 Checks for packages without a `lints` table while `workspace.lints` is present.
 
-### Why it is bad
+### Why is this bad?
 
 Many people mistakenly think that `workspace.lints` is implicitly inherited when it is not.
 
@@ -160,19 +161,27 @@ Should be written as:
 workspace = true
 ```
 
+or make it explicit that you don't intend to inherit by adding an empty `[lints]` table:
+
+```toml
+[workspace.lints.cargo]
+
+[lints]
+```
+
 
 ## `non_kebab_case_bins`
-Group: `style`
 
-Level: `warn`
+- Group: `pedantic`
+- Level: `allow`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 
 Detect binary names, explicit and implicit, that are not kebab-case
 
-### Why it is bad
+### Why is this bad?
 
 Kebab-case binary names is a common convention among command line tools.
 
@@ -200,15 +209,16 @@ name = "foo-bar"
 
 
 ## `non_kebab_case_features`
-Group: `restriction`
 
-Level: `allow`
+- Group: `restriction`
+- Level: `allow`
+
 
 ### What it does
 
 Detect feature names that are not kebab-case.
 
-### Why it is bad
+### Why restrict this?
 
 Having multiple naming styles within a workspace can be confusing.
 
@@ -232,15 +242,16 @@ foo-bar = []
 
 
 ## `non_kebab_case_packages`
-Group: `restriction`
 
-Level: `allow`
+- Group: `restriction`
+- Level: `allow`
+
 
 ### What it does
 
 Detect package names that are not kebab-case.
 
-### Why it is bad
+### Why restrict this?
 
 Having multiple naming styles within a workspace can be confusing.
 
@@ -264,15 +275,16 @@ name = "foo-bar"
 
 
 ## `non_snake_case_features`
-Group: `restriction`
 
-Level: `allow`
+- Group: `restriction`
+- Level: `allow`
+
 
 ### What it does
 
 Detect feature names that are not snake-case.
 
-### Why it is bad
+### Why restrict this?
 
 Having multiple naming styles within a workspace can be confusing.
 
@@ -296,15 +308,16 @@ foo_bar = []
 
 
 ## `non_snake_case_packages`
-Group: `restriction`
 
-Level: `allow`
+- Group: `restriction`
+- Level: `allow`
+
 
 ### What it does
 
 Detect package names that are not snake-case.
 
-### Why it is bad
+### Why restrict this?
 
 Having multiple naming styles within a workspace can be confusing.
 
@@ -328,11 +341,11 @@ name = "foo-bar"
 
 
 ## `redundant_homepage`
-Group: `style`
 
-Level: `warn`
+- Group: `style`
+- Level: `warn`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 
@@ -340,7 +353,7 @@ Checks if the value of `package.homepage` is already covered by another field.
 
 See also [`package.homepage` reference documentation](manifest.md#the-homepage-field).
 
-### Why it is bad
+### Why is this bad?
 
 When package browsers render each link, a redundant link adds visual noise.
 
@@ -364,55 +377,18 @@ repository = "https://github.com/rust-lang/cargo/"
 ```
 
 
-## `redundant_readme`
-Group: `style`
-
-Level: `warn`
-
-MSRV: `1.79.0`
-
-### What it does
-
-Checks for `package.readme` fields that can be inferred.
-
-See also [`package.readme` reference documentation](manifest.md#the-readme-field).
-
-### Why it is bad
-
-Adds boilerplate.
-
-### Drawbacks
-
-It might not be obvious if they named their file correctly.
-
-### Example
-
-```toml
-[package]
-name = "foo"
-readme = "README.md"
-```
-
-Should be written as:
-
-```toml
-[package]
-name = "foo"
-```
-
-
 ## `text_direction_codepoint_in_comment`
-Group: `correctness`
 
-Level: `deny`
+- Group: `correctness`
+- Level: `deny`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 Detects Unicode codepoints in manifest comments that change the visual representation of text on screen
 in a way that does not correspond to their on memory representation.
 
-### Why it is bad
+### Why is this bad?
 Unicode allows changing the visual flow of text on screen
 in order to support scripts that are written right-to-left,
 but a specially crafted comment can make code that will be compiled appear to be part of a comment,
@@ -423,17 +399,17 @@ by default we deny their use.
 
 
 ## `text_direction_codepoint_in_literal`
-Group: `correctness`
 
-Level: `deny`
+- Group: `correctness`
+- Level: `deny`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 Detects Unicode codepoints in literals in manifests that change the visual representation of text on screen
 in a way that does not correspond to their on memory representation.
 
-### Why it is bad
+### Why is this bad?
 Unicode allows changing the visual flow of text on screen
 in order to support scripts that are written right-to-left,
 but a specially crafted literal can make code that will be compiled appear to be part of a literal,
@@ -444,16 +420,16 @@ by default we deny their use.
 
 
 ## `unknown_lints`
-Group: `suspicious`
 
-Level: `warn`
+- Group: `suspicious`
+- Level: `warn`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 Checks for unknown lints in the `[lints.cargo]` table
 
-### Why it is bad
+### Why is this bad?
 - The lint name could be misspelled, leading to confusion as to why it is
   not working as expected
 - The unknown lint could end up causing an error if `cargo` decides to make
@@ -467,17 +443,17 @@ this-lint-does-not-exist = "warn"
 
 
 ## `unused_dependencies`
-Group: `style`
 
-Level: `warn`
+- Group: `style`
+- Level: `warn`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 
 Checks for dependencies that are not used by any of the cargo targets.
 
-### Why it is bad
+### Why is this bad?
 
 Slows down compilation time.
 
@@ -521,16 +497,16 @@ name = "foo"
 
 
 ## `unused_workspace_dependencies`
-Group: `suspicious`
 
-Level: `warn`
+- Group: `suspicious`
+- Level: `warn`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 Checks for any entry in `[workspace.dependencies]` that has not been inherited
 
-### Why it is bad
+### Why is this bad?
 They can give the false impression that these dependencies are used
 
 ### Example
@@ -543,16 +519,16 @@ regex = "1"
 
 
 ## `unused_workspace_package_fields`
-Group: `suspicious`
 
-Level: `warn`
+- Group: `suspicious`
+- Level: `warn`
+- Minimal [`package.rust-version`]: `1.79.0`
 
-MSRV: `1.79.0`
 
 ### What it does
 Checks for any fields in `[workspace.package]` that has not been inherited
 
-### Why it is bad
+### Why is this bad?
 They can give the false impression that these fields are used
 
 ### Example
@@ -565,3 +541,5 @@ name = "foo"
 ```
 
 
+
+[`package.rust-version`]: rust-version.md

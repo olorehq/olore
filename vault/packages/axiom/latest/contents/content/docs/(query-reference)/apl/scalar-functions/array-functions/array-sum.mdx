@@ -1,0 +1,91 @@
+---
+title: array_sum
+description: 'This page explains how to use the array_sum function in APL.'
+---
+
+The `array_sum` function in APL computes the sum of all numerical elements in an array. This function is particularly useful when you want to aggregate numerical values stored in an array field, such as durations, counts, or measurements, across events or records. Use `array_sum` when your dataset includes array-type fields, and you need to quickly compute their total.
+
+## Usage
+
+### Syntax
+
+```kusto
+array_sum(array_expression)
+```
+
+### Parameters
+
+| Parameter           | Type     | Description                                     |
+|---------------------|----------|-------------------------------------------------|
+| `array_expression`  | array    | An array of numerical values to be summed.     |
+
+### Returns
+
+The function returns the sum of all numerical values in the array. If the array is empty or contains no numerical values, the result is `null`.
+
+## Use case example
+
+Summing the duration of all events in an array field.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize event_duration = make_list(duration) by ['service.name']
+| extend total_event_duration = array_sum(event_duration)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20event_duration%20%3D%20make_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20total_event_duration%20%3D%20array_sum(event_duration)%22%7D)
+
+**Output**
+
+| service.name          | total_event_duration |
+|-----------------------|-----------------------|
+| frontend              | 1667269530000                 |
+| checkoutservice       | 3801404276900                 |
+
+The query calculates the total duration of all events for each service.
+
+## List of related functions
+
+- [array_rotate_right](/apl/scalar-functions/array-functions/array-rotate-right): Rotates array elements to the right by a specified number of positions.
+- [array_reverse](/apl/scalar-functions/array-functions/array-reverse): Reverses the order of array elements.
+- [array_shift_left](/apl/scalar-functions/array-functions/array-shift-left): Shifts array elements one position to the left, moving the first element to the last position.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you might need to use commands or functions such as `mvsum` for similar operations. In APL, `array_sum` provides a direct method to compute the sum of numerical arrays.
+
+<CodeGroup>
+```sql Splunk example
+| eval total_duration = mvsum(duration_array)
+```
+
+```kusto APL equivalent
+['dataset.name']
+| extend total_duration = array_sum(duration_array)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t natively support array operations like summing array elements. However, you can achieve similar results with `UNNEST` and `SUM`. In APL, `array_sum` simplifies this by handling array summation directly.
+
+<CodeGroup>
+```sql SQL example
+SELECT SUM(value) AS total_duration
+FROM UNNEST(duration_array) AS value;
+```
+
+```kusto APL equivalent
+['dataset.name']
+| extend total_duration = array_sum(duration_array)
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

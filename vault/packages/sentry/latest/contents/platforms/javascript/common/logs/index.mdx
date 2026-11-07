@@ -1,11 +1,9 @@
 ---
 title: Set Up Logs
 sidebar_title: Logs
-description: "Structured logs allow you to send, view and query logs sent from your applications within Sentry."
+description: "Structured logs allow you to send, view and query logs sent from your applications within Sentry using the JavaScript SDK."
 sidebar_order: 4
 sidebar_section: features
-notSupported:
-  - javascript.cordova
 ---
 
 <PlatformContent includePath="llm-rules-logs" />
@@ -16,30 +14,31 @@ Sentry Logs are **high-cardinality** — you can pass any attributes you want an
 
 <PlatformContent includePath="logs/requirements" />
 
-<SplitLayout>
-
-<SplitSection>
-<SplitSectionText>
-
 ## Setup
 
-Enable logging by adding `enableLogs: true` to your Sentry configuration.
+Logs are enabled by default. Just initialize the SDK and use `Sentry.logger` to send logs.
 
-</SplitSectionText>
-<SplitSectionCode>
+<PlatformSection notSupported={["javascript.cloudflare"]}>
 
 ```javascript
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
-  enableLogs: true,
 });
 ```
 
-</SplitSectionCode>
-</SplitSection>
+</PlatformSection>
 
-<SplitSection>
-<SplitSectionText>
+<PlatformSection supported={["javascript.cloudflare"]}>
+
+```typescript {filename:src/instrument.server.ts}
+import { defineCloudflareOptions } from "@sentry/cloudflare";
+
+export default defineCloudflareOptions((env) => ({
+  dsn: "___PUBLIC_DSN___",
+}));
+```
+
+</PlatformSection>
 
 ## Send Logs
 
@@ -54,9 +53,6 @@ Use `Sentry.logger` to send logs at different levels. A log message is required 
 | `error` | Failures that need attention     |
 | `fatal` | Critical failures, system down   |
 
-</SplitSectionText>
-<SplitSectionCode>
-
 ```javascript
 Sentry.logger.trace("Entering function", { fn: "processOrder" });
 Sentry.logger.debug("Cache lookup", { key: "user:123" });
@@ -66,20 +62,11 @@ Sentry.logger.error("Payment failed", { reason: "card_declined" });
 Sentry.logger.fatal("Database unavailable", { host: "primary" });
 ```
 
-</SplitSectionCode>
-</SplitSection>
-
-<SplitSection>
-<SplitSectionText>
-
 ## Add Context
 
 Pass structured data as the second argument — these attributes become searchable columns in Sentry.
 
 Use `Sentry.logger.fmt` for parameterized messages. Values are automatically extracted as searchable attributes.
-
-</SplitSectionText>
-<SplitSectionCode>
 
 ```javascript
 // Pass attributes directly
@@ -95,32 +82,28 @@ const productName = "Widget Pro";
 Sentry.logger.info(Sentry.logger.fmt`User ${userId} purchased ${productName}`);
 ```
 
-</SplitSectionCode>
-</SplitSection>
+## Shared Attributes
 
-<SplitSection>
-<SplitSectionText>
+<AvailableSince version="10.61.0" />
 
-## Scope Attributes
+Use `Sentry.setAttribute` and `Sentry.setAttributes` to attach attributes that are automatically included in all logs (as well as your metrics). These work just like <PlatformLink to="/apis/#setTag">`Sentry.setTag` and `Sentry.setTags`</PlatformLink>, but they accept `string`, `number`, and `boolean` values or arrays of these.
 
-Set attributes on a scope to automatically include them in all logs within that context. Requires SDK version `10.32.0` or above.
+To attach attributes to a broader or narrower context, set them on a specific scope instead. Use the global scope for app-wide attributes and the current scope for a single operation.
 
-Use global scope for app-wide attributes, and isolation scope for request-specific context. Only `string`, `number`, and `boolean` attribute values are supported.
-
-</SplitSectionText>
-<SplitSectionCode>
+See <PlatformLink to="/enriching-events/attributes/">Attributes</PlatformLink> for more information.
 
 ```javascript
+// Applied to all logs and metrics
+Sentry.setAttributes({
+  org_id: user.orgId,
+  user_tier: user.tier,
+});
+Sentry.setAttribute("service", "checkout");
+
 // Global scope - shared across entire app
 Sentry.getGlobalScope().setAttributes({
   service: "checkout",
   version: "2.1.0",
-});
-
-// Isolation scope - unique per request
-Sentry.getIsolationScope().setAttributes({
-  org_id: user.orgId,
-  user_tier: user.tier,
 });
 
 // Current scope - single operation
@@ -130,12 +113,6 @@ Sentry.withScope((scope) => {
 });
 ```
 
-</SplitSectionCode>
-</SplitSection>
-
-<SplitSection>
-<SplitSectionText>
-
 ## Console Integration
 
 Already using `console.log`? Capture console calls as Sentry Logs with `consoleLoggingIntegration`.
@@ -144,8 +121,7 @@ Multiple arguments are parsed as searchable attributes (requires SDK `10.13.0`+)
 
 For [Consola](https://github.com/unjs/consola) users, use `Sentry.createConsolaReporter()` instead (requires SDK `10.12.0`+).
 
-</SplitSectionText>
-<SplitSectionCode>
+<PlatformSection notSupported={["javascript.cloudflare"]}>
 
 ```javascript
 Sentry.init({
@@ -161,11 +137,30 @@ console.log("Executed Action for User:", 123, true);
 // -> message.parameter.1: true
 ```
 
-</SplitSectionCode>
-</SplitSection>
+</PlatformSection>
 
-<SplitSection>
-<SplitSectionText>
+<PlatformSection supported={["javascript.cloudflare"]}>
+
+```typescript {filename:src/instrument.server.ts}
+import {
+  consoleLoggingIntegration,
+  defineCloudflareOptions,
+} from "@sentry/cloudflare";
+
+export default defineCloudflareOptions((env) => ({
+  dsn: "___PUBLIC_DSN___",
+  integrations: [
+    consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
+  ],
+}));
+
+// In your Worker, arguments become searchable attributes:
+// console.log("Executed Action for User:", 123, true);
+// -> message.parameter.0: 123
+// -> message.parameter.1: true
+```
+
+</PlatformSection>
 
 ## Filter Logs
 
@@ -173,13 +168,11 @@ Use `beforeSendLog` to filter or modify logs before they're sent. Return `null` 
 
 The log object includes: `level`, `message`, `timestamp`, and `attributes`.
 
-</SplitSectionText>
-<SplitSectionCode>
+<PlatformSection notSupported={["javascript.cloudflare"]}>
 
 ```javascript
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
-  enableLogs: true,
   beforeSendLog: (log) => {
     // Drop debug logs in production
     if (log.level === "debug") {
@@ -196,17 +189,39 @@ Sentry.init({
 });
 ```
 
-</SplitSectionCode>
-</SplitSection>
+</PlatformSection>
 
-</SplitLayout>
+<PlatformSection supported={["javascript.cloudflare"]}>
+
+```typescript {filename:src/instrument.server.ts}
+import { defineCloudflareOptions } from "@sentry/cloudflare";
+
+export default defineCloudflareOptions((env) => ({
+  dsn: "___PUBLIC_DSN___",
+  beforeSendLog: (log) => {
+    // Drop debug logs in production
+    if (log.level === "debug") {
+      return null;
+    }
+
+    // Remove sensitive attributes
+    if (log.attributes?.password) {
+      delete log.attributes.password;
+    }
+
+    return log;
+  },
+}));
+```
+
+</PlatformSection>
 
 ## How Logs Link to Other Features
 
 Everything in Sentry is linked by trace. When you're viewing a log, you can jump to the parent trace to see the full request context. When you're viewing a trace, you can see all logs emitted during that operation. This connection makes it easy to move between high-level performance data and detailed diagnostic logs.
 
-- **[Traces](/product/explore/traces/)** — Logs emitted during an active span automatically include `sentry.trace.parent_span_id`. Click through from any log to see the full trace, or filter logs by trace ID to see everything that happened during a specific request.
-- <PlatformSection notSupported={["javascript.node", "javascript.aws-lambda", "javascript.azure-functions", "javascript.connect", "javascript.express", "javascript.fastify", "javascript.gcp-functions", "javascript.hapi", "javascript.hono", "javascript.koa", "javascript.nestjs", "javascript.nitro", "javascript.bun", "javascript.cloudflare"]}>**[Session Replay](/product/explore/session-replay/)** — Logs include `sentry.replay_id` when a replay is active. Jump from a log entry directly to the replay to see what the user was doing when the log was emitted.</PlatformSection>
+- **[Traces](/product/trace-explorer/)** — Logs emitted during an active span automatically include `sentry.trace.parent_span_id`. Click through from any log to see the full trace, or filter logs by trace ID to see everything that happened during a specific request.
+- <PlatformCategorySection notSupported={["server-only", "mobile"]}>**[Session Replay](/product/session-replay/)** — Logs include `sentry.replay_id` when a replay is active. Jump from a log entry directly to the replay to see what the user was doing when the log was emitted.</PlatformCategorySection>
 - **[Errors](/product/issues/)** — Logs capture the journey leading up to a failure. When an error occurs, your logs show what data was processed, which code paths executed, and what state the system was in — context that stack traces alone can't provide.
 
 ## Best Practices
@@ -217,8 +232,14 @@ Everything in Sentry is linked by trace. When you're viewing a log, you can jump
 
 <PlatformContent includePath="logs/default-attributes" />
 
+### Shared Attributes
+
+Any attributes set via `Sentry.setAttribute()` / `Sentry.setAttributes()` (or directly on a scope) are automatically included on all logs. `Sentry.setAttribute(s)` requires SDK version `10.61.0` or above. See [Attributes](#shared-attributes) above for details.
+
+
 ## Related Features
 
 - <PlatformLink to="/tracing/">Tracing</PlatformLink> — Logs are automatically linked to traces, so you can see logs in the context of the request or operation that produced them.
-- <PlatformSection notSupported={["javascript.node", "javascript.aws-lambda", "javascript.azure-functions", "javascript.connect", "javascript.express", "javascript.fastify", "javascript.gcp-functions", "javascript.hapi", "javascript.hono", "javascript.koa", "javascript.nestjs", "javascript.nitro", "javascript.bun", "javascript.cloudflare"]}><PlatformLink to="/session-replay/">Session Replay</PlatformLink> — Logs are automatically linked to replays, letting you jump from a log entry to see what the user was doing.</PlatformSection>
+- <PlatformCategorySection notSupported={["server-only", "mobile"]}><PlatformSection notSupported={["javascript.wasm"]}><PlatformLink to="/session-replay/">Session Replay</PlatformLink> — Logs are automatically linked to replays, letting you jump from a log entry to see what the user was doing.</PlatformSection></PlatformCategorySection>
 - <PlatformLink to="/usage/">Error Monitoring</PlatformLink> — Use logs to add diagnostic context that helps you understand what led to an error.
+- <PlatformLink to="/enriching-events/attributes/">Attributes</PlatformLink> — Set attributes once and have them automatically included on all your logs.

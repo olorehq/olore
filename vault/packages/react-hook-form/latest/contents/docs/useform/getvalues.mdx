@@ -1,11 +1,12 @@
 ---
 title: getValues
+seoTitle: "getValues: Read React Form Values"
 description: Read current form values without subscribing to re-renders.
 metaDescription: Read current form values without subscribing to re-renders. Retrieve a single field, multiple fields, or the entire form data object.
 sidebar: apiLinks
 ---
 
-## \</> `getValues:` <TypeText>`(payload?: string | string[]) => Object`</TypeText>
+## \</> `getValues:` <TypeText>[UseFormGetValues](/ts#UseFormGetValues)</TypeText>
 
 An optimized helper for reading form values. The difference between `watch` and `getValues` is that `getValues` **will not** trigger re-renders or subscribe to input changes.
 
@@ -13,15 +14,15 @@ An optimized helper for reading form values. The difference between `watch` and 
 
 ---
 
-| Name         | Type            | Description                                               |
-| ------------ | --------------- | --------------------------------------------------------- |
-| `fieldNames` | `undefined`     | Returns the entire form values.                           |
-|              | `string`        | Gets the value at path of the form values.                |
-|              | `array`         | Returns an array of the value at path of the form values. |
-| `config`     | `dirtyFields`   | Returns only dirty fields                                 |
-|              | `touchedFields` | Return only touchedFields                                 |
+| Name         |                 | Type                           | Description                                               |
+| ------------ | --------------- | ------------------------------ | --------------------------------------------------------- |
+| `fieldNames` |                 | <TypeText>undefined</TypeText> | Returns the entire form values.                           |
+|              |                 | <TypeText>string</TypeText>    | Gets the value at path of the form values.                |
+|              |                 | <TypeText>string[]</TypeText>  | Returns an array of the value at path of the form values. |
+| `config`     | `dirtyFields`   | <TypeText>boolean</TypeText>   | <Since version="7.63.0" /> Returns only dirty fields.     |
+|              | `touchedFields` | <TypeText>boolean</TypeText>   | <Since version="7.63.0" /> Returns only touched fields.   |
 
-**Examples:**
+##### Examples
 
 ---
 
@@ -33,22 +34,24 @@ The example below shows what to expect when you invoke `getValues` method.
 <input {...register("root.test2")} />
 ```
 
-| Name                                            | Output                              |
-| ----------------------------------------------- | ----------------------------------- |
-| `getValues()`                                   | `{ root: { test1: '', test2: ''} }` |
-| `getValues("root")`                             | `{ test1: '', test2: ''}`           |
-| `getValues("root.firstName")`                   | `''`                                |
-| `getValues(["yourDetails.lastName"])`           | `['']`                              |
-| `getValues(undefined, { dirtyFields: true })`   | `{ root: { test1: '', test2: ''} }` |
-| `getValues(undefined, { touchedFields: true })` | `{ root: { test1: '', test2: ''} }` |
+| Name                                            | Output                                                                                                                  |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `getValues()`                                   | `{ root: { test1: '', test2: ''} }`                                                                                     |
+| `getValues("root")`                             | `{ test1: '', test2: ''}`                                                                                               |
+| `getValues("root.test1")`                       | `''`                                                                                                                    |
+| `getValues(["root.test1", "root.test2"])`       | `['', '']`                                                                                                              |
+| `getValues(undefined, { dirtyFields: true })`   | `{ root: { test1: '' } }` — only fields present in `formState.dirtyFields` (e.g. after editing `test1`) are included    |
+| `getValues(undefined, { touchedFields: true })` | `{ root: { test1: '' } }` — only fields present in `formState.touchedFields` (e.g. after blurring `test1`) are included |
 
 <Admonition type="important" title="Rules">
 
 - It will return `defaultValues` from `useForm` before the **initial** render.
+- `getValues` returns the raw field values. The data passed to your `handleSubmit` callback can differ: with a [resolver](/docs/useform#resolver) it's the resolver's output (with any transforms or coercion applied), and disabled fields are left out.
+- `getValues` doesn't subscribe to changes, so it won't re-render your component. To render a value, use [`useWatch`](/docs/usewatch) or [`watch`](/docs/useform/watch).
 
 </Admonition>
 
-**Examples:**
+### Examples
 
 ---
 
@@ -113,7 +116,6 @@ export default function App() {
 ```
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg"
-import React from "react"
 import { useForm } from "react-hook-form"
 
 // Flat input values
@@ -124,7 +126,7 @@ type Inputs = {
   key4: Date
 }
 
-export default function App() {
+function FlatForm() {
   const { register, getValues } = useForm<Inputs>()
 
   getValues()
@@ -143,26 +145,64 @@ type Inputs1 = {
   key4: string[]
 }
 
-export default function Form() {
+function NestedForm() {
   const { register, getValues } = useForm<Inputs1>()
 
   getValues()
-  // function getValues(): Record<string, unknown>
+  // function getValues(): Inputs1
   getValues("key1")
-  // function getValues<"key1", unknown>(payload: "key1"): string
+  // function getValues<"key1">(name: "key1"): string
   getValues("key2")
-  // function getValues<"key2", unknown>(payload: "key2"): number
+  // function getValues<"key2">(name: "key2"): number
   getValues("key3.key1")
-  // function getValues<"key3.key1", unknown>(payload: "key3.key1"): unknown
-  getValues<string, number>("key3.key1")
-  // function getValues<string, number>(payload: string): number
-  getValues<string, boolean>("key3.key2")
-  // function getValues<string, boolean>(payload: string): boolean
+  // function getValues<"key3.key1">(name: "key3.key1"): number
+  getValues("key3.key2")
+  // function getValues<"key3.key2">(name: "key3.key2"): boolean
   getValues("key4")
-  // function getValues<"key4", unknown>(payload: "key4"): string[]
+  // function getValues<"key4">(name: "key4"): string[]
+  getValues(["key1", "key3.key2"])
+  // function getValues<["key1", "key3.key2"]>(names: readonly ["key1", "key3.key2"]): [string, boolean]
 
   return <form />
 }
 ```
 
 </TabGroup>
+
+### Tips
+
+---
+
+- To compare fields inside a validation rule, use the second argument of `validate` instead of `getValues`. It gets the current form values:
+
+  ```javascript
+  register("confirmPassword", {
+    validate: (value, formValues) =>
+      value === formValues.password || "Passwords do not match",
+  })
+  ```
+
+- Do not mutate the object that `getValues` returns. Nested objects are shared with the form's internal state, so changing them can change form values without updating the form state. Copy the value first, or use [`setValue`](/docs/useform/setvalue).
+- Use `getValues` in event handlers, for example to build a preview or to save a draft on click. In those places you need the latest values once, not a subscription.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### A value shown with `getValues` doesn't update as the user types
+
+<Why>
+
+`getValues` reads the current values once and does not subscribe to changes, so the component does not re-render when the input changes.
+
+</Why>
+
+<Fix>
+
+To render a value, use [`useWatch`](/docs/usewatch) (or [`watch`](/docs/useform/watch)), which re-renders when the value changes. Keep `getValues` for event handlers.
+
+</Fix>
+
+</Troubleshoot>

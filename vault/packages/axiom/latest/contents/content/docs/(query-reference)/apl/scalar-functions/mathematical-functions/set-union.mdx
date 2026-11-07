@@ -1,0 +1,94 @@
+---
+title: set_union
+description: 'This page explains how to use the set_union function in APL.'
+---
+
+Use the `set_union` function in APL to combine two dynamic arrays into one, returning a new array that includes all distinct elements from both. The order of elements in the result isn’t guaranteed and may differ from the original input arrays.
+
+You can use `set_union` when you need to merge two arrays and eliminate duplicates. It’s especially useful in scenarios where you need to perform set-based logic, such as comparing user activity across multiple sources, correlating IPs from different datasets, or combining traces or log attributes from different events.
+
+## Usage
+
+### Syntax
+
+```kusto
+set_union(Array1, Array2)
+```
+
+### Parameters
+
+| Name   | Type    | Description                |
+| ------ | ------- | -------------------------- |
+| Array1 | dynamic | The first array to merge.  |
+| Array2 | dynamic | The second array to merge. |
+
+### Returns
+
+A dynamic array that contains the distinct elements of both input arrays.
+
+## Example
+
+Use `set_union` to return the union of two arrays.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend together = set_union(dynamic([1, 2, 3]), dynamic([2, 3, 4, 5]))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20together%20%3D%20set_union(dynamic(%5B1%2C%202%2C%203%5D)%2C%20dynamic(%5B2%2C%203%2C%204%2C%205%5D))%22%7D)
+
+**Output**
+
+| _time            | together |
+| ---------------- | --- |
+| May 22, 11:42:52 | [1, 2, 3, 4, 5 ] |
+
+## List of related functions
+
+- [set_difference](/apl/scalar-functions/mathematical-functions/set-difference): Returns elements in the first array that aren’t in the second. Use it to find exclusions.
+- [set_has_element](/apl/scalar-functions/mathematical-functions/set-has-element): Tests whether a set contains a specific value. Prefer it when you only need a Boolean result.
+- [set_union](/apl/scalar-functions/mathematical-functions/set-union): Returns the union of two or more sets. Use it when you need any element that appears in at least one set instead of every set.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+APL’s `set_union` works similarly to using `mvappend` followed by `mvdedup` in SPL. While SPL stores multivalue fields and uses field-based manipulation, APL focuses on dynamic arrays. You need to explicitly apply set logic in APL using functions like `set_union`.
+
+<CodeGroup>
+```sql Splunk example
+| eval result=mvappend(array1, array2)
+| eval result=mvdedup(result)
+````
+
+```kusto APL equivalent
+extend result = set_union(array1, array2)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL doesn’t support arrays as first-class types or set functions like `set_union`. However, conceptually, `set_union` behaves like applying `UNION` between two subqueries that return one column each, followed by a `DISTINCT`.
+
+<CodeGroup>
+```sql SQL example
+SELECT value FROM (
+  SELECT value FROM table1
+  UNION
+  SELECT value FROM table2
+)
+```
+
+```kusto APL equivalent
+extend result = set_union(array1, array2)
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

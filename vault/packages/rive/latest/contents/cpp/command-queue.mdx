@@ -37,7 +37,7 @@ plumbing you don't need.
 - Async results (file loaded, state machine settled, image decoded) come
   back via **listener callbacks** registered against handles.
 
-## Setting Up the Queue and Server
+## Setting up the queue and server
 
 ```cpp
 #include "rive/command_queue.hpp"
@@ -65,7 +65,7 @@ server.processCommands();
 blocks waiting for commands, and returns when the app thread calls
 `queue->disconnect()`.
 
-## Loading a File and Creating a State Machine
+## Loading a file and creating a State Machine
 
 All these calls happen on the app thread. They enqueue commands and
 return handles **immediately** — the actual work happens on the server
@@ -83,7 +83,7 @@ The handles are valid to use immediately even though the load hasn't
 happened yet — subsequent commands queued against them will execute in
 order on the server.
 
-## Advancing and Drawing
+## Advancing and drawing
 
 ```cpp
 // App thread:
@@ -100,7 +100,7 @@ for the full draw-callback API; the canonical example is the
 command-queue D3D11 sample in the rive monorepo
 (`packages/sample_win32_d3d11_cq/`).
 
-## Async Results: Listeners
+## Async results: listeners
 
 Because commands run asynchronously, results come back via listener
 callbacks. Each handle type has a matching listener with `on…` methods:
@@ -136,7 +136,7 @@ Pass a non-zero `requestId` to the queue methods that accept one (e.g.
 `deleteFile(handle, requestId)`) and your listener will receive the same
 ID back.
 
-## Pointer Events
+## Pointer events
 
 Pointer events go through the queue too. `CommandQueue::PointerEvent`
 carries the screen-space position; the server converts it to artboard
@@ -170,7 +170,7 @@ queue->deleteArtboard(artboard);
 queue->deleteFile(file);
 ```
 
-## When to Use the Direct API Instead
+## When to use the direct API instead
 
 The direct `File` / `Artboard` / `StateMachineInstance` API documented in
 the other pages on this site is simpler when:

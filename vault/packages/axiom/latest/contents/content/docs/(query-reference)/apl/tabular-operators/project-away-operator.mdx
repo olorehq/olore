@@ -1,0 +1,164 @@
+---
+title: project-away
+description: 'This page explains how to use the project-away operator function in APL.'
+---
+
+The `project-away` operator in APL is used to exclude specific fields from the output of a query. This operator is useful when you want to return a subset of fields from a dataset, without needing to manually specify every field you want to keep. Instead, you specify the fields you want to remove, and the operator returns all remaining fields.
+
+You can use `project-away` in scenarios where your dataset contains irrelevant or sensitive fields that you don’t want in the results. It simplifies queries, especially when dealing with wide datasets, by allowing you to filter out fields without having to explicitly list every field to include.
+
+## Usage
+
+### Syntax
+
+```kusto
+| project-away FieldName1, FieldName2, ...
+```
+
+### Parameters
+
+- `FieldName`: The field you want to exclude from the result set.
+
+### Returns
+
+The `project-away` operator returns the input dataset excluding the specified fields. The result contains the same number of rows as the input table.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you might want to exclude unnecessary fields to focus on the relevant fields, such as timestamp, request duration, and user information.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| project-away status, uri, method
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20project-away%20status%2C%20uri%2C%20method%22%7D)
+
+**Output**
+
+| _time               | req_duration_ms | id  | geo.city | geo.country |
+|---------------------|-----------------|-----|----------|-------------|
+| 2023-10-17 10:23:00 | 120             | u1  | Seattle  | USA         |
+| 2023-10-17 10:24:00 | 135             | u2  | Berlin   | Germany     |
+
+The query removes the `status`, `uri`, and `method` fields from the output, keeping the focus on the key fields.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+When analyzing OpenTelemetry traces, you can remove fields that aren't necessary for specific trace evaluations, such as span IDs and statuses.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| project-away span_id, status_code
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20project-away%20span_id%2C%20status_code%22%7D)
+
+**Output**
+
+| _time               | duration | trace_id | service.name      | kind   |
+|---------------------|----------|----------|-------------------|--------|
+| 2023-10-17 11:01:00 | 00:00:03 | t1       | frontend          | server |
+| 2023-10-17 11:02:00 | 00:00:02 | t2       | checkoutservice   | client |
+
+The query removes the `span_id` and `status_code` fields, focusing on key service information.
+
+</Tab>
+<Tab title="Security logs">
+
+In security log analysis, excluding unnecessary fields such as the HTTP method or URI can help focus on user behavior patterns and request durations.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| project-away method, uri
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20project-away%20method%2C%20uri%22%7D)
+
+**Output**
+
+| _time               | req_duration_ms | id  | status | geo.city | geo.country |
+|---------------------|-----------------|-----|--------|----------|-------------|
+| 2023-10-17 10:25:00 | 95              | u3  | 200    | London   | UK          |
+| 2023-10-17 10:26:00 | 180             | u4  | 404    | Paris    | France      |
+
+The query excludes the `method` and `uri` fields, keeping information like status and geographical details.
+
+</Tab>
+</Tabs>
+
+## Wildcard
+
+Wildcard refers to a special character or a set of characters that can be used to substitute for any other character in a search pattern. Use wildcards to create more flexible queries and perform more powerful searches.
+
+The syntax for wildcard can either be `data*` or `['data.fo']*`.
+
+Here’s how you can use wildcards in `project-away`:
+
+```kusto
+['sample-http-logs']
+| project-away status*, user*, is*,  ['geo.']*
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%5Cn%7C%20project-away%20status%2A%2C%20user%2A%2C%20is%2A%2C%20%20%5B%27geo.%27%5D%2A%22%2C%22queryOptions%22%3A%7B%22quickRange%22%3A%2230d%22%7D%7D)
+
+```kusto
+['github-push-event']
+| project-away push*, repo*, ['commits']*
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27github-push-event%27%5D%5Cn%7C%20project-away%20push%2A%2C%20repo%2A%2C%20%5B%27commits%27%5D%2A%22%2C%22queryOptions%22%3A%7B%22quickRange%22%3A%2230d%22%7D%7D)
+
+## List of related operators
+
+- [project](/apl/tabular-operators/project-operator): The `project` operator lets you select specific fields to include, rather than excluding them.
+- [extend](/apl/tabular-operators/extend-operator): The `extend` operator is used to add new fields, whereas `project-away` is for removing fields.
+- [summarize](/apl/tabular-operators/summarize-operator): While `project-away` removes fields, `summarize` is useful for aggregating data across multiple fields.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `fields` command to remove fields from your results. In APL, the `project-away` operator provides a similar functionality, removing specified fields while returning the remaining ones.
+
+<CodeGroup>
+```splunk Splunk example
+... | fields - status, uri, method
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| project-away status, uri, method
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you typically use the `SELECT` statement to explicitly include fields. In contrast, APL’s `project-away` operator allows you to exclude fields, offering a more concise approach when you want to keep many fields but remove a few.
+
+<CodeGroup>
+```sql SQL example
+SELECT _time, req_duration_ms, id, geo.city, geo.country
+FROM sample_http_logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| project-away status, uri, method
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

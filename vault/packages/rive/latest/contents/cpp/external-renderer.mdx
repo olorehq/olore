@@ -14,7 +14,7 @@ core runtime is renderer-agnostic — anything you pass to
 
 Implement both and Rive will route everything through them.
 
-## Use Cases
+## Use cases
 
 - You already have a 2D vector engine (Skia, Direct2D, custom) and want
   Rive to render through it.
@@ -26,7 +26,7 @@ If you only need Rive on Windows / macOS / iOS / Linux / Web / Android,
 prefer the [built-in renderers](/runtimes/cpp/renderers) — they're
 faster and feature-complete.
 
-## The `Renderer` Interface
+## The `Renderer` interface
 
 ```cpp
 class Renderer {
@@ -63,7 +63,7 @@ A few constraints worth knowing up front:
 - `drawImageMesh` indices are 16-bit; vertex / UV buffers are
   tightly-packed `float` pairs.
 
-## The `Factory` Interface
+## The `Factory` interface
 
 ```cpp
 class Factory {
@@ -102,7 +102,7 @@ Things to keep in mind:
   override points; use the actual virtual `Factory` extension points for
   custom font shaping or audio integration.
 
-## RenderPath / RenderPaint Subclasses
+## RenderPath / RenderPaint subclasses
 
 Each holds the state your backend reads during drawing:
 
@@ -137,7 +137,7 @@ public:
 `rive/renderer.hpp` (for `RenderPath` and `RenderPaint`) — read those for
 the full set.)
 
-## Wiring It Up
+## Wiring it up
 
 ```cpp
 class MyFactory : public rive::Factory { /* ... */ };
@@ -157,7 +157,7 @@ There's no `RenderContext` in this path — your `Renderer` is responsible
 for making the GPU calls (or buffering them, or counting them, or whatever
 you want).
 
-## Reference Implementations
+## Reference implementations
 
 All paths below are in the [rive-runtime](https://github.com/rive-app/rive-runtime) repo.
 

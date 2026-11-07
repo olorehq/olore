@@ -3,7 +3,14 @@ id: infer-types
 title: Inferring Types
 sidebar_label: Inferring Types
 slug: /client/react/infer-types
+section: "Client Usage"
+parent: "client/react"
+order: 55
 ---
+
+:::warning Deprecated
+The classic React Query integration (`@trpc/react-query`) only gets bug fixes, and will be removed in the next major version of tRPC. New projects should use the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
+:::
 
 <!-- Reusable snippet -->
 
@@ -324,4 +331,4 @@ function MyOtherPageComponent() {
 }
 ```
 
-A more complete working example [can be found here](https://github.com/trpc/trpc/tree/main/packages/tests/server/react/polymorphism.test.tsx)
+A more complete working example [can be found here](https://github.com/trpc/trpc/blob/main/packages/react-query/test/polymorphism.test.tsx)

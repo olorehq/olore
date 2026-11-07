@@ -7,7 +7,7 @@ read_when:
 title: "Nix"
 ---
 
-Install OpenClaw declaratively with **[nix-openclaw](https://github.com/openclaw/nix-openclaw)** - the first-party, batteries-included Home Manager module.
+Install OpenClaw declaratively with **[nix-openclaw](https://github.com/openclaw/nix-openclaw)**, the first-party, batteries-included Home Manager module.
 
 <Info>
 The [nix-openclaw](https://github.com/openclaw/nix-openclaw) repo is the source of truth for Nix installation. This page is a quick overview.
@@ -15,7 +15,7 @@ The [nix-openclaw](https://github.com/openclaw/nix-openclaw) repo is the source 
 
 ## What you get
 
-- Gateway + macOS app + tools (whisper, spotify, cameras) -- all pinned
+- Gateway + macOS app + tools (whisper, spotify, cameras), all pinned
 - Launchd service that survives reboots
 - Plugin system with declarative config
 - Instant rollback: `home-manager switch --rollback`
@@ -30,7 +30,8 @@ The [nix-openclaw](https://github.com/openclaw/nix-openclaw) repo is the source 
     Use the agent-first template from the nix-openclaw repo:
     ```bash
     mkdir -p ~/code/openclaw-local
-    # Copy templates/agent-first/flake.nix from the nix-openclaw repo
+    git clone https://github.com/openclaw/nix-openclaw.git /tmp/nix-openclaw
+    cp /tmp/nix-openclaw/templates/agent-first/flake.nix ~/code/openclaw-local/flake.nix
     ```
   </Step>
   <Step title="Configure secrets">
@@ -50,7 +51,12 @@ See the [nix-openclaw README](https://github.com/openclaw/nix-openclaw) for full
 
 ## Nix-mode runtime behavior
 
-When `OPENCLAW_NIX_MODE=1` is set (automatic with nix-openclaw), OpenClaw enters a deterministic mode for Nix-managed installs. Other Nix packages can set the same mode; nix-openclaw is the first-party reference.
+When `OPENCLAW_NIX_MODE=1` is set (automatic with nix-openclaw), OpenClaw uses the Nix-managed install mode. Other Nix packages can set the same mode; nix-openclaw is the first-party reference.
+
+For externally managed config without Nix, use
+[`OPENCLAW_CONFIG_READONLY=1`](/cli/config#externally-managed-config). It applies
+the same immutable-config enforcement with generic messaging, without enabling
+Nix-specific behavior. Existing `OPENCLAW_NIX_MODE=1` installs need no changes.
 
 You can also set it manually:
 
@@ -58,7 +64,7 @@ You can also set it manually:
 export OPENCLAW_NIX_MODE=1
 ```
 
-On macOS, the GUI app does not automatically inherit shell environment variables. Enable Nix mode via defaults instead:
+On macOS, the GUI app does not inherit shell environment variables. Enable Nix mode via `defaults` instead:
 
 ```bash
 defaults write ai.openclaw.mac openclaw.nixMode -bool true
@@ -66,15 +72,15 @@ defaults write ai.openclaw.mac openclaw.nixMode -bool true
 
 ### What changes in Nix mode
 
-- Auto-install and self-mutation flows are disabled
-- `openclaw.json` is treated as immutable. Startup-derived defaults stay runtime-only, and config writers such as setup, onboarding, mutating `openclaw update`, plugin install/update/uninstall/enable, `doctor --fix`, `doctor --generate-gateway-token`, and `openclaw config set` refuse to edit the file.
-- Agents should edit the Nix source instead. For nix-openclaw, use the agent-first [Quick Start](https://github.com/openclaw/nix-openclaw#quick-start) and set config under `programs.openclaw.config` or `instances.<name>.config`.
-- Missing dependencies surface Nix-specific remediation messages
-- UI surfaces a read-only Nix mode banner
+- Auto-install and self-mutation flows are disabled.
+- `openclaw.json` is treated as immutable. Startup-derived defaults stay runtime-only, and config writers (setup, onboarding, mutating `openclaw update`, plugin install/update/uninstall/enable, `doctor --fix`, `doctor --generate-gateway-token`, `openclaw config set`) refuse to edit the file.
+- Edit the Nix source instead. For nix-openclaw, use the agent-first [Quick Start](https://github.com/openclaw/nix-openclaw#quick-start) and set config under `programs.openclaw.config` or `instances.<name>.config`.
+- Missing dependencies surface Nix-specific remediation messages.
+- The UI shows a read-only Nix mode banner.
 
 ### Config and state paths
 
-OpenClaw reads JSON5 config from `OPENCLAW_CONFIG_PATH` and stores mutable data in `OPENCLAW_STATE_DIR`. When running under Nix, set these explicitly to Nix-managed locations so runtime state and config stay out of the immutable store.
+OpenClaw reads JSON5 config from `OPENCLAW_CONFIG_PATH` and stores mutable data in `OPENCLAW_STATE_DIR`. Under Nix, set these explicitly to Nix-managed locations so runtime state and config stay out of the immutable store.
 
 | Variable               | Default                                 |
 | ---------------------- | --------------------------------------- |
@@ -84,15 +90,49 @@ OpenClaw reads JSON5 config from `OPENCLAW_CONFIG_PATH` and stores mutable data 
 
 ### Service PATH discovery
 
-The launchd/systemd gateway service auto-discovers Nix-profile binaries so
-plugins and tools that shell out to `nix`-installed executables work without
-manual PATH setup:
+On Linux, the systemd Gateway service auto-discovers Nix-profile binaries so plugins and tools that shell out to `nix`-installed executables work without manual PATH setup:
 
-- When `NIX_PROFILES` is set, every entry is added to the service PATH in
-  right-to-left precedence (matches Nix shell precedence - rightmost wins).
+- When `NIX_PROFILES` is set, every entry is added to the service PATH in right-to-left precedence (matches Nix shell precedence: rightmost wins).
 - When `NIX_PROFILES` is unset, `~/.nix-profile/bin` is added as a fallback.
 
-This applies to both macOS launchd and Linux systemd service environments.
+These profile directories follow the trusted system directories in the service PATH.
+
+On macOS, the launchd Gateway service intentionally uses a system-only PATH and does not add Nix profiles or inherit your shell's PATH:
+
+```text
+/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+```
+
+If a CLI backend, stdio MCP server, or skill needs a Nix-installed executable, use one of these approaches:
+
+- **CLI-managed service:** install an executable wrapper that adds the required Nix bin directories to `PATH`, then execs OpenClaw with `"$@"`. Adjust the profile directories below to match your own profiles, and replace `/absolute/path/to/openclaw` with your OpenClaw executable's absolute path:
+
+  ```bash
+  mkdir -p ~/.local/bin
+  cat > ~/.local/bin/openclaw-nix-wrapper <<'EOF'
+  #!/bin/sh
+  set -eu
+  export PATH="$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"
+  exec /absolute/path/to/openclaw "$@"
+  EOF
+  chmod +x ~/.local/bin/openclaw-nix-wrapper
+  ```
+
+  Register it with the persistent [`--wrapper` option](/cli/gateway/service#install-with-a-wrapper):
+
+  ```bash
+  openclaw gateway install --wrapper ~/.local/bin/openclaw-nix-wrapper --force
+  openclaw gateway restart
+  ```
+
+  OpenClaw persists the wrapper for later reinstalls, updates, and Doctor repairs; do not edit the generated LaunchAgent.
+
+- **Per-command configuration:** use the executable's absolute path wherever the integration accepts a command path, rather than relying on a bare command name.
+- **nix-openclaw-managed service:** add the tools to `programs.openclaw.runtimePackages` (or `programs.openclaw.instances.<name>.runtimePackages`) in your Home Manager configuration, then run `home-manager switch`. The module adds these packages to the Gateway's runtime PATH without changing your shell's PATH. For example:
+
+  ```nix
+  programs.openclaw.runtimePackages = [ pkgs.jq ];
+  ```
 
 ## Related
 

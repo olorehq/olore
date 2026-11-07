@@ -1,0 +1,29 @@
+---
+title: 'Best Practices'
+description: 'Performance and usage considerations for Rive in React.'
+---
+
+import Overview from "/snippets/runtimes/caching/overview.mdx"
+
+<CardGroup cols={1}>
+  <Card title="General Rive best practices" href="/getting-started/best-practices">
+    Design-time and runtime guidance that applies across platforms.
+  </Card>
+</CardGroup>
+
+## Avoiding unnecessary rerenders
+
+When using useRive, keep the hook and its returned `<RiveComponent />` together in a dedicated wrapper component.
+
+Rive creates an instance when the component mounts, and that instance is tied to the underlying `<canvas>` element. If React repeatedly unmounts or recreates that canvas, the animation may restart, disappear, or fail to display as expected.
+
+```jsx
+function RiveAnimation() {
+  const { RiveComponent } = useRive({
+    src: '/animation.riv',
+    stateMachine: 'State Machine 1',
+  });
+
+  return <RiveComponent />;
+}
+```

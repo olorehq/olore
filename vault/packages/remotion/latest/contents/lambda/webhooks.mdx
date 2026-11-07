@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-lambda-webhooks.png
+image: https://remotion.media/docs/generated/articles-docs-lambda-webhooks.png
 sidebar_label: Webhooks
 title: Webhooks
 slug: /lambda/webhooks
@@ -59,6 +59,12 @@ export type WebhookSuccessPayload = StaticWebhookPayload & {
   lambdaErrors: EnhancedErrorInfo[];
   outputUrl: string | undefined;
   outputFile: string | undefined;
+  separateAudio: {
+    url: string;
+    bucketName: string;
+    key: string;
+    sizeInBytes: number;
+  } | null;
   timeToFinish: number | undefined;
   costs: AfterRenderCost;
 };
@@ -104,6 +110,10 @@ The `outputUrl`, `outputFile` and `timeToFinish` keys are only returned if the r
 
 The `errors` array will contain the error message and stack trace of any _fatal_ error that occurs during the render process.
 
+### `separateAudio`<AvailableFrom v="4.0.535" />
+
+Successful renders include the same [`separateAudio`](/docs/lambda/getrenderprogress#separateaudio) details as [`getRenderProgress()`](/docs/lambda/getrenderprogress). The value is `null` when no separate audio output was requested. A success webhook is sent after both output files have uploaded.
+
 ## Validate Webhooks
 
 Remotion will sign all webhook requests if you provide a webhook secret in the CLI arguments.
@@ -135,16 +145,13 @@ function calculateSignature(payload: string, secret?: string) {
 
 In your webhook endpoint, the `payload` parameter is the request body and the `secret` parameter is your webhook secret.
 
-Instead of validating the signature yourself, you can use the [`validateWebhookSignature()`](/docs/lambda/validatewebhooksignature) function to throw an error if the signature is invalid.
+Instead of validating the signature yourself, you can use the [`validateWebhookSignature()`](/docs/lambda/validatewebhooksignature) function to throw an error if the signature is invalid. The Lambda SDKs for [Go](/docs/lambda/go#verifying-webhooks), [Python](/docs/lambda/python#verifying-webhooks), [PHP](/docs/lambda/php#verifying-webhooks) and [Ruby](/docs/lambda/ruby#verifying-webhooks) ship equivalent helpers that take the raw request body, and `validateWebhookSignature()` accepts the raw request body as well.
 
 ## Example webhook endpoint (Express)
 
 You can use any web framework and language to set up your webhook endpoint. The following example is written in JavaScript using the Express framework, we are using [`expressWebhook()`](/docs/lambda/expresswebhook) to simplify the process.
 
 ```javascript twoslash title="server.js"
-const ENABLE_TESTING = false;
-
-// ---cut---
 import express from 'express';
 import bodyParser from 'body-parser';
 import {expressWebhook} from '@remotion/lambda/client';
@@ -154,7 +161,7 @@ const jsonParser = bodyParser.json();
 
 const handler = expressWebhook({
   secret: 'mysecret',
-  testing: ENABLE_TESTING,
+  testing: false,
   onSuccess: ({renderId}) => console.log('Finished render', renderId),
   onTimeout: ({renderId}) => console.log('Time out', renderId),
   onError: ({renderId}) => console.log('Error', renderId),
@@ -232,15 +239,12 @@ router.listen(3000, () => {
 Similarly, here is an example endpoint in Next.JS for the App Router using [`appRouterWebhook()`](/docs/lambda/approuterwebhook). Available from v4.0.246.
 
 ```tsx twoslash title="app/api/webhook.ts"
-const ENABLE_TESTING = false;
-
-// ---cut---
 import {appRouterWebhook} from '@remotion/lambda/client';
 
 export const POST = appRouterWebhook({
   secret: 'mysecret',
   // Enable testing through the tool below
-  testing: ENABLE_TESTING,
+  testing: false,
   onSuccess: ({renderId}) => console.log('Finished render', renderId),
   onTimeout: ({renderId}) => console.log('Time out', renderId),
   onError: ({renderId}) => console.log('Error', renderId),
@@ -254,16 +258,12 @@ export const OPTIONS = POST;
 The same endpoint as above, but using the Pages Router with the help of [`pagesRouterWebhook()`](/docs/lambda/pagesrouterwebhook). Available from v4.0.246.
 
 ```tsx twoslash title="pages/api/webhook.ts"
-const ENABLE_TESTING = false;
-
-// ---cut---
-
 import {pagesRouterWebhook} from '@remotion/lambda/client';
 
 const handler = pagesRouterWebhook({
   secret: 'mysecret',
   // Enable testing through the tool below
-  testing: ENABLE_TESTING,
+  testing: false,
   onSuccess: ({renderId}) => console.log('Finished render', renderId),
   onTimeout: ({renderId}) => console.log('Time out', renderId),
   onError: ({renderId}) => console.log('Error', renderId),

@@ -24,7 +24,7 @@ An instance of `Hono` has the following methods.
 - app.**basePath**(path)
 - app.**notFound**(handler)
 - app.**onError**(err, handler)
-- app.**mount**(path, anotherApp)
+- app.**mount**(path, anotherApp, \[options\])
 - app.**fire**()
 - app.**fetch**(request, env, event)
 - app.**request**(path, options)
@@ -69,7 +69,7 @@ If both a parent app and its routes have `onError` handlers, the route-level han
 ## fire()
 
 ::: warning
-**`app.fire()` is deprecated**. Use `fire()` from `hono/service-worker` instead. See the [Service Worker documentation](/docs/getting-started/service-worker) for details.
+**`app.fire()` is deprecated**. Use `fire()` from `@hono/service-worker` instead. See the [Service Worker documentation](/docs/getting-started/service-worker) for details.
 :::
 
 `app.fire()` automatically adds a global `fetch` event listener.
@@ -161,6 +161,10 @@ test('POST /message is ok', async () => {
 
 ## mount()
 
+::: warning
+**`app.mount()` is deprecated**. Use the [Mount Middleware](/docs/middleware/builtin/mount) instead.
+:::
+
 The `mount()` allows you to mount applications built with other frameworks into your Hono application.
 
 ```ts
@@ -178,6 +182,30 @@ const app = new Hono()
 
 // Mount!
 app.mount('/itty-router', ittyRouter.handle)
+```
+
+By default, `mount()` passes a new `Request` with the mount path removed from its URL. Provide a `replaceRequest` function to control which `Request` is passed to the mounted application:
+
+```ts twoslash
+import { Hono } from 'hono'
+const app = new Hono()
+const handler = (request: Request) => new Response(request.url)
+// ---cut---
+app.mount('/app', handler, {
+  replaceRequest: (originalRequest) => originalRequest,
+})
+```
+
+To pass the original `Request` unchanged, set `replaceRequest` to `false` as a shorthand for the function above:
+
+```ts twoslash
+import { Hono } from 'hono'
+const app = new Hono()
+const handler = (request: Request) => new Response(request.url)
+// ---cut---
+app.mount('/app', handler, {
+  replaceRequest: false,
+})
 ```
 
 ## strict mode

@@ -1,0 +1,216 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-lambda-php.png
+title: Triggering renders from PHP
+slug: /lambda/php
+sidebar_label: Rendering from PHP
+crumb: '@remotion/lambda'
+---
+
+# Triggering renders from PHP<AvailableFrom v="3.3.96" />
+
+To trigger a Lambda render using PHP, install the `remotion/lambda` package using `composer`. Use the same version as the `remotion` version you are using from NPM and pin the version by removing the `^` character in your `composer.json`.
+
+Below is a snippet showing how to initiate a render request and get its status. Note the following before continuing:
+
+- You first need to [complete the Lambda setup](/docs/lambda/setup).
+- Set the following environment variables - the example below supports `.env` files:
+  - `AWS_ACCESS_KEY_ID`
+  - `AWS_SECRET_ACCESS_KEY`
+  - `REMOTION_APP_REGION`
+  - `REMOTION_APP_FUNCTION_NAME`
+  - `REMOTION_APP_SERVE_URL`
+
+```php title="render.php"
+<?php
+use Aws\Credentials\CredentialProvider;
+
+// We'll assume you use Composer, which will add autoload.php
+require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+use Dotenv\Dotenv;
+use Remotion\LambdaPhp\PHPClient;
+use Remotion\LambdaPhp\RenderParams;
+
+// Load environment variables
+// Use "unsafe" because AWS reads environment variables from getenv(), not $_ENV
+$dotenv = Dotenv::createUnsafeImmutable(__DIR__);
+$dotenv->load();
+
+// Specify the region you deployed to, for example "us-east-1"
+$region = getenv('REMOTION_APP_REGION');
+// Specify the function you would like to call
+$functionName = getenv('REMOTION_APP_FUNCTION_NAME');
+// Specify the URL to your Webpack bundle
+$serveUrl = getenv('REMOTION_APP_SERVE_URL');
+
+
+$provider = CredentialProvider::defaultProvider();
+
+// Instantiate the client
+$client = new PHPClient($region, $serveUrl, $functionName, $provider);
+
+// Initiate the param object and customize as needed
+$params = new RenderParams();
+
+$params->setComposition('react-svg');
+
+// Set input props
+$params->setInputProps(['message' => 'yo whats up']);
+
+// Execute the render and get the response
+
+$renderResponse = $client->renderMediaOnLambda($params);
+
+// Output render response
+print_r($renderResponse);
+
+
+// Get render progress
+$renderId = $renderResponse->renderId;
+$bucketName = $renderResponse->bucketName;
+
+
+$renderProgressResponse = $client->getRenderProgress($renderId, $bucketName);
+
+while (!$renderProgressResponse->done) {
+  // Render is not done
+  // Get the render progress
+  $renderProgress = $renderProgressResponse->overallProgress;
+  // Output render progress
+  print_r("progress: " . ($renderProgress * 100) . "%\n");
+  // Wait 1 second
+  sleep(1);
+  // Get render progress again
+  $renderProgressResponse = $client->getRenderProgress($renderId, $bucketName);
+}
+
+print_r("Render is done!\n");
+```
+
+## Getting compositions<AvailableFrom v="4.0.540" />
+
+Use `getCompositionsOnLambda()` to list the compositions in the project configured by the client's serve URL, function name, and region:
+
+```php title="get-compositions.php"
+$compositions = $client->getCompositionsOnLambda(
+  inputProps: ['title' => 'Hello'],
+);
+
+foreach ($compositions as $composition) {
+  echo $composition['id'] . ': ' . $composition['width'] . 'x' . $composition['height'] . PHP_EOL;
+}
+```
+
+The return value is an array of associative arrays, each with `id`, `width`, `height`, `fps`, `durationInFrames`, `props`, `defaultProps`, and default output settings. The call throws an exception if Lambda reports an error.
+
+### inputProps?
+
+Props passed to each composition's [`calculateMetadata()`](/docs/calculate-metadata) function. Defaults to an empty object; no composition ID is required.
+
+### forceBucketName?
+
+Choose the S3 bucket used by the request, including uploads of large input props. If omitted, the SDK finds or creates a Remotion bucket.
+
+### Other arguments
+
+`logLevel`, `timeoutInMilliseconds`, `envVariables`, `chromiumOptions`, `offthreadVideoCacheSizeInBytes`, `mediaCacheSizeInBytes`, and `preferredEffectBackend` correspond to the options of [`getCompositionsOnLambda()`](/docs/lambda/getcompositionsonlambda). The timeout defaults to `30000` milliseconds, the log level to `info`, and the effect backend to `auto`. Set `forcePathStyle` on the client constructor if needed.
+
+## Rendering an image sequence<AvailableFrom v="4.0.535" />
+
+Use `renderFramesOnLambda()` with `RenderFramesParams`. Images default to PNG; the options follow [`renderFramesOnLambda()`](/docs/lambda/renderframesonlambda).
+
+```php title="render-frames.php"
+use Remotion\LambdaPhp\RenderFramesParams;
+
+$params = new RenderFramesParams(
+  composition: 'main',
+  frameRange: [0, 99],
+  framesPerLambda: 20,
+  outputPrefix: 'exports/my-sequence/',
+  imageSequencePattern: 'element-[frame].[ext]',
+);
+
+$renderResponse = $client->renderFramesOnLambda($params);
+print_r($renderResponse);
+```
+
+Poll `getRenderProgress()` until `done` or `fatalErrorEncountered`. `framesUploaded` reports uploaded frames, and `outputSequence['manifestUrl']` points to the completed manifest. `outputPrefix` also accepts an array with `bucketName`, `keyPrefix`, and optional `s3OutputProvider`.
+
+## Rendering a still<AvailableFrom v="4.0.538" />
+
+Use `renderStillOnLambda()` with `RenderStillParams`. The still is rendered in a single Lambda invocation, and the response contains the URL it was written to.
+
+```php title="render-still.php"
+use Remotion\LambdaPhp\RenderStillParams;
+
+$params = new RenderStillParams(
+  composition: 'still-helloworld',
+  data: ['message' => 'Hello from props!'],
+  frame: 10,
+);
+
+$stillResponse = $client->renderStillOnLambda($params);
+
+print_r($stillResponse->output);
+```
+
+`imageFormat` defaults to `png`; `jpeg` and `webp` are also supported. `output` is the URL of the rendered image, `outKey` is its key in the bucket, and `sizeInBytes` is its size.
+
+## Cancelling a render<AvailableFrom v="4.0.515" />
+
+Enable cancellation before starting the render, then call `cancelRenderOnLambda()`:
+
+```php title="cancel-render.php"
+$params = new RenderParams(enableCancellation: true);
+$params->setComposition('react-svg');
+
+$renderResponse = $client->renderMediaOnLambda($params);
+
+$client->cancelRenderOnLambda(
+  $renderResponse->renderId,
+  $renderResponse->bucketName
+);
+```
+
+## Verifying webhooks<AvailableFrom v="4.0.538" />
+
+If you [set up a webhook](/docs/lambda/webhooks) with a secret, Remotion signs every request so you can confirm it was sent by Remotion and that the body was not modified. The PHP client ships `WebhookSignature::validate()`, the equivalent of [`validateWebhookSignature()`](/docs/lambda/validatewebhooksignature) in the JavaScript client.
+
+Pass the webhook secret, the raw request body exactly as it was received, and the `X-Remotion-Signature` header. It throws if the request cannot be verified and returns nothing if it is authentic.
+
+```php title="webhook.php"
+use Remotion\LambdaPhp\WebhookSignature;
+
+$secret = getenv('REMOTION_WEBHOOK_SECRET');
+$body = file_get_contents('php://input');
+
+WebhookSignature::validate(
+  $secret,
+  $body,
+  $_SERVER['HTTP_X_REMOTION_SIGNATURE'] ?? null
+);
+
+// The request is authentic. Decode the body only now.
+$payload = json_decode($body, true);
+
+http_response_code(200);
+```
+
+Read the body first and verify before decoding it. The signature covers the exact bytes that were sent, so decoding and re-encoding the body can change whitespace and how numbers are serialized, which would make a genuine request fail the check. Pass the body as it arrived (`file_get_contents('php://input')`) rather than a decoded array.
+
+## Changelog
+
+- `v4.0.540`: Added `getCompositionsOnLambda()` and fixed uploads of large input props to honor the selected bucket.
+- `v4.0.15`: The fields are now typed. `->setInputProps()` now works as intended, serializing the input props to JSON for you.
+- `v4.0.6`: The response payload structure has changed. See the history of this page to see the previous structure.
+
+## Preferred effect backend<AvailableFrom v="4.0.540" />
+
+Pass `preferredEffectBackend` to `RenderParams` or `RenderStillParams`, or call `setPreferredEffectBackend()` on either instance.
+
+<Options id="preferred-effect-backend" />
+
+## See also
+
+- [Using Lambda without IAM user](/docs/lambda/without-iam)
+- [Permissions](/docs/lambda/permissions)

@@ -1,0 +1,167 @@
+---
+title: topk
+description: 'This page explains how to use the topk aggregation function in APL.'
+---
+
+The `topk` aggregation in Axiom Processing Language (APL) allows you to identify the top `k` results based on a specified field. This is especially useful when you want to quickly analyze large datasets and extract the most significant values, such as the top-performing queries, most frequent errors, or highest latency requests.
+
+Use `topk` to find the most common or relevant entries in datasets, especially in log analysis, telemetry data, and monitoring systems. This aggregation helps you focus on the most important data points, filtering out the noise.
+
+<Note>
+The `topk` aggregation in APL is a statistical aggregation that returns estimated results. The estimation comes with the benefit of speed at the expense of accuracy. This means that `topk` is fast and light on resources even on a large or high-cardinality dataset, but it doesn’t provide precise results.
+
+For completely accurate results, use the [`top` operator](/apl/tabular-operators/top-operator).
+</Note>
+
+## Usage
+
+### Syntax
+
+```kusto
+topk(Field, k)
+```
+
+### Parameters
+
+- `Field`: The field or expression to rank the results by.
+- `k`: The number of top results to return.
+
+### Returns
+
+A subset of the original dataset with the top `k` values based on the specified field.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+When analyzing HTTP logs, you can use the `topk` function to find the top 5 most frequent HTTP status codes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize topk(status, 5)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%20%7C%20summarize%20topk(status%2C%205)%22%7D)
+
+**Output**
+
+| status | count_ |
+|--------|--------|
+| 200    | 1500   |
+| 404    | 400    |
+| 500    | 200    |
+| 301    | 150    |
+| 302    | 100    |
+
+This query groups the logs by HTTP status and returns the 5 most frequent statuses.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `topk` to find the top five status codes by service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize topk(['attributes.http.status_code'], 5) by ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20topk(%5B'attributes.http.status_code'%5D%2C%205)%20by%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| service.name  | attributes.http.status_code | _count     |
+|---------------|-----------------------------|------------|
+| frontendproxy | 200                         | 34,862,088 |
+|               | 203                         | 3,095,223  |
+|               | 404                         | 154,417    |
+|               | 500                         | 153,823    |
+|               | 504                         | 3,497      |
+
+This query shows the top five status codes by service.
+
+</Tab>
+<Tab title="Security logs">
+
+You can use `topk` in security log analysis to find the top 5 cities generating the most HTTP requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize topk(['geo.city'], 5)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%20%7C%20summarize%20topk(%5B'geo.city'%5D%2C%205)%22%7D)
+
+**Output**
+
+| geo.city | count_ |
+|----------|--------|
+| New York | 500    |
+| London   | 400    |
+| Paris    | 350    |
+| Tokyo    | 300    |
+| Berlin   | 250    |
+
+This query returns the top 5 cities based on the number of HTTP requests.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [top](/apl/tabular-operators/top-operator): Returns the top values based on a field without requiring a specific number of results (`k`), making it useful when you’re unsure how many top values to retrieve.
+- [topkif](/apl/aggregation-function/topkif): Returns the top `k` results without filtering. Use topk when you don’t need to restrict your analysis to a subset.
+- [sort](/apl/tabular-operators/sort-operator): Orders the dataset based on one or more fields, which is useful if you need a complete ordered list rather than the top `k` values.
+- [extend](/apl/tabular-operators/extend-operator): Adds calculated fields to your dataset, which can be useful in combination with `topk` to create custom rankings.
+- [count](/apl/aggregation-function/count): Aggregates the dataset by counting occurrences, often used in conjunction with `topk` to find the most common values.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t have the equivalent of the `topk` function. You can achieve similar results with SPL’s `top` command which is equivalent to APL’s `top` operator. The `topk` function in APL behaves similarly by returning the top `k` values of a specified field, but its syntax is unique to APL.
+
+The main difference between `top` (supported by both SPL and APL) and `topk` (supported only by APL) is that `topk` is estimated. This means that APL’s `topk` is faster, less resource intenstive, but less accurate than SPL’s `top`.
+
+<CodeGroup>
+```sql Splunk example
+| top limit=5 status by method
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize topk(status, 5) by method
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, identifying the top `k` rows often involves using the `ORDER BY` and `LIMIT` clauses. While the logic remains similar, APL’s `topk` simplifies this process by directly returning the top `k` values of a field in an aggregation.
+
+The main difference between SQL’s solution and APL’s `topk` is that `topk` is estimated. This means that APL’s `topk` is faster, less resource intenstive, but less accurate than SQL’s combination of `ORDER BY` and `LIMIT` clauses.
+
+<CodeGroup>
+```sql SQL example
+SELECT status, COUNT(*)
+FROM sample_http_logs
+GROUP BY status
+ORDER BY COUNT(*) DESC
+LIMIT 5;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize topk(status, 5)
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

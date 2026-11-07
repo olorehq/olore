@@ -2,6 +2,127 @@
 
 This package contains the Microsoft Foundry integrations for Microsoft Agent Framework, including Foundry chat clients, preconfigured Foundry agents, Foundry embedding clients, and Foundry memory providers.
 
+## SDK compatibility
+
+This package supports `azure-ai-projects>=2.2.0,<2.8.0`. Projects 2.5 and later require
+`openai>=3.0.0`, so `agent-framework-foundry` requires `agent-framework-openai>=1.14.2`,
+which supports both OpenAI 2.x and 3.x.
+
+## Chat client lifecycle
+
+Use `async with FoundryChatClient(...)` or `async with FoundryAgent(...)` to release owned connections, or call
+`await client.close()` explicitly when using a chat client without a context manager. Chat clients close their
+derived OpenAI connection, including when a timeout-configured copy shares its transport. They also close the
+project connection if they created it. A supplied `project_client` and credential remain caller-owned; manage the
+credential's context outside the chat client or agent. Cleanup does not delete remote agents or conversations.
+
+## Tool ownership for preconfigured Foundry agents
+
+`FoundryAgent` connects to a PromptAgent or HostedAgent whose instructions, tool declarations, and tool-selection
+behavior are configured in Microsoft Foundry. The `tools=` argument supplies only the local Python implementations
+for function declarations already present on that remote agent; it does not replace or restrict the remote tool
+inventory.
+
+Per-run `tool_choice` restrictions and `allow_multiple_tool_calls` values cannot be sent with an agent reference and
+are ignored with a warning. The framework's unrestricted `tool_choice="auto"` default is omitted silently. Configure
+tool behavior on the remote Foundry agent, or use `FoundryChatClient` when tool selection must vary per request.
+`FunctionMiddleware` and tool approval policies can authorize local Python execution, but they do not change tools
+that execute inside the remote Foundry agent.
+
+## Tracing an existing Foundry agent
+
+Install Azure Monitor to connect client and service traces:
+
+```shell
+pip install --upgrade agent-framework-foundry "azure-monitor-opentelemetry>=1.8.10,<2"
+```
+
+With Application Insights connected to your project, call
+`await agent.configure_azure_monitor()` before invoking a `FoundryAgent`.
+See [the tracing sample](../../samples/02-agents/observability/foundry_agent_tracing.py)
+for streaming and non-streaming examples.
+
+## Embeddings
+
+`FoundryEmbeddingClient` supports OpenAI text embedding deployments exposed through a Microsoft Foundry project.
+Pass an existing `AIProjectClient`, or provide the project endpoint and an async Azure credential:
+
+```python
+import os
+
+from agent_framework.foundry import FoundryEmbeddingClient
+from azure.identity.aio import AzureCliCredential
+
+async with AzureCliCredential() as credential:
+    async with FoundryEmbeddingClient(
+        project_endpoint=os.environ["FOUNDRY_PROJECT_ENDPOINT"],
+        model=os.environ["FOUNDRY_EMBEDDING_MODEL"],
+        credential=credential,
+    ) as client:
+        result = await client.get_embeddings(["Hello, world!"])
+        print(result[0].dimensions)
+```
+
+Set `FOUNDRY_PROJECT_ENDPOINT` to the project endpoint and `FOUNDRY_EMBEDDING_MODEL` to the embedding deployment
+name. When an `AIProjectClient` is already available, pass it as `project_client` and omit the endpoint and
+credential.
+
+The client uses the project for authentication and converts a
+`https://<resource>.services.ai.azure.com/api/projects/<project>` endpoint to the documented resource-scoped
+`https://<resource>.openai.azure.com/openai/v1/` model route. The existing `FOUNDRY_MODELS_ENDPOINT` and
+`FOUNDRY_MODELS_API_KEY` configuration remains available for Foundry Models inference endpoints. A Models endpoint is
+required for image embedding models unless an `ImageEmbeddingsClient` is supplied. If both project and Models
+endpoints are configured only through environment variables, the Models endpoint is retained for backward
+compatibility; pass `project_endpoint` explicitly to select the project OpenAI deployment.
+
+A preconfigured `EmbeddingsClient` or `ImageEmbeddingsClient` can be passed as `text_client` or `image_client`.
+The injected client is the transport for that modality and takes precedence over constructor connection settings,
+environment settings, and framework defaults, so no endpoint, API key, credential, or Foundry environment is
+required for it. `model` and `image_model` keep their usual explicit-argument, environment, then default
+resolution. The other modality is created only when a request needs it and enough settings are available.
+For example, an injected `image_client` can be combined with project configuration for text embeddings;
+the project text transport is initialized only when a request includes text.
+
+## Evaluations
+
+`FoundryEvals` implements the provider-neutral `Evaluator` protocol with
+Microsoft Foundry's built-in and generated evaluators. Core owns `EvalItem`,
+local evaluation, and the `evaluate_agent()` / `evaluate_workflow()`
+orchestration functions; this package owns the Foundry Evals data mappings,
+wire serialization, submission, polling, and result parsing.
+
+Use `evaluate_agent()` for the common run-and-evaluate path:
+
+```python
+from agent_framework import evaluate_agent
+from agent_framework.foundry import FoundryEvals
+
+results = await evaluate_agent(
+    agent=agent,
+    queries=["What's the weather in Seattle?"],
+    evaluators=FoundryEvals(),
+)
+```
+
+For manual control, construct public `EvalItem` instances and pass them to
+`FoundryEvals.evaluate()`. The Foundry wire format is private to this package.
+`evaluate_traces()` and `evaluate_foundry_target()` provide Foundry-specific
+entry points for existing traces, response IDs, and registered targets.
+
+## Concurrent reuse
+
+When a Foundry agent is used through `as_tool(propagate_session=True)`, application-owned state propagates
+between the parent and child, but service-owned session handles do not. Each delegated invocation has its own
+service session. This also applies to an `Agent` configured with a `RawFoundryAgentChatClient`.
+
+A `FoundryChatClient` instance can be shared by concurrent asynchronous calls on the same event loop. Streaming,
+non-streaming, and mixed calls are supported. Keep mutable run state isolated by creating a separate `Agent` and
+`AgentSession` for each concurrent run and by passing separate messages and options.
+
+This guarantee does not extend to user-supplied middleware, tools, or callbacks unless those implementations are
+also safe for concurrent use. Do not share one client across OS threads or event loops, and do not mutate its
+configuration while calls are active.
+
 ## Toolboxes
 
 A *toolbox* is a named, versioned bundle of hosted tool configurations — code interpreter, file search, image generation, MCP, web search, and so on — stored inside a Microsoft Foundry project. Toolboxes let you manage tool configuration once and reuse it across agents.
@@ -13,7 +134,9 @@ Toolboxes can be authored two ways:
 - **Foundry portal** — create and version toolboxes through the UI without touching code.
 - **Programmatically** — use the [`azure-ai-projects`](https://pypi.org/project/azure-ai-projects/) SDK to create, update, and version toolboxes from Python.
 
-> Toolbox authoring APIs (`ToolboxVersionObject`, `ToolboxObject`, `project_client.beta.toolboxes.*`) require `azure-ai-projects>=2.1.0`. Earlier versions can only consume toolboxes that already exist.
+> In `azure-ai-projects` 2.2, toolbox authoring is available through
+> `project_client.beta.toolboxes`. Projects 2.3 and later expose stable
+> `project_client.toolboxes` operations.
 
 ### Using toolboxes with `FoundryAgent`
 
@@ -61,9 +184,41 @@ agent = Agent(
 )
 ```
 
-Generally available factories: `get_code_interpreter_tool`,
+Non-preview factories: `get_computer_tool`, `get_code_interpreter_tool`,
 `get_file_search_tool`, `get_web_search_tool`,
 `get_image_generation_tool`, `get_mcp_tool`.
+
+`get_computer_tool()` returns the Foundry SDK's `ComputerTool` (available in
+`azure-ai-projects>=2.3.0`). The package still supports 2.2.x for other tools:
+only calling this factory on an older SDK raises `ImportError` with upgrade guidance.
+`get_computer_use_tool(...)` remains available for the separate preview API.
+The OpenAI Responses client also exposes `OpenAIChatClient.get_computer_tool()`.
+The new `ComputerSafetyCheck` type and `Content.from_computer_tool_call` /
+`Content.from_computer_tool_result` constructors are experimental Agent Framework APIs,
+even though Foundry's `ComputerTool` is a non-preview SDK model.
+
+Computer calls arrive as `Content` with `type="computer_tool_call"`, a
+provider item `id`, a distinct `call_id`, ordered `actions`, and optional
+`pending_safety_checks`. Unanswered calls require application input: inspect
+`AgentResponse.user_input_requests` (or `ChatResponse.messages[*].contents`),
+show the actions and warnings to the user, and execute actions only after
+approval. To continue, return `Content.from_computer_tool_result(call_id=...,
+screenshot=Content.from_data(image_bytes, "image/png"))` in a tool message;
+`Content.from_uri(...)` and `Content.from_hosted_file(...)` also work for
+screenshots. Shared `Content` allows a result without a screenshot for other
+providers, but OpenAI and Foundry Responses require one. If checks were pending,
+explicitly pass *only* those the
+application has confirmed as `acknowledged_safety_checks=[{"id": "..."}]`.
+The framework never acknowledges warnings on your behalf. Calls and results
+can be persisted as `Content.to_dict()` and restored with `Content.from_dict()`.
+A call already paired with a completed screenshot result stays in the transcript
+for audit (`informational_only=True`), but does not appear in
+`AgentResponse.user_input_requests`. When a workflow pauses on a computer call
+alongside locally executable functions, it sends their completed results with
+the screenshot in the original call order after the application responds. If
+any computer request in a workflow batch is cancelled, the remaining requests
+in that agent's batch are cancelled too; the terminal output retains already
+resolved results, and the next turn starts with a fresh agent session.
 
 > **Choosing a web grounding tool.** `get_web_search_tool` is the recommended
 > default — it requires no separate Bing resource and works with Azure OpenAI
@@ -106,6 +261,32 @@ Generally available factories: `get_code_interpreter_tool`,
 | `get_browser_automation_tool(connection_id)` | `BrowserAutomationPreviewTool` |
 | `get_bing_custom_search_tool(connection_id, instance_name, ...)` | `BingCustomSearchPreviewTool` |
 | `get_a2a_tool(base_url=..., project_connection_id=..., ...)` | `A2APreviewTool` |
+
+## Creating Foundry conversation sessions
+
+`FoundryAgent.create_conversation()` creates a server-side Foundry
+project conversation and returns an `AgentSession` that can be passed to
+`agent.run(...)` without reaching into the raw OpenAI client.
+
+```python
+from agent_framework.foundry import FOUNDRY_HOSTED_AGENT_SESSION_ID_KEY, FoundryAgent
+
+agent = FoundryAgent(
+    project_endpoint=project_endpoint,
+    agent_name="travel-agent",
+    credential=credential,
+)
+
+session = await agent.create_conversation()
+response = await agent.run("Help me plan a trip to Seattle.", session=session)
+```
+
+For HostedAgents, start with a normal `AgentSession`. When no hosted-agent
+session ID is supplied, the service creates one and the agent stores it in
+`session.state[FOUNDRY_HOSTED_AGENT_SESSION_ID_KEY]`. The response conversation
+ID or response ID remains separate in `session.service_session_id` and is used
+as the next request's continuation handle.
+
 ## Publishing an agent as a Foundry prompt agent
 
 > **Experimental — `ExperimentalFeature.TO_PROMPT_AGENT`.** `to_prompt_agent`

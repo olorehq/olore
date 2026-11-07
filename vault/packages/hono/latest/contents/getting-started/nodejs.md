@@ -104,6 +104,10 @@ process.on('SIGTERM', () => {
 })
 ```
 
+::: info
+On Node.js, `serve()` wraps the `node:http` module and returns the underlying server instance, so closing it is up to you. Bun and Deno serve Fetch handlers natively and manage the server themselves, which is why their guides don't include this step.
+:::
+
 ## 3. Run
 
 Run the development server locally. Then, access `http://localhost:3000` in your Web browser.
@@ -238,6 +242,10 @@ If a request to the path `/hello.txt` or `/image.png` comes in and you want to r
 ```ts
 app.use('*', serveStatic({ root: './static' }))
 ```
+
+::: warning
+Route matching is case-sensitive, but the file system may not be. On Windows and macOS, `/ADMIN/secret.txt` resolves to the same file as `/admin/secret.txt`, and Windows also accepts 8.3 short names such as `/PROTEC~1`. Path-scoped middleware such as `app.use('/admin/*', auth)` does not match those spellings, so do not rely on it to protect files under a static root. Keep protected files outside the directory you serve, or apply the middleware to every path that `serveStatic` handles.
+:::
 
 ### `rewriteRequestPath`
 

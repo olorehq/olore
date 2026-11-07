@@ -1,0 +1,160 @@
+---
+title: 'Send data from AWS FireLens to Axiom'
+description: 'Leverage AWS FireLens to forward logs from Amazon ECS tasks to Axiom for efficient, real-time analysis and insights.'
+overview: ' Container log router for AWS ECS and AWS EKS'
+sidebarTitle: AWS FireLens
+keywords: ['aws', 'FireLens documentation', 'documentation', 'FireLens', 'Axiom', 'Amazon ECS', 'container logging', 'fluentd', 'fluentbit', 'real-time analysis']
+logoId: 'awsEC2'
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+import AwsDisclaimer from "@/content/snippets/aws-disclaimer.mdx"
+
+AWS FireLens is a log routing feature for Amazon ECS. It lets you use popular open-source logging projects [Fluent Bit](https://fluentbit.io/) or [Fluentd](https://www.fluentd.org/) with Amazon ECS to route your logs to various AWS and partner monitoring solutions like Axiom without installing third-party agents on your tasks.
+
+FireLens integrates with your Amazon ECS tasks and services seamlessly, so you can send logs from your containers to Axiom seamlessly.
+
+<AwsDisclaimer />
+
+<Prerequisites />
+
+## Use AWS FireLens with Fluent Bit and Axiom
+
+Here’s a basic configuration for using FireLens with Fluent Bit to forward logs to Axiom:
+
+## Fluent Bit configuration for Axiom
+
+You’ll typically define this in a file called `fluent-bit.conf`:
+
+```ini
+[SERVICE]
+    Log_Level info
+
+[INPUT]
+    Name forward
+    Listen 0.0.0.0
+    Port 24224
+
+[OUTPUT]
+    Name http
+    Match *
+    Host AXIOM_DOMAIN
+    Port 443
+    URI /v1/ingest/DATASET_NAME
+    Format json_lines
+    tls On
+    format json
+    json_date_key _time
+    json_date_format iso8601
+    Header Authorization Bearer API_TOKEN
+```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+</Info>
+
+Read more about [Fluent Bit configuration here](/send-data/fluent-bit)
+
+## ECS task definition with FireLens
+
+You’ll want to include this within your ECS task definition, and reference the FireLens configuration type and options:
+
+```json
+{
+  "family": "myTaskDefinition",
+  "containerDefinitions": [
+    {
+      "name": "log_router",
+      "image": "amazon/aws-for-fluent-bit:latest",
+      "essential": true,
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "config-file-type": "file",
+          "config-file-value": "/fluent-bit/etc/fluent-bit.conf"
+        }
+      }
+    },
+    {
+      "name": "myApp",
+      "image": "my-app-image",
+      "logConfiguration": {
+        "logDriver": "awsfirelens"
+      }
+    }
+  ]
+}
+```
+
+## Use AWS FireLens with Fluentd and Axiom
+
+Create the `fluentd.conf` file and add your configuration:
+
+```bash
+<source>
+  @type forward
+  port 24224
+  bind 0.0.0.0
+</source>
+
+<match *>
+  @type http
+  headers {"Authorization": "Bearer API_TOKEN"}
+  data_type json
+  endpoint https://AXIOM_DOMAIN/v1/ingest/DATASET_NAME
+  sourcetype ecs
+</match>
+```
+
+<Info>
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+Read more about [Fluentd configuration here](/send-data/fluentd)
+
+## ECS Task Definition for Fluentd
+
+The task definition would be similar to the Fluent Bit example, but using Fluentd and its configuration:
+
+```json
+{
+  "family": "fluentdTaskDefinition",
+  "containerDefinitions": [
+    {
+      "name": "log_router",
+      "image": "YOUR_ECR_REPO_URI:latest",
+      "essential": true,
+      "memory": 512,
+      "cpu": 256,
+      "firelensConfiguration": {
+        "type": "fluentd",
+        "options": {
+          "config-file-type": "file",
+          "config-file-value": "/path/to/your/fluentd.conf"
+        }
+      }
+    },
+    {
+      "name": "myApp",
+      "image": "my-app-image",
+      "essential": true,
+      "memory": 512,
+      "cpu": 256,
+      "logConfiguration": {
+        "logDriver": "awsfirelens",
+        "options": {
+          "Name": "forward",
+          "Host": "log_router",
+          "Port": "24224"
+        }
+      }
+    }
+  ]
+}
+```
+
+By efficiently routing logs with FireLens and analyzing them with Axiom, businesses and development teams can save on operational overheads and reduce time spent on troubleshooting.

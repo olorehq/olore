@@ -12,10 +12,10 @@ filename, if you want to look at older runs.
 
 ## Reading the graphs
 
-There are two tables and two graphs in the output. 
+There are two tables and two graphs in the output.
 
-The first table displays the build information of the project, including the 
-number of units built, the maximum number of concurrency, build time, and the 
+The first table displays the build information of the project, including the
+number of units built, the maximum number of concurrency, build time, and the
 version information of the currently used compiler.
 
 ![build-info](../images/build-info.png)
@@ -48,9 +48,10 @@ indicates CPU usage. The three lines are:
 
 ![cargo-concurrency-over-time](../images/cargo-concurrency-over-time.png)
 
-Note: This does not show the concurrency in the compiler itself. `rustc`
-coordinates with Cargo via the "job server" to stay within the concurrency
-limit. This currently mostly applies to the code generation phase.
+> [!NOTE]
+> This does not show the concurrency in the compiler itself. `rustc`
+> coordinates with Cargo via the "job server" to stay within the concurrency
+> limit. This currently mostly applies to the code generation phase.
 
 Tips for addressing compile times:
 - Look for slow dependencies.

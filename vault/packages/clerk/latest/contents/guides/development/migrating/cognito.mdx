@@ -23,7 +23,7 @@ In AWS, you will need to ensure that your Cognito user pool has a **public** cli
 
 You can create a new client for your user pool at any time from the AWS console or through the [AWS CLI](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cognito-idp/create-user-pool-client.html)
 
-> [!CAUTION]
+> [!WARNING]
 > This step is critical for the migration to work as intended.
 
 ## One-time upload
@@ -34,7 +34,7 @@ with the `password_hasher` and `password_digest` fields set.
 Below is one method of conducting a batch upload of your Cognito users into Clerk.
 However, you are not limited to this approach, nor does it impact the migration flow.
 
-Ensure that you are using `node >= v20`, and run the following to create a new script directory and project.
+Ensure that you are using Node.js 20.9.0 or later, and run the following to create a new script directory and project.
 
 ```shell {{ title: '~/' }}
 user@~: $ mkdir cognito_to_clerk
@@ -42,7 +42,7 @@ user@~: $ cd cognito_to_clerk
 
 user@~/cognito_to_clerk: $ npm init -y
 user@~/cognito_to_clerk: $ npm i -E @aws-sdk/client-cognito-identity-provider@3.614.0
-user@~/cognito_to_clerk: $ npm i -E @clerk/backend@1.4.3
+user@~/cognito_to_clerk: $ npm i @clerk/backend
 
 user@~/cognito_to_clerk: $ touch .env
 user@~/cognito_to_clerk: $ touch main.ts
@@ -69,7 +69,7 @@ CLERK_SECRET_KEY=
 The provided script below lists your Cognito user pool users, calls
 `CreateUser` for each user, and sets the `password_hasher` and `password_digest` fields.
 
-> [!CAUTION]
+> [!WARNING]
 > [Rate limits](/docs/guides/how-clerk-works/system-limits) apply to the [`CreateUser`](/docs/reference/backend-api/tag/users/POST/users){{ target: '_blank' }} endpoint. For development instances, a rate limit rule of **100 requests per 10 seconds** is applied. For production instances, that limit goes up to **1000 requests per 10 seconds**.
 
 ```ts {{ title: '~/cognito_to_clerk/main.ts' }}
@@ -155,7 +155,6 @@ async function main() {
       await clerk.users.createUser({
         emailAddress: [email],
         passwordDigest: `awscognito#${COGNITO_USER_POOL_ID}#${COGNITO_CLIENT_ID}#${identifier}`,
-        // @ts-expect-error - awscognito works, but is not a valid TypeScript yet
         passwordHasher: 'awscognito',
       })
       console.log('Created clerk user for:', identifier)

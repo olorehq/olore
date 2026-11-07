@@ -1,0 +1,103 @@
+---
+title: Lock accounts after failed sign-ins
+description: User information is a prime target for malicious activity. Clerk protects your users against brute force attacks by locking out accounts with too many sign-in attempts until a set period of time has passed.
+---
+
+> [!NOTE]
+> This protection is included on every plan, and it's on by default for new applications.
+
+User accounts are a vector for malicious attacks for many reasons, from impersonation to collecting personally identifiable information (PII). One method is a **"brute force"** attack, where a script will attempt many different passwords to sign into an account. One line of defense against these attacks is to temporarily deny attempts to sign into accounts that attempt too many failed sign-ins in a short period of time. Locking out sign-in attempts disrupts the attack and makes the account a less attractive target.
+
+## How Clerk protects against brute force attacks
+
+**Account lockout** is a Clerk feature that enables you to protect your users from brute-force attacks on static credentials. If enabled on your instance, Clerk automatically tracks each user's failed verification attempts during sign-in, such as an incorrect password or code.
+
+### How account lockout works
+
+By default, new Clerk instances lock user accounts after 10 failed sign-in attempts and require a one-hour cooldown period before anyone can attempt to sign in to that account again. The attempt limit default changed from 100 to 10 on **July 6, 2026** — existing instances kept their limit, and the one-hour cooldown is unchanged.
+
+If the maximum allowed attempts are reached, the user will be locked out from signing in again until the lockout duration lapses. Lockout can also be [configured to never expire](#settings), in which case the user will not be able to sign in unless an admin unlocks them.
+
+An admin can [unlock a user before the expiry of the lockout period via the Clerk Dashboard](#unlock-user-accounts) or [programmatically](#unlock-a-user-programmatically).
+
+Clerk measures the following actions as part of account lockout:
+
+- Password attempts
+- Password resets
+- Backup code requests
+- Email & Phone codes
+- TOTP attempts
+
+## What a locked out user sees
+
+When a user exceeds the maximum sign-in attempts, the Clerk [`<SignIn />`](/docs/reference/components/authentication/sign-in) component will inform them of how long they have been locked out for and to contact support for more information.
+
+![The Clerk component sign-in form with a red alert stating 'Your account is locked. You will be able to try again in 59 minutes. For more information, contact support.'](/docs/images/security/userlock_login.png)
+
+{/* TODO(PROT-825): replace this screenshot with one of the current sign-in component. */}
+
+Clerk also emails the user at their primary email address to let them know their account is locked.
+
+> [!NOTE]
+> Currently, users cannot unlock their own account or submit a request to the admin to be unlocked ("self-service unlock"). This is an upcoming feature, so see the [changelog](/changelog) periodically to find out when it is available. Until then, you can [lock and unlock user accounts programmatically](#unlock-a-user-programmatically).
+
+## Settings
+
+You can change how many failed attempts lock an account, and how long it stays locked. To turn the protection on or off or change its settings, see [Manage protections in the Dashboard](/docs/guides/protect/protections/overview#manage-protections-in-the-dashboard).
+
+| Setting | Default | Description |
+| - | - | - |
+| **Failed attempts allowed** | 10 | How many failed sign-ins in a row lock the account. The minimum is 5. |
+| **Lockout duration** | 1 hour | How long the account stays locked. **Time limit** unlocks the account automatically after the number of minutes, hours, days, or years you set. **Until unlocked** keeps it locked until an admin [unlocks it](#unlock-user-accounts). |
+
+## How it works with other protections
+
+Account lockout stops attackers from guessing a user's password. It doesn't help when an attacker already has the right password, for example from another site's data breach. For that, use [Device Trust](/docs/guides/protect/device-trust) and [Reject compromised passwords](/docs/guides/secure/password-protection-and-rules#reject-compromised-passwords).
+
+## Unlock user accounts
+
+There are two ways to unlock a user's account:
+
+- Through the Clerk Dashboard
+- Programmatically
+
+### Unlock a user through the Clerk Dashboard
+
+Users with admin Roles can override lockouts through the Clerk Dashboard.
+
+1. At the top of the Clerk Dashboard, select [**Users**](https://dashboard.clerk.com/~/users).
+1. Locate the locked user by looking for a "locked" badge next to their username/email.
+1. Open the three-dot menu on the right of that user's row.
+1. Select **Unlock** to unlock the user account.
+
+Alternatively, you can unlock a user's account on their profile page.
+
+1. At the top of the Clerk Dashboard, select [**Users**](https://dashboard.clerk.com/~/users).
+1. Locate the locked user by looking for a "locked" badge next to their username/email.
+1. Select the user's row to open their profile page.
+1. Open the **Actions** dropdown and select **Unlock user**.
+
+### Unlock a user programmatically
+
+You can programmatically unlock a user using the [`UnlockUser`](/docs/reference/backend-api/tag/users/POST/users/\{user_id}/unlock){{ target: '_blank' }} Backend API endpoint.
+
+### Use cases
+
+#### Display an unlock button
+
+Your custom sign-in page could expose a button or link that allows the user to request an unlock token when they are locked out of their account.
+
+- Your app should be able to generate a random unlock token and associate it with the user.
+- The unlock token can be sent to the user via email or SMS.
+- After successful entry of the unlock token, your app's backend can issue an unlock request to the Clerk Backend API.
+
+#### Send an unlock request to an admin
+
+If your app supports users submitting admin requests, it could expose a way of requesting an admin unlock.
+
+- A request for unlock could arrive in your app's admin dashboard.
+- If an admin reviews the request and decides to grant access back to the user, they can request an unlock from your app's backend, which should in turn call the Clerk Backend API.
+
+## Lock a user programmatically
+
+If you'd like to manually lock a user from signing in, you can use the [`LockUser`](/docs/reference/backend-api/tag/users/POST/users/\{user_id}/lock){{ target: '_blank' }} Backend API endpoint. Keep in mind that Clerk will still lock the user based on failed verification attempts.

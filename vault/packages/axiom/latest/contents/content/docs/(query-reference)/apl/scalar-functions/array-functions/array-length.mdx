@@ -1,0 +1,89 @@
+---
+title: array_length
+description: 'This page explains how to use the array_length function in APL.'
+---
+
+The `array_length` function in APL (Axiom Processing Language) returns the length of an array. You can use this function to analyze and filter data by array size, such as identifying log entries with specific numbers of entries or events with multiple tags. This function is useful for analyzing structured data fields that contain arrays, such as lists of error codes, tags, or IP addresses.
+
+## Usage
+
+### Syntax
+
+```kusto
+array_length(array_expression)
+```
+
+### Parameters
+
+- array_expression: An expression representing the array to measure.
+
+### Returns
+
+The function returns an integer representing the number of elements in the specified array.
+
+## Use case example
+
+In OpenTelemetry traces, `array_length` can reveal the number of events associated with a span.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| take 50
+| extend event_count = array_length(events)
+| where event_count > 2
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20take%2050%20%7C%20extend%20event_count%20%3D%20array_length(events)%20%7C%20where%20event_count%20%3E%202%22%7D)
+
+**Output**
+
+| _time               | trace_id      | span_id       | service.name       | event_count |
+|---------------------|---------------|---------------|--------------------|-----------|
+| 2024-10-28T12:30:00 | trace_abc123  | span_001      | frontend           | 3         |
+
+This query finds spans associated with at least three events.
+
+## List of related functions
+
+- [array_slice](/apl/scalar-functions/array-functions/array-slice): Extracts a subset of elements from an array.
+- [array_concat](/apl/scalar-functions/array-functions/array-concat): Combines multiple arrays.
+- [array_shift_left](/apl/scalar-functions/array-functions/array-shift-left): Shifts array elements one position to the left, moving the first element to the last position.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you might use the `mvcount` function to determine the length of a multivalue field. In APL, `array_length` serves the same purpose by returning the size of an array within a column.
+
+<CodeGroup>
+```sql Splunk example
+| eval array_size = mvcount(array_field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend array_size = array_length(array_field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would use functions such as `CARDINALITY` or `ARRAY_LENGTH` (in databases that support arrays) to get the length of an array. In APL, the `array_length` function is straightforward and works directly with array fields in any dataset.
+
+<CodeGroup>
+```sql SQL example
+SELECT CARDINALITY(array_field) AS array_size
+FROM sample_table
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend array_size = array_length(array_field)
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

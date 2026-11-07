@@ -3,7 +3,7 @@ title: '`<UserAvatar />` component'
 description: Clerk's <UserAvatar /> component is used to render the familiar user avatar on its own.
 search:
   rank: 1
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
+sdk: astro, chrome-extension, electron, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
 preview:
   src: '/user-avatar'
 ---
@@ -19,17 +19,20 @@ The `<UserAvatar />` component renders the authenticated user's avatar on its ow
     <CodeBlockTabs options={["App Router", "Pages Router"]}>
       ```tsx {{ filename: 'layout.tsx' }}
       import { ClerkProvider, Show, SignInButton, UserAvatar } from '@clerk/nextjs'
+      import { Suspense } from 'react'
 
       function Header() {
         return (
           <header style={{ display: 'flex', justifyContent: 'space-between', padding: 20 }}>
             <h1>My App</h1>
-            <Show when="signed-in">
-              <UserAvatar />
-            </Show>
-            <Show when="signed-out">
-              <SignInButton />
-            </Show>
+            <Suspense>
+              <Show when="signed-in">
+                <UserAvatar />
+              </Show>
+              <Show when="signed-out">
+                <SignInButton />
+              </Show>
+            </Suspense>
           </header>
         )
       }
@@ -37,10 +40,12 @@ The `<UserAvatar />` component renders the authenticated user's avatar on its ow
       export default function RootLayout({ children }: { children: React.ReactNode }) {
         return (
           <html lang="en">
-            <ClerkProvider>
-              <Header />
-              {children}
-            </ClerkProvider>
+            <body>
+              <ClerkProvider>
+                <Header />
+                {children}
+              </ClerkProvider>
+            </body>
           </html>
         )
       }
@@ -99,6 +104,27 @@ The `<UserAvatar />` component renders the authenticated user's avatar on its ow
     ```
   </If>
 
+  <If sdk="electron">
+    ```tsx {{ filename: 'src/App.tsx' }}
+    import { Show, UserAvatar, SignInButton } from '@clerk/electron/react'
+
+    function App() {
+      return (
+        <header>
+          <Show when="signed-in">
+            <UserAvatar />
+          </Show>
+          <Show when="signed-out">
+            <SignInButton />
+          </Show>
+        </header>
+      )
+    }
+
+    export default App
+    ```
+  </If>
+
   <If sdk="astro">
     ```astro {{ filename: 'pages/index.astro' }}
     ---
@@ -117,7 +143,7 @@ The `<UserAvatar />` component renders the authenticated user's avatar on its ow
   <If sdk="expo">
     <Include src="_partials/expo/web-only-callout" />
 
-    ```jsx {{ filename: 'src/app/user-avatar.web.tsx' }}
+    ```jsx {{ filename: 'src/components/UserAvatar.web.tsx' }}
     import { Show, UserAvatar, SignInButton } from '@clerk/expo/web'
 
     export default function Header() {
@@ -174,7 +200,7 @@ The `<UserAvatar />` component renders the authenticated user's avatar on its ow
   </If>
 
   <If sdk="tanstack-react-start">
-    ```tsx {{ filename: 'app/routes/index.tsx' }}
+    ```tsx {{ filename: 'src/routes/index.tsx' }}
     import { Show, UserAvatar, SignInButton } from '@clerk/tanstack-react-start'
     import { createFileRoute } from '@tanstack/react-router'
 
@@ -242,8 +268,8 @@ The `<UserAvatar />` component renders the authenticated user's avatar on its ow
 
   The following methods available on an instance of the [`Clerk`](/docs/reference/objects/clerk) class are used to render and control the `<UserAvatar />` component:
 
-  - [`mountUserAvatar()`](#mount-user-avatar)
-  - [`unmountUserAvatar()`](#unmount-user-avatar)
+  - [`mountUserAvatar()`](#mountuseravatar)
+  - [`unmountUserAvatar()`](#unmountuseravatar)
 
   The following examples assume that you have followed the [quickstart](/docs/js-frontend/getting-started/quickstart) in order to add Clerk to your JavaScript application.
 
@@ -338,13 +364,6 @@ The `<UserAvatar />` component renders the authenticated user's avatar on its ow
 The `<UserAvatar />` component accepts the following properties, all of which are **optional**:
 
 <Properties>
-  - `rounded?`
-  - `boolean`
-
-  Determines whether the user avatar is displayed with rounded corners.
-
-  ---
-
   - `appearance?`
   - <code>[Appearance](/docs/guides/customizing-clerk/appearance-prop/overview) | undefined</code>
 
@@ -356,6 +375,13 @@ The `<UserAvatar />` component accepts the following properties, all of which ar
   - `ReactNode`
 
   An element to be rendered while the component is mounting.
+
+  ---
+
+  - `rounded?`
+  - `boolean`
+
+  Determines whether the user avatar is displayed with rounded corners.
 </Properties>
 
 ## Customization

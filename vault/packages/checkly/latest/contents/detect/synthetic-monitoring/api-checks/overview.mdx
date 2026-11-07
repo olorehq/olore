@@ -1,10 +1,11 @@
 ---
-title: 'API Checks Overview'
+title: 'API checks overview'
 description: 'Monitor API endpoints with comprehensive HTTP request validation, performance testing, and detailed response analysis.'
 sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/api-checks/overview/'
 ---
 <Tip>
-**Monitoring as Code**: Learn more about the [API Check Construct](/constructs/api-check).
+**Monitoring as Code**: Learn more about the [API check construct](/constructs/api-check).
 </Tip>  
 
 <Frame>
@@ -22,9 +23,9 @@ sidebarTitle: 'Overview'
 />
 </Frame>
 
-## What are API Checks?
+## What are API checks?
 
-API checks are automated HTTP requests that validate API endpoint functionality by checking status codes, response content, headers, and performance metrics. They simulate real API usage patterns and help catch issues before they impact your users. You can create API checks in the UI, via the [API Check Construct](/constructs/api-check) or by importing your existing Swagger/OpenAPI spec.
+API checks are automated HTTP requests that validate API endpoint functionality by checking status codes, response content, headers, and performance metrics. They simulate real API usage patterns and help catch issues before they impact your users. You can create API checks in the UI, via the [API check construct](/constructs/api-check) or by importing your existing Swagger/OpenAPI spec.
 
 **API checks are perfect for:**
 - REST API endpoint monitoring
@@ -33,35 +34,35 @@ API checks are automated HTTP requests that validate API endpoint functionality 
 - Third-party API dependency monitoring
 - Payment and transaction APIs
 
-<Accordion title="Key capabilities" icon="api">
+<Accordion title="Key capabilities" icon="braces">
 - HTTP method support (GET, POST, PUT, DELETE, etc.)
 - Request/response validation
-- JSON schema validation
+- JSON path assertions
 - Authentication handling
 - Performance measurement
 - Global monitoring locations
 </Accordion>
 
 <Note>
-If you are looking to monitor complex API flows or data processing, you might want to consider using [Multistep Checks](/detect/synthetic-monitoring/multistep-checks/overview).
+If you are looking to monitor complex API flows or data processing, you might want to consider using [Multistep checks](/detect/synthetic-monitoring/multistep-checks/overview).
 </Note>
 
 
-## How API Checks Work
+## How API checks work
 
 API checks perform comprehensive endpoint validation:
 
 1. **HTTP Request** - Sends configured requests with headers, body, and authentication
 2. **Response Analysis** - Captures status codes, headers, body content, and timing
 3. **Validation** - Runs assertions against response data and performance metrics
-4. **Performance Tracking** - Measures response times and identifies trends
+4. **Performance Tracking** - Records the response time and timing phases
 5. **Alert Generation** - Notifies teams when endpoints fail or degrade
 
 <Tip>
 API checks are ideal for testing both internal services and external API dependencies your application relies on.
 </Tip>
 
-## API Check Results
+## API check results
 
 API check results will expose key performance and correctness data about the HTTP response received from the target endpoint.
 
@@ -78,9 +79,11 @@ These include:
   * Check job log
 
 * Timings phases: 
+  * `wait`: Time spent initializing the socket
   * `dns`: Duration of DNS lookup
   * `tcp`: Duration of TCP connection
   * `firstByte`: Duration of HTTP server response
   * `download`: Duration of HTTP download
+  * `total`: Total duration of the request
 
 Learn more in our documentation on [Results](/concepts/results).

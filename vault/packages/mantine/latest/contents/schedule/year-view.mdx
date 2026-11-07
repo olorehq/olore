@@ -22,6 +22,24 @@ Set `withWeekDays={false}` to hide the weekday names row in each month.
 
 <Demo data={YearViewDemos.withoutWeekDays} />
 
+## Render day
+
+Use `renderDay` to replace the content of a day cell, for example to display counts, badges
+or icons instead of the default dots. The function is called with the day date in `YYYY-MM-DD`
+format and all events of that day. When `renderDay` is set, the default event indicators
+are not rendered.
+
+<Demo data={YearViewDemos.renderDay} />
+
+## Hide weekend days
+
+Set `withWeekendDays={false}` to hide weekend days. Every month grid shrinks to
+the remaining columns and events that fall only on hidden days are not displayed.
+The days that are considered weekend are controlled by the `weekendDays` prop
+(or [DatesProvider](/dates/getting-started/#datesprovider), `[0, 6]` by default).
+
+<Demo data={YearViewDemos.withoutWeekendDays} />
+
 ## Hide outside days
 
 Set `withOutsideDays={false}` to hide days from adjacent months.
@@ -89,14 +107,9 @@ and reducing padding on smaller screens. Container queries are supported in all 
 
 ### Focus management
 
-In the YearView component, focus is managed to provide an efficient keyboard navigation experience:
-
-- Only the first day of each month is included in the tab order (has `tabIndex={0}`)
-- All other days within a month have `tabIndex={-1}` and can only be reached via arrow key navigation
-- Outside days (days from adjacent months displayed in the current month view) are not focusable
+- Only the first day of each month is included in the tab order, all other days can be reached with arrow keys
+- Outside days are not focusable
 - Disabled days are skipped during keyboard navigation
-
-This approach reduces the number of tab stops when navigating through the calendar, making it faster for keyboard users to move between months while still allowing full access to all days via arrow keys.
 
 ### Keyboard interactions
 
@@ -125,4 +138,4 @@ Note that the following events will only trigger if focus is on a day control.
 
 ### Day labels
 
-Each day button has an `aria-label` attribute with the full date in the format "Month Day, Year" (e.g., "November 15, 2025"). This provides screen reader users with complete date information.
+Each day button has an `aria-label` attribute with the full date in the format "Month Day, Year" (e.g., "November 15, 2025").

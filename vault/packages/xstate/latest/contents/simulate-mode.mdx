@@ -1,0 +1,43 @@
+---
+title: 'Simulate mode'
+description: 'Tour the features in Stately editor’s Simulate mode, including a guide to all the panels and how to simulate your machines.'
+---
+
+import { Play, ListOrderedIcon, RefreshCcw, AlertCircle } from 'lucide-react';
+
+You can simulate your machine as if it were live using the <Play size={18}/> **Simulate** button. Your machine will start in the initial state, and any possible events that can be triggered are highlighted in blue.
+
+<EmbedMachine
+  name="Simulate mode"
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?machineId=e5fbd908-42af-440f-8d11-91ca16a4fbda&mode=Simulate"
+/>
+
+## Simulate events
+
+Press any available event to walk through your machine on the canvas or using the event buttons in the <ListOrderedIcon size={12} /> **Simulation controls** panel. Use <RefreshCcw size={12}/> **Reset** in the canvas tools to return to the initial state and clear the [event log](#event-log).
+
+<Callout type="warning">
+
+Simulate mode is disabled if your machine contains errors. States and events with errors are marked with an <AlertCircle size={12} /> error icon in **Design** mode. Hover over any error icon to find out more about the error. Fix all the errors to enable Simulate mode.
+
+</Callout>
+
+### Simulate eventless (always) events
+
+[Eventless (always) events](/docs/editor-states-and-transitions/#eventless-always-events) will be triggered instantly upon entering their source state unless they’re guarded with a condition.
+
+### Simulate delayed (after) events
+
+[Delayed (after) events](/docs/editor-states-and-transitions/#delayed-after-events) will be taken automatically after completing the timer.
+
+## Event log
+
+All triggered events are recorded, in order, in the <ListOrderedIcon size={12} /> **Simulation controls** panel, along with their target state. Press any event in the log panel list to return to that event. Press any state in the log panel list to return to that state.
+
+Use <RefreshCcw size={12}/> **Reset** to return to the initial state and clear the event log.
+
+<Callout>
+
+[Live simulation mode](live-simulation) ([premium feature](studio-pro-plan)) helps you share your simulated machine with your team without screen sharing or screenshots.
+
+</Callout>

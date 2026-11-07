@@ -1,0 +1,100 @@
+---
+title: 'Send Traefik metrics to Axiom'
+description: 'This page explains how to send Traefik metrics to Axiom using the Prometheus receiver of the OpenTelemetry Collector.'
+overview: 'Cloud-native reverse proxy and load balancer'
+sidebarTitle: Traefik
+keywords: ['traefik', 'axiom documentation', 'documentation', 'axiom', 'metrics', 'prometheus', 'opentelemetry', 'otel collector', 'prometheus receiver']
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+
+Traefik exposes detailed metrics about its entrypoints, routers, and services in Prometheus format. Axiom ingests metrics over OTLP and doesn’t accept Prometheus remote-write, so the recommended setup is an OpenTelemetry Collector that scrapes Traefik’s Prometheus endpoint and forwards the metrics to Axiom. The same pattern works for any app that exposes Prometheus metrics.
+
+<Note>
+The Prometheus receiver is part of the [contrib distribution](https://github.com/open-telemetry/opentelemetry-collector-releases) of the OpenTelemetry Collector (`otelcol-contrib`). It isn’t included in the core distribution.
+</Note>
+
+<Prerequisites />
+
+<Note>
+When you create the dataset, select **Metrics** as the dataset type. Metrics require their own dedicated dataset. For more information, see [Create dataset](/reference/datasets#create-dataset).
+</Note>
+
+## Enable Prometheus metrics in Traefik
+
+Enable the Prometheus metrics provider in Traefik’s static configuration:
+
+```yaml
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
+```
+
+Traefik then serves metrics at `/metrics` on the internal `traefik` entrypoint (port 8080 by default). To add per-router metrics, set `addRoutersLabels: true` as well. For all options, see the [Traefik documentation](https://doc.traefik.io/traefik/reference/install-configuration/observability/metrics/).
+
+## Configure the OpenTelemetry Collector
+
+Add a Prometheus receiver that scrapes Traefik and an OTLP/HTTP exporter that sends data to Axiom:
+
+```yaml
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: traefik
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["traefik:8080"] # host:port of Traefik's metrics entrypoint
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+  batch:
+    send_batch_max_size: 8192
+
+exporters:
+  otlphttp:
+    compression: zstd
+    endpoint: https://AXIOM_DOMAIN
+    headers:
+      authorization: Bearer API_TOKEN
+      x-axiom-metrics-dataset: DATASET_NAME
+
+service:
+  pipelines:
+    metrics:
+      receivers:
+        - prometheus
+      processors:
+        - memory_limiter
+        - batch
+      exporters:
+        - otlphttp
+```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+For metrics, use the `x-axiom-metrics-dataset` header instead of `x-axiom-dataset`.
+</Info>
+
+<Note>
+Traefik v3 can also push OTLP metrics directly (`metrics.otlp`) — for example, to the OTLP receiver of an OpenTelemetry Collector that forwards to Axiom as shown above. For more information, see the [Traefik documentation](https://doc.traefik.io/traefik/reference/install-configuration/observability/metrics/).
+</Note>
+
+## Query your metrics
+
+Once data is flowing, query your Traefik metrics like any other OTel metrics in Axiom. For example, to chart the request rate per service:
+
+```mpl
+`DATASET_NAME`:`traefik_service_requests_total`
+| align to $__interval using prom::rate
+| group by `service` using sum
+```
+
+For more information, see [Metrics](/query-data/metrics).

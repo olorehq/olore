@@ -13,5 +13,4 @@
 | `contents/skill-creation/optimizing-descriptions.mdx` | Optimizing skill descriptions — how to improve the description field so a skill triggers reliably on relevant prompts |
 | `contents/skill-creation/using-scripts.mdx` | Using scripts in skills — how to bundle and run shell commands and executable scripts within a skill |
 | `contents/client-implementation/adding-skills-support.mdx` | How to add Agent Skills support to an AI agent or development tool — discovery, context loading, and progressive disclosure |
-| `contents/CLAUDE.md` | Guidance for Claude Code when working in the agentskills repo — dev server, navigation, deployment notes |
 | `contents/README.md` | Documentation site README — development setup and publishing instructions for the Mintlify site |

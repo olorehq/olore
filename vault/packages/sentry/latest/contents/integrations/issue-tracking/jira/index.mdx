@@ -15,7 +15,7 @@ Sentry owner, manager, or admin permissions, and Jira admin permissions are requ
 
 </Alert>
 
-1. Navigate to **Settings > Integrations > Jira**.
+1. Navigate to [**Settings > Integrations**](https://sentry.io/orgredirect/organizations/:orgslug/settings/integrations/) > **Jira**.
 
 ![Install Jira integration](./img/jira-overview.png)
 
@@ -25,7 +25,7 @@ Sentry owner, manager, or admin permissions, and Jira admin permissions are requ
 
 4. Select which Sentry organizations you’d like to use with Jira. Then click the presented link to return to Sentry.
 
-5. In Sentry, you’ll see a new Jira instance appear on the Integrations page.
+5. In Sentry, you’ll see a new Jira instance appear on the [Integrations](https://sentry.io/orgredirect/organizations/:orgslug/settings/integrations/) page.
 
    ![Jira integration directory](./img/jira-install.png)
 
@@ -61,43 +61,43 @@ openssl x509 -pubkey -noout -in jira_publickey.cer  > jira_publickey.pem
 1. In the resulting dialog, fill out the form as follows:
 
    <table>
-    <tbody>
-      <tr>
-        <th>Application Name </th>
-        <td>Sentry </td>
-      </tr>
-      <tr>
-        <th>Application Type </th>
-        <td>Generic Application</td>
-      </tr>
-      <tr>
-        <th>Service Provider Name</th>
-        <td>Sentry</td>
-      </tr>
-      <tr>
-        <th>Consumer Key </th>
-        <td>(your choice, but keep this handy for the next step)</td>
-      </tr>
-      <tr>
-        <th>Shared Secret </th>
-        <td>sentry</td>
-      </tr>
-      <tr>
-        <th>Request Token URL </th>
-        <td>https://sentry.io</td>
-      </tr>
-      <tr>
-        <th>Access Token URL</th>
-        <td>https://sentry.io </td>
-      </tr>
-      <tr>
-        <th>Authorize URL </th>
-        <td>https://sentry.io </td>
-      </tr>
-      <tr>
-        <th>Create Incoming Link </th>
-        <td>No </td>
-      </tr>
+     <tbody>
+       <tr>
+         <th>Application Name </th>
+         <td>Sentry </td>
+       </tr>
+       <tr>
+         <th>Application Type </th>
+         <td>Generic Application</td>
+       </tr>
+       <tr>
+         <th>Service Provider Name</th>
+         <td>Sentry</td>
+       </tr>
+       <tr>
+         <th>Consumer Key </th>
+         <td>(your choice, but keep this handy for the next step)</td>
+       </tr>
+       <tr>
+         <th>Shared Secret </th>
+         <td>sentry</td>
+       </tr>
+       <tr>
+         <th>Request Token URL </th>
+         <td>https://sentry.io</td>
+       </tr>
+       <tr>
+         <th>Access Token URL</th>
+         <td>https://sentry.io </td>
+       </tr>
+       <tr>
+         <th>Authorize URL </th>
+         <td>https://sentry.io </td>
+       </tr>
+       <tr>
+         <th>Create Incoming Link </th>
+         <td>No </td>
+       </tr>
      </tbody>
    </table>
 
@@ -107,26 +107,26 @@ openssl x509 -pubkey -noout -in jira_publickey.cer  > jira_publickey.pem
 
    <table>
      <tbody>
-      <tr>
-        <th>Consumer Key </th>
-        <td>(the consumer key from Step II.4) </td>
-      </tr>
-      <tr>
-        <th>Consumer Name </th>
-        <td>Sentry</td>
-      </tr>
-      <tr>
-        <th>Public Key</th>
-        <td>(the public key you created in Section I)</td>
-      </tr>
-      <tr>
-        <th>Consumer Callback URL </th>
-        <td>https://sentry.io/extensions/jira-server/setup/</td>
-      </tr>
-      <tr>
-        <th>Allow 2-Legged OAuth </th>
-        <td>no</td>
-      </tr>
+       <tr>
+         <th>Consumer Key </th>
+         <td>(the consumer key from Step II.4) </td>
+       </tr>
+       <tr>
+         <th>Consumer Name </th>
+         <td>Sentry</td>
+       </tr>
+       <tr>
+         <th>Public Key</th>
+         <td>(the public key you created in Section I)</td>
+       </tr>
+       <tr>
+         <th>Consumer Callback URL </th>
+         <td>https://sentry.io/extensions/jira-server/setup/</td>
+       </tr>
+       <tr>
+         <th>Allow 2-Legged OAuth </th>
+         <td>no</td>
+       </tr>
      </tbody>
    </table>
 
@@ -138,11 +138,11 @@ Confirm [Sentry's IP ranges](/security-legal-pii/security/ip-ranges/) are allowe
 
 </Alert>
 
-1. Navigate to **Organization Settings > Integrations**.
+1. Navigate to [**Organization Settings > Integrations**](https://sentry.io/orgredirect/organizations/:orgslug/settings/integrations/).
 2. Next to Jira Server, click "Install".
 3. In the resulting modal, click "Add Installation".
 4. In the resulting window, enter the base URL for your Jira Server instance, your consumer key, and your private key. Click "Submit". Then, complete the OAuth process as prompted.
-5. In Sentry, you’ll see a new Jira Server instance appear on the Integrations page.
+5. In Sentry, you’ll see a new Jira Server instance appear on the [Integrations](https://sentry.io/orgredirect/organizations/:orgslug/settings/integrations/) page.
 
 Jira should now be authorized for all projects under your Sentry organization.
 
@@ -160,12 +160,9 @@ Issue tracking allows you to create Jira issues from within Sentry, and link Sen
 
 <Alert title="Note">
   <p>
-    Manual issue management is available to organizations on Team, Business, and
-    Enterprise plans.
+    Manual issue management is available to organizations on Team, Business, and Enterprise plans.
   </p>
-  <p>
-    Automatic issue management is available to organizations on Business and Enterprise plans.
-  </p>
+  <p>Automatic issue management is available to organizations on Business and Enterprise plans.</p>
 </Alert>
 
 Issue management can be configured in two ways - automatically or manually.
@@ -174,7 +171,7 @@ Issue management can be configured in two ways - automatically or manually.
 
 To configure issue management automatically, create an [**Alert**](/product/monitors-and-alerts/alerts/). When selecting the **action**, choose **Create a new Jira issue**.
 
-![Create Jira ticket alert rule action](./img/jira-ticket-rule.png)
+![Create Jira ticket alert action](./img/jira-ticket-alert.png)
 
 A Jira issue will be created automatically when the alert has been triggered.
 
@@ -193,11 +190,10 @@ Here, you’ll be able to create or link Jira issues.
 To minimize duplication in issue tracking, you can sync comments, assignees, and status updates for Sentry issues to Jira tickets and vice versa. When you delegate an issue to an assignee or update a status on Jira, the updates will also populate in Sentry. When you resolve an issue in Sentry, the issue status will automatically update in Jira. When Jira tickets are marked Done, you can configure how the corresponding issue in Sentry should be resolved.
 
 <Alert title="Note">
-  Issue sync is available for organizations on the Team, Business, and
-  Enterprise plans.
+  Issue sync is available for organizations on the Team, Business, and Enterprise plans.
 </Alert>
 
-To configure Issue sync, navigate to **Organization Settings** > **Integrations**, and click "Configure" next to your Jira Server instance. On the following page, you can configure how you want information to sync between Sentry and Jira.
+To configure Issue sync, navigate to [**Organization Settings** > **Integrations**](https://sentry.io/orgredirect/organizations/:orgslug/settings/integrations/), and click "Configure" next to your Jira Server instance. On the following page, you can configure how you want information to sync between Sentry and Jira.
 
 ![Sync Jira statuses to Sentry](./img/jira-sync.png)
 
@@ -209,11 +205,11 @@ If you hit a 4xx or 5xx error during or after setting up the Jira Server integra
 
 ### Issue Notifications
 
-Alert notifications in Sentry can be routed to many supported integrations, but by default are aimed at email. You will need to configure a project’s [**Alert Rules**](/product/monitors-and-alerts/alerts/) to properly route notifications to a specific integration.
+Alert notifications in Sentry can be routed to many supported integrations, but by default are aimed at email. You will need to configure a project’s [**Alerts**](/product/monitors-and-alerts/alerts/) to properly route notifications to a specific integration.
 
 ### Ignored Fields
 
-Ignored fields are Jira fields that are hidden in the issue creation form. To add ignored fields, navigate to **Settings > Integrations** and click "Configure" next to your Jira instance. Then scroll down to “Ignored Fields” and enter a comma separated list of the Jira field IDs.
+Ignored fields are Jira fields that are hidden in the issue creation form. To add ignored fields, navigate to [**Settings > Integrations**](https://sentry.io/orgredirect/organizations/:orgslug/settings/integrations/) and click "Configure" next to your Jira instance. Then scroll down to “Ignored Fields” and enter a comma separated list of the Jira field IDs.
 
 Field IDs are different from the labels on the issue creation form. If you need help finding a field's ID, check out the Atlassian docs [here](https://confluence.atlassian.com/jirakb/how-to-find-id-for-custom-field-s-744522503.html).
 
@@ -237,7 +233,7 @@ This issue typically occurs if you have an ad blocker blocking the conversation 
 
 We don’t support custom required fields for the Jira integration. The only required fields we support are the ones that are pre-populated by us. If possible, you can edit your required fields in Jira, or as a workaround, you can create a ticket in Jira first and then link it in Sentry.
 
-### Issue Alert not Creating Jira Issues
+### Alert not Creating Jira Issues
 
 This problem occurs when you've selected a priority option for the alert that doesn't exist for the given project. If your project configuration contains the "Priority" field, the dropdown will show every priority from **all** projects. Ensure your alert's saved priority is available on your chosen project.
 

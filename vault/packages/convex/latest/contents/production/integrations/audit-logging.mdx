@@ -7,6 +7,7 @@ sidebar_class_name: "convex-sidebar-beta-badge"
 ---
 
 import getDocumentExample from "!!raw-loader!@site/../private-demos/audit-logging/convex/example.ts";
+import { Screenshot } from "@site/src/components/Screenshot";
 
 Convex offers the ability to emit transactional, durable logs to a S3 bucket in
 your own AWS account. This can be useful for when you need to audit log your
@@ -19,9 +20,9 @@ is not usually available in a query context.
   title={`Audit logging requires a Convex Enterprise plan.`}
 >
   Audit logging requires a Convex Enterprise plan and is only available for
-  D1024 deployments. [Learn more](https://www.convex.dev/enterprise/pricing)
-  about our plans or [ask us](https://www.convex.dev/enterprise/contact) about
-  Convex for Enterprise.
+  dedicated (D1024 and D2048) deployments. [Learn
+  more](https://www.convex.dev/enterprise/pricing) about our plans or [ask
+  us](https://www.convex.dev/enterprise/contact) about Convex for Enterprise.
 </Admonition>
 
 ## API
@@ -39,6 +40,9 @@ are currently available:
 - `log.vars.requestId` - the request ID
 - `log.vars.now` - the timestamp of when the function was run or replayed from
   the cache, as milliseconds from the Unix epoch
+- `log.vars.convexActor` - information about the admin, if the function was
+  invoked using admin auth (either directly or while acting as an end user, e.g.
+  from the dashboard), otherwise `null`
 
 <Snippet
   title="convex/getDocument.ts"
@@ -111,15 +115,32 @@ throw an error.
 
 ## Billing
 
-Audit logs are rounded up to the nearest 5KB when calculating bandwidth for
-billing. See more information about billing on our
+The size of each audit log line is rounded up to the nearest 5KB when
+calculating bandwidth for billing. See more information about billing on our
 [pricing page](https://www.convex.dev/enterprise/pricing).
+
+## Development
+
+While developing, you can enable the `custom_audit` topic on a configured
+[log stream](/production/integrations/log-streams/log-streams.mdx) to see your
+audit logs without setting up S3 delivery. To do so, select `custom_audit` in
+the “Topics” section of the log stream configuration.
+
+<Screenshot
+  story="docs/pages/project/deployment/settings/Integrations#Custom Audit Topic"
+  alt="Enabling the custom_audit topic on a log stream"
+/>
+
+The `custom_audit` topic is intended for testing. `custom_audit` logs sent
+through a log stream do not share the same durability guarantees as S3 delivery,
+and are billed the same as other
+[log streams](/production/integrations/log-streams/log-streams.mdx).
 
 ## Configuration
 
 Contact Convex Support to configure your S3 bucket for audit logging. Note that
 audit logging is only available for
-[D1024 deployments](https://docs.convex.dev/production/state/limits#deployment-classes).
+[dedicated (D1024 and D2048) deployments](https://docs.convex.dev/production/state/limits#deployment-classes).
 
 If no S3 bucket or log stream is configured, no logs will be emitted, but the
 audit log size limits will still be enforced.

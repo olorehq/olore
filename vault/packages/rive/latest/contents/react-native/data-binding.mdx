@@ -58,49 +58,62 @@ import { Demos } from "/snippets/demos.jsx";
     <Tab title="New Runtime (Recommended)">
     Use the `useViewModelInstance` hook to create a view model instance. You can pass a `RiveFile`, `ViewModel`, or `RiveViewRef` as the source.
 
+    Pass `async: true` to create the instance asynchronously. The hook returns `{ instance, isLoading, error }` and the instance is not available on the first render, so gate rendering on it. Without `async: true`, the instance is created through deprecated synchronous APIs that block the JS thread.
+
     ```tsx
+    import { Text } from 'react-native';
     import { useRiveFile, useViewModelInstance, RiveView } from '@rive-app/react-native';
 
-    const { riveFile } = useRiveFile(require('./my_file.riv'));
+    const { riveFile, error: fileError } = useRiveFile(require('./my_file.riv'));
 
     // From RiveFile — default artboard's ViewModel, default instance
-    const { instance } = useViewModelInstance(riveFile);
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true });
 
-    // Specify artboard or ViewModel name (mutually exclusive)
-    const { instance } = useViewModelInstance(riveFile, { artboardName: 'MainArtboard' });
-    const { instance } = useViewModelInstance(riveFile, { viewModelName: 'Settings' });
+    if (fileError || error) return <Text>{(fileError ?? error)!.message}</Text>;
 
-    // instanceName can be combined with any of the above to pick a specific instance
-    const { instance } = useViewModelInstance(riveFile, { instanceName: 'PersonInstance' });
-    const { instance } = useViewModelInstance(riveFile, { viewModelName: 'Settings', instanceName: 'UserSettings' });
-
-    // From a ViewModel object
-    const viewModel = riveFile?.viewModelByName('My View Model');
-    const { instance: namedInstance } = useViewModelInstance(viewModel, { name: 'My Instance' });
-    const { instance: newInstance } = useViewModelInstance(viewModel, { useNew: true });
-
-    // With required: true (throws if null, use with Error Boundary)
-    const { instance } = useViewModelInstance(riveFile, { required: true });
-
-    // With onInit to set initial values synchronously
-    const { instance } = useViewModelInstance(riveFile, {
-        onInit: (vmi) => {
-            vmi.numberProperty('health')?.set(100);
-        },
-    });
-
-    return (
+    return riveFile && instance && (
         <RiveView file={riveFile} dataBind={instance} />
     );
     ```
 
-    You can also get the auto-bound instance from a `RiveViewRef`:
+    All lookup options combine with `async: true`:
+
+    ```tsx
+    // Specify artboard or ViewModel name (mutually exclusive)
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, artboardName: 'MainArtboard' });
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, viewModelName: 'Settings' });
+
+    // instanceName can be combined with any of the above to pick a specific instance
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, instanceName: 'PersonInstance' });
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, viewModelName: 'Settings', instanceName: 'UserSettings' });
+
+    // From a ViewModel object (for example, from riveFile.viewModelByNameAsync('My View Model'))
+    const { instance: namedInstance, isLoading, error } = useViewModelInstance(viewModel, { async: true, name: 'My Instance' });
+    const { instance: newInstance, isLoading, error } = useViewModelInstance(viewModel, { async: true, useNew: true });
+
+    // With required: true (throws once resolved to null, use with Error Boundary)
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, required: true });
+
+    // With onInit to set initial values before the instance is exposed or bound
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, {
+        async: true,
+        onInit: (vmi) => {
+            vmi.numberProperty('health')?.set(100);
+        },
+    });
+    ```
+
+    <Info>
+        `async: true` is available in `@rive-app/react-native@0.4.18` and later. The synchronous creation path is deprecated and will be removed in a future release.
+    </Info>
+
+    You can also get the auto-bound instance from a `RiveViewRef`. The hook waits up to five seconds for the view's auto-bound instance to become available:
 
     ```tsx
     import { useRive, useViewModelInstance } from '@rive-app/react-native';
 
     const { riveViewRef, setHybridRef } = useRive();
-    const { instance } = useViewModelInstance(riveViewRef);
+    const { instance, isLoading, error } = useViewModelInstance(riveViewRef, { async: true });
     ```
 
     </Tab>
@@ -179,7 +192,7 @@ import { Demos } from "/snippets/demos.jsx";
     import { RiveView, useRiveFile, useViewModelInstance } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const { instance } = useViewModelInstance(riveFile);
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true });
 
     return (
         <RiveView
@@ -227,7 +240,7 @@ import { Demos } from "/snippets/demos.jsx";
     Or bind a specific instance:
 
     ```tsx
-    const { instance } = useViewModelInstance(riveFile);
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true });
     <RiveView
         file={riveFile}
         dataBind={instance}
@@ -262,7 +275,22 @@ import { Demos } from "/snippets/demos.jsx";
 
 <Tabs>
     <Tab title="New Runtime (Recommended)">
-    <Note>Coming soon</Note>
+    Use `getPropertiesAsync` on a `ViewModel` to list its properties. Each entry has a `name` and a `type`, such as `'number'`, `'string'`, `'boolean'`, `'color'`, `'enum'`, `'trigger'`, `'list'`, `'viewModel'`, `'assetImage'`, or `'artboard'`.
+
+    ```tsx
+    const viewModel = await riveFile.viewModelByNameAsync('Person');
+    const properties = await viewModel?.getPropertiesAsync();
+    // [{ name: 'name', type: 'string' }, { name: 'age', type: 'number' }, ...]
+
+    const propertyCount = await viewModel?.getPropertyCountAsync();
+    const instanceCount = await viewModel?.getInstanceCountAsync();
+    ```
+
+    `ViewModelInstance` also has `getPropertiesAsync`, but only for instances created from a `ViewModel` or with `useViewModelInstance`. For nested instances, list items, and instances obtained from a view, it rejects; query the `ViewModel` instead.
+
+    <Note>
+        `getPropertiesAsync` requires `0.5.0` or later.
+    </Note>
     </Tab>
     <Tab title="Legacy Runtime">
     <Warning>
@@ -284,7 +312,7 @@ import { Demos } from "/snippets/demos.jsx";
     - `useRiveEnum`: Read/write enum properties
     - `useRiveTrigger`: Fire trigger events with optional callbacks
 
-    These hooks return the current `value`, a setter function (`setValue` or `trigger`), and an `error` if the property is not found.
+    These hooks return the current `value`, a setter function (`setValue` or `trigger`), and an `error` if the property can't be found or read. The `value` is `undefined` until the first value arrives from the runtime.
 
     <Note>
         The `setValue` function allows you to pass a function that receives the previous value, similar to React's `setState` pattern. This is useful when you need to update a value based on its current state:
@@ -304,11 +332,12 @@ import { Demos } from "/snippets/demos.jsx";
         useRiveColor,
         useRiveEnum,
         useRiveTrigger,
+        RiveColor,
         RiveView
     } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const { instance } = useViewModelInstance(riveFile);
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true });
 
     // Boolean
     const { value: isActive, setValue: setIsActive, error: boolError } = useRiveBoolean(
@@ -331,13 +360,13 @@ import { Demos } from "/snippets/demos.jsx";
     );
     // Set: setScore(100);
 
-    // Color (accepts hex string or RiveColor object)
+    // Color (value is a RiveColor; set with a hex string or a RiveColor)
     const { value: themeColor, setValue: setThemeColor, error: colorError } = useRiveColor(
         'ui/themeColor',
         instance
     );
-    // Set: setThemeColor('#FF0000FF'); // hex string
-    // Or: setThemeColor({ r: 255, g: 0, b: 0, a: 255 }); // RGBA object
+    // Set: setThemeColor('#FF0000FF'); // hex string, #RRGGBB or #RRGGBBAA
+    // Or: setThemeColor(new RiveColor(255, 0, 0, 255)); // r, g, b, a in 0-255
 
     // Enum
     const { value: status, setValue: setStatus, error: enumError } = useRiveEnum(
@@ -369,6 +398,27 @@ import { Demos } from "/snippets/demos.jsx";
     ```
 
     The `value` returned by each hook will update automatically when the property changes in the Rive graphic.
+
+    <Note>
+        In `0.5.0` and later, a misspelled property path is not detected when you look the property up. It surfaces as the hook's `error`, or as a rejected `getValueAsync()` promise.
+    </Note>
+
+    Outside of hooks, use the property accessors on a `ViewModelInstance`. Read values with `getValueAsync()` and write them with `set()`, or with `setValueAsync()` if you need to wait for the write to complete:
+
+    ```tsx
+    const health = instance.numberProperty('health');
+
+    const current = await health?.getValueAsync();
+    health?.set(100);
+    await health?.setValueAsync(100);
+
+    // Listen for changes; call the returned function to unsubscribe
+    const unsubscribe = health?.addListener((value) => console.log('health', value));
+    ```
+
+    <Warning>
+        Reading or writing a property's `value` field directly is deprecated. It blocks the JS thread and, in `0.5.0` and later, logs a warning.
+    </Warning>
     </Tab>
     <Tab title="Legacy Runtime">
     The following data binding methods are exposed on the `RiveRef` object.
@@ -442,7 +492,7 @@ import { Demos } from "/snippets/demos.jsx";
     import { useRiveString, useRiveNumber, useRiveFile, useViewModelInstance } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const { instance } = useViewModelInstance(riveFile);
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true });
 
     // Accessing 'settings/theme/name' (String)
     const { value: themeName, setValue: setThemeName } = useRiveString(
@@ -461,9 +511,28 @@ import { Demos } from "/snippets/demos.jsx";
     // setVolume(80);
     ```
 
-    <Info>
-        The Rive React Native runtime does not yet support accessing a ViewModel property directly, to be able to do the chain notation.
-    </Info>
+    To work with a nested view model instance directly, use `viewModelAsync` with the property name or path:
+
+    ```tsx
+    const settings = await instance?.viewModelAsync('settings');
+    const theme = await instance?.viewModelAsync('settings/theme');
+
+    // Use the nested instance with the property hooks, or its accessors
+    theme?.stringProperty('name')?.set('Dark Mode');
+    ```
+
+    To swap a nested view model for another instance of the same view model, use `replaceViewModel`:
+
+    ```tsx
+    const otherSettings = await settingsViewModel.createInstanceByNameAsync('Compact');
+    if (otherSettings) {
+        instance.replaceViewModel('settings', otherSettings);
+    }
+    ```
+
+    <Note>
+        In `0.5.0` and later, `replaceViewModel` is supported on iOS only. On Android it logs a warning and does nothing.
+    </Note>
     </Tab>
     <Tab title="Legacy Runtime">
     <Warning>
@@ -500,11 +569,11 @@ import { Demos } from "/snippets/demos.jsx";
         useRiveColor,
         useRiveEnum,
         useRiveTrigger,
-        useEffect
     } from '@rive-app/react-native';
+    import { useEffect } from 'react';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const { instance } = useViewModelInstance(riveFile);
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true });
 
     const { value: boolValue, setValue: setBoolValue } = useRiveBoolean('My Boolean Property', instance);
     const { value: stringValue, setValue: setStringValue } = useRiveString('My String Property', instance);
@@ -579,22 +648,14 @@ import { Demos } from "/snippets/demos.jsx";
         useViewModelInstance,
         RiveView,
         RiveImages,
-        type RiveViewRef
     } from '@rive-app/react-native';
-    import { useRef } from 'react';
 
     const { riveViewRef, setHybridRef } = useRive();
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const { instance } = useViewModelInstance(riveFile);
-    const riveViewRef = useRef<RiveViewRef>(undefined);
+    const { instance } = useViewModelInstance(riveFile, { async: true });
 
     const handleLoadImage = async () => {
-        if (!riveViewRef) return;
-
-        const vmi = riveViewRef.getViewModelInstance();
-        if (!vmi) return;
-
-        const imgProp = vmi.imageProperty('imageValue');
+        const imgProp = instance?.imageProperty('imageValue');
         if (!imgProp) return;
 
         // Load image from URL
@@ -602,29 +663,24 @@ import { Demos } from "/snippets/demos.jsx";
             'https://picsum.photos/id/372/500/500'
         );
         imgProp.set(riveImage);
-        riveViewRef.playIfNeeded();
+        riveViewRef?.playIfNeeded();
     };
 
     return (
-        <RiveView
-            hybridRef={setHybridRef}
-            file={riveFile}
-            dataBind={instance}
-            autoPlay={true}
-        />
+        riveFile && instance && (
+            <RiveView
+                hybridRef={setHybridRef}
+                file={riveFile}
+                dataBind={instance}
+                autoPlay={true}
+            />
+        )
     );
     ```
 
-    You can also add listeners to image properties:
-
-    ```tsx
-    const imgProp = vmi.imageProperty('imageValue');
-    if (imgProp) {
-        imgProp.addListener(() => {
-            console.log('Image property changed!');
-        });
-    }
-    ```
+    <Note>
+        In `0.5.0` and later, `addListener` on image properties is not supported: it returns an unsubscribe function but the listener is never called.
+    </Note>
 
     Other image loading options on `RiveImages`:
     ```ts
@@ -665,7 +721,7 @@ import { Demos } from "/snippets/demos.jsx";
     } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const { instance } = useViewModelInstance(riveFile);
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true });
 
     // Get the list property with manipulation functions
     const {
@@ -704,10 +760,10 @@ import { Demos } from "/snippets/demos.jsx";
     };
 
     // Remove first item by instance
-    const handleRemoveFirst = () => {
-        const firstInstance = getInstanceAt(0);
+    const handleRemoveFirst = async () => {
+        const firstInstance = await getInstanceAt(0);
         if (firstInstance) {
-            removeInstance(firstInstance);
+            await removeInstance(firstInstance);
         }
     };
 
@@ -736,6 +792,12 @@ import { Demos } from "/snippets/demos.jsx";
     );
     ```
 
+    All `useRiveList` functions except `length` return promises. `length` starts at `0` and updates after each mutation made through the hook.
+
+    <Note>
+        In `0.5.0` and later, list properties don't report changes made outside of `useRiveList`, such as by the state machine. To read the current state, call `getLengthAsync()` and `getInstanceAtAsync(index)` on the list property from `instance.listProperty('todos')`.
+    </Note>
+
     </Tab>
     <Tab title="Legacy Runtime">
     <Warning>
@@ -763,6 +825,8 @@ import { Demos } from "/snippets/demos.jsx";
     const bindableArtboard = riveFile.getBindableArtboard('Character 1');
     artboardProp?.set(bindableArtboard);
     ```
+
+    The artboard can come from a different `RiveFile` than the one bound to the view, which lets you keep swappable content in a separate file. `getBindableArtboard` throws if the file has no artboard with that name. Use `getArtboardNamesAsync()` on the `RiveFile` to list the available names.
     </Tab>
     <Tab title="Legacy Runtime">
     <Warning>
@@ -786,7 +850,7 @@ import { Demos } from "/snippets/demos.jsx";
     } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const { instance } = useViewModelInstance(riveFile);
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true });
 
     const { value: category, setValue: setCategory, error } = useRiveEnum(
         'category',
@@ -805,8 +869,15 @@ import { Demos } from "/snippets/demos.jsx";
     );
     ```
 
+    To list the enums defined in a file and their possible values, use `getEnums`:
+
+    ```tsx
+    const enums = await riveFile.getEnums();
+    // [{ name: 'Pets', values: ['dog', 'cat', 'frog'] }, ...]
+    ```
+
     <Note>
-        Retrieving the list of all enums in the file, or accessing all possible values on an Enum, is not yet available.
+        `getEnums` requires `0.5.0` or later.
     </Note>
     </Tab>
     <Tab title="Legacy Runtime">
@@ -816,7 +887,7 @@ import { Demos } from "/snippets/demos.jsx";
     </Tab>
 </Tabs>
 
-# Examples
+## Examples
 
 <Tabs>
     <Tab title="New Runtime (Recommended)">

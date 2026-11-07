@@ -13,7 +13,7 @@ Lists the directories in the source path to standard output. Does not
 recurse by default.  Use the `-R` flag to recurse.
 
 This command lists the total size of the directory (if known, -1 if
-not), the modification time (if known, the current time if not), the
+not), the modification time (if known, the `--default-time` if not), the
 number of objects in the directory (if known, -1 if not) and the name
 of the directory, E.g.
 
@@ -53,6 +53,10 @@ Note that `ls` and `lsl` recurse by default - use `--max-depth 1` to stop the re
 The other list commands `lsd`,`lsf`,`lsjson` do not recurse by default -
 use `-R` to make them recurse.
 
+On the bucket-based remotes (e.g. s3, gcs, b2) a directory is a key prefix
+rather than an object, so a listing without `-R` shows each prefix as one
+directory entry and not the objects stored under it.
+
 List commands prefer a recursive method that uses more memory but fewer
 transactions by default. Use `--disable ListR` to suppress the behavior.
 See [`--fast-list`](/docs/#fast-list) for more details.
@@ -86,6 +90,7 @@ Flags for filtering directory listings
       --exclude-if-present stringArray      Exclude directories if filename is present
       --files-from stringArray              Read list of source-file names from file (use - to read from stdin)
       --files-from-raw stringArray          Read list of source-file names from file without any processing of lines (use - to read from stdin)
+      --files-from0 stringArray             Read list of source-file names from file using NUL as separator (use - to read from stdin)
   -f, --filter stringArray                  Add a file filtering rule
       --filter-from stringArray             Read file filtering patterns from a file (use - to read from stdin)
       --hash-filter string                  Partition filenames by hash k/n or randomly @/n

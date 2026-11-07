@@ -112,6 +112,61 @@ These examples are setting all the Cache Rules of a zone to a single rule, since
 
 </Details>
 
+<Details header="Example: Turn on Origin Range Requests for large media files">
+
+<APIRequest
+  path="/zones/{zone_id}/rulesets/phases/{ruleset_phase}/entrypoint"
+  method="PUT"
+  parameters={{ ruleset_phase: "http_request_cache_settings" }}
+  json={{
+    rules: [
+      {
+        expression:
+          '(http.request.uri.path.extension in {"mp4" "mov" "m4v"})',
+        description: "turn on origin range requests for large media files",
+        action: "set_cache_settings",
+        action_parameters: {
+          cache: true,
+          origin_range_requests: {
+            mode: "on"
+          }
+        }
+      }
+    ]
+  }}
+  roles={false}
+/>
+
+</Details>
+
+<Details
+  header="Example: Turn off default Origin Range Requests"
+  id="example-turn-off-default-origin-range-requests"
+>
+
+<APIRequest
+  path="/zones/{zone_id}/rulesets/phases/{ruleset_phase}/entrypoint"
+  method="PUT"
+  parameters={{ ruleset_phase: "http_request_cache_settings" }}
+  json={{
+    rules: [
+      {
+        expression: "true",
+        description: "turn off default Origin Range Requests",
+        action: "set_cache_settings",
+        action_parameters: {
+          origin_range_requests: {
+            mode: "off"
+          }
+        }
+      }
+    ]
+  }}
+  roles={false}
+/>
+
+</Details>
+
 
 <Details header="Example: Turn off default cache TTLs">
 
@@ -135,6 +190,46 @@ These examples are setting all the Cache Rules of a zone to a single rule, since
   }}
   roles={false}
 />
+
+</Details>
+
+
+<Details header="Example: Cache expected Vary responses">
+
+<APIRequest
+  path="/zones/{zone_id}/rulesets/phases/{ruleset_phase}/entrypoint"
+  method="PUT"
+  parameters={{ ruleset_phase: "http_request_cache_settings" }}
+  json={{
+    rules: [
+      {
+        expression: '(http.host eq "example.com")',
+        description: "cache expected vary responses",
+        action: "set_cache_settings",
+        action_parameters: {
+          cache: true,
+          vary: {
+            default: {
+              action: "bypass"
+            },
+            headers: {
+              accept: {
+                action: "normalize",
+                media_types: ["text/html", "application/json"]
+              },
+              "accept-language": {
+                action: "normalize",
+                languages: ["en", "fr", "de"]
+              }
+            }
+          }
+        }
+      }
+    ]
+  }}
+  roles={false}
+/>
+
 
 </Details>
 

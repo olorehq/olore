@@ -4,7 +4,6 @@ description: "Loading and replacing assets dynamically at runtime"
 ---
 
 import { YouTube } from "/snippets/youtube.mdx";
-import { Apple } from "/snippets/constants.mdx";
 
 import Overview from '/snippets/runtimes/loading-assets/overview.mdx'
 import MethodsForLoadingAssets from '/snippets/runtimes/loading-assets/methods-for-loading.mdx'
@@ -22,52 +21,190 @@ import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
 <HandlingAssets />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
         This section assumes that you have read through the [Apple](/runtimes/apple/apple) overview.
 
-        Referenced assets can be added using the global asset APIs of a `Worker`.
+        ### Asset API coverage
 
-        Adding global assets is a two-step process:
-        1. Decode the asset from its bytes
-        2. Add the asset to the worker
+        Decode assets with the same `Worker` that owns the files or View Model instances using them.
 
-        Global assets are push-based, meaning that you have to know the unique name of the asset ahead of time. You can retrieve the unique name of the asset from the exported `.zip` file containing the assets. The unique identifier is the identifier that is appended to the asset name (e.g `Font-1234`).
+        | Asset | Decode input | Global registration | Data Binding |
+        | --- | --- | --- | --- |
+        | Image | `decodeImage(from: Data)` | `addGlobalImageAsset(_:name:)` | `ImageProperty` |
+        | Font | `decodeFont(from: Data)`, `UIFont`, or `NSFont` | `addGlobalFontAsset(_:name:)` | `FontProperty` |
+        | Audio | `decodeAudio(from: Data)` | `addGlobalAudioAsset(_:name:)` | No Audio property API |
+        | Blob | `decodeBlob(from: Data)` | Not supported | `BlobProperty` |
 
-        There is no need to maintain a strong reference to the asset. The asset will be automatically cleaned up when the worker is disposed.
+        Global registration replaces matching file assets by `uniqueName` across a worker. [Data Binding](/runtimes/apple/data-binding) assigns an asset to a specific View Model property; it does not require global registration.
 
-        <CodeGroup>
-            ```swift Font
+        <Note>
+            Blobs support decoding and assignment through `BlobProperty`, but not global registration or removal. The examples below skip `.blob` assets; use Data Binding to assign a decoded blob.
+        </Note>
+
+        ### Discovering and Loading File Assets
+
+        Use `File.getAssets()` to discover a file's assets, then decode and register replacements on its `Worker`. This replaces the legacy `customLoader` callback for out-of-band assets.
+
+        A global asset applies to matching assets in that file and other files loaded by the same worker, including files loaded later. Register it using `asset.uniqueName`. You can register assets after creating the file, and register a new asset under the same unique name to replace it.
+
+        Each `File.Asset` provides the following metadata:
+
+        | Property | Description |
+        | --- | --- |
+        | `name` | The authored asset name stored in the file. |
+        | `uniqueName` | The exact name to pass to the worker's global asset APIs. |
+        | `assetID` | The asset identifier stored in the file. |
+        | `type` | `.image`, `.font`, `.audio`, `.blob`, or `.unknown(UInt16)`. |
+        | `fileExtension` | The file extension without a leading period. |
+        | `cdn` | Optional hosted asset metadata with `baseURL` and `uuid`. |
+
+        `getAssets()` includes embedded and referenced assets. Use the metadata to choose which assets your app supplies.
+
+        <Steps>
+            <Step title="Create a Worker and File">
+                Load the file before querying its asset metadata. Call these APIs from a main-actor async context.
+
+                ```swift
+                let worker = try await Worker()
+                let file = try await File(
+                    source: .local("my_rive_file", .main),
+                    worker: worker
+                )
+                ```
+            </Step>
+            <Step title="Choose and Load Assets">
+                Iterate the file's assets and use their metadata to locate their bytes. This example matches bundled resources using each asset's `uniqueName` and `fileExtension`, skipping unknown asset types and resources that are not bundled.
+
+                ```swift
+                for asset in try await file.getAssets() {
+                    if case .unknown = asset.type { continue }
+                    guard let url = Bundle.main.url(
+                        forResource: asset.uniqueName,
+                        withExtension: asset.fileExtension
+                    ) else { continue }
+
+                    let data = try await Task.detached {
+                        try Data(contentsOf: url)
+                    }.value
+
+                    // Decode and register the asset here, as shown below.
+                }
+                ```
+            </Step>
+            <Step title="Register Global Assets">
+                Inside the loop, decode each asset with the worker and register it using `asset.uniqueName`. The worker applies it to files using that unique name.
+
+                ```swift
+                switch asset.type {
+                case .image:
+                    let image = try await worker.decodeImage(from: data)
+                    worker.addGlobalImageAsset(image, name: asset.uniqueName)
+                case .font:
+                    let font = try await worker.decodeFont(from: data)
+                    worker.addGlobalFontAsset(font, name: asset.uniqueName)
+                case .audio:
+                    let audio = try await worker.decodeAudio(from: data)
+                    worker.addGlobalAudioAsset(audio, name: asset.uniqueName)
+                case .blob, .unknown:
+                    break
+                }
+                ```
+            </Step>
+        </Steps>
+
+        #### Complete Example
+
+        This example loads bundled resources whose filenames match each asset's `uniqueName` plus its `fileExtension` (for example, `picture-47982.jpeg`). It skips assets without a matching bundled resource and leaves them unchanged.
+
+        ```swift
+        @MainActor
+        func loadFileWithAssets() async throws -> File {
             let worker = try await Worker()
-            let fontData: Data = ...
-            let font = try await worker.decodeFont(from: fontData)
-            worker.addGlobalFontAsset(font, name: "MyFont-1234")
+            let file = try await File(
+                source: .local("my_rive_file", .main),
+                worker: worker
+            )
 
-            // If you would like to clean up the asset
-            worker.removeGlobalFontAsset(name: "MyFont-1234")
-            ```
+            for asset in try await file.getAssets() {
+                if case .unknown = asset.type { continue }
+                guard let url = Bundle.main.url(
+                    forResource: asset.uniqueName,
+                    withExtension: asset.fileExtension
+                ) else { continue }
 
-            ```swift Audio
-            let worker = try await Worker()
-            let audioData: Data = ...
-            let font = try await worker.decodeAudio(from: audioData)
-            worker.addGlobalAudioAsset(audio, name: "MyAudio-1234")
+                let data = try await Task.detached {
+                    try Data(contentsOf: url)
+                }.value
 
-            // If you would like to clean up the asset
-            worker.removeGlobalAudioAsset(name: "MyAudio-1234")
-            ```
+                switch asset.type {
+                case .image:
+                    let image = try await worker.decodeImage(from: data)
+                    worker.addGlobalImageAsset(image, name: asset.uniqueName)
+                case .font:
+                    let font = try await worker.decodeFont(from: data)
+                    worker.addGlobalFontAsset(font, name: asset.uniqueName)
+                case .audio:
+                    let audio = try await worker.decodeAudio(from: data)
+                    worker.addGlobalAudioAsset(audio, name: asset.uniqueName)
+                case .blob, .unknown:
+                    break
+                }
+            }
 
-            ```swift Image
-            let worker = try await Worker()
-            let imageData: Data = ...
-            let image = try await worker.decodeImage(from: imageData)
-            worker.addGlobalImageAsset(image, name: "MyImage-1234")
+            return file
+        }
+        ```
 
-            // If you would like to clean up the asset
-            worker.removeGlobalImageAsset(name: "MyImage-1234")
-            ```
-        </CodeGroup>
+        Create your `Rive` and view from the returned file. You can also register replacements after displaying a file. Using the same unique name updates matching assets across files on that worker; use separate workers when those files need different replacements.
+
+        ### Loading Hosted Assets
+
+        The new runtime does not automatically fetch hosted assets. For an asset with `cdn` metadata, fetch its bytes from `baseURL` with `uuid` appended as a path component, then decode and register it using the same global asset APIs.
+
+        For example, inside an asset loop, load hosted images with:
+
+        ```swift
+        guard asset.type == .image,
+              let cdn = asset.cdn,
+              let baseURL = URL(string: cdn.baseURL)
+        else { continue }
+
+        let url = baseURL.appendingPathComponent(cdn.uuid)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        guard let response = response as? HTTPURLResponse,
+              (200..<300).contains(response.statusCode)
+        else { throw URLError(.badServerResponse) }
+
+        let image = try await worker.decodeImage(from: data)
+        worker.addGlobalImageAsset(image, name: asset.uniqueName)
+        ```
+
+        ### Decoding native fonts
+
+        In addition to font-file bytes, `decodeFont(from:)` accepts a platform font:
+
+        ```swift
+        #if canImport(UIKit)
+        let font = try await worker.decodeFont(from: UIFont.systemFont(ofSize: 12))
+        #elseif canImport(AppKit)
+        let font = try await worker.decodeFont(from: NSFont.systemFont(ofSize: 12))
+        #endif
+        worker.addGlobalFontAsset(font, name: fontAsset.uniqueName)
+        ```
+
+        Import `UIKit` or `AppKit` for the platform you target. The Rive text run controls the displayed font size. The decoded font can also be assigned to a `FontProperty`.
+
+        ### Managing Global Assets
+
+        The worker retains registered assets, so you do not need to keep a separate strong reference while they are registered. To remove a registration, use the corresponding API with the same unique name:
+
+        ```swift
+        worker.removeGlobalImageAsset(name: imageAsset.uniqueName)
+        worker.removeGlobalFontAsset(fontAsset.uniqueName)
+        worker.removeGlobalAudioAsset(name: audioAsset.uniqueName)
+        ```
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ### Examples
 
         - [(SwiftUI) Swap out images and fonts](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/SwiftUI/SwiftSimpleAssets.swift)

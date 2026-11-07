@@ -1,0 +1,157 @@
+---
+title: 'Manage monitoring through pull requests'
+sidebarTitle: 'Monitoring Through Pull Requests'
+description: 'Export monitoring from the UI, review and test a GitHub pull request, then deploy the merged code with the Checkly CLI.'
+canonical: 'https://www.checklyhq.com/docs/cli/monitoring-pull-requests/'
+---
+
+Review monitoring changes in GitHub, test them, and deploy the merged code to Checkly. Start with a resource you created in the UI, or send UI changes back to a resource you already manage as code.
+
+<Accordion title="Before you begin">
+
+- Access to edit the resource and use your Checkly account's GitHub integration.
+- If GitHub is not connected yet, the GitHub personal account owner or an active organization owner must connect it.
+- A local checkout of the repository and the [CLI prerequisites](/cli/installation), including a Node.js version supported by your Checkly version.
+- The [GitHub CLI](https://cli.github.com/manual/gh_pr_checkout) for the checkout command below. You can also use GitHub's PR checkout instructions.
+
+</Accordion>
+
+## 1. Connect GitHub and choose a repository
+
+Open the resource's **Export to code** dialog and select **Code**. A code-managed resource that was changed in Checkly since its last deploy shows a **Drifted** badge next to **Managed by** on its page; clicking the badge opens the same **Code** tab. If prompted, authorize GitHub from Checkly, choose an installation you own, and click **Connect**. Grant the App access to your repository. See [GitHub integration setup](/integrations/ci-cd/github/deployments#set-up-github-deployment-hooks) for installation help; you don't need a deployment hook for this workflow.
+
+For a UI-created resource, choose the repository to export into. If it has multiple Checkly configs, select the folder for your project. Checkly can add the resource to a project already deployed to this account or create a config for a new project.
+
+For a code-managed resource, Checkly uses its project's repository. If asked, choose the file that declares the resource.
+
+## 2. Open the PR
+
+- **UI-created resource:** click **Export to code**. Checkly generates the code and temporarily reserves the existing resource for the project. Your monitoring keeps running; ownership stays pending until you deploy.
+- **Code-managed resource:** save your UI changes. The **Code** tab lists what changed in Checkly since the last deploy, with the old and new value of each property. Changes the sync doesn't write are listed under **Changed in Checkly, but kept as it is in code**. Click **Sync to code** to send the changes to its source file. **Already in Sync** means there's nothing to send.
+
+Open the PR from the dialog or your project's **Pull requests** view in **Projects**. That view tracks PRs created through Checkly, with **Open**, **Merged**, and **Closed** filters.
+
+## 3. Check out the PR and install dependencies
+
+From your local repository checkout, select the PR:
+
+```bash Terminal
+gh pr checkout
+```
+
+Work from the folder containing `checkly.config.ts` or `checkly.config.js`. In a monorepo, use the package or workspace containing that config.
+
+These examples use npm; use your repository's package manager. Install the project dependencies:
+
+```bash Terminal
+npm install
+```
+
+If the package doesn't already include Checkly, add it:
+
+```bash Terminal
+npm install --save-dev checkly
+```
+
+Keep the project's existing Checkly version. The export doesn't add dependencies or update lockfiles. Commit any dependency and lockfile changes to the PR. If you need a `package.json`, follow [CLI installation](/cli/installation).
+
+For pnpm, use `pnpm add --save-dev checkly` and `pnpm exec checkly`; for Yarn, use `yarn add --dev checkly` and `yarn checkly`.
+
+## 4. Sign in and test the changes
+
+Select the Checkly account that owns the resource:
+
+```bash Terminal
+npx checkly login
+npx checkly whoami
+```
+
+If you already use `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID`, run `whoami` to confirm the account. See [CLI authentication](/cli/authentication) for setup.
+
+Review the files before testing:
+
+- Keep the project's `logicalId` and generated construct IDs unchanged so the code updates the existing resources.
+- Check that your config's file patterns load the exported constructs.
+- Supply the required [environment variables and secrets](/cli/environment-variables) locally and in CI. Exported credentials can be blank or read from environment variables. Deploying a blank credential can overwrite its value in Checkly.
+
+Run the checks from the PR:
+
+```bash Terminal
+npx checkly test
+```
+
+Fix any failures, then preview the project's changes:
+
+```bash Terminal
+npx checkly deploy --preview
+```
+
+Review the resources it will update, create, or delete. If the PR only contains an alert channel or another non-check resource, testing may report no checks; review its code and preview instead.
+
+## 5. Review and merge
+
+Review the diff and test results, then merge the PR on GitHub. Merging saves the code to your repository; deployment applies it to Checkly.
+
+To make another change or abandon the PR, see [Update, close, or reopen a PR](#update-close-or-reopen-a-pr).
+
+## 6. Deploy the merged code
+
+Switch to the branch the PR was merged into. From the folder containing the Checkly config, pull the changes, install dependencies, and preview the deployment:
+
+```bash Terminal
+git pull --ff-only
+npm install
+npx checkly whoami
+npx checkly deploy --preview
+```
+
+Check that the preview includes the exported resources and no unexpected changes or deletions. Then deploy:
+
+```bash Terminal
+npx checkly deploy --output
+```
+
+Or let your existing CI deploy the merged commit, with the same config, dependencies, account credentials, and secrets. Use `npx checkly deploy --force` for CI. See [CI/CD setup](/integrations/ci-cd/overview).
+
+For a UI export, a successful deployment containing all the exported declarations completes the export automatically, preserving resource IDs and history. You don't run `checkly import`, `import apply`, or `import commit`. Tests, previews, and merging leave ownership pending, as does a deployment that omits a required declaration. If deployment fails, ownership stays pending. While pending, deployments that omit the reserved resource can't delete it.
+
+Once code manages the resource, later deployments overwrite UI edits and delete resources removed from code. Use [`--preserve-resources`](/cli/checkly-deploy#deleting-vs-detaching-removed-resources) to keep removed resources and their history.
+
+## 7. Check the result in Checkly
+
+- The project's deployment history shows **Succeeded**. Check its commit information, when available, to confirm the merged revision.
+- An exported resource shows **Managed by** your project instead of **Importing into**, with the same ID and history.
+- The tracked PR shows **Deployed**. For a sync PR, the **Merged · awaiting deploy** badge clears after deployment.
+
+PR status may take a moment to update. Check deployment history too: **Code managed** can also result from a manual import committed without deployment.
+
+## Update, close, or reopen a PR
+
+**Update in code:** edit the PR branch, commit and push your changes, then rerun tests.
+
+**Update from Checkly:** save the resource again, then use **Update PR** or **Sync to code**. Before syncing a code-managed resource, keep a copy of any branch edits you need: Checkly rebuilds the branch from the default branch and can replace those edits. A pending export preserves other files but rewrites its generated resource files. Review the updated diff and rerun tests.
+
+**Close:** close the PR on GitHub. Before ownership is finalized, Checkly releases the reservation when it processes the close, unless another live PR still uses it. The resource keeps running. Closing a sync PR doesn't undo your UI edit.
+
+**Reopen:** reopen it on GitHub. Checkly tries to reserve the original identities again. If another project or import has taken them, resolve that conflict and export again. You can't reopen a merged PR.
+
+Deploy after merging. If you deploy the PR branch before merging, closing the PR won't undo ownership or deployed changes.
+
+## Use the CLI to import resources
+
+The dialog's **CLI** tab supplies a command to generate code locally. You create the branch and PR yourself. Manual import uses `npx checkly import`, then `npx checkly import apply`, then `npx checkly import commit`. The interactive prompts can also apply and commit the plan.
+
+Deployment doesn't automatically commit a manual import. `import commit` changes ownership in Checkly and is separate from a Git commit. Follow [Importing resources from the UI](/cli/importing) for the full workflow.
+
+Deploying manual import code before applying its plan creates duplicates. You can cancel an uncommitted plan with `npx checkly import cancel`, but cancellation doesn't undo changes already deployed.
+
+## Troubleshooting
+
+| Problem | Next step |
+| --- | --- |
+| Repository missing or GitHub error | Check the App's connection to this Checkly account and its repository access. For a missing account or organization, follow [GitHub connection troubleshooting](/integrations/ci-cd/github/deployments#github-account-or-organization-missing). Look for an existing PR before retrying: it may have been created despite the error. The reservation stays protected; use `checkly import cancel` to cancel its uncommitted plan if you're abandoning the export. |
+| Checkly can't select the project | Choose the config folder and check its `logicalId`, `repoUrl`, and account. An existing project must already be deployed to this account. Use [manual import](/cli/importing) if automatic export can't use it. |
+| No source file, several candidates, or unsupported sync | Confirm the file that declares the resource. If Checkly can't patch it, edit the code directly. For a resource still managed in the UI, try manual import if the CLI supports its type. A project that only **References** a resource can't sync it. |
+| Dependencies, sign-in, secrets, or tests fail | Install dependencies in the config's package, use a supported Node.js version, check `whoami`, and supply the required secrets. Fix the reported error and rerun the test or preview. |
+| Reservation released or **Needs attention** after reopening | Resolve the competing project or import, then export or import again. Wait until the existing resources are linked to your project before deploying the old export files. |
+| Deployment failed or ownership still pending | Fix the deployment error and retry from the merged code. Check that your config loads every exported declaration. For manual import, finish `checkly import commit`. |

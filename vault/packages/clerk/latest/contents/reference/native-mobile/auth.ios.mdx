@@ -74,6 +74,16 @@ Sign in using a passkey:
 var signIn = try await clerk.auth.signInWithPasskey()
 ```
 
+### Sign in with biometrics
+
+Sign in using a biometric credential that was enrolled on the current app installation:
+
+```swift
+var signIn = try await clerk.auth.signInWithBiometrics()
+```
+
+See the [biometric sign-in guide](/docs/guides/development/custom-flows/authentication/biometric-sign-in) to learn how to enroll, use, and revoke biometric credentials.
+
 ### Sign in with Enterprise SSO
 
 Sign in using [Enterprise SSO](/docs/guides/configure/auth-strategies/enterprise-connections/overview):
@@ -88,6 +98,17 @@ Sign in using a ticket generated from the Backend API:
 
 ```swift
 var signIn = try await clerk.auth.signInWithTicket(ticket)
+```
+
+If the Backend API created the sign-in token with `org_id`, Clerk activates that Organization for the resulting session. After sign-in succeeds, the Organization ID is available from `Clerk.shared.session?.lastActiveOrganizationId`.
+
+### Sign in with email link
+
+Send an email link to the supplied email address. After the user opens the link, handle the callback with [`clerk.handle(url)`](#deep-linking).
+
+```swift
+let signIn = try await clerk.auth.signInWithEmailLink(emailAddress: "user@email.com")
+// Show a message that tells the user to check their email.
 ```
 
 ### Sign in with identifier
@@ -120,6 +141,15 @@ Send the user an [OTP](!otp) via email to verify their sign-in. Then verify the 
 ```swift
 signIn = try await signIn.sendEmailCode()
 signIn = try await signIn.verifyCode("123456")
+```
+
+#### Send email link
+
+Send the user an email link to verify their sign-in. After the user opens the link, handle the callback with [`clerk.handle(url)`](#deep-linking).
+
+```swift
+signIn = try await signIn.sendEmailLink()
+// Show a message that tells the user to check their email.
 ```
 
 #### Send and verify phone code
@@ -350,6 +380,15 @@ signUp = try await signUp.sendEmailCode()
 signUp = try await signUp.verifyEmailCode("123456")
 ```
 
+#### Send email link
+
+Send the user an email link to verify their account. After the user opens the link, handle the callback with [`clerk.handle(url)`](#deep-linking).
+
+```swift
+signUp = try await signUp.sendEmailLink()
+// Show a message that tells the user to check their email.
+```
+
 #### Send and verify phone via OTP
 
 Send the user an [OTP](!otp) via SMS to verify their account. Then verify the code that the user supplies:
@@ -358,6 +397,32 @@ Send the user an [OTP](!otp) via SMS to verify their account. Then verify the co
 signUp = try await signUp.sendPhoneCode()
 signUp = try await signUp.verifyPhoneCode("123456")
 ```
+
+## Hosted authentication
+
+Hosted authentication opens Clerk's [Account Portal](/docs/guides/account-portal/overview) in a browser authentication session. Account Portal supports the sign-in and sign-up methods enabled for your Clerk application. When authentication completes, the SDK closes the browser session and activates the new session in your app.
+
+The following example opens the Account Portal sign-in page:
+
+```swift
+try await clerk.auth.startHostedAuth()
+```
+
+Pass `.signUp` to open the sign-up page first:
+
+```swift
+try await clerk.auth.startHostedAuth(mode: .signUp)
+```
+
+`startHostedAuth()` accepts the following parameters:
+
+- `mode` - The Account Portal page to open first. Defaults to sign-in.
+- `redirectUrl` - A custom native callback with a non-HTTP URL scheme; `http`, `https`, and universal-link callbacks are rejected. Defaults to Clerk's configured redirect URL, which is `<bundle-identifier>://callback` unless overridden.
+- `prefersEphemeralWebBrowserSession` - Whether the browser should use an ephemeral session. Defaults to `false`.
+
+`startHostedAuth()` returns the `Session` that the SDK activated. The result is discardable; `clerk.user` reflects the signed-in user after the call completes. If the user dismisses the browser or authentication fails, the method throws.
+
+See the [hosted authentication guide](/docs/guides/account-portal/hosted-auth) for setup instructions and tradeoffs.
 
 ## Current sign-in/sign-up
 
@@ -389,7 +454,7 @@ let sessions = clerk.auth.sessions
 
 ### Get session token
 
-Retrieve the user's session token:
+Retrieve the user's [session token](!session-token):
 
 ```swift
 guard let token = try await clerk.auth.getToken() else { return }
@@ -401,6 +466,20 @@ Use this token when calling your backend to authenticate the request:
 var request = URLRequest(url: url)
 request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 ```
+
+### Check authorization
+
+Use `checkAuthorization()` on a `Session` to check whether that session's user has a [Role or Permission](/docs/guides/organizations/control-access/roles-and-permissions) in the [Active Organization](!active-organization), has a [Plan or Feature](/docs/guides/billing/overview), or has [reverified](/docs/guides/secure/reverification) recently. Pass one Role, Permission, Plan, or Feature, optionally with a reverification requirement, or a reverification requirement alone. When you pass both, it returns `true` only if both pass.
+
+```swift
+guard let session = clerk.session else { return }
+
+let isAdmin = session.checkAuthorization(role: "org:admin")
+let canDeleteInvoices = session.checkAuthorization(permission: "org:invoices:delete", reverification: .moderate)
+let hasWidgets = session.checkAuthorization(feature: "widgets")
+```
+
+It returns `false` when the session has no user, and for Role and Permission checks when there is no Active Organization. To check the current session, use `clerk.has()` instead. See [Authorization checks](/docs/guides/secure/authorization-checks) for every condition and the reverification presets.
 
 ### Set current session
 
@@ -431,4 +510,16 @@ try await clerk.auth.signOut()
 
 // Sign out from a specific session.
 try await clerk.auth.signOut(sessionId: sessionId)
+```
+
+## Deep linking
+
+Handle OAuth, SSO, and email link deep link callbacks in your SwiftUI app:
+
+```swift
+.onOpenURL { url in
+  Task {
+    try? await clerk.handle(url)
+  }
+}
 ```

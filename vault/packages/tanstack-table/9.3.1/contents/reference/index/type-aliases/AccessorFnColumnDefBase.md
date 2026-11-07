@@ -1,0 +1,32 @@
+---
+id: AccessorFnColumnDefBase
+title: AccessorFnColumnDefBase
+---
+
+```ts
+type AccessorFnColumnDefBase<TFeatures, TData, TValue> = ColumnDefBase<TFeatures, TData, TValue> & object;
+```
+
+Defined in: [types/ColumnDef.ts:209](https://github.com/TanStack/table/blob/main/packages/table-core/src/types/ColumnDef.ts#L209)
+
+## Type Declaration
+
+### accessorFn
+
+```ts
+accessorFn: AccessorFn<TData, TValue>;
+```
+
+## Type Parameters
+
+### TFeatures
+
+`TFeatures` *extends* [`TableFeatures`](../interfaces/TableFeatures.md)
+
+### TData
+
+`TData` *extends* [`RowData`](RowData.md)
+
+### TValue
+
+`TValue` *extends* [`CellData`](CellData.md) = [`CellData`](CellData.md)

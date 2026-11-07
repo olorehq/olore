@@ -1,0 +1,224 @@
+---
+title: Routes
+---
+
+A **route** is a state node that can be directly navigated to by sending an `xstate.route` event. Routes are useful for mapping URL-based navigation (or any external navigation source) to state machine transitions, allowing you to jump directly to a specific state from anywhere in the machine.
+
+<Callout type="info">
+Routes are syntactic sugar for [transitions from the root state node](transitions#transitions-to-any-state) to the target state. They follow all the same state machine rules — guards, entry/exit actions, and transition selection all work as expected.
+</Callout>
+
+## Defining routes
+
+Add a `route` property to any state node to make it routable. The state node must also have an `id` to be a valid route target:
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const machine = setup({}).createMachine({
+  id: 'app',
+  initial: 'home',
+  states: {
+    home: {
+      id: 'home',
+      route: {}
+    },
+    about: {
+      id: 'about',
+      route: {}
+    },
+    contact: {}  // No route — not directly navigable
+  }
+});
+```
+
+## Navigating to routes
+
+Send an `xstate.route` event with a `to` property referencing the target state's `id` (prefixed with `#`):
+
+```ts
+const actor = createActor(machine).start();
+
+// Navigate to the 'about' state
+actor.send({
+  type: 'xstate.route',
+  to: '#about'
+});
+
+actor.getSnapshot().value; // 'about'
+```
+
+<Callout>
+Routing to the current state will **re-enter** it, executing `exit` and `entry` actions.
+</Callout>
+
+States without a `route` config will not respond to route events:
+
+```ts
+// 'contact' has no route, so this will not transition
+actor.send({
+  type: 'xstate.route',
+  to: '#contact'
+});
+```
+
+## Route guards
+
+You can add a `guard` to a route to conditionally allow navigation:
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const machine = setup({}).createMachine({
+  id: 'app',
+  initial: 'home',
+  states: {
+    home: {
+      id: 'home',
+      route: {}
+    },
+    dashboard: {
+      id: 'dashboard',
+      route: {
+        guard: ({ context }) => context.role === 'editor'
+      }
+    }
+  }
+});
+
+const actor = createActor(machine).start();
+
+// Will NOT navigate — guard returns false
+actor.send({ type: 'xstate.route', to: '#dashboard' });
+```
+
+If the guard returns `false`, the route event is ignored and the state does not change.
+
+<Callout>
+Routes require an `id`. A state node with `route: {}` but no `id` is **not routable** — the `id` is required to generate a valid route target.
+</Callout>
+
+## Deeply nested routes
+
+Routes work with nested state machines. You can navigate directly to a deeply nested state from anywhere:
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const machine = setup({}).createMachine({
+  id: 'app',
+  initial: 'home',
+  states: {
+    home: {
+      id: 'home',
+      route: {}
+    },
+    dashboard: {
+      initial: 'overview',
+      states: {
+        overview: {
+          id: 'overview',
+          route: {}
+        },
+        settings: {
+          id: 'settings',
+          route: {}
+        }
+      }
+    }
+  }
+});
+
+const actor = createActor(machine).start();
+
+// Jump directly to a nested state
+actor.send({ type: 'xstate.route', to: '#overview' });
+
+actor.getSnapshot().value;
+// { dashboard: 'overview' }
+```
+
+<Callout>
+Route targets use the state's `id` (e.g. `#overview`), not dot-separated paths. `#dashboard.overview` is **not** a valid route target.
+</Callout>
+
+## Routes in parallel states
+
+Routes work naturally with parallel states. Routing to a state in one region does not affect the other regions:
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const todoMachine = setup({}).createMachine({
+  id: 'todos',
+  type: 'parallel',
+  states: {
+    todo: {
+      initial: 'new',
+      states: {
+        new: {},
+        editing: {}
+      }
+    },
+    filter: {
+      initial: 'all',
+      states: {
+        all: {
+          id: 'filter-all',
+          route: {}
+        },
+        active: {
+          id: 'filter-active',
+          route: {}
+        },
+        completed: {
+          id: 'filter-completed',
+          route: {}
+        }
+      }
+    }
+  }
+});
+
+const actor = createActor(todoMachine).start();
+
+actor.send({ type: 'xstate.route', to: '#filter-active' });
+
+actor.getSnapshot().value;
+// { todo: 'new', filter: 'active' }
+```
+
+## TypeScript
+
+Route events are strongly typed. Only states with both a `route` config and an `id` will be valid `to` targets:
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const machine = setup({
+  types: {
+    events: {} as
+      | { type: 'navigate'; page: string }
+  }
+}).createMachine({
+  id: 'app',
+  initial: 'home',
+  states: {
+    home: {
+      id: 'home',
+      route: {}
+    },
+    about: {
+      // No route — not a valid target
+    }
+  }
+});
+
+const actor = createActor(machine).start();
+
+// Valid
+actor.send({ type: 'xstate.route', to: '#home' });
+
+// @ts-expect-error — 'about' has no route config
+actor.send({ type: 'xstate.route', to: '#about' });
+```

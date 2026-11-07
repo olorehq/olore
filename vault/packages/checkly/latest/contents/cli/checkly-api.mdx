@@ -1,0 +1,192 @@
+---
+title: checkly api
+description: 'Make authenticated HTTP requests to the Checkly API from the command line.'
+sidebarTitle: 'checkly api'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-api/'
+---
+
+<Note>Available since CLI v8.3.0.</Note>
+
+<Tip>This command is primarily designed for agentic workflows — when you need to interact with the Checkly API but a dedicated CLI command doesn't exist yet for that operation. Make sure your [Checkly skills](/cli/checkly-skills) are up to date so your AI agent has the context it needs to use this command effectively.</Tip>
+
+The `checkly api` command makes authenticated HTTP requests to the Checkly API. It handles authentication automatically using your current login credentials, so you can query or update your account without manually managing API keys in request headers. For available endpoints, refer to the [API reference](/api-reference/overview) or the [OpenAPI spec](https://api.checklyhq.com/openapi.json).
+
+<Accordion title="Prerequisites">
+Before using `checkly api`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+
+See the [Authentication section](/cli/authentication) for other authentication options.
+</Accordion>
+
+## Usage
+
+The basic command takes an API endpoint path and optional flags.
+
+```bash Terminal
+npx checkly api <endpoint> [options]
+```
+
+Responses with a JSON content type (`application/json` or a `+json` media type) are formatted as JSON. Attachments and other response bodies are streamed unchanged, without adding a trailing newline. If you use `--jq`, the response is parsed as JSON regardless of its content type. A non-JSON body produces an error.
+
+## Arguments
+
+The command takes a single required argument.
+
+| Argument | Description |
+|----------|-------------|
+| `ENDPOINT` | API endpoint path, e.g. `/v1/checks`. |
+
+## Options
+
+All flags are optional.
+
+| Option | Description |
+|--------|-------------|
+| `-X, --method` | HTTP method: `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`. Defaults to `GET`, or `POST` when fields are present. |
+| `-F, --field` | Add a field as `key=value` (string) or `key:=value` (JSON-parsed). Sent as a query parameter for `GET` requests and in the request body otherwise. Can be used multiple times. |
+| `-H, --header` | Add a custom HTTP header as `"Key: Value"`. Can be used multiple times. |
+| `--input` | Read the request body from a file path, or `-` to read from stdin. |
+| `--jq` | Filter JSON output using a [jq](https://jqlang.org/) expression. Requires `jq` to be installed. |
+| `-i, --include` | Include HTTP status line and response headers in the output. |
+| `--verbose` | Print request and response headers to stderr. |
+
+## Examples
+
+### List all checks
+
+Returns all checks in your account as JSON.
+
+```bash Terminal
+npx checkly api /v1/checks
+```
+
+### Extract specific fields with jq
+
+Use `--jq` to filter or reshape the JSON response inline.
+
+<Note>`--jq` requires [jq](https://jqlang.org/) to be installed on your system.</Note>
+
+```bash Terminal
+npx checkly api /v1/checks --jq '.[].name'
+```
+
+```
+"My first check"
+"Homepage availability"
+"Login flow"
+```
+
+### Paginate results
+
+Use `-F` to pass query parameters. The API returns 10 results per page by default. Set `-X GET` explicitly, since the command otherwise switches to `POST` when fields are present.
+
+```bash Terminal
+# Get the first 5 checks
+npx checkly api /v1/checks -X GET -F limit=5
+
+# Get the second page
+npx checkly api /v1/checks -X GET -F limit=5 -F page=2
+```
+
+### Get a single resource
+
+Append the resource ID to the endpoint path to fetch a specific item.
+
+```bash Terminal
+npx checkly api /v1/checks/<check-id>
+```
+
+### List alert channels
+
+Use `--jq` to extract only the fields you need from the response.
+
+```bash Terminal
+npx checkly api /v1/alert-channels --jq '[.[] | {id, type}]'
+```
+
+```json
+[
+  { "id": 263584, "type": "SMS" },
+  { "id": 263585, "type": "EMAIL" },
+  { "id": 263586, "type": "SLACK" }
+]
+```
+
+### Update a resource via stdin
+
+Pipe JSON directly into the command using `--input -`:
+
+```bash Terminal
+echo '{"activated": false}' | npx checkly api /v1/checks/<check-id> -X PUT --input -
+```
+
+Or read from a file:
+
+```bash Terminal
+npx checkly api /v1/checks/<check-id> -X PUT --input ./payload.json
+```
+
+### Add custom request headers
+
+Use `-H` to pass additional HTTP headers with the request. You can repeat the flag for multiple headers.
+
+```bash Terminal
+npx checkly api /v1/checks -H "Accept: application/json" -H "X-Custom-Header: value"
+```
+
+### Download a file
+
+Redirect the response to a file. Replace `/path/to/file` with the relative API endpoint that returns your file. The command follows redirects and preserves the bytes of ZIP archives and other downloads.
+
+```bash Terminal
+npx checkly api /path/to/file > report.zip
+```
+
+Use the endpoint path rather than an absolute URL. Avoid `--include` when saving a file because it adds HTTP headers to the output. Attachments, including JSON files, retain their original bytes unless you use `--jq`.
+
+### Inspect response headers
+
+Use `-i` to include the HTTP status and headers in the output:
+
+```bash Terminal
+npx checkly api /v1/checks -i
+```
+
+```
+HTTP/1.1 200 OK
+content-type: application/json; charset=utf-8
+content-range: 0-9/11
+...
+```
+
+The `content-range` header tells you the total number of results (`0-9/11` means items 0–9 of 11 total).
+
+### Debug a request
+
+Use `--verbose` to print request and response headers to stderr:
+
+```bash Terminal
+npx checkly api /v1/checks --verbose
+```
+
+```
+> GET /v1/checks
+
+< 200 OK
+< content-type: application/json; charset=utf-8
+< content-range: 0-9/11
+...
+```
+
+## Related Commands
+
+These commands are commonly used alongside `checkly api`.
+
+- [`checkly login`](/cli/checkly-login) - Sign in to your Checkly account
+- [`checkly whoami`](/cli/checkly-whoami) - Display current account and user information
+
+## API Reference
+
+For available endpoints, see the [Checkly API reference](/api-reference/overview).

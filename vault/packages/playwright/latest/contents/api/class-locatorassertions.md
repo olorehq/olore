@@ -247,7 +247,7 @@ Whether to use `element.innerText` instead of `element.textContent` when retriev
 
 The opposite of [`method: LocatorAssertions.toHaveAccessibleDescription`].
 
-### param: LocatorAssertions.NotToHaveAccessibleDescription.name
+### param: LocatorAssertions.NotToHaveAccessibleDescription.description
 * since: v1.44
 - `description` <[string]|[RegExp]>
 
@@ -315,6 +315,13 @@ Attribute name.
 
 Expected attribute value.
 
+### param: LocatorAssertions.NotToHaveAttribute.value
+* since: v1.62
+* langs: python
+- `value` ?<[string]|[RegExp]>
+
+Expected attribute value. If not specified, the assertion verifies that the attribute is absent.
+
 ### option: LocatorAssertions.NotToHaveAttribute.ignoreCase = %%-assertions-ignore-case-%%
 * since: v1.40
 
@@ -368,6 +375,12 @@ CSS property name.
 - `value` <[string]|[RegExp]>
 
 CSS property value.
+
+### option: LocatorAssertions.NotToHaveCSS.pseudo
+* since: v1.65
+- `pseudo` "PseudoElement" <"before"|"after">
+
+Pseudo-element to read computed styles from.
 
 ### option: LocatorAssertions.NotToHaveCSS.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -533,6 +546,9 @@ await Expect(Page.GetByText("Hidden text")).ToBeAttachedAsync();
 ### option: LocatorAssertions.toBeAttached.timeout = %%-js-assertions-timeout-%%
 * since: v1.33
 
+### option: LocatorAssertions.toBeAttached.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toBeAttached.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.33
 
@@ -591,6 +607,9 @@ This option can't be true when [`option: LocatorAssertions.toBeChecked.checked`]
 ### option: LocatorAssertions.toBeChecked.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
 
+### option: LocatorAssertions.toBeChecked.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toBeChecked.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
 
@@ -637,6 +656,9 @@ await Expect(locator).ToBeDisabledAsync();
 
 ### option: LocatorAssertions.toBeDisabled.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
+
+### option: LocatorAssertions.toBeDisabled.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toBeDisabled.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -685,6 +707,9 @@ await Expect(locator).ToBeEditableAsync();
 ### option: LocatorAssertions.toBeEditable.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
 
+### option: LocatorAssertions.toBeEditable.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toBeEditable.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
 
@@ -727,6 +752,9 @@ await Expect(locator).ToBeEmptyAsync();
 
 ### option: LocatorAssertions.toBeEmpty.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
+
+### option: LocatorAssertions.toBeEmpty.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toBeEmpty.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -775,6 +803,9 @@ await Expect(locator).ToBeEnabledAsync();
 ### option: LocatorAssertions.toBeEnabled.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
 
+### option: LocatorAssertions.toBeEnabled.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toBeEnabled.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
 
@@ -818,6 +849,9 @@ await Expect(locator).ToBeFocusedAsync();
 ### option: LocatorAssertions.toBeFocused.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
 
+### option: LocatorAssertions.toBeFocused.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toBeFocused.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
 
@@ -860,6 +894,9 @@ await Expect(locator).ToBeHiddenAsync();
 
 ### option: LocatorAssertions.toBeHidden.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
+
+### option: LocatorAssertions.toBeHidden.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toBeHidden.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -937,6 +974,9 @@ element should intersect viewport at any positive ratio. Defaults to `0`.
 
 ### option: LocatorAssertions.toBeInViewport.timeout = %%-js-assertions-timeout-%%
 * since: v1.31
+
+### option: LocatorAssertions.toBeInViewport.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toBeInViewport.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.31
@@ -1033,6 +1073,9 @@ await Expect(
 
 ### option: LocatorAssertions.toBeVisible.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
+
+### option: LocatorAssertions.toBeVisible.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toBeVisible.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -1134,6 +1177,9 @@ A string containing expected class names, separated by spaces, or a list of such
 
 ### option: LocatorAssertions.toContainClass.timeout = %%-js-assertions-timeout-%%
 * since: v1.52
+
+### option: LocatorAssertions.toContainClass.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toContainClass.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.52
@@ -1311,6 +1357,9 @@ Whether to use `element.innerText` instead of `element.textContent` when retriev
 ### option: LocatorAssertions.toContainText.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
 
+### option: LocatorAssertions.toContainText.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toContainText.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
 
@@ -1357,6 +1406,9 @@ Expected accessible description.
 
 ### option: LocatorAssertions.toHaveAccessibleDescription.timeout = %%-js-assertions-timeout-%%
 * since: v1.44
+
+### option: LocatorAssertions.toHaveAccessibleDescription.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toHaveAccessibleDescription.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.44
@@ -1408,6 +1460,9 @@ Expected accessible error message.
 ### option: LocatorAssertions.toHaveAccessibleErrorMessage.timeout = %%-js-assertions-timeout-%%
 * since: v1.50
 
+### option: LocatorAssertions.toHaveAccessibleErrorMessage.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toHaveAccessibleErrorMessage.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.50
 
@@ -1458,6 +1513,9 @@ Expected accessible name.
 ### option: LocatorAssertions.toHaveAccessibleName.timeout = %%-js-assertions-timeout-%%
 * since: v1.44
 
+### option: LocatorAssertions.toHaveAccessibleName.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toHaveAccessibleName.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.44
 
@@ -1488,6 +1546,8 @@ from playwright.async_api import expect
 
 locator = page.locator("input")
 await expect(locator).to_have_attribute("type", "text")
+await expect(locator).to_have_attribute("disabled")
+await expect(locator).not_to_have_attribute("readonly")
 ```
 
 ```python sync
@@ -1495,6 +1555,8 @@ from playwright.sync_api import expect
 
 locator = page.locator("input")
 expect(locator).to_have_attribute("type", "text")
+expect(locator).to_have_attribute("disabled")
+expect(locator).not_to_have_attribute("readonly")
 ```
 
 ```csharp
@@ -1514,8 +1576,18 @@ Attribute name.
 
 Expected attribute value.
 
+### param: LocatorAssertions.toHaveAttribute.value
+* since: v1.62
+* langs: python
+- `value` ?<[string]|[RegExp]>
+
+Expected attribute value. If not specified, the assertion verifies that the attribute is present.
+
 ### option: LocatorAssertions.toHaveAttribute.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
+
+### option: LocatorAssertions.toHaveAttribute.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toHaveAttribute.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -1545,6 +1617,9 @@ Attribute name.
 
 ### option: LocatorAssertions.toHaveAttribute#2.timeout = %%-js-assertions-timeout-%%
 * since: v1.39
+
+### option: LocatorAssertions.toHaveAttribute#2.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ## async method: LocatorAssertions.toHaveClass
 * since: v1.20
@@ -1646,6 +1721,9 @@ Expected class or RegExp or a list of those.
 ### option: LocatorAssertions.toHaveClass.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
 
+### option: LocatorAssertions.toHaveClass.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toHaveClass.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
 
@@ -1694,6 +1772,9 @@ Expected count.
 
 ### option: LocatorAssertions.toHaveCount.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
+
+### option: LocatorAssertions.toHaveCount.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toHaveCount.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -1749,12 +1830,15 @@ CSS property value.
 
 ### option: LocatorAssertions.toHaveCSS.pseudo
 * since: v1.60
-- `pseudo` <[PseudoElement]<"before"|"after">>
+- `pseudo` "PseudoElement" <"before"|"after">
 
 Pseudo-element to read computed styles from.
 
 ### option: LocatorAssertions.toHaveCSS.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
+
+### option: LocatorAssertions.toHaveCSS.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toHaveCSS.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -1804,6 +1888,9 @@ Element id.
 
 ### option: LocatorAssertions.toHaveId.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
+
+### option: LocatorAssertions.toHaveId.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toHaveId.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -1861,6 +1948,9 @@ Property value.
 ### option: LocatorAssertions.toHaveJSProperty.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
 
+### option: LocatorAssertions.toHaveJSProperty.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toHaveJSProperty.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
 
@@ -1907,6 +1997,9 @@ await Expect(locator).ToHaveRoleAsync(AriaRole.Button);
 ### option: LocatorAssertions.toHaveRole.timeout = %%-js-assertions-timeout-%%
 * since: v1.44
 
+### option: LocatorAssertions.toHaveRole.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toHaveRole.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.44
 
@@ -1923,6 +2016,9 @@ yield the same result, and then compare the last screenshot with the expectation
 ```js
 const locator = page.getByRole('button');
 await expect(locator).toHaveScreenshot('image.png');
+
+// Store the snapshot in the WebP format.
+await expect(locator).toHaveScreenshot('image.webp');
 ```
 
 Note that screenshot assertions only work with Playwright test runner.
@@ -1931,10 +2027,13 @@ Note that screenshot assertions only work with Playwright test runner.
 * since: v1.23
 - `name` <[string]|[Array]<[string]>>
 
-Snapshot name.
+Snapshot name. Must have a `.png` or `.webp` extension, the screenshot is captured in the corresponding format. Both formats are lossless.
 
 ### option: LocatorAssertions.toHaveScreenshot#1.timeout = %%-js-assertions-timeout-%%
 * since: v1.23
+
+### option: LocatorAssertions.toHaveScreenshot#1.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toHaveScreenshot#1.animations = %%-screenshot-option-animations-default-disabled-%%
 * since: v1.23
@@ -1973,6 +2072,8 @@ Snapshot name.
 This function will wait until two consecutive locator screenshots
 yield the same result, and then compare the last screenshot with the expectation.
 
+The snapshot is stored in the PNG format. To store it in the WebP format instead, pass a snapshot name with the `.webp` extension.
+
 **Usage**
 
 ```js
@@ -1984,6 +2085,9 @@ Note that screenshot assertions only work with Playwright test runner.
 
 ### option: LocatorAssertions.toHaveScreenshot#2.timeout = %%-js-assertions-timeout-%%
 * since: v1.23
+
+### option: LocatorAssertions.toHaveScreenshot#2.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toHaveScreenshot#2.animations = %%-screenshot-option-animations-default-disabled-%%
 * since: v1.23
@@ -2188,6 +2292,9 @@ Whether to use `element.innerText` instead of `element.textContent` when retriev
 ### option: LocatorAssertions.toHaveText.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
 
+### option: LocatorAssertions.toHaveText.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toHaveText.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
 
@@ -2238,6 +2345,9 @@ Expected value.
 
 ### option: LocatorAssertions.toHaveValue.timeout = %%-js-assertions-timeout-%%
 * since: v1.18
+
+### option: LocatorAssertions.toHaveValue.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toHaveValue.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.18
@@ -2320,6 +2430,9 @@ Expected options currently selected.
 ### option: LocatorAssertions.toHaveValues.timeout = %%-js-assertions-timeout-%%
 * since: v1.23
 
+### option: LocatorAssertions.toHaveValues.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toHaveValues.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.23
 
@@ -2380,6 +2493,9 @@ assertThat(page.locator("body")).matchesAriaSnapshot("""
 ### option: LocatorAssertions.toMatchAriaSnapshot.timeout = %%-js-assertions-timeout-%%
 * since: v1.49
 
+### option: LocatorAssertions.toMatchAriaSnapshot.signal = %%-js-assertions-signal-%%
+* since: v1.62
+
 ### option: LocatorAssertions.toMatchAriaSnapshot.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.49
 
@@ -2408,6 +2524,9 @@ Generates sequential names if not specified.
 
 ### option: LocatorAssertions.toMatchAriaSnapshot#2.timeout = %%-js-assertions-timeout-%%
 * since: v1.50
+
+### option: LocatorAssertions.toMatchAriaSnapshot#2.signal = %%-js-assertions-signal-%%
+* since: v1.62
 
 ### option: LocatorAssertions.toMatchAriaSnapshot#2.timeout = %%-csharp-java-python-assertions-timeout-%%
 * since: v1.50

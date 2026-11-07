@@ -1,0 +1,247 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-lambda-go.png
+title: Triggering renders from Go
+slug: /lambda/go
+sidebar_label: Rendering from Go
+crumb: '@remotion/lambda'
+---
+
+<ExperimentalBadge>This feature is new. Please report any issues you encounter.</ExperimentalBadge>
+
+To trigger a Lambda render using Go, you can use the Remotion Lambda Go client. Note the following:
+
+- You first need to [complete the Lambda setup](/docs/lambda/setup).
+- Sending large input props (>200KB) is not supported with Go at the moment.
+- Always match the version of the Go client with the version of the Lambda function you deployed. Otherwise, calls will fail due to version mismatch!
+
+```go title="main.go"
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/joho/godotenv"
+	"github.com/remotion-dev/lambda_go_sdk"
+)
+
+type ValidationError struct {
+	Field   string
+	Message string
+}
+
+func msgForTag(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "This field is required"
+
+	}
+	return fe.Error() // default error
+}
+
+func main() {
+
+	// Load the environment variables from the .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Specify the URL to your Webpack bundle
+	serveUrl := os.Getenv("REMOTION_APP_SERVE_URL")
+	// Specify the function you would like to call
+	functionName := os.Getenv("REMOTION_APP_FUNCTION_NAME")
+	// Specify the region you deployed to, for example "us-east-1"
+	region := os.Getenv("REMOTION_APP_REGION")
+
+	// Set parameters for render
+	renderInputRequest := lambda_go_sdk.RemotionOptions{
+		ServeUrl:     serveUrl,
+		FunctionName: functionName,
+		Region:       region,
+		// The data that composition will use
+		InputProps: map[string]interface{}{
+			"data": "Let's play",
+		},
+		Composition: "main", // The composition to use
+
+	}
+
+	// Execute the render process
+	renderResponse, renderError := lambda_go_sdk.RenderMediaOnLambda(renderInputRequest)
+
+	// Check if there are validation errors
+	if renderError != nil {
+
+		validationOut := make([]ValidationError, len(renderError.(validator.ValidationErrors)))
+
+		for i, fieldError := range renderError.(validator.ValidationErrors) {
+
+			validationOut[i] = ValidationError{fieldError.Field(), msgForTag(fieldError)}
+		}
+
+		for _, apiError := range validationOut {
+			fmt.Printf("%s: %s\n", apiError.Field, apiError.Message)
+		}
+		return
+
+	}
+
+	fmt.Print(renderResponse.RenderId)
+	/// Get bucket information
+	fmt.Printf("bucketName: %s\nRenderId: %s\n", renderResponse.RenderId, renderResponse.RenderId)
+
+	// Render Progress request
+	renderProgressInputRequest := lambda_go_sdk.RenderConfig{
+		FunctionName: functionName,
+		Region:       region,
+		RenderId:     renderResponse.RenderId,
+		BucketName:   renderResponse.BucketName,
+		LogLevel:		  "info",
+	}
+	// Execute getting the render progress
+	renderProgressResponse, renderProgressError := lambda_go_sdk.GetRenderProgress(renderProgressInputRequest)
+
+	// Check if we have error
+	if renderProgressError != nil {
+		log.Fatalf("%s %s", "Invalid render progress response", renderProgressError)
+	}
+
+	// Get the overall render progress
+	fmt.Printf("overallprogress: %f ", renderProgressResponse.OverallProgress)
+}
+```
+
+## GetCompositionsOnLambda()<AvailableFrom v="4.0.540" />
+
+Use `GetCompositionsOnLambda()` to list the compositions in a deployed [Remotion project](/docs/terminology). Pass `GetCompositionsOptions` with `ServeUrl`, `FunctionName`, and `Region`:
+
+```go title="get-compositions.go"
+response, err := lambda_go_sdk.GetCompositionsOnLambda(&lambda_go_sdk.GetCompositionsOptions{
+  ServeUrl: serveUrl,
+  FunctionName: functionName,
+  Region: region,
+  InputProps: map[string]interface{}{"title": "Hello"},
+})
+if err != nil {
+  log.Fatal(err)
+}
+
+for _, composition := range response.Compositions {
+  fmt.Println(composition.ID, composition.Width, composition.Height, composition.Fps, composition.DurationInFrames)
+}
+```
+
+The returned `GetCompositionsResponse.Compositions` contains `VideoConfig` values with each composition's dimensions, frame rate, duration, resolved props, default props, and default output settings. If the Lambda function fails, the call returns an error.
+
+### InputProps?
+
+Props passed to each composition's [`calculateMetadata()`](/docs/calculate-metadata) function. You do not need to select a composition ID.
+
+### Other options
+
+`EnvVariables`, `ChromiumOptions`, `LogLevel`, `TimeoutInMilliseconds`, `ForceBucketName`, `ForcePathStyle`, `OffthreadVideoCacheSizeInBytes`, `MediaCacheSizeInBytes`, and `PreferredEffectBackend` correspond to the options of [`getCompositionsOnLambda()`](/docs/lambda/getcompositionsonlambda). The timeout defaults to `30000` milliseconds, the log level to `info`, and the effect backend to `auto`.
+
+## Rendering an image sequence<AvailableFrom v="4.0.535" />
+
+Use `RenderFramesOnLambda()` with `RenderFramesOptions`. Images default to PNG; the options follow [`renderFramesOnLambda()`](/docs/lambda/renderframesonlambda).
+
+```go title="render-frames.go"
+renderResponse, err := lambda_go_sdk.RenderFramesOnLambda(lambda_go_sdk.RenderFramesOptions{
+  ServeUrl: serveUrl,
+  FunctionName: functionName,
+  Region: region,
+  Composition: "main",
+  FrameRange: [2]int{0, 99},
+  FramesPerLambda: new(20),
+  OutputPrefix: "exports/my-sequence/",
+  ImageSequencePattern: "element-[frame].[ext]",
+})
+if err != nil {
+  log.Fatal(err)
+}
+
+fmt.Println(renderResponse.RenderId, renderResponse.BucketName)
+```
+
+Poll `GetRenderProgress()` until `Done` or `FatalErrorEncountered`. `FramesUploaded` reports uploaded frames, and `OutputSequence.ManifestUrl` points to the completed manifest. Pass an `ImageSequenceOutputPrefix` as `OutputPrefix` to select another bucket or provider.
+
+## Cancelling a render<AvailableFrom v="4.0.515" />
+
+Set `EnableCancellation` when starting the render, then pass its response to `CancelRenderOnLambda()`:
+
+```go title="cancel-render.go"
+renderResponse, err := lambda_go_sdk.RenderMediaOnLambda(lambda_go_sdk.RemotionOptions{
+  ServeUrl: serveUrl,
+  FunctionName: functionName,
+  Region: region,
+  Composition: "main",
+  EnableCancellation: true,
+})
+if err != nil {
+  log.Fatal(err)
+}
+
+err = lambda_go_sdk.CancelRenderOnLambda(lambda_go_sdk.CancelRenderOnLambdaInput{
+  Region: region,
+  BucketName: renderResponse.BucketName,
+  RenderId: renderResponse.RenderId,
+})
+if err != nil {
+  log.Fatal(err)
+}
+```
+
+## Verifying webhooks<AvailableFrom v="4.0.536" />
+
+If you [set up a webhook](/docs/lambda/webhooks) with a secret, Remotion signs every request so you can confirm it was sent by Remotion and that the body was not modified. The Go client ships `ValidateWebhookSignature()`, the equivalent of [`validateWebhookSignature()`](/docs/lambda/validatewebhooksignature) in the JavaScript client.
+
+Pass the webhook secret, the raw request body exactly as it was received, and the `X-Remotion-Signature` header. It returns an error if the request cannot be verified and `nil` if it is authentic.
+
+```go title="webhook.go"
+func webhookHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "could not read body", http.StatusBadRequest)
+		return
+	}
+
+	err = lambda_go_sdk.ValidateWebhookSignature(
+		os.Getenv("REMOTION_WEBHOOK_SECRET"),
+		body,
+		r.Header.Get("X-Remotion-Signature"),
+	)
+	if err != nil {
+		http.Error(w, "invalid signature", http.StatusUnauthorized)
+		return
+	}
+
+	// The request is authentic. Parse the body only now.
+	var payload map[string]interface{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		http.Error(w, "could not parse payload", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+```
+
+Read the body first and verify before decoding it. The signature covers the exact bytes that were sent, so unmarshalling the JSON and re-marshalling it can reorder keys and change whitespace, which would make a genuine request fail the check.
+
+## Changelog
+
+`v4.0.6`: The response payload structure has changed. See the history of this page to see the previous structure.
+
+## Preferred effect backend<AvailableFrom v="4.0.540" />
+
+Set `PreferredEffectBackend` on `RemotionOptions` or `RenderFramesOptions`. An empty string uses `auto`.
+
+<Options id="preferred-effect-backend" />
+
+## See also
+
+- [Using Lambda without IAM user](/docs/lambda/without-iam)
+- [Permissions](/docs/lambda/permissions)

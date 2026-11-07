@@ -6,73 +6,99 @@ metaTitle: Custom domains | Prisma Compute
 metaDescription: Add a custom domain to a Prisma Compute app, configure the CNAME record, watch provisioning, and troubleshoot failures.
 ---
 
-Point a custom domain at a production app and the platform verifies DNS and provisions TLS for you. In beta, custom domains are production-only.
+Configure custom domains that point to your [production app](/compute/branching). You can't configure custom domains for preview apps.
 
 ## Before you start
 
 You'll need:
 
-- A linked project.
-- A production app with a promoted, live deployment.
-- Access to your domain's DNS settings.
+- A [linked project](/compute/getting-started).
+- A production app with a [promoted, running deployment](/compute/deployments).
+- Access to edit DNS records within your DNS provider.
 
-Domain commands target the production branch. Pointing them at any other branch fails with `BRANCH_NOT_DEPLOYABLE`.
+Domain commands target the [production branch](/compute/branching). Pointing them at any other branch fails with a `BRANCH_NOT_DEPLOYABLE` error. Every domain subcommand also accepts `--project` and `--branch` flags.
 
-## Add a domain
+## Add a custom domain
+
+### 1. Add a domain
 
 ```npm
-npx @prisma/cli@latest app domain add shop.acme.com --app web
+npx prisma service domain add shop.acme.com --service web
 ```
 
-The command prints a **CNAME** record. Add it at your DNS provider; it points your hostname at Prisma's routing. Then wait for the domain to go live:
+Registration verifies DNS up front. If the **CNAME** record isn't visible yet, the command fails with a `DOMAIN_DNS_NOT_CONFIGURED` error and prints the record name and value for you to create. Re-running `add` for a hostname that's already attached is safe: it shows the existing domain instead of failing.
+
+### 2. Create CNAME Record
+
+Add the printed DNS record, which points at `switchboard.{region}.prisma.build`.
+
+Example:
+| Type  | Name            | Value                          | TTL |
+| ----- | --------------- | ------------------------------ | --- |
+| CNAME | `shop.acme.com` | `switchboard.cdg.prisma.build` | 300 |
+
+The CLI prints the record name as the full hostname. If your DNS provider expects a relative name, enter just the label (`shop`).
+
+:::note[What is switchboard?]
+
+Switchboard is the routing layer that sits in front of your Compute app. Switchboard verifies the domain, provisions and terminates TLS, then forwards traffic to your app.
+
+:::
+
+### 3. Re-run `add`, then wait for provisioning
+
+Once the CNAME record has propagated, re-run `service domain add`. This time registration succeeds and TLS provisioning starts. Track it with:
 
 ```npm
-npx @prisma/cli@latest app domain wait shop.acme.com --app web
+npx prisma service domain wait shop.acme.com --service web
 ```
 
 `wait` polls until the domain is active, up to 15 minutes. For a single status check, use `--timeout 0`:
 
 ```npm
-npx @prisma/cli@latest app domain wait shop.acme.com --app web --timeout 0 --json
+npx prisma service domain wait shop.acme.com --service web --timeout 0 --json
 ```
 
-In `--json` mode, `wait` streams newline-delimited status events, so an agent can track provisioning as it progresses.
-
-## Check and fix
-
-```npm
-npx @prisma/cli@latest app domain show shop.acme.com --app web
-npx @prisma/cli@latest app domain retry shop.acme.com --app web
-```
-
-`show` gives you the exact state, certificate details, and any DNS hints. `retry` restarts stuck provisioning; if a domain isn't in a retryable state, it returns `DOMAIN_RETRY_NOT_ELIGIBLE`.
-
-A domain moves through these states:
-
-| Status             | Meaning                                                       |
-| ------------------ | ------------------------------------------------------------- |
-| `pending_dns`      | Waiting for your CNAME record to be visible                    |
-| `verifying`        | DNS found; ownership and routing are being verified            |
-| `provisioning_tls` | The TLS certificate is being issued                            |
-| `active`           | The domain is fully provisioned and routing traffic to your app |
-| `failed`           | Registration or provisioning failed; see the failure reason     |
+A single check exits non-zero with `DOMAIN_VERIFICATION_TIMEOUT` while the domain is still provisioning, so automation should read the status event rather than the exit code. In `--json` mode, `wait` streams newline-delimited status events, so an agent can track provisioning as it progresses.
 
 ## Remove a domain
 
 ```npm
-npx @prisma/cli@latest app domain remove shop.acme.com --app web
+npx prisma service domain remove shop.acme.com --service web
 ```
 
-Removing detaches the domain from the app; pass `--yes` to skip the confirmation prompt. Prisma can't touch your DNS, so the CNAME record stays behind: delete it at your provider once you no longer need it.
+Removing detaches the domain from the app. Pass `--yes` to skip the confirmation prompt. Prisma can't touch your DNS, so the CNAME record stays behind. Delete it at your provider once you no longer need it.
+
+## States
+
+A domain moves through these states:
+
+| Status             | Meaning                                                         |
+| ------------------ | --------------------------------------------------------------- |
+| `pending_dns`      | The domain is registered; TLS provisioning hasn't started yet   |
+| `provisioning_tls` | The TLS certificate is being issued                             |
+| `active`           | The domain is fully provisioned and routing traffic to your app |
+| `failed`           | Registration or provisioning failed; see the failure reason     |
 
 ## Limits
 
-- Custom domains are production-only.
-- DNS uses CNAME records.
-- Up to 3 custom domains per app; more returns `DOMAIN_QUOTA_EXCEEDED`.
+- Custom domains are only available on production apps.
+- DNS uses CNAME records only. Apex domains need a DNS provider that supports CNAME-like records (ALIAS, ANAME, or CNAME flattening) at the apex.
+- Wildcard hostnames such as `*.acme.com` are rejected.
+- Up to 3 custom domains per app. Adding more returns `DOMAIN_QUOTA_EXCEEDED`.
 - There's no workspace-wide domain list in the CLI.
+
+## Troubleshooting
+
+```npm
+npx prisma service domain show shop.acme.com --service web
+npx prisma service domain retry shop.acme.com --service web
+```
+
+`show` prints the exact state, certificate details, and any DNS hints. `retry` restarts stuck provisioning. If a domain isn't in a retryable state, it returns `DOMAIN_RETRY_NOT_ELIGIBLE`.
 
 ## Next steps
 
 - [Deployments](/compute/deployments): promote a deployment to production first.
-- [Known limitations](/compute/limitations): what the beta can and can't do.
+- [Known limitations](/compute/limitations): what Compute can and can't do.
+- [`service domain` reference](/cli/service#service-domain): every domain subcommand and flag.

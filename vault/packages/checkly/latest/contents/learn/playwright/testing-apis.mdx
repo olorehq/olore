@@ -1,5 +1,6 @@
 ---
 title: Testing APIs with Playwright
+description: "Use Playwright's request fixture to test REST and GraphQL APIs directly, sending requests and asserting on responses without opening a browser."
 displayTitle: Using Playwright to test APIs
 date: 2020-07-13
 author: Giovanni Rago
@@ -11,6 +12,7 @@ weight: 3
 sidebarTitle: Testing APIs
 learn_playwright:
   parent: "Best practices"
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/testing-apis/'
 ---
 
 import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
@@ -103,15 +105,15 @@ test('the GraphQL API works', async ({ request }) => {
 })
 ```
 
-This version requires that you provide a JSON file with the expected response (that response.json file that's imported at the top). That's not ideal, instead, let's use playwright's snapshot tool so that we can take an initial snapshot of the JSON and compare later runs to that initial version. We'll replace the line:
+This version requires that you provide a JSON file with the expected response (that response.json file that's imported at the top). That's not ideal, instead, let's use Playwright's snapshot tool so that we can take an initial snapshot of the JSON and compare later runs to that initial version. We'll replace the line:
 
 `expect(body).toEqual(countryData)`
 with
-`expect(JSON.stringify(allCountries)).toMatchSnapshot()`
+`expect(JSON.stringify(body)).toMatchSnapshot()`
 
-Now we'll need to run our test locally at least once with the -update-snapshots flag, and we'll save an initial version of the JSON to compare later:
-`npx playwright test -update-snapshots`
-The nice thing about this method is, not having to fool around with the file system, it means we can run this test from automated testing and [monitoring platforms like Checkly](https://www.checklyhq.com/docs/browser-checks/visual-regression-snapshot-testing/) without having to send example JSON or encode it into our test code.
+Now we'll need to run our test locally at least once with the `--update-snapshots` flag, and we'll save an initial version of the JSON to compare later:
+`npx playwright test --update-snapshots`
+The nice thing about this method is, not having to fool around with the file system, it means we can run this test from automated testing and [monitoring platforms like Checkly](/detect/synthetic-monitoring/browser-checks/visual-regressions) without having to send example JSON or encode it into our test code.
 
 ## Filtering your API response
 
@@ -142,13 +144,13 @@ This test now validates a filtered response, all within the same Playwright test
 
 ## Continuous Monitoring with Playwright and Checkly
 
-By running multiple small API requests from within Playwright, you can verify the underlying APIs you need for your pages. If you want to monitor all your API endpoints continually, check out Checkly’s API monitors. Checkly API monitors let you run on a schedule with [dynamic notification settings and retries](https://www.checklyhq.com/docs/api-checks/limits/), run from multiple geographies, and even [run setup and teardown scripts](https://www.checklyhq.com/docs/api-checks/setup-teardown-scripts/) to add logic for your test, and clean up after your test.
+By running multiple small API requests from within Playwright, you can verify the underlying APIs you need for your pages. If you want to monitor all your API endpoints continually, check out Checkly’s API monitors. Checkly API monitors let you run on a schedule with dynamic [notification settings](/communicate/alerts/configuration) and [retries](/communicate/alerts/retries), run from multiple geographies, and even [run setup and teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown) to add logic for your test, and clean up after your test.
 
 ![API Monitoring Dashboard](/images/learn/images/api-monitoring-dashboard.png "API Monitoring Dashboard")
 
 The dashboard for a Checkly API check, complete with response times, failures and retries, and checks run from multiple locations
 
-As a bonus, Checkly’s API checks are cheaper to run than browser checks.
+As a bonus, Checkly’s API checks are cheaper to run than Browser checks.
 
 ## Conclusion
 

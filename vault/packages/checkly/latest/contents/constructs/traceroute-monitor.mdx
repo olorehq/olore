@@ -1,0 +1,278 @@
+---
+title: 'TracerouteMonitor Construct'
+description: 'Learn how to configure Traceroute monitors with the Checkly CLI.'
+sidebarTitle: 'Traceroute monitor'
+canonical: 'https://www.checklyhq.com/docs/constructs/traceroute-monitor/'
+mode: "wide"
+---
+
+import GeneralMonitorOptionsTable from '/snippets/general-monitor-options-table.mdx';
+
+<Tip>
+Learn more about Traceroute monitors in [the Traceroute monitor overview](/detect/uptime-monitoring/traceroute-monitors/overview).
+</Tip>
+
+<Note>The `TracerouteMonitor` construct requires Checkly CLI 8.15.0 or later.</Note>
+
+Traceroute monitors map the network path to a host hop-by-hop, measuring per-hop latency and packet loss, and detecting whether the destination is reached. Use them to monitor path stability and catch routing issues before they affect your users.
+
+<Accordion title="Prerequisites">
+Before creating Traceroute monitors, ensure you have:
+
+- An initialized Checkly CLI project
+- A hostname or IP address you want to trace
+- Basic understanding of network tracing (traceroute / tracert)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+<CodeGroup>
+
+```ts Basic Example
+import { Frequency, TracerouteMonitor } from "checkly/constructs"
+
+new TracerouteMonitor('traceroute-api', {
+  name: 'API Gateway Network Path',
+  description: "Maps the network path to `api.example.com` to detect routing changes.",
+  frequency: Frequency.EVERY_5M,
+  request: {
+    url: 'api.example.com',
+  },
+})
+```
+
+```ts Advanced Example
+import { Frequency, TracerouteAssertionBuilder, TracerouteMonitor } from "checkly/constructs"
+
+new TracerouteMonitor('traceroute-db', {
+  name: 'Database Routing Monitor',
+  description: "Traces path to `db.example.com` with strict latency and hop assertions.",
+  activated: true,
+  frequency: Frequency.EVERY_10M,
+  locations: ['us-east-1', 'eu-central-1'],
+  degradedResponseTime: 10000,
+  maxResponseTime: 20000,
+  request: {
+    url: 'db.example.com',
+    protocol: 'TCP',
+    port: 5432,
+    ipFamily: 'IPv4',
+    maxHops: 20,
+    maxUnknownHops: 10,
+    ptrLookup: true,
+    timeout: 15,
+    assertions: [
+      TracerouteAssertionBuilder.hopCount().lessThan(15),
+      TracerouteAssertionBuilder.responseTime('avg').lessThan(50),
+      TracerouteAssertionBuilder.packetLoss().lessThan(5),
+    ],
+  },
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+Traceroute monitors have their own probe-specific settings, plus the standard monitor options shared across all check types.
+
+<Tabs>
+<Tab title="Traceroute monitor settings">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `request` | `object` | ✅ | - | Traceroute request configuration object |
+| `degradedResponseTime` | `number` | ❌ | `10000` | Final-hop avg RTT in milliseconds at which the monitor is marked as degraded |
+| `maxResponseTime` | `number` | ❌ | `20000` | Final-hop avg RTT in milliseconds at which the monitor is marked as failed |
+
+</Tab>
+<Tab title="General Monitor Settings">
+
+  <GeneralMonitorOptionsTable />
+
+</Tab>
+</Tabs>
+
+### `TracerouteMonitor` Options
+
+<ResponseField name="request" type="object" required>
+
+Traceroute request configuration, including probe protocol, target host, and response validation.
+
+**Usage:**
+
+{/* typecheck-wrap: TracerouteMonitor */}
+```ts
+new TracerouteMonitor('traceroute-monitor', {
+  name: 'Network Path Monitor',
+  request: {
+    url: 'api.example.com',
+    protocol: 'TCP',
+    port: 443,
+    assertions: [
+      TracerouteAssertionBuilder.hopCount().lessThan(20),
+    ],
+  },
+})
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `url` | `string` | ✅ | - | Target hostname or IP address. Do not include a scheme or port |
+| `protocol` | `string` | ❌ | `'TCP'` | Probe protocol: `'TCP'` \| `'UDP'` \| `'ICMP'` \| `'SCTP'` |
+| `port` | `number` | ❌ | `443` (TCP) / `33434` (UDP, SCTP) | Destination port (1–65535). Defaults to `443` for TCP and to `33434` — a high, typically closed port — for UDP/SCTP, so the destination returns ICMP Destination Unreachable to confirm arrival. Ignored (and not sent) when `protocol` is `'ICMP'` |
+| `ipFamily` | `string` | ❌ | `'IPv4'` | IP family: `'IPv4'` \| `'IPv6'` |
+| `maxHops` | `number` | ❌ | `30` | Maximum hops to probe (1–64) |
+| `maxUnknownHops` | `number` | ❌ | `15` | Maximum consecutive unresponsive hops before stopping (1–30) |
+| `ptrLookup` | `boolean` | ❌ | `true` | Perform reverse-DNS (PTR) lookups on hop IPs |
+| `timeout` | `number` | ❌ | `10` | Seconds to wait for the trace to complete (1–30) |
+| `assertions` | `TracerouteAssertion[]` | ❌ | `[]` | Response assertions using `TracerouteAssertionBuilder` |
+
+</ResponseField>
+
+<ResponseField name="degradedResponseTime" type="number" default="10000">
+Final-hop average RTT in milliseconds at which the monitor is marked as degraded (warning state). Maximum: 30,000.
+
+**Usage:**
+
+{/* typecheck-wrap: TracerouteMonitor */}
+```ts highlight={3}
+new TracerouteMonitor("traceroute-latency-tiers", {
+  name: "API Network Path",
+  degradedResponseTime: 5000, // Warn when final-hop avg RTT exceeds 5 seconds
+  request: {
+    url: 'api.example.com',
+  },
+})
+```
+</ResponseField>
+
+<ResponseField name="maxResponseTime" type="number" default="20000">
+Final-hop average RTT in milliseconds at which the monitor is marked as failed. Maximum: 30,000.
+
+**Usage:**
+
+{/* typecheck-wrap: TracerouteMonitor */}
+```ts highlight={3}
+new TracerouteMonitor("traceroute-latency-tiers", {
+  name: "API Network Path",
+  maxResponseTime: 15000, // Fail when final-hop avg RTT exceeds 15 seconds
+  request: {
+    url: 'api.example.com',
+  },
+})
+```
+</ResponseField>
+
+### `TracerouteMonitor` Assertions
+
+Assertions for Traceroute monitors are defined using the `TracerouteAssertionBuilder`. The following sources are available:
+
+- `responseTime(property?)`: Validate RTT at the final responding hop. Pass `'avg'`, `'min'`, `'max'`, or `'stdDev'` as the argument to target a specific statistic; when omitted, it defaults to `'avg'`. This assertion fails when `destinationReached` is `false`
+- `hopCount()`: Assert against the total number of hops recorded in the trace
+- `packetLoss()`: Assert against the packet loss percentage at the last recorded hop (0–100)
+
+Here are some examples:
+
+- Assert that the average final-hop latency is below a threshold (default property is `avg`):
+
+```ts
+TracerouteAssertionBuilder.responseTime().lessThan(100)
+// Equivalent to:
+{ source: 'RESPONSE_TIME', property: 'avg', comparison: 'LESS_THAN', target: '100' }
+```
+
+- Assert against a specific RTT property:
+
+```ts
+TracerouteAssertionBuilder.responseTime('max').lessThan(200)
+// Equivalent to:
+{ source: 'RESPONSE_TIME', property: 'max', comparison: 'LESS_THAN', target: '200' }
+```
+
+- Assert on the number of hops:
+
+```ts
+TracerouteAssertionBuilder.hopCount().lessThan(15)
+// Equivalent to:
+{ source: 'HOP_COUNT', comparison: 'LESS_THAN', target: '15' }
+```
+
+- Assert on packet loss at the last hop:
+
+```ts
+TracerouteAssertionBuilder.packetLoss().lessThan(10)
+// Equivalent to:
+{ source: 'PACKET_LOSS', comparison: 'LESS_THAN', target: '10' }
+```
+
+Learn more in our docs on [Assertions](/detect/assertions).
+
+### General Monitor Options
+
+<ResponseField name="name" type="string" required>
+Friendly name for your Traceroute monitor that will be displayed in the Checkly dashboard and used in notifications.
+
+**Usage:**
+
+{/* typecheck-wrap: TracerouteMonitor */}
+```ts highlight={2}
+new TracerouteMonitor("my-traceroute", {
+  name: "API Gateway Network Path",
+  /* More options ... */
+})
+```
+</ResponseField>
+
+<ResponseField name="frequency" type="Frequency">
+How often the Traceroute monitor should run. Use the `Frequency` enum to set the check interval.
+
+**Usage:**
+
+{/* typecheck-wrap: TracerouteMonitor */}
+```ts highlight={3}
+new TracerouteMonitor("my-traceroute", {
+  name: "API Gateway Network Path",
+  frequency: Frequency.EVERY_5M,
+  /* More options ... */
+})
+```
+
+**Available frequencies**: `EVERY_30S`, `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_3H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`. Traceroute monitors do not support sub-30-second frequencies (`EVERY_10S` / `EVERY_20S`).
+</ResponseField>
+
+<ResponseField name="locations" type="string[]" default="[]">
+Array of [public location codes](/concepts/locations/#public-locations) where the Traceroute monitor should run from. Use `privateLocations` for [private locations](/platform/private-locations/overview). Multiple locations help detect regional routing differences.
+
+**Usage:**
+
+{/* typecheck-wrap: TracerouteMonitor */}
+```ts highlight={3}
+new TracerouteMonitor("global-path-monitor", {
+  name: "API Path from Multiple Regions",
+  locations: ["us-east-1", "eu-central-1", "ap-southeast-1"],
+  request: {
+    url: 'api.example.com',
+  },
+})
+```
+</ResponseField>
+
+<ResponseField name="activated" type="boolean" default="true">
+Whether the Traceroute monitor is enabled and will run according to its schedule.
+
+**Usage:**
+
+{/* typecheck-wrap: TracerouteMonitor */}
+```ts highlight={3}
+new TracerouteMonitor("my-traceroute", {
+  name: "API Gateway Network Path",
+  activated: false, // Disabled monitor
+  request: {
+    url: 'api.example.com',
+  },
+})
+```
+</ResponseField>

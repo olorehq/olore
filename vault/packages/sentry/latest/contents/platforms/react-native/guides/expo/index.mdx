@@ -1,0 +1,250 @@
+---
+title: Expo
+description: "Learn how to set up Sentry in an Expo project and capture your first events, including Expo config plugin, Expo Router tracing, Expo Updates context, and EAS dashboard integration."
+caseStyle: camelCase
+supportLevel: production
+sdk: sentry.javascript.react-native
+fallbackPlatform: react-native
+categories:
+  - mobile
+---
+
+<AgentSetupCallout skill="sentry-react-native-sdk" platformName="Expo" />
+
+Use this guide to set up Sentry's React Native SDK in an [Expo](https://expo.dev/) project. The same `@sentry/react-native` SDK powers bare React Native and Expo apps. This guide covers Expo-specific setup, including the config plugin, Metro, and EAS.
+
+<Alert>
+
+If you don't already have an account and Sentry project, head over to [sentry.io](https://sentry.io/signup/), then return to this page.
+
+</Alert>
+
+## Install
+
+You need Expo SDK 50 or newer. The `@sentry/react-native` SDK requires Expo SDK 50+. On [Expo SDK 49](https://docs.expo.dev/guides/using-sentry/) or older, the deprecated `sentry-expo` package was used; [migrate to `@sentry/react-native`](/platforms/react-native/guides/expo/migration/sentry-expo/) to keep receiving updates.
+
+Use the Sentry Wizard to patch your project automatically:
+
+```bash {tabTitle:npm}
+npx @sentry/wizard@latest -i reactNative
+```
+
+<Expandable title="The following tasks will be performed by the Sentry Wizard">
+
+- Install the `@sentry/react-native` package.
+- Add `@sentry/react-native/metro` to the _*metro.config.js*_ Metro configuration.
+- Add `@sentry/react-native/expo` to the _*app.json*_ Expo configuration.
+- Enable the Sentry React Native Gradle build step for Android to auto-upload generated source maps and debug symbols.
+- Wrap the _Bundle React Native code and images_ Xcode project build phase script to upload generated source maps and collect bundled node modules.
+- Add the _Upload Debug Symbols to Sentry_ Xcode project build phase.
+- Run `pod install`.
+- Store build credentials in _*ios/sentry.properties*_, _*android/sentry.properties*_, and _*.env.local*_.
+- Configure Sentry with the supplied DSN in your _*layout.tsx*_ file.
+
+</Expandable>
+
+You only need to patch the project once. Add the patched files to version control. If you prefer, use the [manual install](#manual-install) below.
+
+### Manual Install
+
+If you don't use the Wizard, install `@sentry/react-native`:
+
+```bash {tabTitle:Expo}
+npx expo install @sentry/react-native
+```
+
+```bash {tabTitle:npm}
+npm install @sentry/react-native --save
+```
+
+```bash {tabTitle:yarn}
+yarn add @sentry/react-native
+```
+
+```bash {tabTitle:pnpm}
+pnpm add @sentry/react-native
+```
+
+## Configure
+
+**Error Monitoring** starts working as soon as you call `Sentry.init()`. **Logs** need `enableLogs: true` in the initialization snippet below, and you'll learn how to send them in [Send Logs](#send-logs). **Application Metrics** need no extra configuration, and you'll learn how to send them in [Send Application Metrics](#send-application-metrics-).
+
+This guide also enables **Tracing**, **Profiling**, **Session Replay**, and **User Feedback**.
+
+<Include name="quick-start-features-expandable" />
+
+### Initialize the SDK
+
+Import `@sentry/react-native` and initialize the SDK in your Expo Router root layout or app entry point.
+
+The snippet also turns on:
+
+- Tracing: via <PlatformLink to="/configuration/options/#tracesSampleRate">`tracesSampleRate`</PlatformLink>
+- Profiling: via `profilesSampleRate` (see <PlatformLink to="/profiling/">Profiling</PlatformLink>)
+- Session Replay: via `mobileReplayIntegration()` and the replay sample rates (see <PlatformLink to="/session-replay/">Session Replay</PlatformLink>)
+- User Feedback: via `feedbackIntegration()` (see <PlatformLink to="/user-feedback/">User Feedback</PlatformLink>)
+- Logs: via <PlatformLink to="/configuration/options/#enableLogs">`enableLogs`</PlatformLink>
+
+Don't need a feature? Remove its integration and options from the snippet.
+
+```javascript {tabTitle:App.js or app/_layout.js}
+import * as Sentry from "@sentry/react-native";
+
+Sentry.init({
+  dsn: "___PUBLIC_DSN___",
+  // Adds context data to events, such as IP address, cookies, and user.
+  sendDefaultPii: true,
+
+  integrations: [
+    // Enables Session Replay
+    Sentry.mobileReplayIntegration(),
+    // Enables User Feedback. Open the form with Sentry.showFeedbackWidget().
+    Sentry.feedbackIntegration(),
+  ],
+
+  // Enables Tracing.
+  // Set to 1.0 to capture 100% of spans for tracing.
+  // We recommend reducing this value in production.
+  tracesSampleRate: 1.0,
+
+  // Enables Profiling for 100% of sampled transactions.
+  profilesSampleRate: 1.0,
+
+  // Enables Logs to be sent to Sentry.
+  enableLogs: true,
+
+  // Capture replays for 10% of sessions and 100% of sessions with an error.
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+});
+```
+
+### Wrap Your App
+
+Wrap the root component of your application with `Sentry.wrap`:
+
+```javascript {tabTitle:App.js or app/_layout.js}
+import { Stack } from "expo-router";
+import * as Sentry from "@sentry/react-native";
+
+function RootLayout() {
+  return <Stack />;
+}
+
+export default Sentry.wrap(RootLayout);
+```
+
+### Add the Sentry Expo Plugin
+
+To upload bundles and source maps automatically during native builds, add the Sentry plugin to your Expo app configuration. Add it to the `plugins` array in `app.json`, or wrap your config with `withSentry` in `app.config.js` or `app.config.ts`:
+
+<Include name="react-native-expo-plugin-code-snippet.mdx" />
+
+### Add the Sentry Metro Plugin
+
+Add Sentry Serializer to the Metro configuration to assign unique Debug IDs to generated bundles and source maps:
+
+<Include name="react-native-expo-metro-plugin-code-snippet.mdx" />
+
+### Add the Apple Privacy Manifest
+
+The SDK needs access to some device and application information for essential functionality. Add the privacy manifest to your Xcode project to meet Apple's guidelines. See the [Apple Privacy Manifest guide](/platforms/react-native/guides/expo/data-management/apple-privacy-manifest/) for the records required by the Sentry SDKs.
+
+### Integrate Sentry With Your EAS Dashboard
+
+Connect Sentry to [Expo Application Services (EAS)](https://expo.dev/eas) to view crash reports and [Session Replays](/platforms/react-native/guides/expo/session-replay/) for deployments in the EAS dashboard, with direct links to Sentry stack traces and debugging context.
+
+<Alert level="warning">
+
+If you change your organization slug, update the configuration for this integration. See the [troubleshooting guide](/integrations/troubleshooting/).
+
+</Alert>
+
+#### Install the Integration
+
+<Alert>
+
+You need Sentry owner, manager, or admin permissions to install this integration.
+
+</Alert>
+
+1. Log in to your Expo dashboard and open **Account Settings > Overview** (`https://expo.dev/accounts/[your-account]/settings`).
+2. Find **Connections** and click **Connect** next to Sentry.
+3. Log in to Sentry and accept the integration into your organization. Expo will redirect you to Account Settings > Overview.
+
+#### Link Your Projects
+
+After connecting your accounts, link your Expo project to your Sentry project:
+
+1. Open **Projects > [Your Project] > Configuration > Project settings** in the Expo dashboard.
+2. Click **Link** and select your Sentry project.
+
+#### View Sentry Data in EAS
+
+To see Sentry issues and replays in the Expo dashboard, create an [EAS Update channel](https://docs.expo.dev/eas-update/how-it-works/) and assign builds to it to create an [EAS deployment](https://docs.expo.dev/eas-update/deployment/). Then open **Projects > [Your Project] > Updates > Deployments > [Deployment]**.
+
+### Expo-Specific Features
+
+- [Expo Updates](/platforms/react-native/guides/expo/manual-setup/expo/expo-updates/) — Automatic OTA update context, searchable tags, performance spans for update checks and downloads, and emergency launch alerts
+- [EAS Build Hooks](/platforms/react-native/guides/expo/manual-setup/expo/eas-build-hooks/) — Capture build failures and lifecycle events from EAS Build
+- [Sentry Android Gradle Plugin](/platforms/react-native/guides/expo/manual-setup/expo/gradle/) — Advanced Android build configuration
+- [Expo Router tracing](/platforms/react-native/guides/expo/tracing/instrumentation/expo-router/) — Navigation transitions, performance spans, prefetch instrumentation, and per-route `ErrorBoundary` capture
+- [Expo Image and Asset tracing](/platforms/react-native/guides/expo/tracing/instrumentation/expo-resources/) — Automatic spans for `expo-image` and `expo-asset`
+- [Upload source maps for native builds and Expo Updates](/platforms/react-native/guides/expo/sourcemaps/uploading/expo/)
+
+### Build Notes
+
+- Don't commit your auth token. Store it in `.env.local` as `SENTRY_AUTH_TOKEN` for local builds, and as an [EAS secret](https://docs.expo.dev/eas/environment-variables/) for EAS builds.
+- Source maps for the `Release` version of your application are uploaded automatically during the native application build.
+- During development, the source code is resolved using the Metro Server and source maps aren't used. This currently doesn't work on web.
+
+## Send Logs
+
+Use `Sentry.logger` to send logs at different levels. You can include attributes to search or filter by later.
+
+The SDK can capture `console.*` calls when Logs are enabled. See the [Console logging integration](/platforms/react-native/integrations/console-logging/) for details.
+
+```javascript
+Sentry.logger.info("Order processed", { order_id: "order-123" });
+Sentry.logger.warn("Slow operation detected", {
+  operation: "data_fetch",
+  duration_ms: 3500,
+});
+```
+
+See <PlatformLink to="/logs/">Set Up Logs</PlatformLink> for all available logging methods and message formatting options.
+
+## Send Application Metrics <FeatureBadge type="new" />
+
+Application Metrics are supported in React Native SDK 7.8.0 and newer. No extra option is needed after SDK initialization. Use `Sentry.metrics` to send counters, gauges, and distributions:
+
+```javascript
+Sentry.metrics.count("checkout.failed", 1);
+Sentry.metrics.gauge("active_connections", 42);
+Sentry.metrics.distribution("api_latency", 187, { unit: "millisecond" });
+```
+
+See <PlatformLink to="/metrics/">Set Up Metrics</PlatformLink> for all available metric types and configuration options.
+
+## Verify Your Setup
+
+Build the `Release` version of your application, then capture a test error:
+
+```javascript
+Sentry.captureException(new Error("First error"));
+```
+
+### View Captured Data in Sentry
+
+Open your project on [Sentry.io](https://sentry.io) to view the captured error.
+
+<Include name="quick-start-locate-data-expandable" />
+
+## Next Steps
+
+At this point, you should have integrated Sentry into your Expo application. Here's what to explore next:
+
+{/* prettier-ignore */}
+- Explore [practical guides](/get-started/guides/) on what to monitor, log, track, and investigate after setup
+- <PlatformLink to="/tracing/instrumentation/expo-router/">Configure Expo Router tracing</PlatformLink>
+- <PlatformLink to="/manual-setup/expo/expo-updates/">Capture Expo Updates context</PlatformLink>

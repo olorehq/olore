@@ -1,0 +1,49 @@
+---
+title: MCP
+description: Expose your docs to AI agents as MCP tools.
+---
+
+`fumadocs-core/mcp` registers tools on a [MCP](https://modelcontextprotocol.io) server, for AI agents to read and search your docs.
+
+<Callout>
+  The [MCP Server](/docs/integrations/llms#mcp-server) guide sets up a route with these tools for
+  you.
+</Callout>
+
+## Usage
+
+```package-install
+fumadocs-core @modelcontextprotocol/server zod
+```
+
+Register the tools with your source, its [`docsLlms`](/docs/integrations/llms#docsllms) renderer, and a search server:
+
+```ts title="lib/mcp.ts"
+import { McpServer } from '@modelcontextprotocol/server';
+import { registerSearchTool, registerSourceTools } from 'fumadocs-core/mcp';
+import { createFromSource } from 'fumadocs-core/search/server';
+import { source, docsLlms } from '@/lib/source';
+
+export const mcp = new McpServer({ name: 'docs', version: '1.0.0' });
+
+// `list_pages` & `get_page`
+registerSourceTools(mcp, source, docsLlms);
+// `search`
+registerSearchTool(mcp, createFromSource(source));
+```
+
+For runtime content sources, pass the getter of your source:
+
+```ts
+registerSourceTools(mcp, getSource, docsLlms);
+```
+
+Then connect the server to a transport, like the streamable HTTP transport.
+
+## Tools
+
+| Tool         | Input              | Output                                              |
+| ------------ | ------------------ | --------------------------------------------------- |
+| `list_pages` | None               | `llms.index()`, the index of pages                  |
+| `get_page`   | `url` of a page    | `llms.page(page)`, or an error when no page matches |
+| `search`     | `query`, `locale?` | the search results, as JSON                         |

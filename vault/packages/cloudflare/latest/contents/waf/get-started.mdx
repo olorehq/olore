@@ -12,8 +12,6 @@ import {
 	Stream,
 	Details,
 	GlossaryTooltip,
-	Tabs,
-	TabItem,
 	Steps,
 	DashButton,
 	Render,
@@ -38,14 +36,11 @@ This guide focuses on configuring WAF for individual domains, known as <Glossary
 ## Before you begin
 
 - Make sure that you have [set up a Cloudflare account](/fundamentals/account/) and [added your domain](/fundamentals/manage-domains/add-site/) to Cloudflare.
-
 - Users on the Free plan have access to the Cloudflare Free Managed Ruleset, a subset of the Cloudflare Managed Ruleset. The Free Managed Ruleset is deployed by default on Free plans and is not specifically covered in this guide.<br/>If you are on a Free plan, you may skip to [5. Review traffic in security dashboards](#5-review-traffic-in-security-dashboards).
 
 ## 1. Deploy the Cloudflare Managed Ruleset
 
 The [Cloudflare Managed Ruleset](/waf/managed-rules/reference/cloudflare-managed-ruleset/) protects against Common Vulnerabilities and Exposures (CVEs) and known attack vectors. This ruleset is designed to identify common attacks using signatures, while generating low false positives. Rule changes are published on a weekly basis in the [WAF changelog](/waf/change-log/). Cloudflare may also add rules at any time during emergency releases for high profile zero-day protection.
-
-<Tabs syncKey="dashNewNav"> <TabItem label="New dashboard" icon="rocket">
 
 <Steps>
 
@@ -57,18 +52,6 @@ The [Cloudflare Managed Ruleset](/waf/managed-rules/reference/cloudflare-managed
 3. Turn on **Cloudflare managed ruleset**.
 
 </Steps>
-
-</TabItem> <TabItem label="Old dashboard">
-
-<Steps>
-
-1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com), and select your account and domain.
-2. Go to **Security** > **WAF** and select the **Managed rules** tab.
-3. Under **Managed Rulesets**, select **Deploy** next to the Cloudflare Managed Ruleset.
-
-</Steps>
-
-</TabItem> </Tabs>
 
 <Details header="Default settings and ruleset customization">
 
@@ -118,7 +101,7 @@ If you are on a Business plan, create a custom rule as mentioned above but use t
 Bot score is only available to Enterprise customers with [Bot Management](/bots/get-started/bot-management/). Customers on Pro and Business plans should turn on [Super Bot Fight Mode](/bots/get-started/super-bot-fight-mode/) instead, which provides built-in bot protection without creating custom rules.
 :::
 
-Enterprise customers with Bot Management should first configure bot protection using **Security Settings**, which provide baseline protection without creating custom rules:
+Bot Management is always active for entitled Enterprise zones and assigns a bot score to every request. It does not block or challenge traffic on its own: you act on bot traffic with custom rules.
 
 <Steps>
 
@@ -126,27 +109,24 @@ Enterprise customers with Bot Management should first configure bot protection u
 
    <DashButton url="/?to=/:account/:zone/security/settings" />
 
-2. Configure the **Definitely automated**, **Likely automated**, and **Verified bots** settings according to your needs.
-3. Turn on **Block AI bots** if you want to block AI crawlers.
+2. In **Bot management**, select the edit icon and make sure **JavaScript Detections** and **Auto-update machine learning model** are turned on.
+3. [Create a custom rule](/waf/custom-rules/create-dashboard/) using the <GlossaryTooltip term="bot score">Bot Score</GlossaryTooltip>, <GlossaryTooltip term="verified bot">Verified Bot</GlossaryTooltip>, and Static Resource fields. You can also start from the bot traffic templates by selecting **View bot traffic templates** in **Bot management**.
+
+   - **When incoming requests match**:
+
+     | Field           | Operator  | Value | Logic |
+     | --------------- | --------- | ----- | ----- |
+     | Bot Score       | less than | `30`  | And   |
+     | Verified Bot    | equals    | Off   | And   |
+     | Static Resource | equals    | Off   |       |
+
+   - **Choose action**: Managed Challenge
+
+4. (Optional) In **Security Settings**, use **Configure AI bot policies** to control how AI crawlers and agents can access your site. For details, refer to [Block AI bots](/bots/additional-configurations/block-ai-bots/).
 
 </Steps>
 
-These built-in settings auto-update with new bot signatures and do not count toward your custom rule limits. For more details, refer to [Bot Management](/bots/get-started/bot-management/).
-
-### Create a custom rule for additional control
-
-Optionally, if you need more granular control — for example, a different score threshold or rules that combine bot score with other fields — [create a custom rule](/waf/custom-rules/create-dashboard/) using the <GlossaryTooltip term="bot score">Bot Score</GlossaryTooltip> and <GlossaryTooltip term="verified bot">Verified Bot</GlossaryTooltip> fields:
-
-- **When incoming requests match**:
-
-  | Field        | Operator  | Value | Logic |
-  | ------------ | --------- | ----- | ----- |
-  | Bot Score    | less than | `20`  | And   |
-  | Verified Bot | equals    | Off   |       |
-
-- **Choose action**: Managed Challenge
-
-This rule uses a threshold of 20 (instead of the default threshold of 30 used by the settings), providing stricter protection for traffic in the 20-29 score range.
+For more details on rule templates and recommended settings, refer to [Bot Management](/bots/get-started/bot-management/#deploy-custom-rule-templates).
 
 For a more comprehensive example of baseline protection against malicious bots, refer to [Challenge bad bots](/waf/custom-rules/use-cases/challenge-bad-bots/#general-protection).
 
@@ -160,8 +140,6 @@ After configuring the Cloudflare Managed Ruleset and attack score, you can also 
 
 <Render file="owasp-false-positives-warning" product="waf" />
 
-<Tabs syncKey="dashNewNav"> <TabItem label="New dashboard" icon="rocket">
-
 <Steps>
 
 1. In the Cloudflare dashboard, go to the Security **Settings** page.
@@ -174,18 +152,6 @@ After configuring the Cloudflare Managed Ruleset and attack score, you can also 
    This will deploy the Cloudflare OWASP Core Ruleset with the default configuration: paranoia level = _PL1_ and score threshold = _Medium - 40 and higher_.
 
 </Steps>
-
-</TabItem> <TabItem label="Old dashboard">
-
-<Steps>
-
-1. Go to your domain > **Security** > **WAF** and select the **Managed rules** tab.
-2. Under **Managed Rulesets**, select **Deploy** next to the Cloudflare OWASP Core Ruleset.<br/>
-   This will deploy the ruleset with the default configuration: paranoia level = _PL1_ and score threshold = _Medium - 40 and higher_.
-
-</Steps>
-
-</TabItem> </Tabs>
 
 <Details header="Ruleset configuration">
 

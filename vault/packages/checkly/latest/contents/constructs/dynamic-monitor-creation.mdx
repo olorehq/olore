@@ -1,6 +1,8 @@
 ---
 title: 'Dynamic monitor creation'
+description: "Create monitors dynamically with the Checkly CLI by looping over lists of targets in TypeScript or JavaScript, managing checks at scale without duplication."
 sidebarTitle: 'Dynamic Monitor Creation'
+canonical: 'https://www.checklyhq.com/docs/constructs/dynamic-monitor-creation/'
 ---
 
 The [Checkly CLI](/cli/overview/) enables you to code your entire monitoring setup taking full advantage of the flexibility of TypeScript/JavaScript. Reusing language constructs that you are already familiar with, you will be able to create a MaC setup that neatly fits your unique use cases and workflows.
@@ -12,7 +14,7 @@ This page shows a few examples.
 Iterating through lists of target URLs is an easy way to manage checks at scale while avoiding code duplication.
 
 ```ts __checks__/api.check.ts
-import { ApiCheck } from 'checkly/constructs'
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
 
 const publicResources = ['/public-stats', '/v1/runtimes']
 
@@ -23,7 +25,7 @@ for (const publicResource of publicResources) {
       url: `https://api.checkly.com${publicResource}`,
       method: 'GET',
       followRedirects: true,
-      skipSsl: false,
+      skipSSL: false,
       assertions: [ AssertionBuilder.statusCode().equals(200) ]
     }
   })
@@ -33,7 +35,7 @@ for (const publicResource of publicResources) {
 Asynchronous operations are supported by exporting an async function from your check files, too.
 
 ```ts __checks__/api.check.ts
-import { ApiCheck } from 'checkly/constructs'
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
 import { getPublicResources } from './helpers'
 
 // an exported async function to signal that
@@ -48,7 +50,7 @@ export default async function createApiChecks() {
         url: `https://api.checkly.com${publicResource}`,
         method: 'GET',
         followRedirects: true,
-        skipSsl: false,
+        skipSSL: false,
         assertions: [ AssertionBuilder.statusCode().equals(200) ]
       }
     })

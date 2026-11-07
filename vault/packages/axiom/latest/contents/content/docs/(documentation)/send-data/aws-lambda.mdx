@@ -1,0 +1,261 @@
+---
+title: 'Send data from AWS Lambda to Axiom'
+description: 'This page explains how to send Lambda function logs and platform events to Axiom.'
+overview: 'Serverless compute service for running code without servers'
+sidebarTitle: AWS Lambda
+keywords: ['aws', 'axiom documentation', 'documentation', 'axiom', 'aws lambda', 'axiom lambda extension', 'cloudwatch subscription filters', 'terraform', 'lambda function layer', 'environment variables']
+logoId: 'awsLambda'
+isPopular: true
+popularityOrder: 5
+---
+
+import AwsDisclaimer from "@/content/snippets/aws-disclaimer.mdx"
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+
+<Frame>
+  <img src="/docs/doc-assets/shots/aws/blog-monitor-aws-lambda.png" alt="Axiom Lambda Extension logo" />
+</Frame>
+
+Use the Axiom Lambda Extension to send logs and platform events of your Lambda function to Axiom.
+
+Alternatively, you can use the AWS Distro for OpenTelemetry to send Lambda function logs and platform events to Axiom. For more information, see [AWS Lambda Using OTel](/send-data/aws-lambda-dot).
+
+Axiom detects the extension and provides you with quick filters and a dashboard. For more information on how this enriches your Axiom organization, see [AWS Lambda app](/apps/lambda).
+
+<AwsDisclaimer />
+
+<Note>
+    The Axiom Lambda Extension is an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/axiom-lambda-extension).
+</Note>
+
+<Prerequisites />
+- [Create an account on AWS Cloud](https://signin.aws.amazon.com/signup?request_type=register).
+
+## Setup
+
+1. [Install the Axiom Lambda extension](#installation).
+1. Ensure everything works properly in Axiom.
+1. [Turn off the permissions for Amazon CloudWatch](#turn-off-cloudwatch-logging).
+
+The last step is important because after you install the Axiom Lambda extension, the Lambda service still sends logs to Amazon CloudWatch Logs. You need to manually turn off Amazon CloudWatch logging.
+
+## Installation
+
+To install the Axiom Lambda Extension, choose one of the following methods:
+
+- [AWS CLI](#install-with-aws-cli)
+- [Terraform](#install-with-terraform)
+- [AWS Lambda function UI](#install-with-aws-lambda-function-ui)
+
+<Warning>
+The layer `VERSION` in the ARN isn’t the same as the extension release version on the [GitHub Releases](https://github.com/axiomhq/axiom-lambda-extension/releases) page. AWS assigns layer version numbers automatically, one per publish, so the two numbering schemes differ. For example, extension release v16 is published as layer version `17` in all supported regions. After you install or upgrade, [verify the extension version](#verify-the-extension-version) that your functions run.
+</Warning>
+
+### Install with AWS CLI
+
+<Steps>
+<Step>
+
+Add the extension as a layer with the AWS CLI:
+
+```bash
+aws lambda update-function-configuration --function-name my-function \
+    --layers arn:aws:lambda:AWS_REGION:694952825951:layer:axiom-extension-ARCH:VERSION
+```
+
+- Replace `AWS_REGION` with the AWS Region to send the request to. For example, `us-west-1`.
+- Replace `ARCH` with the system architecture type. For example, `arm64`.
+- Replace `VERSION` with the latest Lambda layer version. For example, `17`, which contains extension release v16. The layer version doesn’t match the release version on the [GitHub Releases](https://github.com/axiomhq/axiom-lambda-extension/releases) page because AWS assigns layer version numbers automatically.
+
+</Step>
+<Step>
+
+Add the Axiom dataset name and API token to the list of environment variables. For more information on setting environment variables, see the [AWS documentation](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html).
+
+```bash
+AXIOM_TOKEN: API_TOKEN
+AXIOM_DATASET: DATASET_NAME
+AXIOM_URL: AXIOM_DOMAIN
+```
+
+<Info>
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+</Step>
+</Steps>
+
+You have installed the Axiom Lambda Extension. Go to the Axiom UI and ensure your dataset receives events properly.
+
+### Install with Terraform
+
+Choose one of the following to install the Axiom Lambda Extension with Terraform:
+
+- Use plain Terraform code
+
+<Accordion title="Example with plain Terraform code">
+
+```tf
+resource "aws_lambda_function" "test_lambda" {
+  filename      = "lambda_function_payload.zip"
+  function_name = "lambda_function_name"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "index.test"
+  runtime       = "nodejs14.x"
+
+  ephemeral_storage {
+    size = 10240 # Min 512 MB and the Max 10240 MB
+  }
+
+  environment {
+    variables = {
+      AXIOM_TOKEN   = "API_TOKEN"
+      AXIOM_DATASET = "DATASET_NAME"
+      AXIOM_URL     = "AXIOM_DOMAIN"
+    }
+  }
+
+  layers = [
+    "arn:aws:lambda:AWS_REGION:694952825951:layer:axiom-extension-ARCH:VERSION"
+  ]
+}
+```
+
+<Info>
+Replace `AWS_REGION` with the AWS Region to send the request to. For example, `us-west-1`.
+Replace `ARCH` with the system architecture type. For example, `arm64`.
+Replace `VERSION` with the latest Lambda layer version. For example, `17`, which contains extension release v16. The layer version doesn’t match the release version on the [GitHub Releases](https://github.com/axiomhq/axiom-lambda-extension/releases) page because AWS assigns layer version numbers automatically.
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+</Accordion>
+
+- Use the [AWS Lambda Terraform module](https://registry.terraform.io/modules/terraform-aws-modules/lambda/aws/latest)
+
+<Accordion title="Example with AWS Lambda Terraform module">
+
+```tf
+module "lambda_function" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "my-lambda1"
+  description   = "My awesome lambda function"
+  handler       = "index.lambda_handler"
+  runtime       = "python3.8"
+
+  source_path = "../src/lambda-function1"
+
+  layers = [
+    "arn:aws:lambda:AWS_REGION:694952825951:layer:axiom-extension-ARCH:VERSION"
+  ]
+
+  environment_variables = {
+    AXIOM_TOKEN   = "API_TOKEN"
+    AXIOM_DATASET = "DATASET_NAME"
+    AXIOM_URL     = "AXIOM_DOMAIN"
+  }
+}
+```
+
+<Info>
+Replace `AWS_REGION` with the AWS Region to send the request to. For example, `us-west-1`.
+Replace `ARCH` with the system architecture type. For example, `arm64`.
+Replace `VERSION` with the latest Lambda layer version. For example, `17`, which contains extension release v16. The layer version doesn’t match the release version on the [GitHub Releases](https://github.com/axiomhq/axiom-lambda-extension/releases) page because AWS assigns layer version numbers automatically.
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+</Accordion>
+
+You have installed the Axiom Lambda Extension. Go to the Axiom UI and ensure your dataset receives events properly.
+
+### Install with AWS Lambda function UI
+
+<Steps>
+<Step>
+
+Add a new layer to your Lambda function with the following ARN (Amazon Resource Name). For more information on adding layers to your function, see the [AWS documentation](https://docs.aws.amazon.com/lambda/latest/dg/adding-layers.html).
+```bash
+arn:aws:lambda:AWS_REGION:694952825951:layer:axiom-extension-ARCH:VERSION
+```
+
+<Info>
+Replace `AWS_REGION` with the AWS Region to send the request to. For example, `us-west-1`.
+Replace `ARCH` with the system architecture type. For example, `arm64`.
+Replace `VERSION` with the latest Lambda layer version. For example, `17`, which contains extension release v16. The layer version doesn’t match the release version on the [GitHub Releases](https://github.com/axiomhq/axiom-lambda-extension/releases) page because AWS assigns layer version numbers automatically.
+</Info>
+
+</Step>
+<Step>
+
+Add the Axiom dataset name and API token to the list of environment variables. For more information on setting environment variables, see the [AWS documentation](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html).
+
+```bash
+AXIOM_TOKEN: API_TOKEN
+AXIOM_DATASET: DATASET_NAME
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+</Step>
+</Steps>
+
+You have installed the Axiom Lambda Extension. Go to the Axiom UI and ensure your dataset receives events properly.
+
+## Verify the extension version
+
+The extension stamps its release version on every event it sends to Axiom. After you install or upgrade, check which release your functions actually run:
+
+```kusto
+['DATASET_NAME']
+| where isnotnull(['axiom.awsLambdaExtensionVersion'])
+| summarize count() by ['axiom.awsLambdaExtensionVersion']
+```
+
+The result is the extension release version, such as `v16`. If the result shows an older release than you expect, the layer version in your function configuration points to an older build. Update the layer ARN to the latest layer version, and then redeploy your function.
+
+## Turn off Amazon CloudWatch logging
+
+After you install the Axiom Lambda extension, the Lambda service still sends logs to CloudWatch Logs. You need to manually turn off Amazon CloudWatch logging.
+
+To turn off Amazon CloudWatch logging, deny the Lambda function access to Amazon CloudWatch by editing the permissions:
+
+1. In the AWS Lambda function UI, go to **Configuration > Permissions**.
+1. In the **Execution role** section, click the role related to Amazon CloudWatch Logs.
+1. In the **Permissions** tab, select the role, and then click **Remove**.
+
+### Requirements for log level fields
+
+Axiom supports [severity matching](/reference/limits#requirements-for-log-level-fields) for AWS Lambda logs.
+
+## Best practices for production workloads
+
+The Axiom Lambda Extension runs inside your Lambda execution environment and shares its CPU, memory, and network with your function. It favors the performance of your function over guaranteed log delivery: it buffers events in memory and, when Axiom is unreachable for a sustained period, drops the oldest buffered events. The buffer only lives as long as the execution environment. For low-to-medium volume workloads that tolerate occasional loss, sending directly from the extension to Axiom works well.
+
+For high-volume, high-concurrency, or delivery-critical workloads, don’t send directly to Axiom from your functions. Decouple your functions from Axiom with a durable collector that you run on separate infrastructure. Your functions hand logs to a nearby collector and return immediately, and the collector owns buffering, batching, backpressure, and retries before forwarding to Axiom. This keeps your function durations predictable and prevents log loss when Axiom is briefly unreachable.
+
+### Forward to a collector you manage (recommended)
+
+Run a durable log pipeline such as Vector or the OpenTelemetry Collector on always-on infrastructure you manage, such as Amazon ECS or EC2. The collector forwards to Axiom: Vector through its native [Axiom sink](/send-data/vector), and the OpenTelemetry Collector over OTLP, which Axiom ingests [natively](/send-data/opentelemetry). The sizing and operation of the collector are up to you.
+
+Get logs from your functions to this collector in one of the following ways:
+
+- **Axiom Lambda Extension.** Set the `AXIOM_URL` environment variable to your collector’s endpoint. The extension sends gzip-compressed NDJSON to the `/v1/datasets/DATASET_NAME/ingest` path of that URL, so any intermediary that accepts the [Axiom ingest API](/restapi/ingest) and forwards to Axiom works.
+- **OpenTelemetry Lambda layer.** Use the [OpenTelemetry Lambda layer](https://github.com/open-telemetry/opentelemetry-lambda/blob/main/collector/README.md) as a replacement for the Axiom Lambda Extension, and configure its exporter to forward to your collector. For more information, see [Send OpenTelemetry data to Axiom](/send-data/opentelemetry).
+
+### Use Amazon CloudWatch as the buffer
+
+If you prefer not to run collector infrastructure, use AWS-native tooling to decouple delivery. Keep CloudWatch logging turned on (skip the [turn-off step](#turn-off-amazon-cloudwatch-logging) above) and ship logs with the [Axiom CloudWatch Forwarder](/send-data/cloudwatch). CloudWatch durably stores the logs, and the forwarder delivers them to Axiom fully decoupled from your functions, at the cost of CloudWatch pricing and some added latency.
+
+## Troubleshooting
+
+- Ensure the Axiom API token has permission to ingest data into the dataset.
+- Check the function logs on the AWS console. The Axiom Lambda Extension logs any errors with setup or ingest.
+
+For testing purposes, set the `PANIC_ON_API_ERR` environment variable to `true`. This means that the Axiom Lambda Extension crashes if it can’t connect to Axiom.

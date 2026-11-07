@@ -1,0 +1,10 @@
+---
+id: GroupingState
+title: GroupingState
+---
+
+```ts
+type GroupingState = string[];
+```
+
+Defined in: [features/column-grouping/columnGroupingFeature.types.ts:7](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/column-grouping/columnGroupingFeature.types.ts#L7)

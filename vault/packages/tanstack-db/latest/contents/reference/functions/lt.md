@@ -1,0 +1,120 @@
+---
+id: lt
+title: lt
+---
+
+## Call Signature
+
+```ts
+function lt<L, R>(left, right): WithAggregate<BasicExpression<boolean>, [L, R]>;
+```
+
+Defined in: [packages/db/src/query/builder/functions.ts:237](https://github.com/TanStack/db/blob/main/packages/db/src/query/builder/functions.ts#L237)
+
+### Type Parameters
+
+#### L
+
+`L` *extends* `ExpressionLike`
+
+#### R
+
+`R` *extends* `ExpressionLike`
+
+### Parameters
+
+#### left
+
+`L` & `true` *extends* `ContainsAggregate`\<`L` \| `R`, \[\[`L`, `R`\]\]\> ? `unknown` : `never`
+
+#### right
+
+`R`
+
+### Returns
+
+`WithAggregate`\<[`BasicExpression`](../@tanstack/namespaces/IR/type-aliases/BasicExpression.md)\<`boolean`\>, \[`L`, `R`\]\>
+
+## Call Signature
+
+```ts
+function lt<T>(left, right): BasicExpression<boolean>;
+```
+
+Defined in: [packages/db/src/query/builder/functions.ts:241](https://github.com/TanStack/db/blob/main/packages/db/src/query/builder/functions.ts#L241)
+
+### Type Parameters
+
+#### T
+
+`T`
+
+### Parameters
+
+#### left
+
+`ComparisonOperand`\<`T`\>
+
+#### right
+
+`ComparisonOperand`\<`T`\>
+
+### Returns
+
+[`BasicExpression`](../@tanstack/namespaces/IR/type-aliases/BasicExpression.md)\<`boolean`\>
+
+## Call Signature
+
+```ts
+function lt<T>(left, right): BasicExpression<boolean>;
+```
+
+Defined in: [packages/db/src/query/builder/functions.ts:245](https://github.com/TanStack/db/blob/main/packages/db/src/query/builder/functions.ts#L245)
+
+### Type Parameters
+
+#### T
+
+`T` *extends* `string` \| `number`
+
+### Parameters
+
+#### left
+
+`ComparisonOperandPrimitive`\<`T`\>
+
+#### right
+
+`ComparisonOperandPrimitive`\<`T`\>
+
+### Returns
+
+[`BasicExpression`](../@tanstack/namespaces/IR/type-aliases/BasicExpression.md)\<`boolean`\>
+
+## Call Signature
+
+```ts
+function lt<T>(left, right): BasicExpression<boolean>;
+```
+
+Defined in: [packages/db/src/query/builder/functions.ts:249](https://github.com/TanStack/db/blob/main/packages/db/src/query/builder/functions.ts#L249)
+
+### Type Parameters
+
+#### T
+
+`T`
+
+### Parameters
+
+#### left
+
+[`Aggregate`](../@tanstack/namespaces/IR/classes/Aggregate.md)\<`T`\>
+
+#### right
+
+`any`
+
+### Returns
+
+[`BasicExpression`](../@tanstack/namespaces/IR/type-aliases/BasicExpression.md)\<`boolean`\>

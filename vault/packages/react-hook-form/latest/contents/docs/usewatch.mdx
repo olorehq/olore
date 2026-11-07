@@ -1,35 +1,27 @@
 ---
 title: useWatch
+seoTitle: "useWatch: Subscribe to React Form Values"
 description: Subscribe to input changes with isolated component re-renders.
 metaDescription: Subscribe to input value changes with isolated component-level re-renders, offering better performance than watch for large React Hook Forms.
 sidebar: apiLinks
 ---
 
-<SelectNav
-  options={[
-    {
-      label: "Watch",
-      value: "/docs/usewatch/watch",
-    },
-  ]}
-/>
+## \</> `useWatch:` <TypeText>([UseWatchProps](/ts#UseWatchProps)) => object</TypeText>
 
-## \</> `useWatch:` <TypeText>`({ control?: Control, name?: string, defaultValue?: unknown, disabled?: boolean }) => object`</TypeText>
-
-Behaves similarly to the `watch` API, however, this will isolate re-rendering at the custom hook level and potentially result in better performance for your application.
+Behaves similarly to the `watch` API; however, it isolates re-rendering at the custom hook level, which can result in better performance for your application.
 
 ### Props
 
 ---
 
-| Name           | Type                                                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| -------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `name`         | <TypeText>string \| string[] \| undefined</TypeText> | Name of the field.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `control`      | <TypeText>Object</TypeText>                          | [`control`](/docs/useform/control) object provided by `useForm`. It's optional if you are using `FormProvider`.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `compute`      | <TypeText>function</TypeText>                        | <p>Subscribe to selective and computed form values.</p><ul><li>Subscribe to the entire form but only return updated value with certain condition<CodeArea withOutCopy rawData={`const watchedValue = useWatch({\n  compute: (data: FormValue) => { \n    if (data.test?.length) return data.test; \n\n    return ''; \n  }, \n});`}/></li><li>Subscribe to a specific form value state<CodeArea withOutCopy rawData={`const watchedValue = useWatch({\n  name: 'test', \n  compute: (data: string) => { \n    return data.length ? data : ''; \n  }, \n});`}/></li></ul> |
-| `defaultValue` | <TypeText>unknown</TypeText>                         | default value for `useWatch` to return before the initial render.<br/><br/>**Note:** the first render will always return `defaultValue` when it's supplied.                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `disabled`     | <TypeText>boolean = false</TypeText>                 | Option to disable the subscription.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `exact`        | <TypeText>boolean = false</TypeText>                 | Enable exact name matching. When `false` (default), a subscription fires when the subscribed name is a prefix of the changed field name, or vice versa (for example, subscribing to `"users"` receives updates for `"users.0.name"`).                                                                                                                                                                                                                                                                                                                                    |
+| Name           | Type                                                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`         | <TypeText>string \| string[] \| undefined</TypeText> | Name of the field. Reactive — changing this prop dynamically will update the subscription to the new field name.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `control`      | <TypeText>Object</TypeText>                          | [`control`](/docs/useform/control) object provided by `useForm`. It's optional if you are using `FormProvider`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `compute`      | <TypeText>function</TypeText>                        | <p><Since version="7.61.0" /> Subscribe to selective and computed form values.</p><ul><li>Subscribe to the entire form but only return updated value with certain condition<CodeArea withOutCopy rawData={`const watchedValue = useWatch({\n  compute: (data: FormValue) => { \n    if (data.test?.length) return data.test; \n\n    return ''; \n  }, \n});`}/></li><li>Subscribe to a specific form value state<CodeArea withOutCopy rawData={`const watchedValue = useWatch({\n  name: 'test', \n  compute: (data: string) => { \n    return data.length ? data : ''; \n  }, \n});`}/></li></ul>                                              |
+| `defaultValue` | <TypeText>unknown</TypeText>                         | Fallback value returned before the form has mounted and no current value exists yet. Once the form is mounted, the actual current form value takes precedence over this fallback.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `disabled`     | <TypeText>boolean = false</TypeText>                 | <Since version="7.13.0" /> Option to disable the subscription.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `exact`        | <TypeText>boolean = false</TypeText>                 | <Since version="7.20.0" /> Enable exact name matching. When `false` (default), a subscription fires when the subscribed name is a prefix of the changed field name, or vice versa (for example, subscribing to `"users"` receives updates for `"users.0.name"`). <Since version="7.81.0" /> When `true`, the subscription fires when the subscribed field itself or one of its ancestor paths is updated (for example, subscribing to `"users.0.name"` receives updates when `"users.0"` or `"users"` is set via `setValue`), but not when a nested child path changes (subscribing to `"users"` does not receive updates for `"users.0.name"`). |
 
 ### Return
 
@@ -43,13 +35,14 @@ Behaves similarly to the `watch` API, however, this will isolate re-rendering at
 
 <Admonition type="important" title="Rules">
 
-- The initial return value from `useWatch` will always return what's inside of `defaultValue` or `defaultValues` from `useForm`.
-- The only difference between `useWatch` and `watch` is at the root ([`useForm`](/docs/useform)) level or the custom hook level update.
-- `useWatch`'s execution order matters, which means if you update a form value before the subscription is in place, then the value updated will be ignored.
+- On initial render, `useWatch` returns the current form value if available. The `defaultValue` prop (or `defaultValues` from `useForm`) is used only as a fallback before the form has mounted — i.e., before any values are registered.
+- The only difference between `useWatch` and `watch` is at the root ([`useForm`](/docs/useform)) level or the custom hook level.
+- Not sure whether to use `useWatch`, `watch`, `subscribe` or `getValues`? See [which API to use for reading values](/faqs#watchvsgetValuesvsstate).
+- `useWatch`'s execution order matters, which means if you update a form value before the subscription is in place, then the updated value will be ignored.
 
   ```javascript copy
   setValue("test", "data")
-  useWatch({ name: "test" }) // ❌ subscription is happened after value update, no update received
+  useWatch({ name: "test" }) // ❌ subscription happened after value update, no update received
   useWatch({ name: "example" }) // ✅ input value update will be received and trigger re-render
   setValue("example", "data")
   ```
@@ -68,11 +61,11 @@ Behaves similarly to the `watch` API, however, this will isolate re-rendering at
   }
   ```
 
-- `useWatch`'s result is optimised for render phase instead of `useEffect`'s deps, to detect value updates you may want to use an external custom hook for value comparison.
+- `useWatch`'s result is optimized for the render phase instead of `useEffect` dependencies. To detect value updates, you may want to use an external custom hook for value comparison.
 
 </Admonition>
 
-**Examples:**
+### Examples
 
 ---
 
@@ -81,7 +74,7 @@ Behaves similarly to the `watch` API, however, this will isolate re-rendering at
 <TabGroup buttonLabels={["TS", "JS"]} >
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-v7-ts-usewatch-h9i5e"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm, useWatch, Control } from "react-hook-form"
 
 interface FormInputs {
   firstName: string
@@ -182,3 +175,73 @@ export const Calc = ({ control, setValue }) => {
   return <p>{output}</p>
 }
 ```
+
+### Tips
+
+---
+
+- Use `compute` to derive a small value from the form. The component re-renders only when the computed result changes (compared deeply), not on every key press:
+
+  ```javascript
+  const isAdult = useWatch({
+    control,
+    name: "age",
+    compute: (age) => Number(age) >= 18,
+  })
+  ```
+
+- For totals in a field array, watch the array in a small child component, so typing in one row does not re-render the whole list:
+
+  ```javascript
+  function Total({ control }) {
+    const total = useWatch({
+      control,
+      name: "items",
+      compute: (items = []) =>
+        items.reduce((sum, item) => sum + Number(item.price || 0), 0),
+    })
+    return <p>Total: {total}</p>
+  }
+  ```
+
+- Pass `name` to watch only what you need. `useWatch()` with no `name` watches the whole form.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### `useWatch` returns `undefined` on the first render
+
+<Why>
+
+`useWatch` runs before the input registers, so on the first render it returns the field's default value. With no default value, that is `undefined`.
+
+</Why>
+
+<Fix>
+
+Set the field in `defaultValues` on `useForm`, or pass `defaultValue` to `useWatch`.
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### `Cannot read properties of null (reading '_getWatch')`
+
+<Why>
+
+`useWatch` could not find a form: no `control` was passed and the component is not inside a [`FormProvider`](/docs/formprovider).
+
+</Why>
+
+<Fix>
+
+Pass `control` from `useForm`, or wrap the tree in `<FormProvider {...methods}>`.
+
+</Fix>
+
+</Troubleshoot>

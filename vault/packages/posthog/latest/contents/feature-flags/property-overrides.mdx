@@ -99,6 +99,64 @@ final showFeature = await Posthog().isFeatureEnabled('beta-feature');
 
 </MultiLanguage>
 
+#### From `setPersonProperties` calls
+
+`setPersonProperties()` persists the property on the person profile and caches it for flag evaluation. This means a flag can target the property right after you set it, without waiting for the property to be ingested.
+
+<MultiLanguage>
+
+```js file=Web
+// The property is persisted on the person and cached for flag evaluation
+posthog.setPersonProperties({ is_beta_user: true })
+
+// This flag check can use 'is_beta_user' immediately
+const showFeature = posthog.isFeatureEnabled('beta-feature')
+```
+
+```react-native
+// The property is persisted on the person and cached for flag evaluation
+posthog.setPersonProperties({ is_beta_user: true })
+
+// This flag check can use 'is_beta_user' immediately
+const showFeature = posthog.isFeatureEnabled('beta-feature')
+```
+
+```swift file=iOS
+// The property is persisted on the person and cached for flag evaluation
+PostHogSDK.shared.setPersonProperties(userPropertiesToSet: ["is_beta_user": true])
+
+// On iOS, reload flags yourself before checking
+PostHogSDK.shared.reloadFeatureFlags()
+```
+
+```kotlin file=Android
+// The property is persisted on the person and cached for flag evaluation
+PostHog.setPersonProperties(userPropertiesToSet = mapOf("is_beta_user" to true))
+
+// On Android, reload flags yourself before checking
+PostHog.reloadFeatureFlags()
+```
+
+```dart
+// The property is persisted on the person and cached for flag evaluation
+await Posthog().setPersonProperties(
+  userPropertiesToSet: {'is_beta_user': true},
+);
+
+// On iOS and Android, reload flags yourself before checking
+await Posthog().reloadFeatureFlags();
+```
+
+</MultiLanguage>
+
+On web and React Native, `setPersonProperties()` also reloads feature flags. On iOS, Android, and Flutter it doesn't, so call `reloadFeatureFlags()` yourself.
+
+The reload is async, so a flag check on the line straight after `setPersonProperties()` can still return the value cached before the property was set. It's usually fast, but reading the flag in an `onFeatureFlags()` callback avoids the race.
+
+Identical calls are ignored. If you set the same properties for the same distinct ID twice in a row, the second call does nothing: no `$set` event and no flag reload.
+
+> **Note:** `setPersonProperties()` creates a [person profile](/docs/data/persons) if one doesn't exist yet, so subsequent events for that user are captured as [identified events](/docs/data/anonymous-vs-identified-events). If you only need the property for flag evaluation, use [`setPersonPropertiesForFlags()`](#manual-overrides-with-setpersonpropertiesforflags) instead.
+
 #### From group calls
 
 Similarly, when you call `group()` with group properties, those properties are cached for flag evaluation:
@@ -189,15 +247,20 @@ Other campaign parameters (`gad_source`, `mc_cid`, `dclid`, `gbraid`, `wbraid`, 
 
 #### Including browser and device properties
 
-To include current browser and device properties (like `$browser`, `$os`, `$device_type`) with flag requests, use the `setAllPersonProfilePropertiesAsPersonPropertiesForFlags` customization.
+To include current browser and device properties (like `$browser`, `$os`, `$device_type`) with flag requests, use the `setAllPersonProfilePropertiesAsPersonPropertiesForFlags` customization. Call it inside the `loaded` callback so it runs before the SDK's first flag request and those properties are included from the very first evaluation.
 
 **Using npm:**
 
 ```js
-import { setAllPersonProfilePropertiesAsPersonPropertiesForFlags } from 'posthog-js/lib/src/customizations'
+import posthog from 'posthog-js'
+import { setAllPersonProfilePropertiesAsPersonPropertiesForFlags } from 'posthog-js/customizations'
 
-// Call after PostHog is initialized
-setAllPersonProfilePropertiesAsPersonPropertiesForFlags(posthog)
+posthog.init('<ph_project_api_key>', {
+    api_host: '<ph_client_api_host>',
+    loaded: (posthog) => {
+        setAllPersonProfilePropertiesAsPersonPropertiesForFlags(posthog)
+    },
+})
 ```
 
 **Using the snippet:**
@@ -205,7 +268,12 @@ setAllPersonProfilePropertiesAsPersonPropertiesForFlags(posthog)
 ```html
 <script type="text/javascript" src="https://us.i.posthog.com/static/customizations.full.js"></script>
 <script>
-  posthogCustomizations.setAllPersonProfilePropertiesAsPersonPropertiesForFlags(posthog)
+  posthog.init('<ph_project_api_key>', {
+    api_host: '<ph_client_api_host>',
+    loaded: function (posthog) {
+      posthogCustomizations.setAllPersonProfilePropertiesAsPersonPropertiesForFlags(posthog)
+    },
+  })
 </script>
 ```
 
@@ -238,7 +306,7 @@ Mobile SDKs (React Native, iOS, Android, and Flutter) include common device and 
 | `$app_version` | App version from bundle/package info |
 | `$app_build` | App build number |
 | `$app_namespace` | App bundle identifier/namespace |
-| `$os` | Operating system name ("macOS", "iOS", "iPadOS", "tvOS", "watchOS", "visionOS", "Android") |
+| `$os` / `$os_name` | Operating system name ("macOS", "iOS", "iPadOS", "tvOS", "watchOS", "visionOS", "Android") |
 | `$os_version` | Operating system version |
 | `$device_type` | Device type ("Mobile", "Tablet", "TV", "CarPlay", "Desktop", "Vision") |
 | `$lib` | SDK identifier (e.g., "posthog-ios") |
@@ -310,6 +378,8 @@ final showFeature = await Posthog().isFeatureEnabled('beta-feature');
 </MultiLanguage>
 
 > **Note:** Properties set with `setPersonPropertiesForFlags()` are additive. Each call merges new properties with existing ones rather than replacing them.
+
+Unlike `setPersonProperties()`, this doesn't create a person profile and doesn't send a `$set` event. The properties stay in the SDK and are sent with each flag evaluation request, so you can target flags on person properties for users who are still anonymous. They aren't saved on the person either, so they're not available anywhere else, like server-side evaluation or the same user on another device.
 
 ### Controlling automatic flag reload
 
@@ -511,6 +581,10 @@ PostHog's servers automatically derive GeoIP properties from the user's IP addre
 | `$geoip_continent_code` | Continent code |
 | `$geoip_postal_code` | Postal/ZIP code |
 | `$geoip_time_zone` | Time zone |
+| `$geoip_subdivision_1_code` | Primary subdivision code (e.g., state or province) |
+| `$geoip_subdivision_1_name` | Primary subdivision name |
+| `$geoip_subdivision_2_code` | Secondary subdivision code (e.g., county) |
+| `$geoip_subdivision_2_name` | Secondary subdivision name |
 
 ### Use case: Geolocation targeting
 

@@ -1,0 +1,186 @@
+---
+title: checkly members
+description: 'List, update, and delete members in your Checkly account.'
+sidebarTitle: 'checkly members'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-members/'
+---
+
+<Note>The canonical `checkly members` commands are available since CLI v8.7.0. Earlier versions use `checkly account members`, which remains available as a compatibility alias.</Note>
+
+The `checkly members` commands let you list account members and pending invites, update member roles, and remove members from the currently selected account.
+
+<Accordion title="Prerequisites">
+Before using `checkly members`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+- Account admin access for role updates or member deletion
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+## Usage
+
+```bash Terminal
+npx checkly members [options]
+npx checkly members <subcommand> [arguments] [options]
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `members` | List account members and pending invites. |
+| `members update` | Update an account member role. |
+| `members delete` | Delete an account member. |
+
+## `checkly members`
+
+List members and pending invites for the currently selected account. You can filter the results or enable cursor pagination for larger accounts.
+
+**Usage:**
+
+```bash Terminal
+npx checkly members [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--search, -s` | - | Search members and invites by name or email. |
+| `--type` | - | Filter by item type: `member` or `invite`. |
+| `--role` | - | Filter by role: `owner`, `admin`, `read_write`, `read_run`, or `read_only`. |
+| `--status` | - | Filter by status: `active`, `pending`, or `expired`. |
+| `--limit, -l` | - | Number of results to return (1-100). Enables cursor pagination. |
+| `--next-id` | - | Cursor for the next page. Requires `--limit`. |
+| `--hide-id` | - | Hide member and invite IDs in formatted output. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### List Examples
+
+```bash Terminal
+# List members and pending invites
+npx checkly members
+
+# Search by name or email
+npx checkly members --search="alex@example.com"
+
+# List pending invites
+npx checkly members --type=invite --status=pending
+
+# Find account admins
+npx checkly members --role=admin
+
+# Get the first 10 results as JSON
+npx checkly members --limit=10 --output=json
+
+# Get the next page using the cursor from the previous response
+npx checkly members --limit=10 --next-id=<nextId>
+```
+
+### JSON pagination
+
+When you use `--output=json`, the command returns the members and invites together with cursor pagination fields:
+
+```json
+{
+  "members": [],
+  "length": 0,
+  "nextId": null
+}
+```
+
+Use a non-null `nextId` value with `--limit` and `--next-id` to retrieve the next page.
+
+## `checkly members update`
+
+Update an account member's role. Identify the member by email or user ID. The command shows the proposed change and asks for confirmation by default.
+
+**Usage:**
+
+```bash Terminal
+npx checkly members update <member> --role=<role> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `member` | The account member email or user ID. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--role, -r` | Yes | New role: `admin`, `read_write`, `read_run`, or `read_only`. |
+| `--email` | - | Treat the member argument as an email address. Mutually exclusive with `--id`. |
+| `--id` | - | Treat the member argument as a user ID. Mutually exclusive with `--email`. |
+| `--force, -f` | - | Skip the confirmation prompt. |
+| `--dry-run` | - | Preview the change without updating the member. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### Update Examples
+
+```bash Terminal
+# Update a member by email and confirm interactively
+npx checkly members update alex@example.com --role=read_write
+
+# Update a member by user ID
+npx checkly members update usr_123 --id --role=admin
+
+# Preview the change without applying it
+npx checkly members update alex@example.com --role=admin --dry-run
+
+# Update without a confirmation prompt and return JSON
+npx checkly members update alex@example.com --role=admin --force --output=json
+```
+
+## `checkly members delete`
+
+Delete an account member by email or user ID. The command shows the member to remove and asks for confirmation by default.
+
+<Warning>Deleting a member removes their access to the account. Use `--dry-run` to preview the operation before confirming it.</Warning>
+
+**Usage:**
+
+```bash Terminal
+npx checkly members delete <member> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `member` | The account member email or user ID. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--email` | - | Treat the member argument as an email address. Mutually exclusive with `--id`. |
+| `--id` | - | Treat the member argument as a user ID. Mutually exclusive with `--email`. |
+| `--force, -f` | - | Skip the confirmation prompt. |
+| `--dry-run` | - | Preview the deletion without removing the member. |
+
+### Delete Examples
+
+```bash Terminal
+# Delete a member by email and confirm interactively
+npx checkly members delete alex@example.com
+
+# Delete a member by user ID
+npx checkly members delete usr_123 --id
+
+# Preview the deletion
+npx checkly members delete alex@example.com --dry-run
+
+# Delete without a confirmation prompt
+npx checkly members delete alex@example.com --force
+```
+
+## Related Commands
+
+- [`checkly account`](/cli/checkly-account) - View plan entitlements and limits
+- [`checkly whoami`](/cli/checkly-whoami) - Display the current account and user
+- [`checkly switch`](/cli/checkly-switch) - Switch between Checkly accounts

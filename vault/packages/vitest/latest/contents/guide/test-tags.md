@@ -15,14 +15,14 @@ A tag captures that kind of category: the definition holds the shared options, a
 
 ## When to reach for tags
 
-| If you want to… | Use |
-| --- | --- |
-| Apply timeout/retry to a *category* of tests | **Tags** |
-| Mark cross-cutting categories (`flaky`, `slow`, `frontend`) scattered across many files | **Tags** |
-| Conditionally run expensive setup based on what's filtered | **Tags** + [`matchesTags`](#checking-tags-filter-at-runtime) |
-| Run a subset by test name match | [`-t` / `testNamePattern`](/config/testnamepattern) |
-| Run a subset by file path | `--include` / `--exclude` |
-| Run different files with different *runner settings* (isolation, pool, environment) | [Test Projects](/guide/projects) |
+| If you want to…                                                                         | Use                                                          |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Apply timeout/retry to a _category_ of tests                                            | **Tags**                                                     |
+| Mark cross-cutting categories (`flaky`, `slow`, `frontend`) scattered across many files | **Tags**                                                     |
+| Conditionally run expensive setup based on what's filtered                              | **Tags** + [`matchesTags`](#checking-tags-filter-at-runtime) |
+| Run a subset by test name match                                                         | [`-t` / `testNamePattern`](/config/testnamepattern)          |
+| Run a subset by file path                                                               | `--include` / `--exclude`                                    |
+| Run different files with different _runner settings_ (isolation, pool, environment)     | [Test Projects](/guide/projects)                             |
 
 You can combine projects and tags. A test that sits in a `Sequential` project can also carry a `flaky` tag, and Vitest applies both.
 
@@ -138,6 +138,13 @@ test('flaky database test', { tags: ['flaky', 'db'], timeout: 120_000 })
 // { timeout: 120_000, retry: 3 }
 ```
 
+Options set to `undefined` are ignored, so they don't override the values from tags:
+
+```ts
+test('flaky database test', { tags: ['flaky', 'db'], timeout: undefined })
+// { timeout: 30_000, retry: 3 }
+```
+
 ## Using Tags in Tests
 
 You can apply tags to individual tests or entire suites using the `tags` option:
@@ -212,6 +219,7 @@ describe('forms', () => {
   })
 })
 ```
+
 :::
 
 ## Filtering Tests by Tag

@@ -11,6 +11,10 @@ By default, only [admins](/docs/guides/organizations/control-access/roles-and-pe
 
 This feature requires that [**Email** is enabled](/docs/guides/configure/auth-strategies/sign-up-sign-in-options#email), as Clerk uses the user's email address to send the invitation. If you don't want to enable **Email** for your application, you can bypass the invitation flow completely and add existing users directly to the Organization with the [`createOrganizationMembership()`](/docs/reference/backend/organization/create-organization-membership) method. Because this method requires the user's ID, the user must already have a Clerk account.
 
+<If is="llm">
+  **For AI agents:** Instead of hand-writing cURL requests to the Backend API, send an invitation with the CLI: `npx clerk@latest api organizations/<org_id>/invitations -d '{"email_address":"email@example.com","role":"org:member"}'` (discover related endpoints, like bulk create and revoke, via `npx clerk@latest api ls invitations`). Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
+
 ## When to use invitations
 
 Invitations work well when you need precise control over who joins your Organization and which Role they receive. This approach fits scenarios where:
@@ -19,7 +23,7 @@ Invitations work well when you need precise control over who joins your Organiza
 - Onboarding requires manual approval or review.
 - Specific Roles need to be assigned during the invitation.
 
-If you want to streamline enrollment for users with company email addresses, consider [Verified Domains](/docs/guides/organizations/add-members/verified-domains), which can automatically invite users based on their email domain. If customers require centralized authentication through their Identity Provider, use [Enterprise SSO](/docs/guides/organizations/add-members/sso).
+If you want to streamline enrollment for users with company email addresses, consider [Verified Domains](/docs/guides/organizations/add-members/verified-domains), which can automatically invite users based on their email domain. If customers require centralized authentication through their identity provider ([IdP](!identity-provider)), use [Enterprise SSO](/docs/guides/organizations/add-members/sso).
 
 ## Create an invitation
 
@@ -29,7 +33,7 @@ However, if you want to build [custom flows](!custom-flow), see the following se
 
 ### Client-side
 
-To create an Organization invitation on the client-side, see the [dedicated guide](/docs/guides/development/custom-flows/organizations/manage-organization-invitations). Note that this uses the [`organizations.inviteMember()`](/docs/reference/objects/organization#invite-member) method, which does not let you specify a redirect URL; the invitation links will always redirect to the Account Portal sign-in page. If you want to specify a redirect URL, you must create the invitation on the server-side.
+To create an Organization invitation on the client-side, see the [dedicated guide](/docs/guides/development/custom-flows/organizations/manage-organization-invitations). Note that this uses the [`organizations.inviteMember()`](/docs/reference/objects/organization#invitemember) method, which does not let you specify a redirect URL; the invitation links will always redirect to the Account Portal sign-in page. If you want to specify a redirect URL, you must create the invitation on the server-side.
 
 ### Server-side
 
@@ -190,7 +194,7 @@ Now that you understand how to invite users to your Organization, you can:
   ---
 
   - [Set up Enterprise SSO Connections](/docs/guides/organizations/add-members/sso)
-  - Learn how to set up Enterprise SSO Connections for centralized authentication through an Identity Provider.
+  - Learn how to set up Enterprise SSO Connections for centralized authentication through an IdP.
 
   ---
 

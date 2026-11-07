@@ -2,15 +2,16 @@
 title: 'Reporting Results with Checkly'
 description: 'Analyze check performance and export monitoring data with Checkly reporting dashboard'
 sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/platform/reporting/overview/'
 ---
 
 The reporting dashboard provides comprehensive insights into your monitoring performance, including response times, success ratios, and trends across all your checks. Export data for further analysis or create reports for stakeholders.
 
 ![Reporting Dashboard](/images/docs/images/reporting/dashboard.png)
 
-## Dashboard Overview
+## Dashboard overview
 
-The reporting dashboard displays your first 15 checks with key performance metrics at a glance. Use this view to:
+The reporting dashboard lists your checks, 25 per page, with key performance metrics at a glance. **Avg**, **P95** and **P99** count only runs with a measured response time. A check without measured runs shows a dash. Use this view to:
 
 - Quickly identify underperforming checks
 - Monitor trends across your monitoring infrastructure  
@@ -23,34 +24,33 @@ Customize your view using the toolbar filters and sorting options:
 
 <AccordionGroup>
 <Accordion title="Date Range">
-Select the time period for your analysis. The dashboard adjusts data granularity automatically based on your selection.
+Select the time period for your analysis: Today, Last hour, Last 3 hours, Last 24 hours, Last 7 days, Last 30 days, or a custom range. The dashboard adjusts data granularity automatically based on your selection.
 </Accordion>
 
 <Accordion title="Check Filters">
-Filter by:
-- **Check Type**: API, Browser, or Multistep checks
-- **Check Tags**: Filter by tags applied to individual checks
-- **Check Group Tags**: Filter by tags applied to check groups
+Type a filter into the search bar, for example `tags:is:prod`. You can filter by status, check type, tags, project, location, creator, name, group, URL, logical ID and whether the check ran, and by the Success, Avg, P95 and P99 metrics, and combine filters with `and` and `or`. See [Filters](/platform/filters#reporting) for the syntax and what each field matches. You can save any filter as a [view](/platform/views).
+</Accordion>
+
+<Accordion title="Group by Location">
+Type `group by location` in the filter field and press Enter to list one row per check and location. See [Group the rows](/platform/filters#group-the-rows).
 </Accordion>
 
 <Accordion title="Sorting Options">
-Sort your results by:
-- **Name**: Alphabetical order (ASC/DESC)
-- **Check Type**: Group similar check types together (ASC/DESC)
+Click a column header to sort by Type, Name, Success, Avg, P95 or P99, in ascending or descending order. When you group by location, you can also sort by Location. Checks without a value come last.
 </Accordion>
 </AccordionGroup>
 
 ## Performance Graphs
 
-Click any check to view detailed performance graphs showing response times and success ratios over your selected time period.
+Use the **Table** and **Chart** toggle in the toolbar to switch between the list and a chart of response times and success ratios over your selected time period. Select up to 12 checks in the table and click **Compare in chart** to chart them together. Without a selection, the chart shows the first 12 checks in the table's order, the 12 with the highest P95 unless you sorted the table.
 
 ![Reporting Dashboard Graphs](/images/docs/images/reporting/dashboard-graph.png)
 
 ### Graph Features
 
-**Response Time Metrics**: Toggle between average, P95, and P99 response times using the metric pills beside the graph.
+**Response Time Metrics**: Toggle Avg, P95 and P99 with the Metrics buttons above the chart. P95 is shown by default. Each check keeps its color across the chart, and Avg and P99 use dotted and dashed lines.
 
-**Success Ratio**: Track the percentage of successful check runs over time.
+**Success Ratio**: Click **Success** in the Metrics buttons to add a pane with the percentage of successful check runs over time.
 
 **Dynamic Granularity**: Data grouping adjusts automatically based on your date range:
 
@@ -78,24 +78,26 @@ Use check type, tags, and other filters to narrow your dataset if needed.
 </Step>
 
 <Step title="Download">
-Click **Download as CSV** in the toolbar to generate your export file.
+Click **Download CSV** in the toolbar of the Table view to generate your export file.
 </Step>
 </Steps>
 
 ### Export Data Fields
 
-The CSV export includes the following columns:
+The CSV export (`checkly_export.csv`) includes the following columns:
 
 | Field | Description |
 |-------|-------------|
-| Name | Check name for identification |
-| Check ID | Unique identifier for the check |
-| Check Type | API, Browser, or Multistep |
-| Success Ratio | Percentage of successful runs |
-| Response Time (Average) | Mean response time |
-| Response Time (P95) | 95th percentile response time |
-| Response Time (P99) | 99th percentile response time |
-| Check Tags | Applied tags for categorization |
+| `id` | Unique identifier for the check |
+| `name` | Check name for identification |
+| `activated` | Whether the check is activated |
+| `group` | The check group the check belongs to |
+| `type` | The check type |
+| `successRatio` | Percentage of successful runs |
+| `avg` | Mean response time in milliseconds |
+| `p95` | 95th percentile response time in milliseconds |
+| `p99` | 99th percentile response time in milliseconds |
+| `tags` | Tags of the check and of its group |
 
 <Note>
 All statistics are calculated based on your selected date range. The default range is "Last 24 Hours".
@@ -103,7 +105,7 @@ All statistics are calculated based on your selected date range. The default ran
 
 ## Best Practices
 
-- **Regular exports**: Schedule periodic data exports for long-term trend analysis
+- **Regular exports**: Use the [Reporting API](/api-reference/reporting/generates-a-report-with-aggregate-statistics-for-checks-and-check-groups) to automate periodic exports for long-term trend analysis
 - **Filter strategically**: Use tags and groups to create focused reports for different teams
 - **Monitor P95/P99**: Don't rely only on averages - percentiles reveal user experience reality
 - **Compare periods**: Use date range filtering to compare performance before and after deployments

@@ -1,0 +1,25 @@
+---
+title: 'Export traces to New Relic'
+description: 'Send Checkly traces to New Relic with an Ingest - License key.'
+sidebarTitle: 'New Relic'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/traces/new-relic/'
+---
+
+import OtlpVendorIntro from '/snippets/otlp-vendor-intro.mdx';
+import OtlpVendorOutro from '/snippets/otlp-vendor-outro.mdx';
+
+<OtlpVendorIntro vendor="New Relic" />
+
+1. Get the endpoint for your New Relic region. US is `https://otlp.nr-data.net/v1/traces`, EU is `https://otlp.eu01.nr-data.net/v1/traces`, JP is `https://otlp.jp.nr-data.net/v1/traces` and FedRAMP is `https://gov-otlp.nr-data.net/v1/traces`.
+2. Get the key. In New Relic, go to **Administration** > **API Keys**, create a key, and set the key type to **Ingest - License**. Copy the key.
+3. Paste the values into Checkly. On the [Traces settings page](https://app.checklyhq.com/settings/account/traces), turn on **Enable exporting traces**, paste the URL, and add the header from the table below.
+4. Find the spans. In New Relic, the spans appear under service `checkly`.
+
+| Header name | Value |
+|---|---|
+| `api-key` | `<Ingest - License key>` |
+
+New Relic limits each request to 1 MB.
+
+New Relic documents the endpoints in its [OTLP best practices](https://docs.newrelic.com/docs/opentelemetry/best-practices/opentelemetry-otlp/).
+<OtlpVendorOutro />

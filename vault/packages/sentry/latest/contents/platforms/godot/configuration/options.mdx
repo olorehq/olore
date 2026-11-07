@@ -1,7 +1,7 @@
 ---
 title: Options
 sidebar_order: 1
-description: "Learn more about how the SDK can be configured via options. These are being passed to the init function and therefore set when the SDK is first initialized."
+description: "Learn more about how the Sentry Godot SDK can be configured via options. These are being passed to the init function and therefore set when the SDK is first initialized."
 ---
 
 <PlatformContent includePath="configuration/config-intro" />
@@ -20,7 +20,7 @@ The DSN tells the SDK where to send the events. If this value is not provided, t
 
 In runtimes without a process environment (such as the browser) that fallback does not apply.
 
-Learn more about [DSN utilization](/product/sentry-basics/dsn-explainer/#dsn-utilization).
+Learn more about [DSN utilization](/concepts/key-terms/dsn-explainer/#dsn-utilization).
 
 </SdkOption>
 
@@ -128,21 +128,80 @@ This option is turned off by default.
 
 </SdkOption>
 
-<SdkOption name="app_hang_tracking" type="bool" defaultValue="false">
+<SdkOption name="enable_app_hang_tracking" type="bool" defaultValue="true">
 
-If `true`, enables automatic detection and reporting of application hangs. The SDK will monitor the main thread and report hang events when it becomes unresponsive for longer than the duration specified in `app_hang_timeout_sec`. This helps identify performance issues where the application becomes frozen or unresponsive.
+If `true`, enables automatic detection and reporting of application hangs. The SDK will monitor the main thread and report hang events when it becomes unresponsive for longer than the duration specified in `app_hang_timeout_ms`. This helps identify performance issues where the application becomes frozen or unresponsive.
 
 <Alert title="Note">
 
-This feature is only supported on Android, iOS, and macOS platforms.
+This feature applies to iOS and macOS only. On Android, ANR (Application Not Responding) detection is configured separately — see [`android.enable_anr_detection`](#android.enable_anr_detection).
 
 </Alert>
 
 </SdkOption>
 
-<SdkOption name="app_hang_timeout_sec" type="float" defaultValue="5.0">
+<SdkOption name="app_hang_timeout_ms" type="int" defaultValue="5000">
 
-Specifies the timeout duration in seconds after which the application is considered to have hanged. When `app_hang_tracking` is enabled, if the main thread is blocked for longer than this duration, it will be reported as an application hang event to Sentry.
+Specifies the timeout duration in milliseconds after which the application is considered to have hanged. When `enable_app_hang_tracking` is enabled, if the main thread is blocked for longer than this duration, it will be reported as an application hang event to Sentry.
+
+</SdkOption>
+
+## Tracing Options
+
+<SdkOption name="traces_sample_rate" type="float" defaultValue="0.0" availableSince="2.2.0">
+
+Controls the percentage of traces sent to Sentry. Set this value between 0.0 (send no traces) and 1.0 (send all traces). The SDK samples each trace as a whole, so it sends either all spans in a trace or none of them.
+
+See <PlatformLink to="/tracing/">Set Up Tracing</PlatformLink> for configuration and testing guidance.
+
+</SdkOption>
+
+<SdkOption name="trace_lifecycle" type="SentryOptions.TraceLifecycle" defaultValue="TRACE_LIFECYCLE_STATIC" availableSince="2.2.0">
+
+Controls how the SDK sends traces:
+
+- `SentryOptions.TRACE_LIFECYCLE_STATIC` holds completed spans and sends each root span and its children as a transaction when that root span ends.
+- `SentryOptions.TRACE_LIFECYCLE_STREAM` sends completed spans independently.
+
+This option currently only affects Web exports; other platforms always use the static lifecycle. Streamed spans use the Span v2 format, which Sentry SaaS ingests but self-hosted Sentry doesn't currently support.
+
+</SdkOption>
+
+<SdkOption name="trace_propagation_targets" type="Array" defaultValue={'[".*"]'} availableSince="2.2.0">
+
+Controls which downstream services can receive tracing headers.
+
+`SentryHTTPRequest` adds tracing headers only when its initial request URL matches one of the targets. When you propagate trace context yourself, pass the destination URL to `SentrySpan.get_trace_headers(url)` to apply the same targets.
+
+- A `String` matches when it appears anywhere in the URL. The special string `".*"` matches every URL and is the only entry by default.
+- A `RegEx` searches the complete URL. Use an anchored expression to match a specific origin.
+- An empty array blocks headers for the initial URL of every `SentryHTTPRequest` and every URL passed to `get_trace_headers(url)`.
+
+Omitting the URL when calling `get_trace_headers()` bypasses this option, including an empty target list. Other HTTP clients may require <PlatformLink to="/tracing/distributed-tracing/custom-trace-propagation/">custom trace propagation</PlatformLink>.
+
+In **Project Settings > Sentry > Options**, **Trace Propagation Targets** accepts strings only. Add `RegEx` entries in your initialization callback. See <PlatformLink to="/tracing/distributed-tracing/limiting-trace-propagation/">Limiting Trace Propagation</PlatformLink> for an example.
+
+</SdkOption>
+
+<SdkOption name="propagate_traceparent" type="bool" defaultValue="false" availableSince="2.2.0">
+
+Controls whether outgoing tracing headers include the W3C `traceparent` header alongside `sentry-trace` and `baggage`.
+
+Set this option to `true` when your backend uses OpenTelemetry or another W3C Trace Context-compatible library to continue traces. `SentryHTTPRequest` then adds `traceparent` to matching requests, and `SentrySpan.get_trace_headers()` includes it in the returned headers.
+
+[`trace_propagation_targets`](#trace_propagation_targets) controls where this header is allowed when you pass a URL. For Web exports, also <PlatformLink to="/tracing/distributed-tracing/dealing-with-cors-issues/">allow `traceparent` in your backend's CORS configuration</PlatformLink>.
+
+<Include name="platforms/configuration/options/propagate-traceparent-tail-sampling.mdx" />
+
+</SdkOption>
+
+<SdkOption name="org_id" type="String" defaultValue={'""'} availableSince="2.2.0">
+
+The organization ID for your Sentry project.
+
+The SDK tries to extract the ID from your DSN. If it can't be found, or you need to override it when using self-hosted Sentry or a local Relay, set it with this option.
+
+The ID is included as `sentry-org_id` in the outgoing `baggage` header. Downstream services can use it to check whether an incoming trace belongs to the same organization before continuing it.
 
 </SdkOption>
 
@@ -171,70 +230,171 @@ This option is turned off by default.
 
 ## Logging Options
 
-<SdkOption name="enable_logs" type="bool" defaultValue="false" availableSince="1.2.0">
+<SdkOption name="enable_logs" type="bool" defaultValue="true" availableSince="1.2.0">
 
-If `true`, enables Sentry structured logs functionality, allowing you to use dedicated logging APIs through
-`SentrySDK.logger`, and Godot's built-in log messages are automatically captured and sent to Sentry Logs.
-Use `logger_enabled` and other `logger_*` options to control how Godot's error messages and log output
-(including `print()` statements) are captured and processed by Sentry.
+**Deprecated:** This compatibility option is a no-op: it always returns `true`, and assigning it has no effect. It will be removed in version 3.0.
 
-This option is turned off by default.
+[Sentry's structured logs](/product/logs/) are always enabled. Logs you record through `SentrySDK.logger` are sent to Sentry.
+
+To capture Godot logger events automatically, see [`godot_logger.log_mask`](#godot_logger.log_mask).
+
+</SdkOption>
+
+<SdkOption name="before_send_log" type="Callable" availableSince="1.2.0">
+
+If assigned, this callback will be called before sending a log message to Sentry.
+It can be used to modify the log message or prevent it from being sent.
+
+```gdscript {tabTitle:GDScript} {mdExpandTabs}
+func _before_send_log(log_entry: SentryLog) -> SentryLog:
+	# Filter junk.
+	if log_entry.body == "Junk message":
+		return null
+	# Remove sensitive information from log messages.
+	log_entry.body = log_entry.body.replace("Bruno", "REDACTED")
+	# Add custom attributes.
+	log_entry.set_attribute("current_scene", current_scene.name)
+	return log_entry
+```
+
+```csharp {tabTitle:C#}
+// The .NET hook applies to logs emitted from your C# code.
+options.SetBeforeSendLog(log =>
+{
+    // Filter junk.
+    if (log.Message == "Junk message")
+    {
+        return null;
+    }
+    // Add custom attributes.
+    log.SetAttribute("current_scene", currentScene.Name);
+    return log;
+});
+```
+
+</SdkOption>
+
+## Metrics Options
+
+<SdkOption name="enable_metrics" type="bool" defaultValue="true" availableSince="2.0.0">
+
+**Deprecated:** This compatibility option is a no-op: it always returns `true`, and assigning it has no effect. It will be removed in version 3.0.
+
+[Sentry's Application Metrics](/product/metrics/) are always enabled. Use `SentrySDK.metrics` to emit custom counters, gauges, and distributions. See <PlatformLink to="/metrics/">Set Up Metrics</PlatformLink> for usage details.
+
+</SdkOption>
+
+<SdkOption name="before_send_metric" type="Callable" availableSince="2.0.0">
+
+If assigned, this callback runs before a metric is sent to Sentry.
+It can be used to modify the metric or prevent it from being sent.
+It takes a `SentryMetric` as a parameter and returns either the same metric object, with or without modifications, or `null` to discard it.
+
+```gdscript {tabTitle:GDScript} {mdExpandTabs}
+func _before_send_metric(metric: SentryMetric) -> SentryMetric:
+	# Drop debug-only metrics in release builds.
+	if not OS.is_debug_build() and metric.name.begins_with("debug."):
+		return null
+	# Enrich with runtime context.
+	metric.set_attribute("current_scene", get_tree().current_scene.name)
+	return metric
+```
+
+```csharp {tabTitle:C#}
+options.SetBeforeSendMetric(metric =>
+{
+    // Drop debug-only metrics in release builds.
+    if (!OS.IsDebugBuild() && metric.Name.StartsWith("debug."))
+    {
+        return null;
+    }
+    // Enrich with runtime context.
+    metric.SetAttribute("current_scene", GetTree().CurrentScene.Name);
+    return metric;
+});
+```
 
 </SdkOption>
 
 ## Godot Logger Options
 
-<SdkOption name="logger_enabled" type="bool" defaultValue="true">
+These options are grouped under the `godot_logger` object on `SentryOptions` (for example, `options.godot_logger.event_mask` or `options.GodotLogger.EventMask` in C#).
+They control how the SDK captures Godot's errors and log messages as Sentry events, breadcrumbs, and logs.
 
-If `true`, the SDK will capture logged errors as events, logs and/or breadcrumbs, as defined by `logger_event_mask` and `logger_breadcrumb_mask` options. Crashes are always captured. See also `enable_logs` option.
+<Alert level="warning" title="Deprecated">
+
+The previous flat `logger_*` options (such as `logger_event_mask` and `logger_limits`) are deprecated since 2.0.0. See the <PlatformLink to="/migration/#changes-to-logging">migration guide</PlatformLink> for details.
+
+</Alert>
+
+<SdkOption name="godot_logger.enabled" type="bool" defaultValue="true">
+
+If `true`, the SDK captures Godot logger output as events, logs, and/or breadcrumbs. Which items are captured depends on [`godot_logger.event_mask`](#godot_logger.event_mask), [`godot_logger.log_mask`](#godot_logger.log_mask), and [`godot_logger.breadcrumb_mask`](#godot_logger.breadcrumb_mask). Crashes are always captured.
 
 This option is turned on by default.
 
 </SdkOption>
 
-<SdkOption name="logger_breadcrumb_mask" type="int" defaultValue="15 (All)">
+<SdkOption name="godot_logger.breadcrumb_mask" type="int" defaultValue="143 (All)">
 
-Specifies the types of errors captured as breadcrumbs. Accepts a single value or a bitwise combination of `GodotErrorMask` masks. The default value captures native errors, warnings, script and shader errors (`MASK_ERROR | MASK_WARNING | MASK_SCRIPT | MASK_SHADER`).
+Specifies the Godot logger events captured as breadcrumbs. Accepts a single value or a bitwise combination of `GodotLoggerEventMask` masks. The default value captures native errors, warnings, script and shader errors, and log messages (`MASK_ERROR | MASK_WARNING | MASK_SCRIPT | MASK_SHADER | MASK_MESSAGE`).
 
-`GodotErrorMask` values:
+`GodotLoggerEventMask` values:
 
-- `MASK_NONE`: No logger errors will be captured.
+- `MASK_NONE`: No logger events will be captured.
 - `MASK_ERROR`: Native errors will be captured. These are typically C++ errors, which may also originate from a script.
 - `MASK_WARNING`: Warnings will be captured.
 - `MASK_SCRIPT`: Script errors will be captured.
 - `MASK_SHADER`: Shader errors will be captured.
+- `MASK_MESSAGE`: Log messages, such as `print()` statements, will be captured.
 
 ```gdscript {tabTitle:GDScript} {mdExpandTabs}
 var mask = SentryOptions.MASK_ERROR | SentryOptions.MASK_SCRIPT
-options.logger_breadcrumb_mask = mask
+options.godot_logger.breadcrumb_mask = mask
 ```
 
 ```csharp {tabTitle:C#}
-var mask = SentryGodotOptions.GodotLoggerEventMask.Error
-    | SentryGodotOptions.GodotLoggerEventMask.Script;
-options.LoggerBreadcrumbMask = mask;
+var mask = GodotLoggerEventMask.Error | GodotLoggerEventMask.Script;
+options.GodotLogger.BreadcrumbMask = mask;
 ```
 
 </SdkOption>
 
-<SdkOption name="logger_event_mask" type="int" defaultValue="13 (All except warnings)">
+<SdkOption name="godot_logger.event_mask" type="int" defaultValue="13">
 
-Specifies the types of errors captured as events. Accepts a single value or a bitwise combination of `GodotErrorMask` masks. The default value captures native, script and shader errors (`MASK_ERROR | MASK_SCRIPT` | `MASK_SHADER`).
+Specifies the Godot logger events captured as Sentry events. Accepts a single value or a bitwise combination of `GodotLoggerEventMask` masks. The default value captures native, script and shader errors (`MASK_ERROR | MASK_SCRIPT | MASK_SHADER`).
+
+`MASK_MESSAGE` has no effect here. To capture log messages, set it in [`godot_logger.log_mask`](#godot_logger.log_mask) and/or [`godot_logger.breadcrumb_mask`](#godot_logger.breadcrumb_mask) instead.
 
 ```gdscript {tabTitle:GDScript} {mdExpandTabs}
 var mask = SentryOptions.MASK_ERROR | SentryOptions.MASK_SCRIPT
-options.logger_event_mask = mask
+options.godot_logger.event_mask = mask
 ```
 
 ```csharp {tabTitle:C#}
-var mask = SentryGodotOptions.GodotLoggerEventMask.Error
-    | SentryGodotOptions.GodotLoggerEventMask.Script;
-options.LoggerEventMask = mask;
+var mask = GodotLoggerEventMask.Error | GodotLoggerEventMask.Script;
+options.GodotLogger.EventMask = mask;
 ```
 
 </SdkOption>
 
-<SdkOption name="logger_include_source" type="bool" defaultValue="true">
+<SdkOption name="godot_logger.log_mask" type="int" defaultValue="0 (None)" availableSince="2.0.0">
+
+Specifies the Godot logger events captured as [Sentry Logs](/product/logs/). Accepts a single value or a bitwise combination of `GodotLoggerEventMask` masks. Empty by default, so no Godot logger events are captured as logs.
+
+```gdscript {tabTitle:GDScript} {mdExpandTabs}
+var mask = SentryOptions.MASK_ERROR | SentryOptions.MASK_WARNING | SentryOptions.MASK_SCRIPT | SentryOptions.MASK_SHADER | SentryOptions.MASK_MESSAGE
+options.godot_logger.log_mask = mask
+```
+
+```csharp {tabTitle:C#}
+var mask = GodotLoggerEventMask.Error | GodotLoggerEventMask.Warning | GodotLoggerEventMask.Script | GodotLoggerEventMask.Shader | GodotLoggerEventMask.Message;
+options.GodotLogger.LogMask = mask;
+```
+
+</SdkOption>
+
+<SdkOption name="godot_logger.include_source_context" type="bool" defaultValue="true">
 
 If `true`, the SDK will include the surrounding source code of logged errors, if available in the exported project.
 
@@ -242,7 +402,7 @@ This option is turned on by default.
 
 </SdkOption>
 
-<SdkOption name="logger_include_variables" type="bool" defaultValue="false">
+<SdkOption name="godot_logger.include_variables" type="bool" defaultValue="false">
 
 If `true`, the SDK will include local variables from stack traces when capturing script errors. This allows showing the values of variables at each frame in the call stack. Requires enabling **Debug -> Settings -> GDScript -> Always Track Local Variables** in the **Project Settings**.
 
@@ -258,13 +418,13 @@ Enabling this option may impact performance, especially for applications with fr
 
 <SdkOption name="logger_messages_as_breadcrumbs" type="bool" defaultValue="true">
 
-If `true`, the SDK will capture log messages (such as `print()` statements) as breadcrumbs along with events.
+**Deprecated since 2.0.0.** Set the `MASK_MESSAGE` flag in [`godot_logger.breadcrumb_mask`](#godot_logger.breadcrumb_mask) instead — it's included in the default mask.
 
-This option is turned on by default.
+If `true`, the SDK will capture log messages (such as `print()` statements) as breadcrumbs along with events.
 
 </SdkOption>
 
-<SdkOption name="logger_limits" type="object">
+<SdkOption name="godot_logger.limits" type="object">
 
 Defines throttling limits for the error logger. These limits are used to prevent the SDK from sending too many non-critical and repeating error events.
 
@@ -280,6 +440,36 @@ This option contains multiple properties that govern the behavior of throttling.
 
 </SdkOption>
 
+## Android Options
+
+These options configure Android-specific behavior, such as ANR (Application Not Responding) detection. Set them programmatically through `options.android`, or in the **Project Settings** under **Sentry > Android > Application Not Responding**.
+
+<SdkOption name="android.enable_anr_detection" type="bool" defaultValue="true">
+
+If `true`, detects and reports ANR (Application Not Responding) errors. The SDK monitors the main thread for unresponsiveness and reports an event when an ANR occurs.
+
+Android 11 and later use the system-based V2 implementation, while earlier versions use the watchdog-based V1 implementation. See `android.anr_timeout_interval_ms` and `android.attach_anr_thread_dump` for the options specific to each implementation. On Apple platforms, [`enable_app_hang_tracking`](#enable_app_hang_tracking) configures the equivalent app hang detection.
+
+To learn more, see the [Application Not Responding documentation](/platforms/android/configuration/app-not-respond/).
+
+</SdkOption>
+
+<SdkOption name="android.anr_timeout_interval_ms" type="int" defaultValue="5000">
+
+Specifies how long, in milliseconds, the main thread must stay blocked before the SDK reports an ANR.
+
+Applies only when `android.enable_anr_detection` is enabled, and only to the V1 implementation used on Android versions before 11. On Android 11 and later, the operating system determines when the application stops responding, so this value has no effect.
+
+</SdkOption>
+
+<SdkOption name="android.attach_anr_thread_dump" type="bool" defaultValue="false">
+
+If `true`, attaches the operating system's thread dump to the ANR event as a plain-text attachment, adding detail for investigating where the application became unresponsive.
+
+Applies only when `android.enable_anr_detection` is enabled, and only to the V2 implementation used on Android 11 and later.
+
+</SdkOption>
+
 ## Hooks
 
 These options can be used to hook the SDK in various ways to customize the reporting of events.
@@ -289,7 +479,7 @@ thread-safe APIs and only use Godot-specific APIs after you've checked that you'
 
 <SdkOption name="before_send" type="Callable">
 
-If assigned, this callback runs before an event is sent to Sentry. You can only set it [programmatically](#programmatic-configuration). It takes `SentryEvent` as a parameter and returns either the same event object, with or without modifications, or `null` to skip reporting the event. This can be used, for instance, for stripping PII before sending.
+If assigned, this callback runs before an error event is sent to Sentry. You can only set it [programmatically](#programmatic-configuration). It takes `SentryEvent` as a parameter and returns either the same event object, with or without modifications, or `null` to skip reporting the event. This can be used, for instance, for stripping PII before sending.
 
 ```gdscript {tabTitle:GDScript} {mdExpandTabs}
 func _before_send(event: SentryEvent) -> SentryEvent:
@@ -327,6 +517,24 @@ options.SetBeforeSend((sentryEvent, hint) =>
 });
 ```
 
+In C#, `options.SetBeforeSend` covers managed events only. To filter native events from C# (such as engine, GDScript, and GDExtension errors), use [`Native.SetBeforeSend`](#Native.SetBeforeSend).
+
+</SdkOption>
+
+<SdkOption name="before_send_transaction" type="Callable" availableSince="2.3.0">
+
+If assigned, this callback runs before a transaction is sent to Sentry. You can only set it [programmatically](#programmatic-configuration). It takes `SentryEvent` as a parameter and returns either the same transaction event, with or without modifications, or `null` to skip reporting the transaction and its child spans.
+
+See <PlatformLink to="/configuration/filtering/#filtering-transaction-events">Filtering Transaction Events</PlatformLink> for examples, supported fields, and the Web lifecycle restriction. In C#, use [`Native.SetBeforeSendTransaction`](#Native.SetBeforeSendTransaction) for native transactions or `options.SetBeforeSendTransaction` for managed transactions.
+
+</SdkOption>
+
+<SdkOption name="before_send_feedback" type="Callable" availableSince="2.2.0">
+
+Feedback events don't pass through [`before_send`](#before_send). Use this callback to inspect, modify, or drop user feedback before the SDK sends it to Sentry. You can only set it [programmatically](#programmatic-configuration).
+
+The submitted message, name, contact email, and associated event ID are included in the event's `feedback` context. See <PlatformLink to="/configuration/filtering/#filtering-user-feedback">Filtering User Feedback</PlatformLink> for callback behavior, setup, and platform support.
+
 </SdkOption>
 
 <SdkOption name="before_capture_screenshot" type="Callable">
@@ -348,36 +556,32 @@ This callback isn't available in the .NET layer yet, so it can only be set from 
 
 </SdkOption>
 
-<SdkOption name="before_send_log" type="Callable" availableSince="1.2.0">
+## Native Hooks in C#
 
-If assigned, this callback will be called before sending a log message to Sentry.
-It can be used to modify the log message or prevent it from being sent.
+In C#, hook methods set directly on `options` apply to managed SDK data, such as events and logs from your game's C# code and third-party .NET libraries. However, much of the Godot SDK's processing happens in the native C++ layer, including events and logs captured from the engine, GDScript, and GDExtension code. Native hook methods live under `options.Native`; use these callbacks to inspect, modify, or drop native data before it's sent to Sentry.
 
-```gdscript {tabTitle:GDScript} {mdExpandTabs}
-func _before_send_log(log_entry: SentryLog) -> SentryLog:
-	# Filter junk.
-	if log_entry.body == "Junk message":
-		return null
-	# Remove sensitive information from log messages.
-	log_entry.body = log_entry.body.replace("Bruno", "REDACTED")
-	# Add custom attributes.
-	log_entry.set_attribute("current_scene", current_scene.name)
-	return log_entry
-```
+<SdkOption name="Native.SetBeforeSend" type="Func<SentryNativeEvent, SentryNativeEvent?>">
 
-```csharp {tabTitle:C#}
-// The .NET hook applies to logs emitted from your C# code.
-options.SetBeforeSendLog(log =>
+Runs before a native event is sent. Return the event, with or without modifications, to send it, or `null` to drop it. This is most useful for engine, GDScript, and GDExtension errors. Native crash events aren't passed to this callback.
+
+```csharp
+options.Native.SetBeforeSend(nativeEvent =>
 {
-    // Filter junk.
-    if (log.Message == "Junk message")
+    // Drop a noisy error that you can't fix.
+    if (nativeEvent.GetExceptionValue(0)?.Contains("Noisy error") == true)
     {
         return null;
     }
-    // Add custom attributes.
-    log.SetAttribute("current_scene", currentScene.Name);
-    return log;
+    return nativeEvent;
 });
 ```
+
+</SdkOption>
+
+<SdkOption name="Native.SetBeforeSendTransaction" type="Func<SentryNativeEvent, SentryNativeEvent?>" availableSince="2.3.0">
+
+Runs before a native transaction is sent. Return the transaction, with or without modifications, to send it, or `null` to drop it. This applies to transactions created by the native layer, including GDScript and GDExtension code. The `SentryNativeEvent` object is valid only during the callback.
+
+Managed transactions use `options.SetBeforeSendTransaction` instead. See <PlatformLink to="/configuration/filtering/#filtering-transaction-events">Filtering Transaction Events</PlatformLink> for examples and supported fields.
 
 </SdkOption>

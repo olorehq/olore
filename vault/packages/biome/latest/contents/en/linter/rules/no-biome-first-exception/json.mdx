@@ -1,0 +1,112 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: false
+
+title: noBiomeFirstException (JSON)
+description: JSON (and super languages) documentation for noBiomeFirstException
+localized: false
+---
+import RuleLanguageLinks from "@/components/RuleLanguageLinks.astro";
+import RulePlaygroundLink from "@/components/RulePlaygroundLink.astro";
+
+<RuleLanguageLinks current="json" languages={[{"id":"json","label":"JSON (and super languages)","href":"/linter/rules/no-biome-first-exception/json/"}]} />
+
+## Summary
+- Rule available since: `v2.2.0`
+- Diagnostic Category: [`lint/suspicious/noBiomeFirstException`](/reference/diagnostics#diagnostic-category)
+- This rule is **recommended**, meaning it is enabled by default.
+- This rule has a [**safe**](/linter/#safe-fixes) fix.
+- The default severity of this rule is [**error**](/reference/diagnostics#error).
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noBiomeFirstException": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Disallow ineffective ordering in `files.includes` patterns.
+
+A pattern beginning with `!` excludes matching paths. If an exclusion is first, no earlier
+pattern has included files for it to remove, so Biome matches no files. Start with an
+inclusion pattern, then add exclusions.
+
+See the [file exclusion guide](https://biomejs.dev/guides/configure-biome/#exclude-files-via-configuration)
+for more examples.
+
+## Examples
+
+### Invalid
+
+```json
+{
+    "files": {
+        "includes": ["!dist"]
+    }
+}
+```
+
+### Valid
+
+```json
+{
+    "files": {
+        "includes": ["src/**", "!dist"]
+    }
+}
+```
+
+## Extended configurations
+
+The catch-all pattern `**` includes every path. When an extended configuration already
+starts with `**`, repeating that pattern at the start of the local configuration is
+redundant. Keep the inherited catch-all and add only the local exclusions.
+
+### Invalid
+
+```jsonc
+// biome.json
+{
+    "extends": ["./base.json"],
+    "files": {
+        "includes": ["**", "!**/test"]
+    }
+}
+```
+
+```jsonc
+// base.json
+{
+    "files": {
+        "includes": ["**", "!**/dist"]
+    }
+}
+```
+
+### Valid
+
+```jsonc
+// biome.json
+{
+    "extends": ["./base.json"],
+    "files": {
+        "includes": ["!**/test"]
+    }
+}
+```
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code (Edit this Page)](https://github.com/biomejs/biome/blob/main/crates/biome_json_analyze/src/lint/suspicious/no_biome_first_exception.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_json_analyze/tests/specs/suspicious/noBiomeFirstException)
+

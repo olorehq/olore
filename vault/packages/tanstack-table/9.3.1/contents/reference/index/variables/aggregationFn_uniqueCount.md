@@ -1,0 +1,12 @@
+---
+id: aggregationFn_uniqueCount
+title: aggregationFn_uniqueCount
+---
+
+```ts
+const aggregationFn_uniqueCount: AggregationFnDef<any, any, unknown, number>;
+```
+
+Defined in: [features/row-aggregation/aggregationFns.ts:321](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/row-aggregation/aggregationFns.ts#L321)
+
+Counts distinct row values using JavaScript `Set` semantics.

@@ -20,7 +20,6 @@ Agent Skills is a lightweight, open format for extending AI agent capabilities w
 | `contents/skill-creation/optimizing-descriptions.mdx` | Optimizing Descriptions | How to write descriptions that trigger reliably on the right prompts |
 | `contents/skill-creation/using-scripts.mdx` | Using Scripts | Bundling and running shell commands and scripts inside a skill |
 | `contents/client-implementation/adding-skills-support.mdx` | Adding Skills Support | How to implement Agent Skills support in an agent or dev tool |
-| `contents/CLAUDE.md` | CLAUDE.md | Claude Code guidance for the agentskills repo |
 | `contents/README.md` | README | Documentation site setup and publishing instructions |
 
 ## When to use

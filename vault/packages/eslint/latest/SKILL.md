@@ -1,42 +1,40 @@
 ---
 name: olore-eslint-latest
-description: Local ESLint documentation reference (latest). ESLint documentation for JavaScript/TypeScript linting, rules, flat config, plugins, custom rules, and code quality enforcement.
+description: Local ESLint documentation reference (latest). ESLint documentation. Use for JavaScript/TypeScript linting, rules, flat config, plugins, custom rules, and code quality enforcement.
 ---
 
 # ESLint Documentation
 
-ESLint is a tool for identifying and fixing problems in JavaScript and TypeScript code. This package contains the complete ESLint documentation including all 312 built-in rules, flat config guides, plugin authoring, and the Node.js API.
+ESLint is a static analysis tool for JavaScript and TypeScript. Use this skill for configuring ESLint, looking up built-in rules, writing custom rules and plugins, the CLI, and the Node.js API.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
 | Getting started | `contents/use/getting-started.md` |
-| CLI reference | `contents/use/command-line-interface.md` |
 | Flat config (eslint.config.js) | `contents/use/configure/configuration-files.md` |
-| Configure rules | `contents/use/configure/rules.md` |
+| Migrate eslintrc to flat config | `contents/use/configure/migration-guide.md` |
+| Migrate to v10 | `contents/use/migrate-to-10.0.0.md` |
+| Rule reference | `contents/rules/{rule-name}.md` |
+| CLI reference | `contents/use/command-line-interface.md` |
 | Custom rules | `contents/extend/custom-rules.md` |
 | Plugins | `contents/extend/plugins.md` |
 | Node.js API | `contents/integrate/nodejs-api.md` |
-| Migrate to v10 | `contents/use/migrate-to-10.0.0.md` |
 | Troubleshooting | `contents/use/troubleshooting/index.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- ESLint rules (configuring, disabling, understanding what a rule does)
-- Flat config format (`eslint.config.js`, plugins, parsers, language options)
-- Writing custom ESLint rules or plugins
-- CLI flags and command-line usage
-- Migrating from eslintrc to flat config or upgrading ESLint versions
-- Node.js API for programmatic ESLint usage
-- TypeScript linting with ESLint
+- Configuring ESLint (flat config, ignores, language options, plugins, parsers)
+- What a specific built-in rule does, its options, or examples
+- Writing custom rules, plugins, processors, parsers, or formatters
+- ESLint CLI flags, Node.js API, or editor/CI integrations
+- Migrating between ESLint versions or from eslintrc to flat config
 
 ## How to find information
 
 1. **First**, read `TOC.md` for complete file listing organized by directory
-2. For a specific rule, read `contents/rules/{rule-name}.md` directly
-3. For configuration topics, check `contents/use/configure/`
-4. For plugin/custom rule authoring, check `contents/extend/`
+2. Identify relevant section based on user's question
+3. Read specific files for details
 
 **TOC.md contains all files organized by directory - always check it first.**

@@ -26,6 +26,11 @@ Waits for this response to finish, returns always `null`.
 * langs: js
 - returns: <[null]|[Error]>
 
+## async method: Response.finished
+* since: v1.8
+* langs: python
+- returns: <[void]>
+
 ## method: Response.frame
 * since: v1.8
 - returns: <[Frame]>
@@ -48,14 +53,14 @@ You can use [`method: Response.allHeaders`] for complete list of headers that in
 
 ## async method: Response.headersArray
 * since: v1.15
-- returns: <[Array]<[Object]>>
-  * alias: HttpHeader
+- returns: "HttpHeader" <[Array]<[Object]>>
   * alias-csharp: Header
   - `name` <[string]> Name of the header.
   - `value` <[string]> Value of the header.
 
-An array with all the request HTTP headers associated with this response. Unlike [`method: Response.allHeaders`], header names are NOT lower-cased.
+An array with all the response HTTP headers associated with this response. Unlike [`method: Response.allHeaders`], header names are NOT lower-cased.
 Headers with multiple entries, such as `Set-Cookie`, appear in the array multiple times.
+Some browser network stacks combine multiple field values before reporting them, so separate entries are not always available.
 
 ## async method: Response.headerValue
 * since: v1.15

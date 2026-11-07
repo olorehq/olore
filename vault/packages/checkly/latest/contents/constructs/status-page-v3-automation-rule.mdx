@@ -1,0 +1,121 @@
+---
+title: 'StatusPageV3AutomationRule Construct'
+description: 'Learn how to automate status page incidents with the Checkly CLI.'
+sidebarTitle: 'Status page automation rule'
+canonical: 'https://www.checklyhq.com/docs/constructs/status-page-v3-automation-rule/'
+---
+
+An automation rule opens and resolves incidents on a [`StatusPageV3`](/constructs/status-page-v3) page automatically. When a check whose tags overlap with the rule's tags fails, Checkly opens one incident impacting the listed components, and resolves it when the check recovers.
+
+```ts
+import {
+  StatusPageV3,
+  StatusPageV3AutomationRule,
+  StatusPageV3Component,
+} from "checkly/constructs"
+
+const statusPage = new StatusPageV3("company-status", {
+  name: "Company Status",
+  url: "company-status",
+})
+
+const api = new StatusPageV3Component("api-component", {
+  statusPage,
+  name: "API",
+  displayOrder: 0,
+})
+
+new StatusPageV3AutomationRule("api-outage-rule", {
+  statusPage,
+  name: "API outage",
+  tags: ["api", "production"],
+  firstUpdate: "We are investigating elevated error rates on the API.",
+  lastUpdate: "The API has recovered.",
+  components: [{ component: api, targetImpact: "PARTIAL_OUTAGE" }],
+})
+```
+
+## Configuration
+
+### `StatusPageV3AutomationRule` Options
+
+<ResponseField name="statusPage" type="StatusPageV3 | StatusPageV3Ref" required>
+The page this rule belongs to.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+Name of the rule.
+</ResponseField>
+
+<ResponseField name="tags" type="string[]" required>
+A failing check matches this rule when it, or its group, carries any of these tags. At least one tag is required.
+
+**Usage:**
+
+{/* typecheck-wrap: StatusPageV3AutomationRule */}
+```ts highlight={4}
+new StatusPageV3AutomationRule("api-outage-rule", {
+  statusPage,
+  name: "API outage",
+  tags: ["api", "production"],
+  /* More options... */
+})
+```
+</ResponseField>
+
+<ResponseField name="firstUpdate" type="string" required>
+Body of the status update that opens the incident.
+</ResponseField>
+
+<ResponseField name="lastUpdate" type="string" required>
+Body of the status update that resolves the incident.
+</ResponseField>
+
+<ResponseField name="components" type="array" required>
+The components an automated incident impacts, with the impact each one gets. The components must belong to the rule's status page.
+
+**Parameters:**
+
+<Expandable title="components entry">
+<ResponseField name="component" type="StatusPageV3Component | StatusPageV3ComponentRef" required>
+The component the automated incident impacts.
+</ResponseField>
+
+<ResponseField name="targetImpact" type="string" required>
+The impact set on the component while the incident is open: `'UNDER_MAINTENANCE'`, `'DEGRADED_PERFORMANCE'`, `'PARTIAL_OUTAGE'`, or `'MAJOR_OUTAGE'`.
+</ResponseField>
+</Expandable>
+
+**Usage:**
+
+{/* typecheck-wrap: StatusPageV3AutomationRule */}
+```ts highlight={5-8}
+new StatusPageV3AutomationRule("api-outage-rule", {
+  statusPage,
+  name: "API outage",
+  tags: ["api"],
+  components: [
+    { component: api, targetImpact: "PARTIAL_OUTAGE" },
+    { component: webApp, targetImpact: "DEGRADED_PERFORMANCE" },
+  ],
+  firstUpdate: "We are investigating elevated error rates.",
+  lastUpdate: "The issue is resolved.",
+})
+```
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean" default="true">
+A disabled rule never opens incidents.
+</ResponseField>
+
+<ResponseField name="notifySubscribers" type="boolean" default="true">
+Whether subscribers are notified of the automated updates.
+</ResponseField>
+
+<ResponseField name="coolDownMinutes" type="number" default="5">
+Minimum minutes after an automated incident before this rule may open the next one. Must be a non-negative integer. `0` disables the cool down.
+</ResponseField>
+
+<Info>
+Rules match on tags, not on individual checks. To automate incidents from a specific check, give that check a tag only the rule uses.
+</Info>

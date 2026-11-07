@@ -1,20 +1,12 @@
 ---
 title: useFormContext
+seoTitle: "useFormContext: Access Form Methods"
 description: Access useForm methods anywhere in the component tree.
 metaDescription: Access all useForm methods deep in the component tree without prop drilling, using React Hook Form's built-in context API.
 sidebar: apiLinks
 ---
 
-<SelectNav
-  options={[
-    {
-      label: "FormProvider",
-      value: "/docs/formprovider",
-    },
-  ]}
-/>
-
-## \</> `useFormContext:` <TypeText>Function</TypeText>
+## \</> `useFormContext:` <TypeText>() => [UseFormReturn](/ts#UseFormReturn)</TypeText>
 
 This custom hook allows you to access the form context. `useFormContext` is intended to be used in deeply nested structures, where it would become inconvenient to pass the context as a prop.
 
@@ -22,7 +14,7 @@ This custom hook allows you to access the form context. `useFormContext` is inte
 
 ---
 
-This hook will return all the useForm return methods and props.
+This hook returns all the `useForm` methods and props.
 
 ```javascript
 const methods = useForm()
@@ -36,17 +28,33 @@ const methods = useFormContext() // retrieve those props
   You need to wrap your form with the [`FormProvider`](/docs/formprovider)
   component for `useFormContext` to work properly.
 
+Outside a `FormProvider`, `useFormContext()` returns `null` even though its return type isn't nullable, so destructuring it throws `Cannot destructure property 'register' of ... as it is null`.
+
+To avoid repeating your form type, wrap it in a typed hook. The generic is only a type assertion; it isn't checked against the form the provider actually holds.
+
+```tsx
+export const useProfileForm = () => useFormContext<ProfileFormValues>()
+```
+
+<Since version="7.44.0" /> Supports a third generic, `useFormContext<TFieldValues, TContext, TTransformedValues>()`, to type the resolver's transformed output separately from the raw form values and context type.
+
 If you need to subscribe to form state values like `errors`, `isDirty`, or
 `dirtyFields` inside a `FormProvider` tree, use
 [`useFormState`](/docs/useformstate) instead of destructuring `formState`
-from `useFormContext()`. `formState` is wrapped with a Proxy, so you should
-read the specific state you want to subscribe to before render.
+from `useFormContext()`. `formState` is wrapped in a Proxy that only tracks
+the fields you actually read during render — destructuring `formState` and
+reading a property later (e.g. in a callback), or reading it conditionally,
+won't register a subscription, so the component won't re-render when that
+value changes.
 
 </Admonition>
 
-**Example:**
+### Example
+
+---
 
 ```javascript copy codesandbox="https://codesandbox.io/s/react-hook-form-v7-form-context-ytudi"
+import { useEffect } from "react"
 import { useForm, FormProvider, useFormContext } from "react-hook-form"
 
 export default function App() {
@@ -58,11 +66,10 @@ export default function App() {
     reset({
       name: "data",
     })
-  }, [reset]) // ❌ never put `methods` as the deps
+  }, [reset]) // ❌ never put `methods` as a dependency
 
   return (
     <FormProvider {...methods}>
-      // pass all methods into the context
       <form onSubmit={methods.handleSubmit(onSubmit)}>
         <NestedInput />
         <input {...register("name")} />
@@ -77,3 +84,90 @@ function NestedInput() {
   return <input {...register("test")} />
 }
 ```
+
+### Tips
+
+---
+
+- Wrap components that use `useFormContext` in a small test helper, so you can render them alone in unit tests:
+
+  ```tsx
+  import { render } from "@testing-library/react"
+
+  function renderWithForm(ui: React.ReactElement, defaultValues = {}) {
+    function Wrapper({ children }: { children: React.ReactNode }) {
+      const methods = useForm({ defaultValues })
+      return <FormProvider {...methods}>{children}</FormProvider>
+    }
+    return render(ui, { wrapper: Wrapper })
+  }
+  ```
+
+- `useFormContext` couples a component to one form shape. For an input that you reuse in many forms, take `name` (and optionally `control`) as props and use [`useController`](/docs/usecontroller), or look at [`useLens`](/docs/uselens).
+- Use the context only for the methods you need. For example, `const { register } = useFormContext()` in a leaf input. Read state with [`useFormState`](/docs/useformstate) and values with [`useWatch`](/docs/usewatch).
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### `Cannot destructure property 'register' of 'useFormContext(...)' as it is null`
+
+<Why>
+
+`useFormContext()` returns `null` outside a [`FormProvider`](/docs/formprovider). The exact wording depends on your bundler, but the message always ends in `as it is null`.
+
+</Why>
+
+<Fix>
+
+Render the component inside a `FormProvider` that receives the whole `useForm` return value:
+
+```javascript
+const methods = useForm()
+
+<FormProvider {...methods}>
+  <NestedInput />
+</FormProvider>
+```
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### `handleSubmit is not a function` (or another method is `undefined`)
+
+<Why>
+
+Only some methods were passed to `FormProvider`, for example `<FormProvider register={register}>`. `useFormContext()` returns exactly what the provider received, so the other methods are missing.
+
+</Why>
+
+<Fix>
+
+Spread the whole `useForm` return value: `<FormProvider {...methods}>`.
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### A field inside a nested `FormProvider` is missing from the submitted data
+
+<Why>
+
+`useFormContext` uses the nearest `FormProvider`. When one provider is rendered inside another, fields under the inner one register with the inner form, and the outer form's `handleSubmit` never sees them.
+
+</Why>
+
+<Fix>
+
+Use one `FormProvider` per form. To show two forms on one page, render the providers next to each other, not one inside the other.
+
+</Fix>
+
+</Troubleshoot>

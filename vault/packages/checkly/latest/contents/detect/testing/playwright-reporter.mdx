@@ -2,6 +2,7 @@
 title: 'Playwright Reporter'
 description: 'Learn how to use the Checkly Playwright Reporter.'
 sidebarTitle: 'Using the Playwright Reporter'
+canonical: 'https://www.checklyhq.com/docs/detect/testing/playwright-reporter/'
 ---
 
 <Frame>
@@ -15,9 +16,9 @@ Integrate Playwright test results with Checkly monitoring. Upload test results, 
 <Accordion title="Prerequisites">
 Before using the Playwright reporter, ensure you have:
 
-- Node.js >= 18.0.0
+- Node.js ^20.19.0 or >= 22.12.0
 - Playwright >= 1.40.0
-- A Checkly account ([sign up](https://www.checklyhq.com/signup))
+- A Checkly account ([sign up](https://app.checklyhq.com/signup))
 </Accordion>
 
 ## Install the Playwright Reporter
@@ -145,22 +146,27 @@ export default defineConfig({
 | `dryRun` | `boolean` | `false` | Skip upload, create local files only |
 | `verbose` | `boolean` | `true` | Forward worker `stdout`/`stderr` to the terminal |
 | `debug` | `boolean` | `false` | Enable debug logging |
+| `apiKey` | `string` | `CHECKLY_API_KEY` | Checkly API key |
+| `accountId` | `string` | `CHECKLY_ACCOUNT_ID` | Checkly account ID |
+| `testCommand` | `string` | Detected from the command line | Test command recorded with the session. Can also be set with `CHECKLY_TEST_COMMAND` |
+| `webVitals` | `boolean` | `false` | Collect Web Vitals (LCP, CLS, FCP, TTFB, TBT) for pages your tests visit |
 | `showProgress` | `boolean` | `true` | Display real-time test progress |
 | `printSteps` | `boolean` | `false` | Display individual test steps |
 | `showSummaryTable` | `boolean` | `true` | Display per-project results table |
-| `scrubbing` | `boolean \| object` | See [Secret Scrubbing](#secret-scrubbing) | Control sensitive data removal from reports and traces |
+| `scrubbing` | `false \| object` | See [Secret Scrubbing](#secret-scrubbing) | Control sensitive data removal from reports and traces |
 
 **Output files** (written to `outputDir`):
 - `checkly-report.json` - JSON test report
 - `checkly-report.zip` - ZIP archive with report and assets
 
-### Environment Variables
+### Environment variables
 
 | Variable | Description |
 |----------|-------------|
 | `CHECKLY_API_KEY` | Your Checkly API key |
 | `CHECKLY_ACCOUNT_ID` | Your Checkly account ID |
-| `CHECKLY_REPORTER_VERBOSE` | Set to `true` for detailed debug output |
+| `CHECKLY_REPORTER_DEBUG` | Set to `true` for detailed debug output |
+| `NODE_ENV` | Sets the **environment** field for uploaded test sessions. Defaults to `test` when unset |
 
 <Warning>
 **Security Note**: Always use environment variables for credentials. Never commit API keys to version control.
@@ -262,7 +268,7 @@ If your Checkly reports don't include traces or videos, ensure that your `playwr
 **Using UI mode?** The reporter uploads results from UI mode runs, too. Enable [`dryRun`](#dry-run-mode) to skip uploads during local development.
 </Tip>
 
-## Understanding Test Sessions
+## Understanding test sessions
 
 The reporter creates **suite-level test sessions**, not individual test file results.
 
@@ -303,7 +309,7 @@ Automatically detects git information (branch, commit, author) from:
 - Jenkins, Azure DevOps, Bitbucket Pipelines
 - Local git repository (when running locally)
 
-### Test Step Code Snippets
+### Test Step Source Code
 
 Includes source code context in test step reports. View the exact line of code that executed with surrounding context for easier debugging.
 
@@ -466,7 +472,7 @@ export CHECKLY_ACCOUNT_ID=b2f...
 
 ### Upload failures
 
-- Enable verbose logging with `verbose: true` or `CHECKLY_REPORTER_VERBOSE=true` for detailed error messages
+- Enable debug logging with `debug: true` or `CHECKLY_REPORTER_DEBUG=true` for detailed error messages
 - Verify your API key exists in [Checkly API Keys settings](https://app.checklyhq.com/accounts/settings/user/api-keys)
 
 ## Changelog

@@ -1,0 +1,88 @@
+---
+title: has_any_ipv4
+description: 'This page explains how to use the has_any_ipv4 function in APL.'
+---
+
+The `has_any_ipv4` function in Axiom Processing Language (APL) allows you to check whether a specified column contains any IPv4 addresses from a given set of IPv4 addresses or CIDR ranges. This function is useful when analyzing logs, tracing OpenTelemetry data, or investigating security events to quickly filter records based on a predefined list of IP addresses or subnets.
+
+## Usage
+
+### Syntax
+
+```kusto
+has_any_ipv4(column, ip_list)
+```
+
+### Parameters
+
+| Parameter | Description                                  | Type           |
+|-----------|----------------------------------------------|----------------|
+| `column`  | The column to evaluate.                     | `string`       |
+| `ip_list` | A list of IPv4 addresses or CIDR ranges.    | `dynamic`      |
+
+### Returns
+
+A boolean value indicating whether the specified column contains any of the given IPv4 addresses or matches any of the CIDR ranges in `ip_list`.
+
+## Use case example
+
+When analyzing logs, you can use `has_any_ipv4` to filter requests from specific IPv4 addresses or subnets.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend has_ip = has_any_ipv4('192.168.1.1', dynamic(['192.168.1.1', '192.168.0.0/16']))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20has_ip%20%3D%20has_any_ipv4('192.168.1.1'%2C%20dynamic(%5B'192.168.1.1'%2C%20'192.168.0.0%2F16'%5D))%22%7D)
+
+**Output**
+
+| _time               | has_ip       | status |
+|---------------------|----------------|---------------------|
+| 2024-11-14T10:00:00 | true    | 200    |
+
+This query identifies log entries from specific IPs or subnets.
+
+## List of related functions
+
+- [has_ipv4_prefix](/apl/scalar-functions/ip-functions/has-ipv4-prefix): Checks if an IPv4 address matches a single prefix.
+- [has_ipv4](/apl/scalar-functions/ip-functions/has-ipv4): Checks if a single IP address is present in a string column.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you typically use the `cidrmatch` or similar functions for working with IP ranges. In APL, `has_any_ipv4` offers similar functionality by matching any IPv4 address in a column against multiple values or ranges.
+
+<CodeGroup>
+```sql Splunk example
+| where cidrmatch("192.168.1.0/24", ip_field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where has_any_ipv4('ip_field', dynamic(['192.168.1.0/24']))
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+SQL doesn’t natively support CIDR matching or IP address comparison out of the box. In APL, the `has_any_ipv4` function is designed to simplify these checks with concise syntax.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM logs WHERE ip_field = '192.168.1.1' OR ip_field = '192.168.1.2';
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where has_any_ipv4('ip_field', dynamic(['192.168.1.1', '192.168.1.2']))
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

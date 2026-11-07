@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-lambda-pagesrouterwebhooks.png
+image: https://remotion.media/docs/generated/articles-docs-lambda-pagesrouterwebhooks.png
 id: pagesrouterwebhook
 title: pagesRouterWebhook()
 slug: /lambda/pagesrouterwebhook
@@ -51,14 +51,20 @@ const handler = pagesRouterWebhook({
   },
   onSuccess: () => console.log('Rendering Completed Successfully'),
   onError: () => console.log('Something went wrong while rendering'),
-  onTimeout: () => console.log('Timeout occured while rendering'),
+  onTimeout: () => console.log('Timeout occurred while rendering'),
 });
 export default handler;
 ```
 
 See [Webhooks](/docs/lambda/webhooks) for an Express example.
 
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions="Node.js runtime" clientSideRendering="" serverSideRendering="" player="" studio="" hideBrowsers />
+
+For serverless functions, use the [light client](/docs/lambda/light-client).
+
 ## See also
 
 - [Webhooks](/docs/lambda/webhooks)
-- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda/src/api/pages-router-webhook.ts)
+- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda-client/src/pages-router-webhook.ts)

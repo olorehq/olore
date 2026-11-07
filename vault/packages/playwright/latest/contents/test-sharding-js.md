@@ -44,6 +44,7 @@ Without the fullyParallel setting, Playwright Test defaults to file-level granul
 - **With** `fullyParallel: true`: Tests are split at the individual test level, leading to more balanced shard execution.
 - **Without** `fullyParallel`: Tests are split at the file level, so to balance the shards, it's important to keep your test files small and evenly sized.
 - To ensure the most effective use of sharding, especially in CI environments, it is recommended to use `fullyParallel: true` when aiming for balanced distribution across shards. Otherwise, you may need to manually organize your test files to avoid imbalances.
+- Tests that are statically skipped, for example with [`method: Test.skip`] or [`method: Test.fixme`], are not counted when balancing shards, because they do not run.
 
 ## Merging reports from multiple shards
 
@@ -93,7 +94,6 @@ on:
     branches: [ main, master ]
 jobs:
   playwright-tests:
-    timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -101,8 +101,8 @@ jobs:
         shardIndex: [1, 2, 3, 4]
         shardTotal: [4]
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
+    - uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
       with:
         node-version: lts/*
     - name: Install dependencies
@@ -115,7 +115,7 @@ jobs:
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: blob-report-${{ matrix.shardIndex }}
         path: blob-report
@@ -134,8 +134,8 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
+    - uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
       with:
         node-version: lts/*
     - name: Install dependencies
@@ -152,7 +152,7 @@ jobs:
       run: npx playwright merge-reports --reporter html ./all-blob-reports
 
     - name: Upload HTML report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: html-report--attempt-${{ github.run_attempt }}
         path: playwright-report

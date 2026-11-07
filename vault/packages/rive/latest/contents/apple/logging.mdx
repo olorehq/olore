@@ -3,14 +3,12 @@ title: 'Logging'
 description: ''
 ---
 
-import { Apple } from '/snippets/constants.mdx'
-
 import Overview from '/snippets/runtimes/logging/overview.mdx'
 
 <Overview />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
         The new runtime supports logging via the `RiveLog` type. To enable logging, set the `RiveLog.logger` property to a `RiveLog.Logger` implementation. The new runtime defaults to no logging, which can be set at any time by setting `RiveLog.logger` to `RiveLog.none`. The new runtime ships with a default implementation that logs to the console, which can be set by using the `RiveLog.system(levels:)` helper function. When using the system logger, any logs that are not emitted at the levels specified will be suppressed.
 
         ```swift
@@ -61,7 +59,7 @@ import Overview from '/snippets/runtimes/logging/overview.mdx'
         RiveLog.logger = MyLogger()
         ```
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```
         RiveLogger.isEnabled = true // Enable logging; false by default
         RiveLogger.levels = [.debug] // Filter logs; all by default

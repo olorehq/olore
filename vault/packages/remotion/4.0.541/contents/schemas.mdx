@@ -1,0 +1,130 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-schemas.png
+id: schemas
+title: Defining a schema for your props
+sidebar_label: Defining a schema
+crumb: 'How To'
+---
+
+Use [Zod](https://zod.dev/) to validate the props your component accepts and to customize their controls in the Remotion Studio.
+
+You do not need to define a schema to [edit props visually](/docs/visual-editing). Since <AvailableFrom v="4.0.516" inline />, Remotion [infers basic controls from `defaultProps`](/docs/default-props-inference). See [When to define a schema](/docs/default-props-inference#when-to-define-a-schema) for cases where an explicit schema is useful.
+
+## AI agent prompt
+
+Use this prompt to make an existing composition parameterizable:
+
+```txt
+Make this Remotion composition parameterizable in Remotion Studio.
+
+Find the component that is passed to <Composition> and the file where the composition is registered.
+Define a TypeScript type that describes the props the component accepts.
+Add defaultProps to the <Composition> that match the type and preserve the current rendered output.
+Keep defaultProps as an inline object literal so Remotion can infer visual controls and save changes back to the file.
+
+If zod is missing, install it with npx remotion add zod.
+Only add a Zod schema when the props need validation, constraints, choices, descriptions or specialized controls.
+Keep the existing composition behavior unchanged except for making the props editable in Remotion Studio.
+```
+
+## Prerequisites
+
+To define a schema, install `zod`:
+
+```bash
+npx remotion add zod
+```
+
+Install [`@remotion/zod-types`](/docs/zod-types) as well if you want to use Remotion-specific types such as [`zColor()`](/docs/zod-types/z-color), [`zTextarea()`](/docs/zod-types/z-textarea) or [`zMatrix()`](/docs/zod-types/z-matrix).
+
+## Defining a schema
+
+To define a schema for your props, use [`z.object()`](https://zod.dev/?id=objects):
+
+```tsx twoslash
+import {z} from 'zod';
+
+export const myCompSchema = z.object({
+  propOne: z.string(),
+  propTwo: z.string(),
+});
+```
+
+Using `z.infer()`, you can turn the schema into a type:
+
+```tsx twoslash
+import {z} from 'zod';
+
+export const myCompSchema = z.object({
+  propOne: z.string(),
+  propTwo: z.string(),
+});
+// ---cut---
+export const MyComp: React.FC<z.infer<typeof myCompSchema>> = ({propOne, propTwo}) => {
+  return (
+    <div>
+      props: {propOne}, {propTwo}
+    </div>
+  );
+};
+```
+
+## Adding a schema to your composition
+
+Use the [`schema`](/docs/composition#schema) prop to attach the schema to your [`<Composition>`](/docs/composition). Remotion will require you to specify matching [`defaultProps`](/docs/composition#schema).
+
+```tsx twoslash title="src/Root.tsx" {3,14-18}
+// @filename: MyComponent.tsx
+import React from 'react';
+import {z} from 'zod';
+
+export const myCompSchema = z.object({
+  propOne: z.string(),
+  propTwo: z.string(),
+});
+
+export const MyComponent: React.FC<z.infer<typeof myCompSchema>> = ({propOne, propTwo}) => {
+  return (
+    <div>
+      <h1>{propOne}</h1>
+      <h2>{propTwo}</h2>
+    </div>
+  );
+};
+
+// @filename: Root.tsx
+// ---cut---
+import React from 'react';
+import {Composition} from 'remotion';
+import {MyComponent, myCompSchema} from './MyComponent';
+
+export const RemotionRoot: React.FC = () => {
+  return (
+    <Composition
+      id="my-video"
+      component={MyComponent}
+      durationInFrames={100}
+      fps={30}
+      width={1920}
+      height={1080}
+      schema={myCompSchema}
+      defaultProps={{
+        propOne: 'Hello World',
+        propTwo: 'Welcome to Remotion',
+      }}
+    />
+  );
+};
+```
+
+## Editing props visually
+
+The schema determines which controls appear when you [edit props visually in the Remotion Studio](/docs/visual-editing). It overrides the controls that Remotion would otherwise [infer from `defaultProps`](/docs/default-props-inference).
+
+## Supported types
+
+All schemas that are supported by [Zod](https://zod.dev/) are supported by Remotion.
+
+Remotion requires that the top-level type is a `z.object()`, because the collection of props of a React component is always an object.
+
+In addition to the built in types, the [`@remotion/zod-types` package](/docs/zod-types) also provides types like [`zColor()`](/docs/zod-types/z-color), [`zTextarea()`](/docs/zod-types/z-textarea) and [`zMatrix()`](/docs/zod-types/z-matrix).

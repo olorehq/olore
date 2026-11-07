@@ -86,7 +86,7 @@ Read more about Clerk session tokens and how they work in [the guide on how Cler
   </Tab>
 
   <Tab>
-    > [!IMPORTANT]
+    > [!DEPRECATED]
     > Version 1 was deprecated on April 14, 2025. To upgrade to version 2, go to the [**Updates**](https://dashboard.clerk.com/~/updates) page in the Clerk Dashboard.
 
     Every generated token has default claims that cannot be overridden by templates. Clerk's default claims include:
@@ -124,6 +124,17 @@ Read more about Clerk session tokens and how they work in [the guide on how Cler
 If you would like to add custom claims to your session token, you can [customize it](/docs/guides/sessions/customize-session-tokens).
 
 You can also create custom tokens using a [JWT template](/docs/guides/sessions/jwt-templates).
+
+## Header parameters
+
+Alongside the standard `alg`, `typ`, and `kid` parameters, Clerk sets the following in the JWT's protected header:
+
+| Parameter | Description |
+| - | - |
+| `oiat` | Intended for internal use by Clerk only. |
+
+> [!NOTE]
+> Clerk may add parameters to the JWT header over time, so it's worth checking that your JWT parser is set up to ignore unknown headers rather than validating against a fixed list.
 
 ## Size limitations
 
@@ -217,7 +228,7 @@ Then, when you need to access the other metadata fields, you can fetch them usin
   </Tab>
 
   <Tab>
-    ```tsx {{ filename: 'src/api/example.ts' }}
+    ```tsx {{ filename: 'src/pages/api/example.ts' }}
     import { clerkClient } from '@clerk/astro/server'
 
     export async function GET(context) {
@@ -306,12 +317,11 @@ Then, when you need to access the other metadata fields, you can fetch them usin
   </Tab>
 
   <Tab>
-    ```tsx {{ filename: 'app/routes/api/example.tsx' }}
-    import { json } from '@tanstack/react-start'
+    ```tsx {{ filename: 'src/routes/api/example.tsx' }}
     import { createFileRoute } from '@tanstack/react-router'
     import { auth, clerkClient } from '@clerk/tanstack-react-start/server'
 
-    export const ServerRoute = createFileRoute('/api/example')({
+    export const Route = createFileRoute('/api/example')({
       server: {
         handlers: {
           GET: async () => {
@@ -333,7 +343,7 @@ Then, when you need to access the other metadata fields, you can fetch them usin
             const user = await clerkClient().users.getUser(userId)
 
             // Return the Backend User object
-            return json({ user })
+            return Response.json({ user })
           },
         },
       },

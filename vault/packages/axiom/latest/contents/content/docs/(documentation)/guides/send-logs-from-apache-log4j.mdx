@@ -1,0 +1,465 @@
+---
+title: 'Send logs from Apache Log4j to Axiom'
+description: 'This guide explains how to configure Apache Log4j to send logs to Axiom '
+overview: 'Logging framework for Java applications'
+sidebarTitle: Apache Log4j
+keywords: ['guides', 'apache', 'log4j', 'java', 'jvm', 'kotlin']
+logoId: 'apache'
+enlargeLogo: true
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+
+Log4j is a Java logging framework developed by the Apache Software Foundation and widely used in the Java community. This page covers how to get started with Log4j, configure it to forward log messages to Fluentd, and send logs to Axiom.
+
+<Prerequisites />
+- [Install JDK 11](https://www.oracle.com/java/technologies/java-se-glance.html) or later
+- [Install Maven](https://maven.apache.org/download.cgi)
+- [Install Fluentd](https://www.fluentd.org/download)
+- [Install Docker](https://docs.docker.com/get-docker/)
+
+## Configure Log4j
+
+Log4j is a flexible and powerful logging framework for Java applications. To use Log4j in your project, add the necessary dependencies to your `pom.xml` file. The dependencies required for Log4j include `log4j-core`, `log4j-api`, and `log4j-slf4j2-impl` for logging capability, and `jackson-databind` for JSON support.
+
+1. Create a new Maven project:
+
+    ```bash
+    mvn archetype:generate -DgroupId=com.example -DartifactId=log4j-axiom-test -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+
+    cd log4j-axiom-test
+    ```
+
+1. Open the `pom.xml` file and replace its contents with the following:
+
+    ```xml
+    <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+      <modelVersion>4.0.0</modelVersion>
+      <groupId>com.example</groupId>
+      <artifactId>log4j-axiom-test</artifactId>
+      <packaging>jar</packaging>
+      <version>1.0-SNAPSHOT</version>
+      <name>log4j-axiom-test</name>
+      <url>http://maven.apache.org</url>
+
+      <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <log4j.version>2.19.0</log4j.version>
+      </properties>
+
+      <dependencies>
+        <dependency>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+          <version>4.12</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+          <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+          <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j2-impl</artifactId>
+          <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+          <version>2.13.0</version>
+        </dependency>
+      </dependencies>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.2.4</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>com.example.App</mainClass>
+                    </transformer>
+                  </transformers>
+                  <createDependencyReducedPom>false</createDependencyReducedPom>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </project>
+    ```
+
+    This `pom.xml` file includes the necessary Log4j dependencies and configures the Maven Shade plugin to create an executable JAR file.
+
+1. Create a new file named `log4j2.xml` in your root directory and add the following content:
+
+    ```xml
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Configuration status="WARN">
+      <Appenders>
+        <Socket name="Socket" host="127.0.0.1" port="24224" protocol="TCP">
+          <JsonLayout complete="false" compact="true" eventEol="true" properties="true" includeTimeMillis="true"/>
+        </Socket>
+        <Console name="Console" target="SYSTEM_OUT">
+          <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+      </Appenders>
+      <Loggers>
+        <Root level="info">
+          <AppenderRef ref="Socket"/>
+          <AppenderRef ref="Console"/>
+        </Root>
+      </Loggers>
+    </Configuration>
+    ```
+
+    This configuration sets up two appenders:
+
+    - A Socket appender that sends logs to Fluentd, running on `localhost:24224`. Is uses JSON format for the log messages, which makes it easier to parse and analyze the logs later in Axiom.
+    - A Console appender that prints logs to the standard output,
+
+## Set log level
+
+Log4j supports various log levels, allowing you to control the verbosity of your logs. The main log levels, in order of increasing severity, are the following:
+
+- `TRACE`: Fine-grained information for debugging.
+- `DEBUG`: General debugging information.
+- `INFO`: Informational messages.
+- `WARN`: Indications of potential problems.
+- `ERROR`: Error events that might still allow the app to continue running.
+- `FATAL`: Severe error events that might lead the app to cancel.
+
+In the configuration above, the root logger level is set to INFO which means it logs messages at INFO level and above (WARN, ERROR, and FATAL).
+
+To set the log level, create a simple Java class to demonstrate these log levels. Create a new file named `App.java` in the `src/main/java/com/example` directory with the following content:
+
+```java
+package com.example;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.Level;
+
+import java.util.Random;
+
+public class App {
+    // Define loggers for different purposes
+    private static final Logger logger = LogManager.getLogger(App.class);
+    private static final Logger securityLogger = LogManager.getLogger("SecurityLogger");
+    private static final Logger performanceLogger = LogManager.getLogger("PerformanceLogger");
+
+    public static void main(String[] args) {
+        // Configure logging levels programmatically
+        configureLogging();
+
+        Random random = new Random();
+
+        // Infinite loop to continuously generate log events
+        while (true) {
+            try {
+                // Simulate various logging scenarios
+                simulateUserActivity(random);
+                simulateDatabaseOperations(random);
+                simulateSecurityEvents(random);
+                simulatePerformanceMetrics(random);
+
+                // Simulate a critical error with 10% probability
+                if (random.nextInt(10) == 0) {
+                    throw new RuntimeException("Simulated critical error");
+                }
+
+                Thread.sleep(1000);  // Sleep for 1 second
+            } catch (InterruptedException e) {
+                logger.warn("Sleep interrupted", e);
+            } catch (Exception e) {
+                logger.error("Critical error occurred", e);
+            } finally {
+                // Clear thread context after each iteration
+                ThreadContext.clearAll();
+            }
+        }
+    }
+
+    private static void configureLogging() {
+        // Set root logger level to DEBUG
+        Configurator.setRootLevel(Level.DEBUG);
+
+        // Set custom logger levels
+        Configurator.setLevel("SecurityLogger", Level.INFO);
+        Configurator.setLevel("PerformanceLogger", Level.TRACE);
+    }
+
+    // Simulate user activities and log them
+    private static void simulateUserActivity(Random random) {
+        String[] users = {"Alice", "Bob", "Charlie", "David"};
+        String[] actions = {"login", "logout", "view_profile", "update_settings"};
+
+        String user = users[random.nextInt(users.length)];
+        String action = actions[random.nextInt(actions.length)];
+
+        // Add user and action to thread context
+        ThreadContext.put("user", user);
+        ThreadContext.put("action", action);
+
+        // Log different user actions with appropriate levels
+        switch (action) {
+            case "login":
+                logger.info("User logged in successfully");
+                break;
+            case "logout":
+                logger.info("User logged out");
+                break;
+            case "view_profile":
+                logger.debug("User viewed their profile");
+                break;
+            case "update_settings":
+                logger.info("User updated their settings");
+                break;
+        }
+    }
+
+    // Simulate database operations and log them
+    private static void simulateDatabaseOperations(Random random) {
+        String[] operations = {"select", "insert", "update", "delete"};
+        String operation = operations[random.nextInt(operations.length)];
+        long duration = random.nextInt(1000);
+
+        // Add operation and duration to thread context
+        ThreadContext.put("operation", operation);
+        ThreadContext.put("duration", String.valueOf(duration));
+
+        // Log slow database operations as warnings
+        if (duration > 500) {
+            logger.warn("Slow database operation detected");
+        } else {
+            logger.debug("Database operation completed");
+        }
+
+        // Simulate database connection loss with 5% probability
+        if (random.nextInt(20) == 0) {
+            logger.error("Database connection lost", new SQLException("Connection timed out"));
+        }
+    }
+
+    // Simulate security events and log them
+    private static void simulateSecurityEvents(Random random) {
+        String[] events = {"failed_login", "password_change", "role_change", "suspicious_activity"};
+        String event = events[random.nextInt(events.length)];
+
+        ThreadContext.put("security_event", event);
+
+        // Log different security events with appropriate levels
+        switch (event) {
+            case "failed_login":
+                securityLogger.warn("Failed login attempt");
+                break;
+            case "password_change":
+                securityLogger.info("User changed their password");
+                break;
+            case "role_change":
+                securityLogger.info("User role was modified");
+                break;
+            case "suspicious_activity":
+                securityLogger.error("Suspicious activity detected", new SecurityException("Potential breach attempt"));
+                break;
+        }
+    }
+
+    // Simulate performance metrics and log them
+    private static void simulatePerformanceMetrics(Random random) {
+        String[] metrics = {"cpu_usage", "memory_usage", "disk_io", "network_latency"};
+        String metric = metrics[random.nextInt(metrics.length)];
+        double value = random.nextDouble() * 100;
+
+        // Add metric and value to thread context
+        ThreadContext.put("metric", metric);
+        ThreadContext.put("value", String.format("%.2f", value));
+
+        // Log high resource usage as warnings
+        if (value > 80) {
+            performanceLogger.warn("High resource usage detected");
+        } else {
+            performanceLogger.trace("Performance metric recorded");
+        }
+    }
+
+    // Custom exception classes for simulating errors
+    private static class SQLException extends Exception {
+        public SQLException(String message) {
+            super(message);
+        }
+    }
+
+    private static class SecurityException extends Exception {
+        public SecurityException(String message) {
+            super(message);
+        }
+    }
+}
+```
+
+This class demonstrates the use of different log levels and also shows how to add context to your logs using `ThreadContext`.
+
+## Forward log messages to Fluentd
+
+Fluentd is a popular open-source data collector used to forward logs from Log4j to Axiom. The Log4j configuration is already set up to send logs to Fluentd using the Socket appender. Fluentd acts as a unified logging layer, allowing you to collect, process, and forward logs from various sources to different destinations.
+
+### Configure the Fluentd.conf file
+
+To configure Fluentd, create a configuration file. Create a new file named `fluentd.conf` in your project root directory with the following content:
+
+```xml
+<source>
+  @type forward
+  bind 0.0.0.0
+  port 24224
+  <parse>
+    @type multi_format
+    <pattern>
+      format json
+      time_key timeMillis
+      time_type string
+      time_format %Q
+    </pattern>
+  </parse>
+</source>
+
+<filter **>
+  @type record_transformer
+  <record>
+    tag java.log4j
+  </record>
+</filter>
+
+<match **>
+  @type http
+  endpoint https://AXIOM_DOMAIN/v1/ingest/DATASET_NAME
+  headers {"Authorization":"Bearer API_TOKEN"}
+  json_array true
+  <buffer>
+    @type memory
+    flush_interval 5s
+    chunk_limit_size 5m
+    total_limit_size 10m
+  </buffer>
+  <format>
+    @type json
+  </format>
+</match>
+```
+
+<Info>
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+This configuration does the following:
+
+1. Set up a forward input plugin to receive logs from Log4j.
+1. Add a `java.log4j` tag to all logs.
+1. Forward the logs to Axiom using the HTTP output plugin.
+
+### Create the Dockerfile
+
+To simplify the deployment of the Java app and Fluentd, use Docker. Create a new file named `Dockerfile` in your project root directory with the following content:
+
+```yaml
+# Build stage
+FROM maven:3.8.1-openjdk-11-slim AS build
+
+WORKDIR /usr/src/app
+COPY pom.xml .
+COPY src ./src
+COPY log4j2.xml .
+RUN mvn clean package
+
+# Runtime stage
+FROM openjdk:11-jre-slim
+
+WORKDIR /usr/src/app
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ruby \
+    ruby-dev \
+    build-essential && \
+    gem install fluentd --no-document && \
+    fluent-gem install fluent-plugin-multi-format-parser && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /usr/src/app/target/log4j-axiom-test-1.0-SNAPSHOT.jar .
+COPY fluentd.conf /etc/fluent/fluent.conf
+COPY log4j2.xml .
+
+# Create startup script
+RUN echo '#!/bin/sh\n\
+fluentd -c /etc/fluent/fluent.conf &\n\
+sleep 5\n\
+java -Dlog4j.configurationFile=log4j2.xml -jar log4j-axiom-test-1.0-SNAPSHOT.jar\n'\
+> /usr/src/app/start.sh && chmod +x /usr/src/app/start.sh
+
+EXPOSE 24224
+
+CMD ["/usr/src/app/start.sh"]
+```
+
+This Dockerfile does the following:
+
+1. Build the Java app.
+1. Set up a runtime environment with Java and Fluentd.
+1. Copy the necessary files and configurations.
+1. Create a startup script to run both Fluentd and the Java app.
+
+### Build and run the Dockerfile
+
+1. To build the Docker image, run the following command in your project root directory:
+
+    ```bash
+    docker build -t log4j-axiom-test .
+    ```
+
+1. Run the container with the following:
+
+    ```bash
+    docker run -p 24224:24224 log4j-axiom-test
+    ```
+
+This command starts the container, running both Fluentd and your Java app.
+
+## View logs in Axiom
+
+Now that your app is running and sending logs to Axiom, you can view them in the Axiom dashboard. Log in to your Axiom account and go to the dataset you specified in the Fluentd configuration.
+
+Logs appear in real-time, with various log levels and context information added.
+
+## Logging in Log4j best practices
+
+- Use appropriate log levels: Reserve ERROR and FATAL for serious issues, use WARN for potential problems, and INFO for general app flow.
+- Include context: Add relevant information to your logs using ThreadContext or by including important variables in your log messages.
+- Use structured logging: Log in JSON format to make it easier to parse, and later, analyze the logs using [APL](https://axiom.co/docs/apl/introduction).
+- Log actionable information: Include enough detail in your logs to understand and potentially reproduce issues.
+- Use parameterized logging: Instead of string concatenation, use Log4j’s support for parameterized messages to improve performance.
+- Configure appenders appropriately: Use asynchronous appenders for better performance in high-throughput scenarios.
+- Regularly review and maintain your logs: Periodically check your logging configuration and the logs themselves to ensure they’re providing value.

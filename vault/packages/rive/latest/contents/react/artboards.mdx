@@ -12,7 +12,11 @@ import ChoosingAnArtboard from "/snippets/runtimes/artboards/choosing-an-artboar
 
 ```javascript
 export const Simple = () => (
-  <Rive src="https://cdn.rive.app/animations/vehicles.riv" artboard="Truck" />
+  <Rive
+    src="https://cdn.rive.app/animations/vehicles.riv"
+    artboard="Truck"
+    stateMachine="bumpy"
+  />
 );
 
 // With `useRive` Hook:
@@ -20,6 +24,7 @@ export default function Simple() {
   const { RiveComponent } = useRive({
       src: 'https://cdn.rive.app/animations/vehicles.riv',
       artboard: 'Truck',
+      stateMachine: 'bumpy',
       autoplay: true,
   });
 

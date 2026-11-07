@@ -1,0 +1,58 @@
+---
+id: like
+title: like
+---
+
+## Call Signature
+
+```ts
+function like<L, R>(left, right): WithAggregate<BasicExpression<boolean>, [L, R]>;
+```
+
+Defined in: [packages/db/src/query/builder/functions.ts:336](https://github.com/TanStack/db/blob/main/packages/db/src/query/builder/functions.ts#L336)
+
+### Type Parameters
+
+#### L
+
+`L` *extends* `StringLike`
+
+#### R
+
+`R` *extends* `StringLike`
+
+### Parameters
+
+#### left
+
+`L`
+
+#### right
+
+`R`
+
+### Returns
+
+`WithAggregate`\<[`BasicExpression`](../@tanstack/namespaces/IR/type-aliases/BasicExpression.md)\<`boolean`\>, \[`L`, `R`\]\>
+
+## Call Signature
+
+```ts
+function like(left, right): BasicExpression<boolean>;
+```
+
+Defined in: [packages/db/src/query/builder/functions.ts:340](https://github.com/TanStack/db/blob/main/packages/db/src/query/builder/functions.ts#L340)
+
+### Parameters
+
+#### left
+
+`StringLike`
+
+#### right
+
+`StringLike`
+
+### Returns
+
+[`BasicExpression`](../@tanstack/namespaces/IR/type-aliases/BasicExpression.md)\<`boolean`\>

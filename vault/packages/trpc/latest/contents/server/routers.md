@@ -3,13 +3,15 @@ id: routers
 title: Define Routers
 sidebar_label: Define Routers
 slug: /server/routers
+section: "Backend Usage"
+order: 6
 ---
 
 To begin building your tRPC-based API, you'll first need to define your router. Once you've mastered the fundamentals, you can [customize your routers](#advanced-usage) for more advanced use cases.
 
 ## Initialize tRPC
 
-You should initialize tRPC **exactly once** per application. Multiple instances of tRPC will cause issues.
+You should initialize tRPC **exactly once** per application. Multiple instances of tRPC will cause issues: for example, `t.mergeRouters()` throws if the routers come from different instances that each set a [transformer](/docs/server/data-transformers) or [error formatter](/docs/server/error-formatting). Create `t` in one file and import your procedures and `router` from it everywhere.
 
 ```ts twoslash title='server/trpc.ts'
 // @filename: trpc.ts
@@ -53,6 +55,10 @@ const appRouter = router({
 // This prevents us from importing server code on the client.
 export type AppRouter = typeof appRouter;
 ```
+
+On the client, import it with `import type { AppRouter } from '...'` and never import the `appRouter` value: a type-only import is always erased, so your server code can't end up in the client bundle.
+
+Procedures can't be named `then`, `call` or `apply`: `router()` throws if you use these names.
 
 ## Defining an inline sub-router {#inline-sub-router}
 

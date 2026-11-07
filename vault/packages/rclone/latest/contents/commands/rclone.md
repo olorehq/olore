@@ -24,6 +24,7 @@ rclone [flags]
 ```
       --alias-description string                            Description of the remote
       --alias-remote string                                 Remote or path to alias
+      --allow-https-downgrade                               Follow redirects from HTTPS to HTTP (insecure)
       --archive-description string                          Description of the remote
       --archive-remote string                               Remote to wrap to read archives from
       --ask-password                                        Allow prompt for password for encrypted configuration (default true)
@@ -50,8 +51,10 @@ rclone [flags]
       --azureblob-encoding Encoding                         The encoding for the backend (default Slash,BackSlash,Del,Ctl,RightPeriod,InvalidUtf8)
       --azureblob-endpoint string                           Endpoint for the service
       --azureblob-env-auth                                  Read credentials from runtime (environment variables, CLI or MSI)
+      --azureblob-hns Tristate                              Set if the storage account has a hierarchical namespace (default unset)
       --azureblob-key string                                Storage Account Shared Key
       --azureblob-list-chunk int                            Size of blob list (default 5000)
+      --azureblob-list-parallelism int                      Number of parallel shards to list a directory with
       --azureblob-msi-client-id string                      Object ID of the user-assigned MSI to use, if any
       --azureblob-msi-mi-res-id string                      Azure resource ID of the user-assigned MSI to use, if any
       --azureblob-msi-object-id string                      Object ID of the user-assigned MSI to use, if any
@@ -64,6 +67,7 @@ rclone [flags]
       --azureblob-tenant string                             ID of the service principal's tenant. Also called its directory ID
       --azureblob-upload-concurrency int                    Concurrency for multipart uploads (default 16)
       --azureblob-upload-cutoff string                      Cutoff for switching to chunked upload (<= 256 MiB) (deprecated)
+      --azureblob-use-arrow-list                            Use the Apache Arrow listing format
       --azureblob-use-az                                    Use Azure CLI tool az for authentication
       --azureblob-use-copy-blob                             Whether to use the Copy Blob API when copying to the same storage account (default true)
       --azureblob-use-emulator                              Uses local storage emulator if provided as 'true'
@@ -224,6 +228,12 @@ rclone [flags]
       --doi-doi string                                      The DOI or the doi.org URL
       --doi-doi-resolver-api-url string                     The URL of the DOI resolver API to use
       --doi-provider string                                 DOI provider
+      --dosya-api-key string                                Your API Key, get it from https://dosya.dev/profile under "API keys"
+      --dosya-api-url string                                API base URL (default "https://api.dosya.dev")
+      --dosya-description string                            Description of the remote
+      --dosya-encoding Encoding                             The encoding for the backend (default Slash,LtGt,DoubleQuote,SingleQuote,BackSlash,Del,Ctl,LeftSpace,RightSpace,InvalidUtf8,Dot)
+      --dosya-upload-concurrency int                        Concurrency for multipart uploads (default 4)
+      --dosya-workspace-id string                           Your workspace ID
       --drime-access-token string                           API Access token
       --drime-chunk-size SizeSuffix                         Chunk size to use for uploading (default 5Mi)
       --drime-description string                            Description of the remote
@@ -232,7 +242,7 @@ rclone [flags]
       --drime-list-chunk int                                Number of items to list in each call (default 1000)
       --drime-root-folder-id string                         ID of the root folder
       --drime-upload-concurrency int                        Concurrency for multipart uploads and copies (default 4)
-      --drime-upload-cutoff SizeSuffix                      Cutoff for switching to chunked upload (default 200Mi)
+      --drime-upload-cutoff SizeSuffix                      Cutoff for switching to chunked upload (default 5Mi)
       --drime-workspace-id string                           Account ID
       --drive-acknowledge-abuse                             Set to allow files which return cannotDownloadAbusiveFile to be downloaded
       --drive-allow-import-name-change                      Allow the filetype to change when uploading Google docs
@@ -241,7 +251,7 @@ rclone [flags]
       --drive-chunk-size SizeSuffix                         Upload chunk size (default 8Mi)
       --drive-client-credentials                            Use client credentials OAuth flow
       --drive-client-id string                              Google Application Client Id
-      --drive-client-secret string                          OAuth Client Secret
+      --drive-client-secret string                          Google Application Client Secret
       --drive-copy-shortcut-content                         Server side copy contents of shortcuts instead of the shortcut
       --drive-description string                            Description of the remote
       --drive-disable-http2                                 Disable drive using http2 (default true)
@@ -297,17 +307,20 @@ rclone [flags]
       --dropbox-encoding Encoding                           The encoding for the backend (default Slash,BackSlash,Del,RightSpace,InvalidUtf8,Dot)
       --dropbox-export-formats CommaSepList                 Comma separated list of preferred formats for exporting files (default html,md)
       --dropbox-impersonate string                          Impersonate this user when using a business account
+      --dropbox-impersonate-admin string                    Team admin ID to use when performing actions as a team administrator
       --dropbox-pacer-min-sleep Duration                    Minimum time to sleep between API calls (default 10ms)
       --dropbox-root-namespace string                       Specify a different Dropbox namespace ID to use as the root for all paths
       --dropbox-shared-files                                Instructs rclone to work on individual shared files
       --dropbox-shared-folders                              Instructs rclone to work on shared folders
       --dropbox-show-all-exports                            Show all exportable files in listings
       --dropbox-skip-exports                                Skip exportable files in all listings
+      --dropbox-skip-shared-folders                         Instructs rclone to skip all shared folders
+      --dropbox-skip-unowned-folders                        Instructs rclone to skip shared folders not owned by the current user
       --dropbox-token string                                OAuth Access Token as a JSON blob
       --dropbox-token-url string                            Token server url
   -n, --dry-run                                             Do a trial run with no permanent changes
       --dscp string                                         Set DSCP value to connections, value or name, e.g. CS1, LE, DF, AF21
-      --dump DumpFlags                                      List of items to dump from: headers, bodies, requests, responses, auth, filters, goroutines, openfiles, mapper, curl
+      --dump DumpFlags                                      List of items to dump from: headers, bodies, requests, responses, auth, filters, goroutines, openfiles, mapper, curl, errors, trace
       --dump-bodies                                         Dump HTTP headers and bodies - may contain sensitive info
       --dump-headers                                        Dump HTTP headers - may contain sensitive info
       --error-on-no-transfer                                Sets exit code 9 if no files are transferred, useful in scripts
@@ -349,6 +362,7 @@ rclone [flags]
       --filen-upload-concurrency int                        Concurrency for chunked uploads (default 16)
       --files-from stringArray                              Read list of source-file names from file (use - to read from stdin)
       --files-from-raw stringArray                          Read list of source-file names from file without any processing of lines (use - to read from stdin)
+      --files-from0 stringArray                             Read list of source-file names from file using NUL as separator (use - to read from stdin)
       --filescom-api-key string                             The API key used to authenticate with Files.com
       --filescom-description string                         Description of the remote
       --filescom-encoding Encoding                          The encoding for the backend (default Slash,BackSlash,Del,Ctl,RightSpace,RightCrLfHtVt,InvalidUtf8,Dot)
@@ -466,6 +480,8 @@ rclone [flags]
       --http-headers CommaSepList                           Set HTTP headers for all transactions
       --http-no-escape                                      Do not escape URL metacharacters in path names
       --http-no-head                                        Don't use HEAD requests
+      --http-no-head-size SizeSuffix                        Set the reported file size for --http-no-head (default off)
+      --http-no-head-time Time                              Set a default modification time for --http-no-head (default off)
       --http-no-slash                                       Set this if the site doesn't end directories with /
       --http-proxy string                                   HTTP proxy URL
       --http-url string                                     URL of HTTP host to connect to
@@ -539,6 +555,17 @@ rclone [flags]
       --jottacloud-token-url string                         Token server url
       --jottacloud-trashed-only                             Only show files that are in the trash
       --jottacloud-upload-resume-limit SizeSuffix           Files bigger than this can be resumed if the upload fail's (default 10Mi)
+      --kdrive-auth-url string                              Auth server URL
+      --kdrive-chunk-size SizeSuffix                        Files above this size are uploaded in chunks of this size (default 20Mi)
+      --kdrive-client-id string                             OAuth Client Id
+      --kdrive-description string                           Description of the remote
+      --kdrive-drive-id string                              ID of the kDrive to use
+      --kdrive-encoding Encoding                            The encoding for the backend (default Slash,Del,Ctl,LeftSpace,RightSpace,InvalidUtf8,Dot)
+      --kdrive-endpoint string                              The API endpoint to use
+      --kdrive-root-folder-id string                        The folder to use as root
+      --kdrive-token string                                 OAuth Access Token as a JSON blob
+      --kdrive-token-url string                             Token server url
+      --kdrive-upload-concurrency int                       Concurrency for chunked uploads (default 4)
       --koofr-description string                            Description of the remote
       --koofr-encoding Encoding                             The encoding for the backend (default Slash,BackSlash,Del,Ctl,InvalidUtf8,Dot)
       --koofr-endpoint string                               The Koofr API endpoint to use
@@ -558,8 +585,10 @@ rclone [flags]
       --local-case-sensitive                                Force the filesystem to report itself as case sensitive
       --local-description string                            Description of the remote
       --local-encoding Encoding                             The encoding for the backend (default Slash,Dot)
+      --local-fatal-if-no-space                             Make out-of-space errors fatal during transfers
       --local-hashes CommaSepList                           Comma separated list of supported checksum types
       --local-links                                         Translate symlinks to/from regular files with a '.rclonelink' extension for the local backend
+      --local-metadata-restore-special-bits                 Restore the setuid, setgid and sticky bits from metadata
       --local-no-check-updated                              Don't check to see if the files change during upload
       --local-no-clone                                      Disable reflink cloning for server-side copies
       --local-no-preallocate                                Disable preallocation of disk space for transferred files
@@ -624,7 +653,7 @@ rclone [flags]
       --metadata-include-from stringArray                   Read metadata include patterns from file (use - to read from stdin)
       --metadata-mapper SpaceSepList                        Program to run to transforming metadata before upload
       --metadata-set stringArray                            Add metadata key=value when uploading
-      --metrics-addr stringArray                            IPaddress:Port or :Port to bind metrics server to
+      --metrics-addr stringArray                            IPaddress:Port or :Port to bind server to
       --metrics-allow-origin string                         Origin which cross-domain request (CORS) can be executed from
       --metrics-baseurl string                              Prefix for URLs - leave blank for root
       --metrics-cert string                                 TLS PEM key (concatenation of certificate and CA certificate)
@@ -635,6 +664,7 @@ rclone [flags]
       --metrics-min-tls-version string                      Minimum TLS version that is acceptable (default "tls1.0")
       --metrics-pass string                                 Password for authentication
       --metrics-realm string                                Realm for authentication
+      --metrics-response-header stringArray                 Set HTTP header for all responses, overriding existing values
       --metrics-salt string                                 Password hashing salt (default "dlPL2MqE")
       --metrics-server-read-timeout Duration                Timeout for server reading data (default 1h0m0s)
       --metrics-server-write-timeout Duration               Timeout for server writing data (default 1h0m0s)
@@ -688,6 +718,8 @@ rclone [flags]
       --onedrive-root-folder-id string                      ID of the root folder
       --onedrive-server-side-across-configs                 Deprecated: use --server-side-across-configs instead
       --onedrive-tenant string                              ID of the service principal's tenant. Also called its directory ID
+      --onedrive-tenant-api-version string                  The SharePoint API version to use with tenant_url (default "v2.0")
+      --onedrive-tenant-url string                          The tenant URL for non-admin OneDrive access
       --onedrive-token string                               OAuth Access Token as a JSON blob
       --onedrive-token-url string                           Token server url
       --onedrive-upload-cutoff SizeSuffix                   Cutoff for switching to chunked upload (default off)
@@ -698,9 +730,10 @@ rclone [flags]
       --oos-config-profile string                           Profile name inside the oci config file (default "Default")
       --oos-copy-cutoff SizeSuffix                          Cutoff for switching to multipart copy (default 4.656Gi)
       --oos-copy-timeout Duration                           Timeout for copy (default 1m0s)
+      --oos-decompress                                      If set this will decompress gzip encoded objects
       --oos-description string                              Description of the remote
       --oos-disable-checksum                                Don't store MD5 checksum with object metadata
-      --oos-encoding Encoding                               The encoding for the backend (default Slash,InvalidUtf8,Dot)
+      --oos-encoding Encoding                               The encoding for the backend (default Slash,CrLf,InvalidUtf8,Dot)
       --oos-endpoint string                                 Endpoint for Object storage API
       --oos-leave-parts-on-error                            If true avoid calling abort upload on a failure, leaving all successfully uploaded parts for manual recovery
       --oos-max-upload-parts int                            Maximum number of parts in a multipart upload (default 10000)
@@ -822,6 +855,7 @@ rclone [flags]
       --rc-no-auth                                          Don't require auth for certain methods
       --rc-pass string                                      Password for authentication
       --rc-realm string                                     Realm for authentication
+      --rc-response-header stringArray                      Set HTTP header for all responses, overriding existing values
       --rc-salt string                                      Password hashing salt (default "dlPL2MqE")
       --rc-serve                                            Enable the serving of remote objects
       --rc-serve-no-modtime                                 Don't read the modification time (can speed things up)
@@ -830,11 +864,6 @@ rclone [flags]
       --rc-template string                                  User-specified template
       --rc-user string                                      User name for authentication
       --rc-user-from-header string                          User name from a defined HTTP header
-      --rc-web-fetch-url string                             URL to fetch the releases for webgui (default "https://api.github.com/repos/rclone/rclone-webui-react/releases/latest")
-      --rc-web-gui                                          Launch WebGUI on localhost
-      --rc-web-gui-force-update                             Force update to latest version of web gui
-      --rc-web-gui-no-open-browser                          Don't open the browser automatically
-      --rc-web-gui-update                                   Check and update to latest version of web gui
       --refresh-times                                       Refresh the modtime of remote files
       --retries int                                         Retry operations this many times if they fail (default 3)
       --retries-sleep Duration                              Interval between retrying operations if they fail, e.g. 500ms, 60s, 5m (0 to disable) (default 0s)
@@ -935,9 +964,11 @@ rclone [flags]
       --sftp-disable-concurrent-reads                       If set don't use concurrent reads
       --sftp-disable-concurrent-writes                      If set don't use concurrent writes
       --sftp-disable-hashcheck                              Disable the execution of SSH commands to determine if remote file hashing is available
+      --sftp-encoding Encoding                              The encoding for the backend (default Slash,Dot)
       --sftp-hashes CommaSepList                            Comma separated list of supported checksum types
       --sftp-host string                                    SSH host to connect to
       --sftp-host-key-algorithms SpaceSepList               Space separated list of host key algorithms, ordered by preference
+      --sftp-host-keys CommaSepList                         Pinned host keys for this remote, used to verify the server
       --sftp-http-proxy string                              URL for HTTP CONNECT proxy
       --sftp-idle-timeout Duration                          Max time before closing idle connections (default 1m0s)
       --sftp-key-exchange SpaceSepList                      Space separated list of key exchange algorithms, ordered by preference
@@ -948,8 +979,10 @@ rclone [flags]
       --sftp-known-hosts-file string                        Optional path to known_hosts file
       --sftp-macs SpaceSepList                              Space separated list of MACs (message authentication code) algorithms, ordered by preference
       --sftp-md5sum-command string                          The command used to read MD5 hashes
+      --sftp-multithread-upload                             Set this to use multi-thread (multi-connection) uploads
       --sftp-pass string                                    SSH password, leave blank to use ssh-agent (obscured)
       --sftp-path-override string                           Override path used by SSH shell commands
+      --sftp-pin-host-key                                   Pin the server host key on first connection (Trust On First Use)
       --sftp-port int                                       SSH port number (default 22)
       --sftp-pubkey string                                  SSH public certificate for public certificate based authentication
       --sftp-pubkey-file string                             Optional path to public key file
@@ -1010,7 +1043,8 @@ rclone [flags]
       --smb-port int                                        SMB port number (default 445)
       --smb-spn string                                      Service principal name
       --smb-use-kerberos                                    Use Kerberos authentication
-      --smb-user string                                     SMB username (default "$USER")
+      --smb-user string                                     SMB username
+      --smb-workstation string                              Workstation name sent in NTLM authentication
       --stats Duration                                      Interval between printing stats, e.g. 500ms, 60s, 5m (0 to disable) (default 1m0s)
       --stats-file-name-length int                          Max file name length in stats (0 for no limit) (default 45)
       --stats-log-level LogLevel                            Log level to show --stats output DEBUG|INFO|NOTICE|ERROR (default INFO)
@@ -1094,7 +1128,7 @@ rclone [flags]
       --use-json-log                                        Use json log format
       --use-mmap                                            Use mmap allocator (see docs)
       --use-server-modtime                                  Use server modified time instead of object metadata
-      --user-agent string                                   Set the user-agent to a specified string (default "rclone/v1.74.0")
+      --user-agent string                                   Set the user-agent to a specified string (default "rclone/v1.76.0")
   -v, --verbose count                                       Print lots more stuff (repeat for more)
   -V, --version                                             Print the version number
       --webdav-auth-redirect                                Preserve authentication on redirect
@@ -1112,6 +1146,7 @@ rclone [flags]
       --webdav-url string                                   URL of http host to connect to
       --webdav-user string                                  User name
       --webdav-vendor string                                Name of the WebDAV site/service/software you are using
+      --yandex-app-folder                                   Use the application folder as the root
       --yandex-auth-url string                              Auth server URL
       --yandex-client-credentials                           Use client credentials OAuth flow
       --yandex-client-id string                             OAuth Client Id
@@ -1122,15 +1157,22 @@ rclone [flags]
       --yandex-spoof-ua                                     Set the user agent to match an official version of the yandex disk client. May help with upload performance (default true)
       --yandex-token string                                 OAuth Access Token as a JSON blob
       --yandex-token-url string                             Token server url
+      --yandex-upload-wait Duration                         Wait this long after an upload before setting the modification time (default 0s)
       --zoho-auth-url string                                Auth server URL
       --zoho-client-credentials                             Use client credentials OAuth flow
       --zoho-client-id string                               OAuth Client Id
       --zoho-client-secret string                           OAuth Client Secret
       --zoho-description string                             Description of the remote
       --zoho-encoding Encoding                              The encoding for the backend (default Del,Ctl,InvalidUtf8)
+      --zoho-list-folder-burst int                          Same-folder listings allowed back-to-back before --zoho-list-folder-limit paces them (default 6)
+      --zoho-list-folder-limit int                          Max listings of the SAME folder allowed per --zoho-list-folder-window (default 19)
+      --zoho-list-folder-window Duration                    The window for --zoho-list-folder-limit (default 1m0s)
       --zoho-region string                                  Zoho region to connect to
+      --zoho-root-folder-id string                          ID of the root folder
       --zoho-token string                                   OAuth Access Token as a JSON blob
       --zoho-token-url string                               Token server url
+      --zoho-tpslimit float                                 Max number of API transactions per second (default 6)
+      --zoho-tpslimit-burst int                             Number of API calls to allow back-to-back without sleeping, for --zoho-tpslimit (default 1)
       --zoho-upload-cutoff SizeSuffix                       Cutoff for switching to large file upload api (>= 10 MiB) (default 10Mi)
 ```
 
@@ -1163,6 +1205,7 @@ rclone [flags]
 * [rclone gitannex](/commands/rclone_gitannex/)	 - Speaks with git-annex over stdin/stdout.
 * [rclone gui](/commands/rclone_gui/)	 - Open the web based GUI.
 * [rclone hashsum](/commands/rclone_hashsum/)	 - Produces a hashsum file for all the objects in the path.
+* [rclone index](/commands/rclone_index/)	 - Write static directory listings into a remote.
 * [rclone link](/commands/rclone_link/)	 - Generate public link to file/folder.
 * [rclone listremotes](/commands/rclone_listremotes/)	 - List all the remotes in the config file and defined in environment variables.
 * [rclone ls](/commands/rclone_ls/)	 - List the objects in the path with size and path.

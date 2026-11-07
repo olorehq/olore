@@ -1,0 +1,12 @@
+---
+title: Run APL query to edge deployment
+openapi: "v1-edge-query post /query/_apl?format=tabular"
+---
+
+import EdgeQuery from "@/content/snippets/edge-query.mdx"
+
+<EdgeQuery />
+
+This endpoint replaces the legacy [Run APL query](/restapi/endpoints/queryApl) endpoint. Send the request to your edge deployment's base domain at the path `/v1/query/_apl`. The standard `/v1/datasets/_apl` path isn't served on edge domains, so requests to it return a `404`.
+
+If you use an Axiom SDK, set the `edge` option on the client and it sends queries to this endpoint automatically. For more information, see [Configure region](/guides/javascript#configure-region).

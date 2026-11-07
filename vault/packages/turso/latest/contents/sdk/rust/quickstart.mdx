@@ -107,7 +107,7 @@ Then use `http://127.0.0.1:8080` as the remote URL (no auth token needed). See [
 
 ## Remote Access (Over-the-Wire)
 
-If your application needs to query a Turso Cloud database directly over the network (e.g., from a web server or serverless function), use the `libsql` crate with the `remote` feature. It connects over HTTP — no local file needed, no C compiler required.
+If your application needs to query a Turso Cloud database directly over the network (e.g., from a web server or serverless function), use the crate that matches your database engine: `turso_serverless` for [Turso databases](/tursodb/quickstart), or `libsql` (with the `remote` feature) for [libSQL](/libsql) databases.
 
 <Info>
 
@@ -115,10 +115,62 @@ For most applications, we recommend running a local database with sync (`turso::
 
 </Info>
 
+### Remote Turso database: turso_serverless
+
+`turso_serverless` connects to a remote Turso database over HTTP — no persistent connections, no C compiler required. Its API mirrors the embedded `turso` crate, so code moves between local and remote with minimal changes.
+
 <Steps>
   <Step title="Retrieve database credentials">
 
-You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+You will need an existing Turso database to continue. If you don't have one, create one with `turso db create --tursodb` (see the [quickstart](/quickstart)).
+
+<Snippet file="retrieve-database-credentials-tursodb.mdx" />
+
+<Info>You will want to store these as environment variables.</Info>
+
+  </Step>
+  <Step title="Install">
+
+```bash
+cargo add turso_serverless tokio --features tokio/full
+```
+
+  </Step>
+  <Step title="Connect and query">
+
+```rust
+use turso_serverless::Builder;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let db = Builder::new_remote(std::env::var("TURSO_DATABASE_URL")?)
+        .with_auth_token(std::env::var("TURSO_AUTH_TOKEN")?)
+        .build()
+        .await?;
+    let conn = db.connect()?;
+
+    let mut rows = conn.query("SELECT * FROM users", ()).await?;
+    while let Some(row) = rows.next().await? {
+        let id: i64 = row.get(0)?;
+        let name: String = row.get(1)?;
+        println!("User: {} {}", id, name);
+    }
+
+    Ok(())
+}
+```
+
+  </Step>
+</Steps>
+
+### Remote libSQL database: libsql
+
+The `libsql` crate with the `remote` feature connects to a remote libSQL database over HTTP — no local file needed, no C compiler required.
+
+<Steps>
+  <Step title="Retrieve database credentials">
+
+You will need an existing libSQL database to continue. If you don't have one, [create one](/quickstart).
 
 <Snippet file="retrieve-database-credentials.mdx" />
 

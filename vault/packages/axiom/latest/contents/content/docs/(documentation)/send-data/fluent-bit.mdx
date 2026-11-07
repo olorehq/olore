@@ -1,0 +1,44 @@
+---
+title: 'Send data from Fluent Bit to Axiom'
+description: 'This page explains how to send data from Fluent Bit to Axiom.'
+overview: 'Lightweight log processor and forwarder for various data sources'
+sidebarTitle: Fluent Bit
+keywords: ['fluentd', 'axiom documentation', 'documentation', 'axiom', 'guide', 'logs', 'fluent bit', 'metrics']
+logoId: 'fluentbit'
+isPopular: true
+popularityOrder: 11
+---
+
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+
+Fluent Bit is an open-source log processor and forwarder that allows you to collect any data like metrics and logs from different sources, enrich them with filters, and send them to multiple destinations like Axiom.
+
+<Prerequisites />
+- [Install Fluent Bit](https://docs.fluentbit.io/manual/installation/getting-started-with-fluent-bit).
+
+## Configure Fluent Bit
+
+1. Set up the Fluent Bit configuration file based on the [Fluent Bit documentation](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/configuration-file).
+1. In the Fluent Bit configuration file, use the HTTP output plugin with the following configuration. For more information on the plugin, see the [Fluent Bit documentation](https://docs.fluentbit.io/manual/pipeline/outputs/http).
+
+    ```ini
+    [OUTPUT]
+        Name               http
+        Match              *
+        Host               AXIOM_DOMAIN
+        Port               443
+        URI                /v1/ingest/DATASET_NAME
+        Header             Authorization Bearer API_TOKEN
+        Compress           gzip
+        Format             json
+        JSON_Date_Key      _time
+        JSON_Date_Format   iso8601
+        TLS                On
+    ```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+</Info>

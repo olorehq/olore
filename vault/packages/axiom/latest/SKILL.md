@@ -1,9 +1,9 @@
 ---
 name: olore-axiom-latest
-description: Local Axiom documentation reference (latest). Axiom observability documentation. Use for log ingestion, APL queries, dashboards, alerting, integrations, Next.js/Vercel/Lambda, and real-time analytics.
+description: Local axiom documentation reference (latest). Axiom observability documentation. Use for log ingestion, APL queries, dashboards, alerting, integrations, Next.js/Vercel/Lambda, and real-time analytics.
 ---
 
-# Axiom Documentation
+# axiom Documentation
 
 Axiom observability documentation. Use for log ingestion, APL queries, dashboards, alerting, integrations, Next.js/Vercel/Lambda, and real-time analytics.
 
@@ -11,28 +11,21 @@ Axiom observability documentation. Use for log ingestion, APL queries, dashboard
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started | `contents/getting-started-guide/axiom-tour.mdx` |
-| Send data (OTel) | `contents/send-data/opentelemetry.mdx` |
-| APL query language | `contents/apl/apl-features.mdx` |
-| APL functions reference | `contents/apl/scalar-functions/` |
-| REST API reference | `contents/restapi/endpoints/` |
-| Monitors & alerting | `contents/monitor-data/monitors.mdx` |
-| MCP server setup | `contents/console/intelligence/mcp-server.mdx` |
-| Language SDKs | `contents/guides/` |
-| Troubleshooting | `contents/get-help/faq.mdx` |
+| Getting started | `contents/content/docs/(documentation)/getting-started.mdx` |
+| Send data | `contents/content/docs/(documentation)/send-data/` |
+| APL reference | `contents/content/docs/(query-reference)/apl/` |
+| REST API | `contents/content/docs/(api-reference)/restapi/` |
+| Monitors and alerts | `contents/content/docs/(documentation)/monitor-data/` |
+| Dashboards | `contents/content/docs/(documentation)/dashboards/` |
+| Guides | `contents/content/docs/(documentation)/guides/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Ingesting logs, traces, or metrics into Axiom (OTel, Fluent Bit, Lambda, Kubernetes, etc.)
-- Writing APL queries (aggregations, scalar functions, tabular operators, string/datetime/math functions)
-- Axiom REST API endpoints and authentication
-- Setting up monitors, alerts, and notifiers (Slack, PagerDuty, email, webhooks)
-- Dashboards and dashboard elements (charts, heatmaps, tables)
-- Integrations with Vercel, Cloudflare Workers, Next.js, AWS Lambda, Supabase
-- Axiom CLI usage and dataset management
-- AI engineering features, evaluations, and the MCP server
-- MPL (Metrics Pipeline Language) and metrics migration
+- Ingesting logs and traces into Axiom (integrations, OpenTelemetry, Vercel, Lambda)
+- Writing APL queries, operators, and functions
+- Dashboards, monitors, alerts, and notifiers
+- The Axiom REST API
 
 ## How to find information
 

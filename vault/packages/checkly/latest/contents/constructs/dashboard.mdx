@@ -2,10 +2,12 @@
 title: 'Dashboard Construct'
 description: 'Learn how to configure dashboards with the Checkly CLI.'
 sidebarTitle: 'Dashboard'
+canonical: 'https://www.checklyhq.com/docs/constructs/dashboard/'
+mode: "wide"
 ---
 
 <Tip>
-Learn more about Dashboards in [the Dashboards overview](/communicate/dashboards/overview).
+Learn more about dashboards in [the dashboards overview](/communicate/dashboards/overview).
 </Tip>
 
 Use Dashboard to create public or private dashboards that display checks and their related metrics on a single page. Dashboards provide a centralized view of your monitoring data.
@@ -92,6 +94,7 @@ Text displayed at the top of your dashboard as the main title.
 
 **Usage:**
 
+{/* typecheck-wrap: Dashboard */}
 ```ts highlight={2}
 new Dashboard('my-dashboard', {
   header: 'Production Services Status'
@@ -107,6 +110,7 @@ Text displayed below the header providing additional context about the dashboard
 
 **Usage:**
 
+{/* typecheck-wrap: Dashboard */}
 ```ts highlight={3}
 new Dashboard('my-dashboard', {
   header: 'Production Services',
@@ -122,6 +126,7 @@ Tags that filter which checks appear on the dashboard. Empty array shows all che
 
 **Usage:**
 
+{/* typecheck-wrap: Dashboard */}
 ```ts highlight={2}
 new Dashboard('my-dashboard', {
   tags: ['production', 'api']
@@ -130,6 +135,7 @@ new Dashboard('my-dashboard', {
 
 **Examples:**
 
+{/* typecheck-wrap: Dashboard */}
 ```ts
 // Service-specific tags
 new Dashboard('api-dashboard', {
@@ -160,6 +166,7 @@ Subdomain under "checklyhq.com" for your dashboard (e.g., "my-status" becomes "m
 
 **Usage:**
 
+{/* typecheck-wrap: Dashboard */}
 ```ts highlight={2}
 new Dashboard('my-dashboard', {
   customUrl: 'service-status'
@@ -180,6 +187,7 @@ Custom domain for your dashboard (e.g., "status.example.com"). Must be verified 
 
 **Usage:**
 
+{/* typecheck-wrap: Dashboard */}
 ```ts highlight={2}
 new Dashboard('my-dashboard', {
   customDomain: 'status.example.com'
@@ -194,6 +202,7 @@ Custom CSS styling for your dashboard. Only available on Team and Enterprise pla
 
 **Usage:**
 
+{/* typecheck-wrap: Dashboard */}
 ```ts highlight={3-5,10-20}
 // Using file reference
 new Dashboard("styled-dashboard", {
@@ -236,6 +245,7 @@ You must provide either `entrypoint` or `content`, but not both.
 
 <Tabs>
   <Tab title="Production Monitoring">
+    {/* typecheck-wrap: Dashboard */}
     ```ts
     new Dashboard("production-monitoring", {
       header: "Production Services",
@@ -252,7 +262,8 @@ You must provide either `entrypoint` or `content`, but not both.
     ```
   </Tab>
 
-  <Tab title="API Dashboard">
+  <Tab title="API dashboard">
+    {/* typecheck-wrap: Dashboard */}
     ```ts
     new Dashboard("api-dashboard", {
       header: "API Endpoints Status",
@@ -262,13 +273,14 @@ You must provide either `entrypoint` or `content`, but not both.
       customDomain: "api-status.company.com",
       width: "960PX",
       refreshRate: 60,
-      checksPerPage: 25,
+      checksPerPage: 20,
       expandChecks: true,
     })
     ```
   </Tab>
 
-  <Tab title="Regional Dashboard">
+  <Tab title="Regional dashboard">
+    {/* typecheck-wrap: Dashboard */}
     ```ts
     new Dashboard("us-east-dashboard", {
       header: "US East Region Status",
@@ -284,7 +296,8 @@ You must provide either `entrypoint` or `content`, but not both.
     ```
   </Tab>
 
-  <Tab title="Team Dashboard">
+  <Tab title="Team dashboard">
+    {/* typecheck-wrap: Dashboard */}
     ```ts
     new Dashboard("platform-team-dashboard", {
       header: "Platform Team Services",
@@ -301,7 +314,8 @@ You must provide either `entrypoint` or `content`, but not both.
     ```
   </Tab>
 
-  <Tab title="Custom Styled Dashboard">
+  <Tab title="Custom styled dashboard">
+    {/* typecheck-wrap: Dashboard */}
     ```ts
     new Dashboard("branded-dashboard", {
       header: "ACME Corporation Status",

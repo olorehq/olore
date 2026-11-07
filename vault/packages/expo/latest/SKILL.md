@@ -3,37 +3,33 @@ name: olore-expo-latest
 description: Local Expo documentation reference (latest). Expo React Native framework documentation. Use for Expo SDK, EAS Build, app configuration, navigation, native modules, and cross-platform mobile development.
 ---
 
-# expo Documentation
+# Expo Documentation
 
-Expo React Native framework documentation covering the Expo SDK, EAS Build/Submit/Update, Expo Router (file-based navigation), native modules, config plugins, and cross-platform mobile development for iOS, Android, and web.
+Expo React Native framework documentation. Covers the Expo SDK (v58), EAS Build, EAS Update, app configuration, Expo Router, native modules, and cross-platform mobile development.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| New project | `contents/get-started/create-a-project.mdx` |
-| Tutorial | `contents/tutorial/introduction.mdx` |
-| Expo Router | `contents/router/basics/core-concepts.mdx` |
-| SDK API (v56) | `contents/versions/v56.0.0/sdk/` |
-| App config | `contents/versions/v56.0.0/config/app.mdx` |
-| EAS Build | `contents/build/setup.mdx` |
-| EAS Update (OTA) | `contents/eas-update/introduction.mdx` |
-| Push notifications | `contents/push-notifications/overview.mdx` |
-| Native modules | `contents/modules/overview.mdx` |
-| Troubleshooting | `contents/troubleshooting/overview.mdx` |
+| Getting started | `contents/get-started/` |
+| Tutorial | `contents/tutorial/` |
+| SDK API reference | `contents/versions/v58.0.0/sdk/` |
+| App configuration | `contents/versions/v58.0.0/config/app.mdx` |
+| Expo Router | `contents/router/` |
+| EAS Build | `contents/build/` |
+| EAS Update (OTA) | `contents/eas-update/` |
+| Native modules | `contents/modules/` |
+| Troubleshooting | `contents/troubleshooting/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Expo SDK modules and APIs (camera, sensors, media, storage, location, etc.)
-- Expo Router and file-based navigation
-- EAS Build, EAS Submit, EAS Update, EAS Hosting, EAS Workflows
-- React Native cross-platform development with Expo
-- Native modules and config plugins
-- App signing, credentials, and distribution
-- Push notifications with Expo
-- Debugging and troubleshooting Expo apps
-- Bare workflow and brownfield integration
+- Expo SDK packages and APIs (camera, notifications, file system, UI components, etc.)
+- Expo Router navigation, layouts, and deep linking
+- EAS Build, Submit, Update, Workflows, and Hosting
+- app.json / app config, config plugins, and prebuild
+- Writing native modules with the Expo Modules API
+- Push notifications, app signing, and development builds
 
 ## How to find information
 

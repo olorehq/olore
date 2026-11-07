@@ -1,112 +1,370 @@
 ---
 title: 'Checkly Documentation'
-description: 'The AI Native Application Reliability Platform built for modern engineering teams.'
-mode: "wide"
-
+sidebarTitle: 'Home'
+description: 'The active monitoring layer for engineers and agents. Detect, communicate, and resolve failures with checks defined as code.'
+mode: "frame"
+canonical: 'https://www.checklyhq.com/docs/'
 ---
 
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx';
 
-## Ready to get started?
+<Visibility for="agents">
+> **For AI agents:** Start with [llms.txt](https://www.checklyhq.com/docs/llms.txt) for the full documentation index. Append `.md` to any docs URL to get its Markdown. To set Checkly up in a project, follow the [Quickstart](https://www.checklyhq.com/docs/quickstart.md).
 
-Checkly combines **testing**, **monitoring**, and **incident communication** <br />into a single platform to help you catch issues before your users do.
+# Checkly Documentation
 
-<Columns cols={2}>
-<Card title="What is Checkly?" icon="rocket" href="/what-is-checkly" cta="Learn more">
-Learn more about how Checkly works for modern teams.
-</Card>
+Checkly is the active monitoring layer for engineers & agents. Detect downtime with Playwright-powered monitors defined in TypeScript running from global or internal locations. Communicate outages with custom alerts and status pages. Resolve errors with traces and AI root cause analysis for new failures.
 
-<Card title="Quick Start" icon="bolt" href="quickstarts/browser-check/" cta="Get started">
-Get up and running with tests and monitors deployed in 5 minutes.
-</Card>
-</Columns>
+## Set up Checkly in a project
 
----
+Run this in your project directory. It installs the Checkly CLI and [Checkly Skills](/ai/skills), creates a `checkly.config.ts`, and copies a starter prompt for your coding agent:
 
-## Product Documentation
+```bash
+npx checkly init
+```
 
-<Columns cols={3}>
-<Card title="Detect"  href="/detect/overview" img="/images/Detect.svg">
-#### Monitor & Test
+To install only the skills for Claude Code, Cursor, Codex, and other agents:
 
-Detect issues before they happen with multiple layers of detection from around the globe.
-</Card>
+```bash
+npx checkly skills install
+```
 
-<Card title="Communicate"  href="/communicate/overview" img="/images/Communicate.svg">
-#### Alerts & Status
+## Explore the platform
 
-Get notified when issues happen with smart alerting, status pages, and dashboards.
-</Card>
+- [Detect](/detect/overview): synthetic monitoring, uptime monitoring, and testing
+- [Communicate](/communicate/overview): alerts, status pages, and dashboards
+- [Resolve](/resolve/overview): traces, Rocky AI root cause analysis, and automatic check repair
 
-<Card title="Resolve"  href="/resolve/overview" img="/images/Resolve.svg">
-#### Debug & Fix
+## Developer resources
 
-Debug issues with distributed OTel tracing, AI-powered insights, and performance analysis.
-</Card>
-</Columns>
+- [Constructs reference](/constructs/overview)
+- [CLI reference](/cli/overview)
+- [API reference](/api-reference/overview)
+- [MCP server](/ai/mcp-server)
+- [Guides](/guides/)
+- [Checkly for AI agents](/ai/overview)
+- [Changelog](https://www.checklyhq.com/changelog/)
+</Visibility>
 
----
+<Visibility for="humans">
+<div className="home">
 
-## Developer Tools Documentation
-<Columns cols={3}>
-<Card title="Constructs" icon="building-columns" href="/constructs/overview">
-Build and deploy monitoring infrastructure with reusable code constructs.
-</Card>
+{/* Hero */}
 
-
-<Card title="CLI" icon="terminal" href="/cli/overview">
-Get everything you need to monitor and test your applications continuously with the Checkly CLI.
-</Card>
-
-<Card title="API" icon="code" href="/api-reference/overview">
-Extend the Checkly platform with our powerful REST API and SDKs.
-</Card>
+<div className="home-hero">
+  <h1 className="home-title">Checkly Documentation</h1>
+  <p className="home-subtitle">Guides and reference for testing, monitoring, communicating, and debugging issues in your applications.</p>
 
 
+  <div className="home-hero-actions">
+    <a className="home-button" href="/quickstart">Get started</a>
+    <CopyPromptButton label="Copy prompt" targetId="home-agent-prompt" className="home-button home-button-secondary" />
+    <span className="home-hero-hint">Paste the prompt into Claude Code, Codex, OpenCode, or most other agents.</span>
+  </div>
+</div>
 
-</Columns>
+<div id="home-agent-prompt" style={{ display: 'none' }}>
 
----
+```txt
+Set up Checkly monitoring in this project.
 
-## Learn More
+1. Run `npx checkly init` in this project, installing the Checkly skill for this agent. Load the installed skill before writing monitoring code.
+2. Inspect the project structure, existing tests, and endpoints. Create a small set of monitors as code that match this codebase: URL monitors for key pages, API checks for important endpoints, and Browser Checks or a Playwright Check Suite if a Playwright config exists. Start with the most critical flow, not full coverage.
+3. Ask me for an alert email address or Slack channel and create at least one alert channel assigned to the checks. Do not use placeholder values.
+4. Run `npx checkly test` and fix anything that fails. If I am not logged in, ask me to run `npx checkly login`.
+5. Show me what you changed and stop for my confirmation before running `npx checkly deploy`.
 
-<Columns cols={3}>
-  <Card title="Learn" href="/learn/overview">
-  #### Reliability Fundamentals
+Documentation index: https://www.checklyhq.com/docs/llms.txt (append .md to any docs URL for Markdown).
+```
 
-  Learn the fundamentals of reliability and how to build a reliable application.
-  </Card>
+</div>
 
-  <Card title="Guides"  href="/guides/">
-  #### How-to Guides
+{/* Detect / Communicate / Resolve */}
 
-  Implementation tutorials, best practices, and real-world examples.
-  </Card>
+<div className="home-section">
+  <div className="home-section-head">
+    <div>
+      <h2 className="home-heading">The active monitoring layer for engineers & agents</h2>
+      <p className="home-lead">Detect downtime with powerful monitors defined in TypeScript running from global or internal locations. Communicate outages with customizable alerts and status pages. Resolve errors with traces and AI root cause analysis for failures.</p>
+    </div>
+  </div>
 
-  <Card title="Community" href="https://www.checklyhq.com/slack/">
-  #### Join the Checkly Community
+<Tabs>
+  <Tab title="Detect" icon="activity">
+  <div className="home-tab">
+    <div className="home-tab-title"><Icon icon="activity" size={18} />Monitors are created in the UI or through coded constructs</div>
+    <p className="home-tab-text">You can use Browser Checks to run plain `@playwright/test` spec in your repo on a schedule from locations around the globe, alongside API checks, URL monitors, and heartbeats.</p>
 
-  Ask questions and get help from the Checkly team and other users.
-  </Card>
-</Columns>
+```ts __checks__/homepage.spec.ts
+import { test, expect } from '@playwright/test'
 
----
+test('homepage loads', async ({ page }) => {
+  const response = await page.goto('https://www.checklyhq.com')
+  expect(response?.status()).toBeLessThan(400)
+  await expect(page).toHaveTitle(/Checkly/)
+})
+```
 
-## Quick Links
+    <div className="home-tab-links">
+      <a className="home-tab-cta" href="/detect/synthetic-monitoring/browser-checks/overview">Create your first check <Icon icon="arrow-right" size={14} /></a>
+      <a href="/detect/synthetic-monitoring/api-checks/overview">API Checks</a>
+      <a href="/detect/uptime-monitoring/overview">Uptime Monitors</a>
+      <a href="/detect/synthetic-monitoring/playwright-checks/overview">Playwright Check Suites</a>
+      <a href="/detect/testing/overview">Testing</a>
+    </div>
+  </div>
+  </Tab>
+  <Tab title="Communicate" icon="bell">
+  <div className="home-tab">
+    <div className="home-tab-title"><Icon icon="bell" size={18} /> Alerts and status pages as code</div>
+    <p className="home-tab-text">Define alert channels once and attach them to any check or group. Route failures to Slack, email, PagerDuty, or webhooks, and publish a status page from the same project.</p>
 
-<Columns cols={4}>
-<Card title="What is Checkly?" href="/what-is-checkly">
-Platform overview
-</Card>
+```ts __checks__/alerts.check.ts
+import { SlackAppAlertChannel } from 'checkly/constructs'
 
-<Card title="Create API Check" href="/quickstarts/api-check">
-Monitor APIs
-</Card>
+// Install the Checkly Slack App in your Slack workspace before deploying.
+export const slack = new SlackAppAlertChannel('ops-slack', {
+  slackChannels: ['#ops'],
+  sendFailure: true,
+  sendRecovery: true,
+  sendDegraded: false,
+})
+```
 
-<Card title="Set up Alerts" href="/communicate/overview">
-Get notified
-</Card>
+    <div className="home-tab-links">
+      <a className="home-tab-cta" href="/communicate/alerts/overview">Set up alerting <Icon icon="arrow-right" size={14} /></a>
+      <a href="/communicate/alerts/channels">Alert channels</a>
+      <a href="/communicate/status-pages/overview">Status Pages</a>
+      <a href="/communicate/dashboards/overview">Dashboards</a>
+      <a href="/communicate/maintenance-windows/overview">Maintenance Windows</a>
+    </div>
+  </div>
+  </Tab>
+  <Tab title="Resolve" icon="target-arrow">
+  <div className="home-tab">
+    <div className="home-tab-title"><Icon icon="target-arrow" size={18} /> Find the root cause with Rocky AI</div>
+    <p className="home-tab-text">Rocky AI uses your check's errors, logs, screenshots, and available traces to explain what failed, identify the likely root cause, and assess user impact. By default, Rocky AI analyzes every new error group automatically, and you can start an analysis from any failing result.</p>
 
-<Card title="Deploy with CLI" href="/cli/overview/">
-Monitoring as code
-</Card>
-</Columns>
+```bash Terminal
+npx checkly checks get <check-id> --error-group=<error-group-id>
+```
+
+    <div className="home-tab-links">
+      <a className="home-tab-cta" href="/ai/rocky-ai">Explore Rocky AI <Icon icon="arrow-right" size={14} /></a>
+      <a href="/resolve/ai-root-cause-analysis/overview">Root cause analysis</a>
+      <a href="/resolve/automatic-check-repair">Automatic check repair</a>
+    </div>
+  </div>
+  </Tab>
+</Tabs>
+</div>
+
+{/* Monitoring use cases */}
+
+<div className="home-section">
+  <div className="home-section-head">
+    <div>
+      <h2 className="home-heading">What are you monitoring?</h2>
+      <p className="home-lead">Start with what you need to keep working, then choose the right check.</p>
+    </div>
+  </div>
+
+  <div className="home-grid">
+    <div className="home-monitoring-group">
+      <h3 className="home-feature-title">Websites &amp; user journeys</h3>
+      <ul>
+        <li><a href="/detect/uptime-monitoring/url-monitors/overview">Page availability</a></li>
+        <li><a href="/detect/synthetic-monitoring/browser-checks/overview">Login and signup</a></li>
+        <li><a href="/guides/monitoring-ecommerce-apps-using-playwright">Checkout flows</a></li>
+      </ul>
+    </div>
+    <div className="home-monitoring-group">
+      <h3 className="home-feature-title">APIs &amp; services</h3>
+      <ul>
+        <li><a href="/detect/synthetic-monitoring/api-checks/overview">REST APIs</a></li>
+        <li><a href="/detect/synthetic-monitoring/multistep-checks/overview">Multistep API flows</a></li>
+        <li><a href="/detect/uptime-monitoring/grpc-monitors/overview">gRPC services</a></li>
+      </ul>
+    </div>
+    <div className="home-monitoring-group">
+      <h3 className="home-feature-title">Infrastructure &amp; jobs</h3>
+      <ul>
+        <li><a href="/detect/uptime-monitoring/ssl-monitors/overview">SSL certificates</a></li>
+        <li><a href="/detect/uptime-monitoring/dns-monitors/overview">DNS records</a></li>
+        <li><a href="/detect/uptime-monitoring/heartbeat-monitors/overview">Cron jobs and backups</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+{/* What's new. Refresh these cards from https://www.checklyhq.com/changelog/ when a new monthly post ships. */}
+
+<div className="home-section">
+  <div className="home-section-head">
+    <div>
+      <h2 className="home-heading">What's new</h2>
+      <p className="home-lead">The latest features and improvements shipping across Checkly.</p>
+    </div>
+    <a className="home-section-link" href="https://www.checklyhq.com/changelog/">View changelog <Icon icon="arrow-right" size={14} /></a>
+  </div>
+
+  <div className="home-news">
+    <a className="home-news-card home-news-featured" href="https://www.checklyhq.com/changelog/whats-new-in-september-2026/#whats-new-in-september-2026-create-and-manage-checks-from-your-ai-agent">
+      <img className="home-news-waves" src="/images/home-news-waves.svg" alt="" noZoom />
+      <span className="home-news-title">Create and manage checks from your AI agent</span>
+      <span className="home-news-text">The Checkly MCP server can now create, update, and delete checks, monitors, and check groups, so an agent can go from "this endpoint matters" to a running monitor without leaving the conversation.</span>
+      <span className="home-card-link">Read more <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-news-card" href="https://www.checklyhq.com/changelog/whats-new-in-september-2026/#whats-new-in-september-2026-automatic-check-repair-for-browser-and-multistep-checks-beta">
+      <span className="home-news-title">Automatic check repair (Beta)</span>
+      <span className="home-news-text">Rocky AI proposes, tests, and applies fixes for repairable errors such as outdated selectors in Browser and Multistep checks.</span>
+      <span className="home-card-link">Read more <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-news-card" href="https://www.checklyhq.com/changelog/whats-new-in-september-2026/#whats-new-in-september-2026-status-pages-rebuilt-around-components">
+      <span className="home-news-title">Status pages rebuilt around components</span>
+      <span className="home-news-text">Group services into components with StatusPageV3, and let automation rules open and resolve incidents for you.</span>
+      <span className="home-card-link">Read more <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-news-card" href="https://www.checklyhq.com/changelog/whats-new-in-september-2026/#whats-new-in-september-2026-also-shipped">
+      <span className="home-news-title">Pull requests from the UI</span>
+      <span className="home-news-text">With the GitHub App installed, Export to Code and UI edits to code-managed checks open a pull request against the defining file.</span>
+      <span className="home-card-link">Read more <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-news-card" href="https://www.checklyhq.com/changelog/whats-new-in-september-2026/#whats-new-in-september-2026-track-contract-usage-and-credit-budgets">
+      <span className="home-news-title">Track contract usage and credit budgets</span>
+      <span className="home-news-text">Contract customers can see consumed and remaining credits, usage trends, and projected consumption by account and check type.</span>
+      <span className="home-card-link">Read more <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-news-card" href="https://www.checklyhq.com/changelog/whats-new-in-august-2026/#whats-new-in-august-2026-private-locations-now-report-their-own-errors">
+      <span className="home-news-title">Private Locations report their own errors</span>
+      <span className="home-news-text">A new Errors tab shows error trends, stack traces, and agent details for every Private Location.</span>
+      <span className="home-card-link">Read more <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-news-card" href="https://www.checklyhq.com/changelog/whats-new-in-august-2026/#whats-new-in-august-2026-see-inspect-and-clean-up-projects-from-the-app">
+      <span className="home-news-title">Inspect projects from the app</span>
+      <span className="home-news-text">Monitoring as Code projects now appear in the UI with their resources, deployment history, and any drift from code.</span>
+      <span className="home-card-link">Read more <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-news-card" href="https://www.checklyhq.com/changelog/whats-new-in-august-2026/#whats-new-in-august-2026-maintenance-windows-are-now-timezone-aware">
+      <span className="home-news-title">Timezone-aware maintenance windows</span>
+      <span className="home-news-text">Recurring maintenance windows stay at their local time through daylight saving changes.</span>
+      <span className="home-card-link">Read more <Icon icon="arrow-right" size={12} /></span>
+    </a>
+  </div>
+</div>
+
+{/* Developer tools */}
+
+<div className="home-section">
+  <div className="home-section-head">
+    <div>
+      <h2 className="home-heading">Build with Checkly</h2>
+      <p className="home-lead">Everything you need to define, test, deploy, and automate your monitoring from code, CI, or an AI agent.</p>
+    </div>
+    <a className="home-section-link" href="/guides/">Browse guides <Icon icon="arrow-right" size={14} /></a>
+  </div>
+
+  <p className="home-eyebrow">Monitoring as Code</p>
+  <div className="home-grid">
+    <a className="home-feature" href="/cli/overview">
+      <span className="home-feature-title">Test and deploy from your terminal or CI</span>
+      <span className="home-feature-text">Run checks against any environment with <code>checkly test</code>, then ship them as always-on monitors with <code>checkly deploy</code>.</span>
+      <span className="home-card-link">CLI reference <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-feature" href="/constructs/overview">
+      <span className="home-feature-title">Every resource, typed and versioned</span>
+      <span className="home-feature-text">Checks, groups, alert channels, status pages, and dashboards, all defined as TypeScript constructs in your repo.</span>
+      <span className="home-card-link">Constructs reference <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-feature" href="/api-reference/overview">
+      <span className="home-feature-title">Automate anything with the REST API</span>
+      <span className="home-feature-text">Manage checks, results, and account settings programmatically, with an OpenAPI spec you can generate clients from.</span>
+      <span className="home-card-link">API reference <Icon icon="arrow-right" size={12} /></span>
+    </a>
+  </div>
+
+  <p className="home-eyebrow">AI agents</p>
+  <div className="home-grid">
+    <a className="home-feature" href="/ai/skills">
+      <span className="home-feature-title">Teach your agent Checkly</span>
+      <span className="home-feature-text">Official skills give Claude Code, Cursor, Codex, and other agents the context to write, test, and deploy monitoring correctly.</span>
+      <span className="home-card-link">Install Checkly Skills <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-feature" href="/ai/mcp-server">
+      <span className="home-feature-title">Query and manage your account from chat</span>
+      <span className="home-feature-text">Inspect failing checks, results, incidents, and root cause analyses, or create and update checks from any MCP client.</span>
+      <span className="home-card-link">Connect the MCP server <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-feature" href="/ai/rocky-ai">
+      <span className="home-feature-title">Root cause analysis for new failures</span>
+      <span className="home-feature-text">Rocky AI reads errors, traces, screenshots, and the last passing run, then explains the impact and suggests a fix.</span>
+      <span className="home-card-link">Meet Rocky AI <Icon icon="arrow-right" size={12} /></span>
+    </a>
+  </div>
+
+  <p className="home-eyebrow">Platform</p>
+  <div className="home-grid">
+    <a className="home-feature" href="/integrations/ci-cd/overview">
+      <span className="home-feature-title">Run checks on every deploy</span>
+      <span className="home-feature-text">Gate releases with GitHub Actions, GitLab, Vercel, or Jenkins, and deploy monitoring changes alongside your code.</span>
+      <span className="home-card-link">CI/CD integrations <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-feature" href="/platform/private-locations/overview">
+      <span className="home-feature-title">Monitor inside your network</span>
+      <span className="home-feature-text">Run the Checkly Agent in your own infrastructure to check internal services, staging environments, and private APIs.</span>
+      <span className="home-card-link">Set up a Private Location <Icon icon="arrow-right" size={12} /></span>
+    </a>
+    <a className="home-feature" href="/integrations/iac/terraform/overview">
+      <span className="home-feature-title">Manage Checkly with your IaC</span>
+      <span className="home-feature-text">Prefer Terraform or Pulumi over the CLI? Official providers cover checks, groups, alert channels, and more.</span>
+      <span className="home-card-link">Terraform provider <Icon icon="arrow-right" size={12} /></span>
+    </a>
+  </div>
+</div>
+
+{/* Connect */}
+
+<div className="home-section">
+  <div className="home-section-head">
+    <div>
+      <h2 className="home-heading">Connect with Checkly</h2>
+      <p className="home-lead">Find the community, read the blog, and explore open source projects.</p>
+    </div>
+  </div>
+
+  <div className="home-grid home-connect">
+    <div className="home-connect-card">
+      <span className="home-tag">Community</span>
+      <span className="home-feature-title">Join the conversation</span>
+      <span className="home-feature-text">Ask questions, share what you built, and get help from the Checkly team and other users.</span>
+      <span className="home-connect-links">
+        <a href="https://www.checklyhq.com/slack/">Slack</a>
+        <a href="https://github.com/checkly">GitHub</a>
+        <a href="https://www.youtube.com/@ChecklyHQ">YouTube</a>
+      </span>
+    </div>
+    <div className="home-connect-card">
+      <span className="home-tag">Open source</span>
+      <span className="home-feature-title">View the source</span>
+      <span className="home-feature-text">The CLI and the Terraform and Pulumi providers are developed in the open.</span>
+      <span className="home-connect-links">
+        <a href="https://github.com/checkly/checkly-cli">checkly-cli</a>
+        <a href="https://github.com/checkly/terraform-provider-checkly">Terraform</a>
+        <a href="https://github.com/checkly/pulumi-checkly">Pulumi</a>
+      </span>
+    </div>
+    <div className="home-connect-card">
+      <span className="home-tag">Learn</span>
+      <span className="home-feature-title">Read the latest</span>
+      <span className="home-feature-text">Product news, engineering deep dives, and fundamentals of testing and monitoring with Playwright and OpenTelemetry.</span>
+      <span className="home-connect-links">
+        <a href="https://www.checklyhq.com/blog/">Blog</a>
+        <a href="/learn/overview">Learn</a>
+        <a href="/guides/">Guides</a>
+      </span>
+    </div>
+  </div>
+</div>
+
+</div>
+</Visibility>

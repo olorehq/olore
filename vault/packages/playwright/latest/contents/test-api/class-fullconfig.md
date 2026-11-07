@@ -27,6 +27,12 @@ Path to the configuration file used to run the tests. The value is an empty stri
 
 See [`property: TestConfig.failOnFlakyTests`].
 
+## property: FullConfig.filteredProjects
+* since: v1.64
+- type: <[Array]<[FullProject]>>
+
+List of projects that were selected to run, after applying the `--project` command line filter. When no filter is specified, this is the same as [`property: FullConfig.projects`].
+
 ## property: FullConfig.forbidOnly
 * since: v1.10
 - type: <[boolean]>
@@ -83,7 +89,7 @@ See [`property: TestConfig.metadata`].
 
 ## property: FullConfig.preserveOutput
 * since: v1.10
-- type: <[PreserveOutput]<"always"|"never"|"failures-only">>
+- type: "PreserveOutput" <"always"|"never"|"failures-only">
 
 See [`property: TestConfig.preserveOutput`].
 
@@ -101,7 +107,7 @@ See [`property: TestConfig.quiet`].
 
 ## property: FullConfig.reporter
 * since: v1.10
-- type: <[string]|[Array]<[Object]>|[BuiltInReporter]<"list"|"dot"|"line"|"github"|"json"|"junit"|"null"|"html">>
+- type: "BuiltInReporter" <[string]|[Array]<[Object]>|"list"|"dot"|"failures"|"line"|"github"|"json"|"junit"|"null"|"html"|"blob"|"perfetto">
   - `0` <[string]> Reporter name or module or file path
   - `1` <[Object]> An object with reporter options if any
 
@@ -137,13 +143,13 @@ Resolved global tags. See [`property: TestConfig.tag`].
 
 ## property: FullConfig.updateSnapshots
 * since: v1.10
-- type: <[UpdateSnapshots]<"all"|"changed"|"missing"|"none">>
+- type: "UpdateSnapshots" <"all"|"changed"|"missing"|"none"|"default">
 
 See [`property: TestConfig.updateSnapshots`].
 
 ## property: FullConfig.updateSourceMethod
 * since: v1.50
-- type: <[UpdateSourceMethod]<"overwrite"|"3way"|"patch">>
+- type: "UpdateSourceMethod" <"overwrite"|"3way"|"patch">
 
 See [`property: TestConfig.updateSourceMethod`].
 
@@ -158,6 +164,7 @@ Playwright version.
 - type: <[null]|[Object]>
 
 See [`property: TestConfig.webServer`].
+This property is `null` in merged reports because server configuration is not serialized.
 
 ## property: FullConfig.workers
 * since: v1.10

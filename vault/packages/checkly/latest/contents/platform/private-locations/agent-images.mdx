@@ -1,6 +1,8 @@
 ---
 title: 'Agent Images'
+description: "Compare the Checkly Agent images, Standard, Dev, and Uptime, and learn the image tag format for pulling the variant and version you need."
 sidebarTitle: 'Agent Images'
+canonical: 'https://www.checklyhq.com/docs/platform/private-locations/agent-images/'
 ---
 
 Checkly provides different agent images:
@@ -43,11 +45,11 @@ Use the standard image unless you have a specific need for the dev or uptime var
 
 The uptime image (`checkly/agent-uptime:X.Y.Z`) is a lightweight version of the agent designed for [uptime monitoring](/detect/uptime-monitoring/overview) only.
 
-It supports URL, DNS, TCP and ICMP monitors.
+It supports URL, DNS, TCP and ICMP monitors. Concurrency is controlled by `AGENT_WORKER_COUNT`; `JOB_CONCURRENCY` has no effect on this image. See [agent configuration](/platform/private-locations/agent-configuration).
 
 ## Dev Image
 
-If any of the checks you run on Private Locations rely on npm packages with native code, those packages need to be compiled during installation.
+If any of the checks you run on private locations rely on npm packages with native code, those packages need to be compiled during installation.
 
 The standard agent is optimized for size and doesn’t ship with build tools. In those cases, you’ll need to use the dev image instead.
 

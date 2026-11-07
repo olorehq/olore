@@ -1,14 +1,15 @@
 ---
-title: 'Multistep Check Structure'
-description: 'Learn how to structure your multistep checks with Playwright.'
+title: 'Multistep check structure'
+description: 'Learn how to structure your Multistep checks with Playwright.'
 sidebarTitle: MaC Structure
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/multistep-checks/multistep-structure/'
 ---
 
 <Tip>
-**Monitoring as Code**: Learn more about the [Multistep Check Construct](/constructs/multistep-check).
+**Monitoring as Code**: Learn more about the [Multistep check construct](/constructs/multistep-check).
 </Tip>
 
-## Multistep Check Construct
+## Multistep check construct
 
 ```ts multistep-check.ts
 import { MultiStepCheck, Frequency } from 'checkly/constructs'
@@ -143,9 +144,14 @@ const response = await request.get('/api/search', {
 </Tab>
 <Tab title="Form Data">
 ```typescript
+const file = await request.get('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf')
 const response = await request.post('/api/upload', {
-  form: {
-    file: fs.readFileSync('document.pdf'),
+  multipart: {
+    file: {
+      name: 'document.pdf',
+      mimeType: 'application/pdf',
+      buffer: await file.body()
+    },
     description: 'Important document'
   }
 })

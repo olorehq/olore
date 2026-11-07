@@ -1,0 +1,144 @@
+---
+title: order
+description: 'This page explains how to use the order operator in APL.'
+---
+
+The `order` operator in Axiom Processing Language (APL) allows you to sort the rows of a result set by one or more specified fields. You can use this operator to organize data for easier interpretation, prioritize specific values, or prepare data for subsequent analysis steps. The `order` operator is particularly useful when working with logs, telemetry data, or any dataset where ranking or sorting by values (such as time, status, or user ID) is necessary.
+
+## Usage
+
+### Syntax
+
+```kusto
+| order by FieldName [asc | desc], FieldName [asc | desc]
+```
+
+### Parameters
+
+- `FieldName`: The name of the field by which to sort.
+- `asc`: Sorts the field in ascending order.
+- `desc`: Sorts the field in descending order.
+
+### Returns
+
+The `order` operator returns the input dataset, sorted according to the specified fields and order (ascending or descending). If multiple fields are specified, sorting is done based on the first field, then by the second if values in the first field are equal, and so on.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this example, you sort HTTP logs by request duration in descending order to prioritize the longest requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| order by req_duration_ms desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20order%20by%20req_duration_ms%20desc%22%7D)
+
+**Output**
+
+| _time               | req_duration_ms | id     | status | uri                    | method | geo.city | geo.country |
+|---------------------|-----------------|--------|--------|------------------------|--------|----------|-------------|
+| 2024-10-17 10:10:01 | 1500            | user12 | 200    | /api/v1/get-orders     | GET    | Seattle  | US          |
+| 2024-10-17 10:09:47 | 1350            | user23 | 404    | /api/v1/get-products   | GET    | New York | US          |
+| 2024-10-17 10:08:21 | 1200            | user45 | 500    | /api/v1/post-order     | POST   | London   | UK          |
+
+This query sorts the logs by request duration, helping you identify which requests are taking the most time to complete.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In this example, you sort OpenTelemetry trace data by span duration in descending order, which helps you identify the longest-running spans across your services.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| order by duration desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20order%20by%20duration%20desc%22%7D)
+
+**Output**
+
+| _time               | duration | span_id    | trace_id  | service.name       | kind   | status_code |
+|---------------------|----------|------------|-----------|--------------------|--------|-------------|
+| 2024-10-17 10:10:01 | 15.3s    | span4567   | trace123  | frontend           | server | 200         |
+| 2024-10-17 10:09:47 | 12.4s    | span8910   | trace789  | checkoutservice    | client | 200         |
+| 2024-10-17 10:08:21 | 10.7s    | span1112   | trace456  | productcatalogservice | server | 500         |
+
+This query helps you detect performance bottlenecks by sorting spans based on their duration.
+
+</Tab>
+<Tab title="Security logs">
+
+In this example, you analyze security logs by sorting them by time to view the most recent logs.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| order by _time desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20order%20by%20_time%20desc%22%7D)
+
+**Output**
+
+| _time               | req_duration_ms | id     | status | uri                    | method | geo.city | geo.country |
+|---------------------|-----------------|--------|--------|------------------------|--------|----------|-------------|
+| 2024-10-17 10:10:01 | 300             | user34 | 200    | /api/v1/login          | POST   | Berlin   | DE          |
+| 2024-10-17 10:09:47 | 150             | user78 | 401    | /api/v1/get-profile    | GET    | Paris    | FR          |
+| 2024-10-17 10:08:21 | 200             | user56 | 500    | /api/v1/update-profile | PUT    | Madrid   | ES          |
+
+This query sorts the security logs by time to display the most recent log entries first, helping you quickly review recent security events.
+
+</Tab>
+</Tabs>
+
+## List of related operators
+
+- [top](/apl/tabular-operators/top-operator): The `top` operator returns the top N records based on a specific sorting criteria, which is similar to `order` but only retrieves a fixed number of results.
+- [summarize](/apl/tabular-operators/summarize-operator): The `summarize` operator groups data and often works in combination with `order` to rank summarized values.
+- [extend](/apl/tabular-operators/extend-operator): The `extend` operator can be used to create calculated fields, which can then be used as sorting criteria in the `order` operator.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the equivalent operator to `order` is `sort`. SPL uses a similar syntax to APL but with some differences. In SPL, `sort` allows both ascending (`asc`) and descending (`desc`) sorting, while in APL, you achieve sorting using the `asc()` and `desc()` functions for fields.
+
+<CodeGroup>
+```splunk Splunk example
+| sort - _time
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| order by _time desc
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the equivalent of `order` is `ORDER BY`. SQL uses `ASC` for ascending and `DESC` for descending order. In APL, sorting works similarly, with the `asc()` and `desc()` functions added around field names to specify the order.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM logs ORDER BY _time DESC;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| order by _time desc
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

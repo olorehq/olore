@@ -3,8 +3,6 @@ title: "Layout"
 description: "Control how graphics are laid out within the canvas."
 ---
 
-import { Apple } from '/snippets/constants.mdx'
-
 import FitMode from '/snippets/runtimes/layouts/fit-mode.mdx'
 import Alignment from "/snippets/runtimes/layouts/alignment.mdx"
 import Bounds from "/snippets/runtimes/layouts/bounds.mdx"
@@ -24,7 +22,7 @@ import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx
 <ApplyingFitMode />
 
 <Tabs>
-  <Tab title={Apple.currentRuntimeName}>
+  <Tab title={"{{runtimeCurrentNameApple}}"}>
     You can set the fit and layout options on a `Rive` object. The `.fit` can be updated at runtime without creating a new `Rive` object.
 
     For all possible options, see [Fit.swift](https://github.com/rive-app/rive-ios/blob/main/Source/Concurrency/View/Fit.swift)
@@ -38,7 +36,7 @@ import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx
     rive.fit = .fitWidth(alignment: .topCenter)
     ```
   </Tab>
-  <Tab title={Apple.legacyRuntimeName}>
+  <Tab title={"{{runtimeLegacyNameApple}}"}>
     The runtime provides the following enums to set on layout parameters:
 
     - **Fit**
@@ -154,7 +152,7 @@ import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx
 <ResponsiveLayouts />
 
 <Tabs>
-  <Tab title={Apple.currentRuntimeName}>
+  <Tab title={"{{runtimeCurrentNameApple}}"}>
     When creating a new `Rive` object, you can set the fit to layout, with two options for the scale factor: automatic or explicit.
 
     ```swift
@@ -166,7 +164,7 @@ import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx
     rive.fit = .layout(scaleFactor: .explicit(2.0))
     ```
   </Tab>
-  <Tab title={Apple.legacyRuntimeName} borderBottom>
+  <Tab title={"{{runtimeLegacyNameApple}}"} borderBottom>
     **Examples**
 
     - [SwiftUI](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/SwiftUI/SwiftLayout.swift)

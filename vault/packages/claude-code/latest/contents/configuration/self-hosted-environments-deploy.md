@@ -1,0 +1,1060 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Deploy self-hosted environments to production
+
+> Run self-hosted runners in production: security hardening, network egress control, git credentials, Kubernetes and Compose recipes, and troubleshooting.
+
+> [!NOTE]
+>
+> Self-hosted environments are in public beta on Team and Enterprise plans; [Availability and limitations](https://code.claude.com/docs/en/self-hosted-environments#availability-and-limitations) covers the enablement path. This page covers running the fleet in production; see the [quickstart](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md) for your first runner and session.
+
+A [self-hosted environment](https://code.claude.com/docs/en/self-hosted-environments) runs Claude Code [cloud sessions](https://code.claude.com/docs/en/claude-code-on-the-web.md) on runners you deploy inside your network, and in production those sessions execute model-directed code on behalf of everyone who can dispatch a session to the environment. This page is for the operator taking a working environment to production. It works through the deployment in order: what to lock down before connecting real systems, the egress the fleet needs, how sessions authenticate to your git host, the deployment recipes themselves, and what to check when sessions misbehave.
+
+## Harden your deployment
+
+A self-hosted runner executes arbitrary, model-directed code on your infrastructure on behalf of everyone who can dispatch a session to its environment. That's any member of your Anthropic organization, and anyone who can start a [Claude Tag](https://claude.com/docs/claude-tag/overview) channel session in a scope an Owner routed to the environment. Work through each item before you connect an environment to production systems:
+
+* **Ephemeral, per-session containers**: run each runner process in a fresh container or VM that's destroyed when the process exits, with `--capacity 1` and the default `--drain-grace-sec 0` so each container serves exactly one session. At a higher capacity, or with a positive drain grace, one container serves multiple sessions from the same [locked owner](https://code.claude.com/docs/en/self-hosted-environments#key-concepts); see [Runner lifecycle](https://code.claude.com/docs/en/self-hosted-environments#runner-lifecycle). Don't reuse a filesystem between runner restarts, except in the deliberate [pre-warmed checkout](#reuse-a-pre-warmed-checkout) setup, and never across owners.
+  * When the runner stops a session, it sends no signal to a process still running after its shell command exited, such as a service that daemonized. Destroying the container or VM ends that process.
+* **No broad credentials in the image**: don't include long-lived SSH keys, cloud-provider credentials, or personal access tokens that grant more than a session needs. Mint credentials used during a session, such as push or API tokens, per session from your [wrapper script](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#wrapper-scripts). The initial clone happens before the wrapper runs, so handle it with a [`checkout` lifecycle hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout), or with [`--use-anthropic-git-proxy`](#use-the-anthropic-git-proxy) when all of a session's repositories are on github.com. For both, see [Configure git](#configure-git).
+* **Keep the host's GitHub credentials away from sessions**: Claude can use any GitHub credential a session can read, with whatever access that credential grants. Keep the runner host's own broadly scoped GitHub credentials out of anything a session can read. Such a credential can be a personal access token, the token `gh auth login` saves for your account, or a `GH_TOKEN` in the runner's environment.
+  * **With [Anthropic-managed git](#use-the-anthropic-git-proxy)**: with such a credential, Claude reaches GitHub directly instead of through Anthropic-managed git.
+  * **Without Anthropic-managed git**: a clone credential can stay in the image if you scope it as tightly as [Ship git config in your image](#ship-git-config-in-your-image) describes.
+* **Keep the environment secret off session-running hosts**: the environment secret can register runners and pick up any session queued on the environment. On a fixed fleet it lives on every runner host, where any session's code can read the secret file. Prefer [on-demand runners](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners), where the secret stays on the orchestrator host, which never runs user code, and each runner receives a single-use work order that registers exactly one runner. On a fixed fleet, treat the environment-secret file as readable by every session and rotate the secret after any suspected session compromise.
+* **Default-deny network egress**: restrict runner and session container outbound traffic at your own network boundary on every environment; [Default-deny egress](#default-deny-egress) covers what to allow and why.
+* **Least-privilege host IAM**: the compute identity attached to the runner host, such as an instance profile or node service account, should grant only what the runner itself needs. Sessions should obtain their own credentials through your wrapper script rather than inheriting the host's.
+* **Block the cloud metadata endpoint from sessions**: keeping sessions off the host identity requires blocking their access to the cloud metadata endpoint, and subnet-level egress policies don't intercept link-local metadata traffic, so block it in the container itself:
+
+  * IMDSv2 with a hop limit of one
+  * GKE Workload Identity with metadata concealment
+  * An explicit deny for `169.254.169.254` in the session container's network namespace
+
+  The block applies to your wrapper script and lifecycle hooks too, since they share the container. Authenticate any token exchange with the [session JWT](https://code.claude.com/docs/en/self-hosted-environments-identity.md) against your own token service over allowlisted egress, or use a file-based web identity such as IAM Roles for Service Accounts (IRSA) on Amazon EKS.
+* **Per-runner filesystem isolation**: each runner process gets its own working directory that no other process on the host can read or write. Make `--hooks-dir`, the wrapper script, and the host's `~/.claude/` read-only to the session, either built into the image or mounted read-only.
+* **Dispatch has no per-environment access control**: any member of your Anthropic organization can dispatch a session to any of its environments. If an Owner [routes Claude Tag channels to the environment](https://code.claude.com/docs/en/cloud-environments.md#set-the-environment-a-claude-tag-channel-uses), anyone the [Claude Tag access setting](https://claude.com/docs/claude-tag/admins/restrict-access#restrict-who-can-use-claude) admits can start channel sessions that run there. By default that's anyone in the connected Slack workspace, with or without a Claude account. Treat every runner host as reachable for code execution by everyone who can dispatch to it, and place on a runner host only data and credentials that all of those people are allowed to read. [`--lock-to-account`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) bounds which account's sessions a given host executes, but it doesn't narrow who can dispatch into the environment. To make self-hosted environments the only picker option, an [Owner](https://code.claude.com/docs/en/cloud-environments.md#organization-shared-environments) can hide Anthropic-hosted environments for the whole organization from the [**Cloud environments** page](https://claude.ai/admin-settings/cloud-environments).
+* **Enforce the repo-settings guard**: choose the guard mode with [`--confine-repo-settings`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags). The default `warn` logs a violation and still spawns the session, `enforce` refuses the session, and `off` disables the scan. The runner scans each repository's committed settings for:
+
+  * A grant that resolves outside that session's own workspace: an `additionalDirectories` entry, an `Edit`, `Write`, or `NotebookEdit` rule in `permissions.allow`, or a `sandbox.filesystem.allowWrite` or `allowRead` entry
+  * A non-empty `env` block
+  * An operator-posture override such as `sandbox.enabled: false`
+
+  The guard runs regardless of [`--trust-workspace`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), and doesn't cover repository hooks, `.mcp.json`, or Bash rules; see [Permissions and tool approval](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#permissions-and-tool-approval) for where those grants belong.
+
+> [!NOTE]
+>
+> If your organization has [IP allowlisting](https://support.claude.com/en/articles/13200993-restrict-access-to-claude-with-ip-allowlisting) enabled, add the public egress addresses of your runners and session containers to the allowlist before you start them. If you run [on-demand runners](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners), add the orchestrator host's address too. Don't rely on the allowlist as a network control for runner or session traffic. Apply default-deny egress at your own network boundary instead.
+
+## Network requirements
+
+The runner and the session children it spawns make outbound connections to the hosts below. Restrict session-container egress to these hosts and the specific internal services sessions need to reach; [Default-deny egress](#default-deny-egress) covers how and why.
+
+These hosts are always required:
+
+| Host | Port | Used for |
+| :- | :- | :- |
+| `api.anthropic.com` | 443, HTTPS; WSS for [Anthropic-managed git](#use-the-anthropic-git-proxy) | Runner control plane and session streaming, model inference, feature flags, product analytics, [JWKS](https://code.claude.com/docs/en/self-hosted-environments-identity.md) key fetches, commit signing, and Anthropic-managed git when `--use-anthropic-git-proxy` is set |
+| Your git host, such as `github.com` or your GitHub Enterprise host | 443 or 22 | Cloning and pushing repositories on each git host the runner's sessions use. On a runner that uses [`--use-anthropic-git-proxy`](#use-the-anthropic-git-proxy), see [when the `github.com` path is still needed](#github-com-egress-with-the-anthropic-git-proxy). |
+
+A runner that uses [`--use-anthropic-git-proxy`](#use-the-anthropic-git-proxy) routes its `github.com` git traffic through `api.anthropic.com`, so it doesn't need the git host path for `github.com`. It still needs that path if you set `--push-outcome-on-release` or push from a `post-session` hook.
+
+Whether these hosts are needed depends on your configuration:
+
+| Host | Port | When required |
+| :- | :- | :- |
+| `api.github.com` | 443 | With or without `--use-anthropic-git-proxy`, when the runner image includes the [GitHub CLI](#github-api-access-with-the-github-cli) and you give sessions a github.com credential, such as a `GH_TOKEN` |
+| `downloads.claude.ai` | 443 | At install time, when you install or update Claude Code on the host with the native installer; the `install.sh` script itself is served from `claude.ai`. At session runtime, only when sessions install plugins from the official Anthropic marketplace. |
+| `storage.googleapis.com` | 443 | At session runtime, for the plugin install counts and metadata shown in `/plugin`. |
+| `code.claude.com` and `claude.com` | 443 | Documentation lookups by the built-in claude-code-guide agent and pre-approved WebFetch requests during sessions. Blocking these hosts only affects documentation lookups. |
+| `*.frame.claudeusercontent.com` | 443 | Only when the [Artifact tool](https://code.claude.com/docs/en/artifacts.md#availability) is available for sessions in your organization; defaults vary by plan, per the availability table there. Set `CLAUDE_CODE_DISABLE_ARTIFACT=1` on the runner to keep the tool disabled regardless of the organization setting. |
+| `registry.npmjs.org` | 443 | When a session installs a plugin, both for fetching npm-source plugin packages and for installing a plugin's Node.js dependencies, or when an `npx`-launched MCP server runs |
+| An internal mirror of the package registries your builds use, or the registries themselves | 443, or your mirror's port | When sessions install dependencies to build or test your repositories |
+| `http-intake.logs.us5.datadoghq.com` | 443 | Anthropic operational metrics. Only when `CLAUDE_CODE_BYOC_ENABLE_DATADOG=1` is set; off by default in self-hosted environments. |
+| `browser-intake-us5-datadoghq.com` | 443 | Anthropic error-report uploads, sent only when [error reporting](https://code.claude.com/docs/en/data-usage.md#telemetry-services) is enabled for the session's account. Suppressed by `DISABLE_ERROR_REPORTING=1` or `DISABLE_TELEMETRY=1`. |
+| Your cloud provider's endpoints for model requests, model lookups, and renewing credentials, such as `bedrock-runtime.us-east-1.amazonaws.com` or `aiplatform.googleapis.com` | 443 | Only when the runner [sends model requests to Amazon Bedrock or Google Cloud's Agent Platform](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#send-model-requests-to-bedrock-or-agent-platform) |
+
+You don't need to allowlist these hosts for runner or session traffic:
+
+* **`statsig.anthropic.com`, `*.sentry.io`, `claude.ai`, and `platform.claude.com`**: these hosts appear in some older enterprise network checklists, but the runner doesn't reach them. Feature-flag fetches go to `api.anthropic.com`, and the runner authenticates with the environment secret rather than interactive OAuth.
+* **`mcp-proxy.anthropic.com`**: self-hosted sessions don't use it. When connector delivery is enabled for your organization, your organization's claude.ai connectors reach sessions through `api.anthropic.com`. See [MCP servers](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#mcp-servers).
+
+These host-side flows do reach `claude.ai`, so run them from a host whose egress allows it rather than widening session-container egress:
+
+* **The one-line installer**: fetches `install.sh` from `claude.ai` at install time.
+* **Interactive `claude auth login`**: signs in through `claude.ai`, `claude.com`, and `platform.claude.com`. The [guided setup](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md#run-the-guided-setup), `doctor`'s signed-in mode, and [CI dispatch](https://code.claude.com/docs/en/self-hosted-environments-testing.md#authenticate-from-ci) use it. The browser you sign in with also loads the claude.ai sign-in page's browser checks from `hcaptcha.com`, `*.hcaptcha.com`, and `challenges.cloudflare.com`. If your organization uses single sign-on, that browser can also be redirected through `sso.claude.com`.
+
+### Default-deny egress
+
+Deploy runner and session containers in a network segment or namespace whose outbound traffic is limited to the hosts in the [network requirements table](#network-requirements), your git host, and the specific internal services sessions need to reach. The product can't verify or enforce this, so apply it at your own network boundary on every environment. Session code is model-directed and can attempt connections to arbitrary hosts; default-deny egress at the network layer bounds where those attempts can land. This applies regardless of permission mode: the default pre-approved tool set already includes `Bash`, so shell egress runs without a prompt even without [auto mode](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#permissions-and-tool-approval).
+
+For details on which telemetry each session emits and how to turn it off, see [Telemetry](https://code.claude.com/docs/en/self-hosted-environments-reference.md#telemetry).
+
+### Authenticate to an egress proxy
+
+Some corporate egress proxies require a `Proxy-Authorization` header on every connection. The token in that header often rotates too fast to write into the proxy URL you set in `HTTPS_PROXY`. Set `HTTPS_PROXY` or `HTTP_PROXY` to your proxy's URL as usual, then set `--proxy-authorization-command` or `--proxy-authorization-file` to tell the runner where to read the header value from. Both flags require Claude Code v2.1.238 or later.
+
+#### Choose where the `Proxy-Authorization` value comes from
+
+Pick the flag that matches how you produce the `Proxy-Authorization` token:
+
+* **[`--proxy-authorization-command <command>`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags)**: choose this for a token you generate on demand. The runner runs the shell command and uses its trimmed stdout as the header value, for example `Bearer <token>`.
+* **[`--proxy-authorization-file <path>`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags)**: choose this for a token another process rotates in place. The runner reads the file and uses its trimmed contents as the header value.
+
+#### Configurations the runner refuses to start with
+
+Each flag also has an environment variable form, listed beside it in the [runner CLI flags reference](https://code.claude.com/docs/en/self-hosted-environments-reference.md#runner-cli-flags). Before the runner contacts your proxy or the control plane, it checks the flags and their variables, and refuses to start in three cases:
+
+* **Both flags set**: one flag plus the other flag's environment variable counts as setting both.
+* **No proxy URL**: neither `HTTPS_PROXY` nor `HTTP_PROXY` holds an `http://` or `https://` URL. The runner reads both variables in upper or lower case, and doesn't consult `ALL_PROXY`.
+* **Either flag passed to the orchestrator subcommand**: `self-hosted-runner orchestrator` doesn't accept the flags or their environment variables. Pass the flag to each runner the orchestrator starts instead.
+
+#### What the runner changes while a proxy-authorization flag is set
+
+With either flag set, the runner starts a listener of its own and sends proxy traffic from itself, its lifecycle hooks, and its sessions through that listener. The listener adds the `Proxy-Authorization` header on the way to your proxy.
+
+* **Listener**: the listener is a forward proxy on `127.0.0.1`. The runner starts the listener before registering with the control plane, and exits at startup if the listener can't start.
+* **Proxy variables**: the runner rewrites whichever of `HTTPS_PROXY` and `HTTP_PROXY` you set so that it points at the listener. That rewritten value reaches the runner itself, its lifecycle hooks, and every session it runs.
+* **Token rotation**: a rotated token takes effect without a restart. For each connection the listener opens to your proxy, the runner runs your command or reads your file again and adds the result as the header.
+* **Session environment**: a session reaches your proxy only through the listener. In each session's environment the runner removes `ALL_PROXY`, removes any spelling of `HTTPS_PROXY` or `HTTP_PROXY` that you didn't set, and pins `NO_PROXY` to the runner's own value.
+* **Logs**: the runner never logs the header value.
+
+## Configure git
+
+The runner manages repository checkouts but doesn't configure git identity or credentials by default. You control the runner's image and process environment, so you control the git config. Choose one of two approaches:
+
+* **Let the runner configure git**: start the runner with `--configure-git` to have it write the same identity and commit-signing config that Anthropic-hosted sessions use
+* **Ship git config in your image**: set identity and push credentials yourself, for example to commit under your own bot identity
+
+For repositories on github.com, you can also start the runner with [`--use-anthropic-git-proxy`](#use-the-anthropic-git-proxy), or set `CLAUDE_RUNNER_USE_GIT_PROXY=1`, to ask Anthropic to serve git for the runner's sessions.
+
+Git version floors on the runner host: [`--configure-git`](#let-the-runner-configure-git) SSH commit signing requires Git 2.34 or later, [`--use-anthropic-git-proxy`](#use-the-anthropic-git-proxy) requires 2.32 or later, and resuming sessions from branches pushed by [`--push-outcome-on-release`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) requires 2.29 or later. Git 2.24 is sufficient if you omit all three and manage git identity yourself.
+
+### Let the runner configure git
+
+Start the runner with `--configure-git`, or set `SELF_HOSTED_RUNNER_CONFIGURE_GIT=1`, to have it write global git config at startup:
+
+* `user.name = Claude` and `user.email = noreply@anthropic.com`, matching Anthropic-hosted sessions
+* SSH-format commit and tag signing, routed through a runner-managed shim that signs each commit via Anthropic's signing service using the session's own credentials. Signatures are verifiable on GitHub against Anthropic's published SSH signing key.
+* `push.negotiate = true`, so git asks your git host which commits it already has before packing a push. Requires Claude Code v2.1.257 or later.
+* `core.hooksPath` pointing at a runner-managed hooks directory. Its `commit-msg` and `prepare-commit-msg` hooks add a `Co-authored-by:` trailer for the session's creator to each commit. The trailer is built from the email in [`CCR_SESSION_ACCOUNT_EMAIL`](https://code.claude.com/docs/en/self-hosted-environments-configuration#wrapper-scripts) and omitted when that variable is unset. If your image already sets `core.hooksPath` and the runner doesn't use [Anthropic-managed git](#use-the-anthropic-git-proxy), the runner keeps your setting, skips installing these hooks, and prints a `[runner:git]` warning.
+
+Commit signing requires git 2.34 or later; the runner checks at startup and exits with an error if your git is older. This flag doesn't configure push credentials, which you still provide in the image.
+
+On a runner on v2.1.280 or later, commits you make from a `checkout` or `post-session` lifecycle hook are signed as the session too, without the `Co-authored-by:` trailer. [Git configuration inside lifecycle hooks](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#git-configuration-inside-lifecycle-hooks) describes the git settings the runner fixes inside those hooks.
+
+With or without `--configure-git`, Claude Code instructs Claude to end its commit messages with a `Claude-Session: <url>` trailer and its pull request descriptions with the session's URL. To omit both, set [`attribution.sessionUrl`](https://code.claude.com/docs/en/settings-reference#attribution-sessionurl) to `false` in the runner host's [`~/.claude/settings.json`](https://code.claude.com/docs/en/self-hosted-environments-configuration#how-each-session’s-config-is-assembled), then restart the runner.
+
+### Ship git config in your image
+
+Git identity is required for any commit. Set it system-wide in your Dockerfile so the config applies regardless of which user the runner process runs as:
+
+```dockerfile theme={null}
+RUN git config --system user.name "Claude" && \
+    git config --system user.email "noreply@anthropic.com"
+```
+
+Without an identity, `git commit` fails with `Please tell me who you are` and sessions can't make progress. You can use your own bot identity instead; the runner doesn't override these values.
+
+Don't bake long-lived or broadly scoped push credentials into a shared runner image: a credential in the image is available to every session the image runs, whoever started it. Instead, mint a short-lived, least-scoped token per session from your [wrapper script](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#wrapper-scripts), using the session creator's identity decoded from the session JWT. Pair it with an ephemeral per-session container, which requires `--capacity 1`, so no credential outlives the session that minted it; see the [hardening section](#harden-your-deployment).
+
+If you must configure push credentials at the image level, for example for a read-only deploy key, scope them as tightly as your git host allows:
+
+* An SSH deploy key limited to one repository with a `url.<base>.insteadOf` rewrite
+* A `credential.helper` that returns a minimally scoped token
+* `GIT_SSH_COMMAND` pointing at a narrowly scoped key
+
+Whichever mechanism you configure must work without a prompt, because the runner's built-in clone and fetch disable the prompts that git, SSH, and Git Credential Manager would otherwise show:
+
+* The runner sets `GIT_TERMINAL_PROMPT=0`, so git doesn't ask for a username or password.
+* The runner runs SSH with `BatchMode=yes`, appended to your `GIT_SSH_COMMAND` if you set one, so SSH doesn't ask for a passphrase or host confirmation.
+* The runner sets `GCM_INTERACTIVE=never`, so Git Credential Manager doesn't open a sign-in dialog. Before v2.1.229, repository preparation could hang on a Git Credential Manager prompt.
+* The runner clears `core.askPass`, so if you use an askpass helper, set it through the `GIT_ASKPASS` environment variable instead.
+
+If your git host rejects the credential, or you didn't configure one, the runner retries a few times and then fails repository preparation when the repository is the one the session pushes results to. For a repository the session only reads from, [Troubleshooting](#troubleshooting) covers when the runner skips it instead. The runner doesn't pass these settings into the session's environment.
+
+Keep any program you name in `GIT_SSH_COMMAND` or `GIT_ASKPASS` where sessions can't write to it, the way the [hardening checklist](#harden-your-deployment) asks for the hooks directory and the wrapper script. The same goes for any key or file on that program's command line. The runner's own git runs that program when it clones or fetches.
+
+If checkout directories are owned by a different uid than the runner process, git refuses to operate on them; add `safe.directory`:
+
+```dockerfile theme={null}
+RUN git config --system --add safe.directory '*'
+```
+
+### Use the Anthropic git proxy
+
+With the Anthropic git proxy, also called Anthropic-managed git, the runner image needs no SSH keys, credential helper, `.netrc`, or other git credentials for the session itself. Instead, the runner asks Anthropic to serve git for its sessions. For a user's session that Anthropic serves, the runner's clone and the session's own fetches and pushes go through Anthropic, which uses the GitHub OAuth token stored for the session's creator. [How Anthropic serves git for a session](#how-anthropic-serves-git-for-a-session) covers bot and agent sessions.
+
+The git proxy is off unless you [turn it on](#turn-the-anthropic-git-proxy-on). A runner that reaches your git host with its own credentials doesn't need it, and its git works with any git host.
+
+In exchange, the git proxy limits what the runner supports and changes what it needs:
+
+* **github.com only**: Anthropic serves a session only when all of its repositories are on github.com, and the git proxy doesn't support GitHub Enterprise Server yet. On a runner with the git proxy, a session with a repository on another git host [fails to start](#when-anthropic-doesnt-serve-a-session).
+* **Credentials for the session's repositories only**: Anthropic supplies git credentials for the repositories that are part of the session, not for other repositories on the same git host. A private submodule, a dependency that your package manager fetches with git, or a plugin marketplace in another repository gets no credential from Anthropic. Ask the people who create sessions to [add every repository](https://code.claude.com/docs/en/web-quickstart.md#start-a-task) a session needs when they create it.
+
+  Each run of a [cloud scheduled task](https://code.claude.com/docs/en/routines.md) is a session with the task's repositories, so ask each task's owner to [add every repository its runs need](https://code.claude.com/docs/en/routines.md#edit-and-control-routines).
+* **Branch pushes only**: a push that deletes a branch fails, and so does a push to any other kind of ref, such as a tag. For which branches a push can update, see [GitHub proxy](https://code.claude.com/docs/en/cloud-environments.md#github-proxy).
+* **Connected GitHub accounts**: ask each person who creates user sessions with a repository to [connect GitHub](https://code.claude.com/docs/en/web-quickstart.md#connect-github). Without their own connection, those sessions [don't start](#creator-has-no-github-connection).
+* **`--capacity 1`**: the git proxy requires one session per runner process, so run more replicas for parallelism. [Turn the Anthropic git proxy on](#turn-the-anthropic-git-proxy-on) lists the requirements.
+* **Replaced global git config**: the runner [deletes and replaces the global git config](#git-proxy-replaces-global-git-config) of the user it runs as. Run it as a dedicated user or in a container.
+* **Host credentials for host pushes**: the runner's [`--push-outcome-on-release`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) push and any push your [`post-session` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#post-session) makes still use the runner host's own git credentials and its [network path to `github.com`](#github-com-egress-with-the-anthropic-git-proxy). Keep those credentials out of the [global git config](#git-proxy-replaces-global-git-config), and see [Ship git config in your image](#ship-git-config-in-your-image) for ways to supply them.
+* **Per-session decision**: Anthropic decides for each session on the runner whether to serve its git, and a session it doesn't serve fails to start. [When sessions fail to start on a runner with the git proxy](#when-anthropic-doesnt-serve-a-session) covers the causes.
+
+> [!WARNING]
+>
+> With `--use-anthropic-git-proxy` set, the runner deletes and replaces the global git config of the user it runs as, and keeps no backup. It does this at startup and before each session. A login or credential helper you kept there is lost. Settings that [`--configure-git`](#let-the-runner-configure-git) writes survive. Run the runner as a dedicated user or in a container, never as your own user.
+
+Keep git settings that aren't secret, such as identity and `safe.directory`, in the system git configuration.
+
+#### Turn the Anthropic git proxy on
+
+Before you start the runner with `--use-anthropic-git-proxy`, confirm that the runner host meets each of these requirements. The runner refuses to start when the capacity or git requirement is unmet:
+
+* **Claude Code v2.1.267 or later**: earlier versions accept the flag but don't report the request for Anthropic to serve git or print the `Registering as opted in` line, so Anthropic doesn't serve their sessions.
+* **`--capacity 1`, the default**: each runner process handles one session at a time, so run more replicas for parallelism.
+* **Git 2.32 or later**: older git ignores the per-session git configuration that the runner sets up for the git proxy.
+
+> [!WARNING]
+>
+> The [Kubernetes](#kubernetes) and [Docker Compose](#docker-compose) recipes on this page use `--capacity 4`. If you add `--use-anthropic-git-proxy` or `CLAUDE_RUNNER_USE_GIT_PROXY=1` to one of them without changing the capacity to `1`, the runner exits at startup every time your orchestrator restarts it. Set `--capacity 1` and run more replicas for parallelism. [When the runner exits](#when-the-runner-exits) shows the line the runner prints.
+
+To turn the git proxy on, add `--use-anthropic-git-proxy` to the runner's command, or set `CLAUDE_RUNNER_USE_GIT_PROXY=1` in the runner's environment. This command, run in a shell on the runner host, starts the [quickstart](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md#set-up-manually)'s runner with the git proxy on:
+
+```bash theme={null}
+claude self-hosted-runner --environment-secret-file '/etc/claude/environment-secret' --base-dir '<writable-dir>' --use-anthropic-git-proxy
+```
+
+At startup, the runner prints `Registering as opted in to Anthropic-managed git (--use-anthropic-git-proxy)`. Anthropic then decides for each session on that runner whether to serve its git. For each session it serves, the runner logs a `[runner:session]` line containing `governed git ACTIVE`. If a session fails to start instead, see [When sessions fail to start on a runner with the git proxy](#when-anthropic-doesnt-serve-a-session).
+
+#### How Anthropic serves git for a session
+
+For a session that Anthropic serves, the runner's clone and the session's own fetches and pushes go through Anthropic, authenticated with the session's own short-lived token:
+
+* **User sessions**: Anthropic uses the GitHub OAuth token stored for the session's creator.
+* **Bot and agent sessions**: Anthropic uses your organization's GitHub App installation token.
+* **URL rewrites**: `--git-host-rewrite` and `--git-ssh-rewrite` have no effect on a repository that the git proxy serves.
+
+#### When sessions fail to start on a runner with the git proxy
+
+On a runner started with `--use-anthropic-git-proxy`, a session fails to start when Anthropic doesn't serve its git. Look in the runner's log for a git error that names an `api.anthropic.com` address containing `/git_proxy/`.
+
+For each session, a runner on Claude Code v2.1.267 or later also logs either a `[runner:session]` line containing `governed git ACTIVE` when Anthropic serves the session's git, or one `[runner:warn]` line containing `the server withheld Anthropic-managed git for this session` when it doesn't. Find the line you're seeing among these cases:
+
+* **Neither `governed git ACTIVE` nor the `withheld` line**: a runner older than Claude Code v2.1.267 logs neither line, and Anthropic doesn't serve its sessions. Update the runner to v2.1.267 or later by following [Pin the version](#pin-the-version).
+* **The `withheld` line**: Anthropic didn't serve the session. A runner that worked with the git proxy before can fail this way with no change on your side.
+  * **A repository isn't on github.com**: a session with even one repository on another git host, such as GitHub Enterprise Server, isn't served, including its github.com repositories. [Turn the Anthropic git proxy off](#turn-the-anthropic-git-proxy-off) for that environment's runners.
+  * **Every repository is on github.com**: report the failure to [your Anthropic account team](#report-an-issue) with the session ID from the `withheld` line. Anthropic records the reason on its side.
+* **A line containing `remote: access denied by the git proxy`**: a session that Anthropic serves can still be refused, for example when organization policy denies git access for the session, or the session isn't authorized for the repository. The runner's log then shows a line containing `remote: access denied by the git proxy`, and the rest of that line says why.
+* **`GitHub authentication required`**: this appears when the session's creator has no working GitHub connection on claude.ai. The session's clone fails, and the git error contains `GitHub authentication required. Please reconnect your GitHub account.` Ask that person to connect or reconnect GitHub in their claude.ai settings.
+
+After you fix the cause, start the failed sessions again.
+
+#### Turn the Anthropic git proxy off
+
+If sessions in an environment use a repository on a git host other than github.com, such as GitHub Enterprise Server, turn `--use-anthropic-git-proxy` off for that environment's runners.
+
+**1. Remove the flag**
+
+Remove `--use-anthropic-git-proxy` from the runner's command. If you set `CLAUDE_RUNNER_USE_GIT_PROXY` in the runner's environment, such as a pod spec or a Compose file, remove it there. In a shell, unset it:
+
+```bash theme={null}
+unset CLAUDE_RUNNER_USE_GIT_PROXY
+```
+
+**2. Give the runner git credentials**
+
+Provide credentials that work without a prompt for every git host the runners' sessions use, github.com included. Any credential that was in the runner user's global git config is gone, because the runner deleted that config while `--use-anthropic-git-proxy` was set. [Ship credentials in your image](#ship-git-config-in-your-image) or use a [`checkout` lifecycle hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout).
+
+**3. Open the network path**
+
+Allow the runner to reach each git host the runners' sessions use on port 443 or 22. See the git host row in [Network requirements](#network-requirements).
+
+**4. Restart the runners**
+
+Restart the runners so that they register without the git proxy. Then start each failed session again.
+
+#### GitHub API access without the GitHub CLI
+
+If your runner image doesn't include the GitHub CLI, Claude Code can provide a built-in `gh`, so Claude can still open pull requests, comment, and read CI results. The built-in `gh` is for runners that use Anthropic-managed git. It supports one command, `gh api`, which calls GitHub's REST API. Requires Claude Code v2.1.287 or later in the runner image.
+
+This command opens a pull request in place of `gh pr create`. The built-in `gh` fills in `{owner}` and `{repo}` for the current repository:
+
+```bash theme={null}
+gh api repos/{owner}/{repo}/pulls -f title='Fix' -f head='my-branch' -f base='main'
+```
+
+* **Credentials**: the built-in `gh` sends its REST requests through Anthropic-managed git, which supplies the GitHub credential on Anthropic's side, so the image needs no GitHub token for it
+* **Which sessions get it**: Anthropic decides per session whether Anthropic-managed git serves the session's `gh`. When it does, the `[runner:session] governed git ACTIVE` line that the runner logs for the session shows `gh_path_shim=true`. When it doesn't, the session has no `gh`
+* **`jq`**: install `jq` in the image if you want `--jq` to work
+* **[`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`](https://code.claude.com/docs/en/env-vars)**: if the session environment sets it, Claude Code doesn't provide the built-in `gh`, and the session has no `gh`
+
+#### GitHub API access with the GitHub CLI
+
+If your runner image includes the GitHub CLI for sessions to use, have your [wrapper script](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#provision-credentials-scoped-to-the-session-creator) mint a short-lived, least-scoped `GH_TOKEN` per session for the session's creator. When `gh` is on the `PATH` that Claude Code starts with, the session has that `gh` and no [built-in `gh`](#github-api-access-without-the-github-cli). With the token, that `gh` reaches GitHub with whatever access the token grants and outside Anthropic-managed git, so allow [`api.github.com`](#network-requirements).
+
+With Anthropic-managed git, leave the GitHub CLI out of the image to use the built-in `gh` instead.
+
+#### Trust a private certificate authority with Anthropic-managed git
+
+This section applies if you set `GIT_SSL_CAINFO` or `GIT_SSL_NO_VERIFY` in the environment of a runner whose sessions use Anthropic-managed git. The handling it describes requires the runner to run Claude Code v2.1.283 or later.
+
+When git on the runner must trust a private certificate authority (CA), such as the one a TLS-inspecting proxy signs with, the usual approaches work out as follows:
+
+* **System certificate store**: install your CA in the runner host's system certificate store, and git trusts it without either variable.
+* **`GIT_SSL_CAINFO`**: set it to a PEM file of your CAs, for example `GIT_SSL_CAINFO=/etc/ssl/corp-ca.pem`.
+* **`GIT_SSL_NO_VERIFY`**: doesn't help behind a re-signing proxy. The runner's own clone through Anthropic-managed git checks certificates even when the variable is set, so that clone fails until git trusts your CA through one of the other two approaches.
+
+For git connections that carry a session's token to Anthropic-managed git, the runner applies the two variables as follows. A [`command` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#command) starts with the session's environment, so it gets what git inside the session gets:
+
+* **`GIT_SSL_CAINFO`**: what git checks Anthropic-managed git against depends on where git runs:
+  * **Runner's own clone and fetches**: run without the variable and check Anthropic-managed git against a per-session certificate file the runner writes. The runner builds that file from the runner host's system CA bundle and the certificates in your file.
+  * **Git inside the session**: gets `http.sslCAInfo` configuration naming your file in place of the variable, plus `http.<url>.sslCAInfo` entries that check Anthropic-managed git against the per-session file.
+  * **`checkout` and `post-session` hooks**: inherit the variable unchanged.
+* **`GIT_SSL_NO_VERIFY`**: which certificate checks stay off depends on where git runs:
+  * **Runner's own clone and fetches**: run without the variable and check the certificate they're presented.
+  * **Git inside the session**: gets `http.sslVerify=false` configuration in place of the variable, so checks stay off for other hosts. It also gets `http.<url>.sslVerify=true` entries that keep checks on for Anthropic-managed git.
+  * **`checkout` and `post-session` hooks**: when the session has a repository on Anthropic-managed git, get `http.sslVerify=false` configuration in place of the variable. They also get `http.<url>.sslVerify=true` entries that keep checks on for Anthropic-managed git.
+
+The per-session certificate file needs a system CA bundle at `/etc/ssl/certs/ca-certificates.crt` or `/etc/pki/tls/certs/ca-bundle.crt` on the runner host. It also needs a `GIT_SSL_CAINFO` file that the runner's user can read, that holds PEM `CERTIFICATE` blocks, and that is at most 1 MiB. When the runner can't build the per-session file, it logs a `[runner:warn]` line containing `did not build the certificate file` and the reason. Git then uses your file as it is for Anthropic-managed git. Fix what the line names.
+
+For each session that uses Anthropic-managed git, the runner also logs a `[runner:warn]` line that begins `governed git: GIT_SSL_CAINFO is set` or `governed git: GIT_SSL_NO_VERIFY is set`. The line says what the runner did with that variable for its own git, for git inside the session, and for your lifecycle hooks. It ends with whether you need to change anything.
+
+### Add github.com repositories to Claude Tag channel sessions
+
+If Claude can't add a github.com repository to a Claude Tag channel session, make sure the channel has access to it, even when your runner can clone it. That access comes from settings on GitHub and in your Claude organization, not from your runner's git credentials.
+
+**1. Install the Claude GitHub App**
+
+Install the [Claude GitHub App](https://github.com/apps/claude) on the GitHub organization or account that owns the repository, and include that repository in the installation.
+
+**2. Link the GitHub organization or account**
+
+In [**Organization settings > Git providers**](https://claude.ai/admin-settings/source-control), link that organization or account to your Claude organization. An Owner of your Claude organization who also owns the GitHub organization can link it. See [Link your GitHub organization](https://claude.com/docs/claude-tag/admins/configure-github#link-your-github-organization).
+
+**3. Grant the repository**
+
+In [Claude Tag admin settings](https://claude.ai/admin-settings/claude-tag), grant the repository to the channel or to a wider scope that includes the channel: its Slack workspace or all of Slack. Someone with the Owner role or the Claude Tag Admin permission can grant it. A channel manager can also add it to their own channel if their GitHub account is an admin of the repository. See [Grant repository access](https://claude.com/docs/claude-tag/admins/configure-github#grant-repository-access).
+
+Then start a new thread in the channel and [name the repository](https://claude.com/docs/claude-tag/admins/configure-github#how-granted-repositories-reach-a-session) in your first message.
+
+If Claude still can't add the repository, see [If Claude can't reach a repository](https://claude.com/docs/claude-tag/admins/configure-github#if-claude-can%E2%80%99t-reach-a-repository) for where to check the GitHub link and the repository grant.
+
+### Rewrite git URLs for private networks
+
+Repository URLs arrive from the control plane as HTTPS, with the hostname of your git host; for GitHub Enterprise, that's the hostname you configured for the [GitHub Enterprise integration](https://code.claude.com/docs/en/github-enterprise-server.md) on claude.ai. Two repeatable flags rewrite those URLs before clone:
+
+* `--git-host-rewrite <from>=<to>`: for split-horizon DNS, where Anthropic reaches your git host via an external hostname but runners must use an internal one
+* `--git-ssh-rewrite <host>`: for git hosts that only accept SSH, or a runner host that has only an SSH key. For example, to clone github.com repositories over SSH, add `--git-ssh-rewrite github.com` to the runner command. The runner then rewrites `https://github.com/owner/repo` to `git@github.com:owner/repo`. SSH must [connect without a prompt](#git-must-work-without-a-prompt).
+
+Host rewriting runs first, so list the internal hostname in `--git-ssh-rewrite` if you need both. For full control over checkout, use a [`checkout` lifecycle hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout).
+
+### Start a session on a repository outside GitHub
+
+To run a session on a repository from a git host other than GitHub, start the session from your terminal, in a checkout of that repository. First check the runner's git credentials, network and git proxy, the repository's address, and your branch:
+
+* **Git credentials and network**: [supply credentials](#ship-git-config-in-your-image) that [work without a prompt](#git-must-work-without-a-prompt) for `https://<host>/<owner>/<name>`, the address the runner clones, and let the runner reach your git host, as [Network requirements](#network-requirements) lists. For a git host that only accepts SSH, see [`--git-ssh-rewrite`](#rewrite-git-urls-for-private-networks).
+* **Git proxy**: if the environment's runners use the Anthropic git proxy, [turn it off](#turn-the-anthropic-git-proxy-off).
+* **Repository address**: check the checkout's `origin` remote. Its host must be a domain name such as `git.example.com`, and its path must have the form `<owner>/<name>`. A nested path such as `group/subgroup/name` doesn't pass.
+* **Branch**: push the branch you're on to your git host, because the runner clones that branch.
+
+In the checkout, signed in to claude.ai as [Authenticate from CI](https://code.claude.com/docs/en/self-hosted-environments-testing.md#authenticate-from-ci) describes, run `claude -p` with [`--environment`](https://code.claude.com/docs/en/self-hosted-environments-testing#run-the-test-loop) and your environment's `ccpool_...` ID:
+
+```bash theme={null}
+claude -p "Fix the login bug" --environment ccpool_abc123 --output-format json
+```
+
+When the session is created, the command prints one line of JSON that starts with `{"ok":true`. If the `origin` remote doesn't fit, the command fails with `requires a git source, but no GitHub remote was detected`.
+
+Review and merge on your git host the branches that sessions [push](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#prompt-sessions-to-push-their-work).
+
+## Build the runner image
+
+Anthropic doesn't publish a pre-built runner image. Build your own around the `claude` binary, layering in whatever toolchain your repositories need: language runtimes, compilers, package managers, and [MCP](https://code.claude.com/docs/en/mcp.md) sidecars.
+
+The recipes below use `--capacity 4`, so one container serves up to four concurrent sessions from the same locked owner. That doesn't provide the per-session container isolation in the [hardening section](#harden-your-deployment): before connecting an environment to production systems, either run the recipes at `--capacity 1` with one container per session, or use [on-demand runners](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners), which also keep the environment secret off session-running hosts. If you add the [Anthropic git proxy](#use-the-anthropic-git-proxy) to one of these recipes, also change `--capacity` to `1`.
+
+This Dockerfile is a minimal starting point. It installs `python3` because the [hooks Anthropic's control plane supplies](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#how-each-session’s-config-is-assembled) to Claude Tag sessions, including the one that has Claude post its reply in Slack, run `python3`. Keep `python3` on `PATH` in any image that serves Claude Tag sessions:
+
+```dockerfile theme={null}
+FROM debian:bookworm-slim
+ARG CLAUDE_CODE_VERSION
+RUN apt-get update && apt-get install -y --no-install-recommends git curl ca-certificates openssh-client jq python3 \
+ && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL "https://downloads.claude.ai/claude-code-releases/${CLAUDE_CODE_VERSION:?set with --build-arg CLAUDE_CODE_VERSION}/linux-x64/claude" \
+      -o /usr/local/bin/claude && chmod +x /usr/local/bin/claude
+RUN git config --system user.name "Claude" \
+ && git config --system user.email "noreply@anthropic.com" \
+ && git config --system --add safe.directory '*'
+ENTRYPOINT ["claude"]
+```
+
+Swap `linux-x64` for `linux-arm64` if your nodes are ARM, or for `linux-x64-musl` or `linux-arm64-musl` on a musl-based image such as Alpine; see [Alpine Linux setup](https://code.claude.com/docs/en/setup.md#alpine-linux-and-musl-based-distributions) for the extra packages musl images need. The URL is the standard Claude Code release location, so you can verify the downloaded binary against the release's signed manifest as described in [Binary integrity and code signing](https://code.claude.com/docs/en/setup.md#binary-integrity-and-code-signing). The runner requires Claude Code version 2.1.224 or later, or 2.1.229 or later to serve Claude Tag sessions. Build the image, then push it to your registry and reference it in the recipes below:
+
+```bash theme={null}
+docker build \
+  --build-arg CLAUDE_CODE_VERSION="$(curl -fsSL https://downloads.claude.ai/claude-code-releases/stable)" \
+  -t <your-registry>/claude-runner:latest .
+```
+
+The command substitution looks up the current `stable` release number and passes it as the build argument, so running the same command after a new stable release rebuilds the download layer with the newer binary. To pin a specific release for reproducible builds, pass the version number directly as `CLAUDE_CODE_VERSION`. Replace `stable` with `latest` in the lookup URL when you need a release newer than the stable channel, such as one a [newly launched model requires](https://code.claude.com/docs/en/model-config.md).
+
+## Size CPU and memory for sessions
+
+Size a runner's container or host for the sessions it runs rather than for the runner process. The runner itself polls for work, prepares each session's checkout, runs your [lifecycle hooks](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#lifecycle-hooks), and starts and supervises the session processes. The load comes from the sessions: each one is a Claude Code process plus whatever it starts, such as builds, test suites, package installs, and [MCP servers](https://code.claude.com/docs/en/mcp.md).
+
+For one session, start with the following values, stated as Kubernetes requests and limits or your platform's equivalent, and treat them as a starting point rather than a requirement:
+
+* **Memory**: a request and a limit of 4 GiB each, which meets the 4 GB minimum in Claude Code's [system requirements](https://code.claude.com/docs/en/setup.md#system-requirements). Keep the two equal so the scheduler accounts for the container's full memory. When the container reaches its memory limit, the kernel kills processes inside it, which can end a session mid-task.
+* **CPU**: a request of 2 CPUs and a limit of 4 CPUs, so a session can burst above the request during builds. The kernel throttles a container at its CPU limit rather than killing processes in it, so sessions at the limit run slower but keep running.
+
+In a Kubernetes container spec, set those starting values with the following `resources` block:
+
+```yaml theme={null}
+resources:
+  requests:
+    cpu: "2"
+    memory: 4Gi
+  limits:
+    cpu: "4"
+    memory: 4Gi
+```
+
+Builds and tests are usually the largest and most variable part of a session's load, so run a representative build of your repository, measure its peak CPU and memory, and raise any starting value that leaves no room for the Claude Code process on top of that peak.
+
+The runner uses `--capacity` to cap how many sessions it runs at once. It doesn't divide CPU or memory between them, so the sessions on a runner share the container's CPU and memory. To keep one session's memory use from ending the others, run one session per runner with [its own memory limit](#give-each-session-its-own-memory-limit).
+
+* **One session per runner**: give each container one session's values. Use this sizing at `--capacity 1`, which the [hardening section](#harden-your-deployment) recommends, and for [on-demand runners](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners), where you set the values on the workload your [`spawn-runner` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#the-spawn-runner-hook) submits, such as a Kubernetes Job's pod template.
+* **Several sessions per runner**: at a `--capacity` above one, multiply one session's values by the capacity, because up to that many sessions can run in the container at the same time. The [Kubernetes](#kubernetes) and [Docker Compose](#docker-compose) recipes run `--capacity 4` with no CPU or memory limits, so add limits sized for the capacity you run.
+* **Several runner containers on one host**: size the host for the sum of the runners' capacities, because each runner counts only its own sessions against `--capacity`:
+
+  * **Memory**: multiply one session's memory by the sum, then add what the host's own processes use
+  * **CPU**: multiply one session's CPU request by the sum. To let every session burst at once, multiply its CPU limit instead.
+
+  Give each runner its own container. Use the [same `--base-dir` path](#keep-the-base-directory-and-capacity-identical-across-runners) in each, on storage that no other runner's container mounts, so that each runner has [its own working directory](#harden-your-deployment).
+
+### Give each session its own memory limit
+
+To stop one session from ending the others when memory runs out, run each runner at `--capacity 1` under its own memory limit, set to one session's memory:
+
+* **In a container**: run one runner per container, and set the container's memory limit, such as `limits.memory` on Kubernetes, `--memory` on Docker, or `mem_limit` in a Compose file. Keep the sum of the containers' limits below the host's memory, because when the host itself runs out, the kernel can kill processes anywhere on the host.
+* **Under systemd without a container**: set `MemoryMax` on the runner's unit, and run one runner per host, because runners that [use the same `--base-dir`](#keep-the-base-directory-and-capacity-identical-across-runners) on one filesystem share the repositories cloned there. For example, at `--capacity 1` with no `checkout` hook, their sessions on one repository can work in the same checkout at once. To run several runners on one host, give each a container.
+
+When a container or unit reaches its memory limit, the kernel kills processes only inside it. If you set `--capacity` above one, the sessions share one limit. When they reach it, the kernel doesn't choose by session which processes to kill, so one session's memory use can end the others.
+
+On Kubernetes, you can't separate the sessions with either value of the kubelet's `singleProcessOOMKill` setting. You can't cap a session's total memory with a memory `ulimit` in your [wrapper script](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#wrapper-scripts) either. The kernel applies a value such as `ulimit -v` to each process separately.
+
+### Leave room under process and thread limits
+
+To size a process and thread limit, measure what one session needs and multiply it by the number of sessions that share the limit. When those sessions reach the limit, the kernel refuses new processes and threads, so commands, builds, and tests in any of them can fail. The refused call returns `EAGAIN`, whose standard message is `Resource temporarily unavailable`.
+
+Suppose one session peaks at 300 processes and threads, and four sessions share the limit. Together they need 1,200, and with a limit of 2,400, you leave room for builds that need twice as much.
+
+#### Where to set each limit
+
+Each limit in this table counts threads as well as processes, and `pids.max` is the file that holds a cgroup's limit:
+
+| Limit | Where you set it | What shares it |
+| :- | :- | :- |
+| `pids.max` on Kubernetes | `podPidsLimit` in the kubelet configuration of the nodes that run runners. You can't set it in a Pod spec. | The containers of one Pod |
+| `pids.max` on Docker | `--pids-limit`, or `pids_limit` in a Compose file | One container |
+| `pids.max` under systemd | `TasksMax` on the runner's unit | One unit |
+| `ulimit -u` | The shell or service that starts the runner | Everything on the host that runs as the runner's user ID. Not enforced for root. |
+
+When you don't set `TasksMax`, systemd applies `DefaultTasksMax`, which defaults to 15% of the lowest of `kernel.pid_max`, `kernel.threads-max`, and the root cgroup's `pids.max`.
+
+#### Measure one session's peak
+
+To get the numbers for your own runners, measure one session on its host, which on Kubernetes is the node:
+
+**1. Start one runner alone**
+
+Start one runner at `--capacity 1` with nothing else in its container or systemd unit, alone on its host and in its environment:
+
+* **Its host**: use one that runs no other runner. You can then pick out its process in the next step.
+* **Its environment**: make it the only runner there, for example in an environment you [create for the test](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md#set-up-manually). Sessions are routed to an environment and not to a runner.
+
+Don't start a session yet, because you need the directory from the next step before the build starts.
+
+**2. Find the runner's cgroup directory**
+
+On the host, not inside the container, find the runner's process ID, for example with `ps`. Read `/proc/<pid>/cgroup` for that ID:
+
+* **A line contains `:pids:`**: the host uses cgroup v1, and the directory is `/sys/fs/cgroup/pids` followed by the text after `:pids:`
+* **The only line starts with `0::`**: the host uses cgroup v2, and the directory is `/sys/fs/cgroup` followed by the text after `0::`
+
+**3. Run a representative build and record the peak**
+
+Run one session through a representative build, and take the peak from the runner's cgroup directory:
+
+* **The directory has `pids.peak`**: read the file after the build finishes
+* **The directory has no `pids.peak`**: read `pids.current` once a second while the build runs, and keep the highest value. A peak between two reads goes unseen, so treat that value as a low estimate.
+
+**4. Multiply by the sessions that share the limit**
+
+* **One runner's Pod, container, or unit**: multiply the peak by the runner's `--capacity`
+* **A limit that several runners share**: multiply the peak by the sum of their capacities
+
+Then add the peak of anything else that shares the limit, such as another container in the Pod.
+
+**5. Set the limit above the result**
+
+With a higher limit, you leave room for heavier builds, and with a lower one, you stop a fork bomb sooner.
+
+#### Check a `pids.max` limit
+
+* **Check whether `pids.max` was reached**: search the host's kernel log, for example with `dmesg`, for a line that contains `cgroup: fork rejected by pids controller in` and a cgroup's path. The kernel logs it only the first time it refuses a process or thread in that cgroup, so search the whole log.
+* **See the limit in force**: read `pids.max` in the runner's cgroup directory and in each directory above it. The lowest value is the limit in force, and `max` means no limit at that level.
+
+## Kubernetes
+
+The runner serves `GET /healthz` on port 8080 by default, configurable with `--health-port`, so Kubernetes probes work with no extra setup. The endpoint returns `200` whenever the process is alive, so the probes below detect a dead process, not a stuck one; to catch a runner that stopped polling, alert on the `last_poll_age_seconds` series from [`/metrics`](https://code.claude.com/docs/en/self-hosted-environments-reference#prometheus-metrics). The Deployment below mounts the environment secret from a Kubernetes Secret, points the liveness and readiness probes at `/healthz`, and sets a 90-second termination grace period. See [Shutdown timing](#shutdown-timing) for why the grace period matters.
+
+The manifest sets no CPU or memory `resources` on the runner container. Add a block sized for the capacity you run, as [Size CPU and memory for sessions](#size-cpu-and-memory-for-sessions) describes.
+
+```yaml theme={null}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claude-runner
+  namespace: claude-runners
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: claude-runner
+  template:
+    metadata:
+      labels:
+        app: claude-runner
+        app.kubernetes.io/part-of: claude-code-self-hosted-runner
+    spec:
+      terminationGracePeriodSeconds: 90
+      containers:
+        - name: runner
+          image: <your-registry>/claude-runner:latest
+          args:
+            - self-hosted-runner
+            - --environment-secret-file
+            - /etc/claude/environment-secret
+            - --capacity
+            - "4"
+            - --base-dir
+            - /workspace
+          volumeMounts:
+            - name: environment-secret
+              mountPath: /etc/claude
+              readOnly: true
+          ports:
+            - name: health
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: environment-secret
+          secret:
+            secretName: claude-runner-environment-secret
+```
+
+The Deployment above lives in a `claude-runners` namespace. Create the namespace first:
+
+```bash theme={null}
+kubectl create namespace claude-runners
+```
+
+Create the backing Secret from a local file holding the value you copied in the admin UI's [**Copy environment key** step](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md#set-up-manually), so the secret never appears in your shell history. Run `(umask 077 && cat > ./environment-secret)`, paste the secret, press Enter, then Ctrl-D. Then create the Secret and delete the file:
+
+```bash theme={null}
+kubectl create secret generic claude-runner-environment-secret -n claude-runners --from-file=environment-secret=./environment-secret
+```
+
+## Docker Compose
+
+The Compose service below restarts the runner whenever it exits, which covers both crashes and the normal exit after draining. A Docker restart policy restarts the same container with its writable layer intact, so the runner comes back on a reused filesystem rather than the fresh one the [hardening posture](#harden-your-deployment) recommends; use this recipe for evaluation, and for production either recreate the container per run or use an orchestrator that does.
+
+Docker waits longer before each restart of a container that keeps exiting, up to a ceiling, so a runner that can't start doesn't keep restarting in a tight loop under this recipe. [When the runner exits](#when-the-runner-exits) describes what to check when that happens.
+
+```yaml theme={null}
+services:
+  claude-runner:
+    image: <your-registry>/claude-runner:latest
+    command:
+      - self-hosted-runner
+      - --environment-secret-file
+      - /run/secrets/environment-secret
+      - --capacity
+      - "4"
+      - --base-dir
+      - /workspace
+    secrets:
+      - environment-secret
+    restart: always
+    stop_grace_period: 90s
+
+secrets:
+  environment-secret:
+    file: ./environment-secret
+```
+
+## Shutdown timing
+
+> [!NOTE]
+>
+> These timings apply to runners. The `claude self-hosted-runner orchestrator` process has its own: see [Size `--shutdown-drain-sec` and the orchestrator's stop timeout](https://code.claude.com/docs/en/self-hosted-environments-configuration#size-shutdown-drain-sec-and-the-supervisors-stop-timeout-for-the-orchestrator).
+
+At startup, each runner logs how long it can need after `SIGTERM` to shut its sessions down cleanly, such as `This runner needs up to 80s` at default settings. Your stop timeout is how long your process supervisor waits after `SIGTERM` before it kills the runner. Set it to at least the logged time:
+
+* **Kubernetes**: `terminationGracePeriodSeconds`. Kubernetes defaults to 30 seconds, so without this setting it can stop the pod before the runner finishes.
+* **Docker Compose**: `stop_grace_period`
+
+On `SIGTERM`, the runner stops accepting new sessions. It then begins a graceful shutdown, called a drain, unless you set [`--defer-shutdown-max-min`](#defer-the-drain-past-the-first-signal) to delay it. The drain has three steps:
+
+1. The runner waits up to [`--drain-wait-sec`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) seconds, `0` by default, for turns still running to finish.
+2. It terminates each session's process tree, including any command Claude was still running, but not [a process still running after its shell command exited](#processes-a-stopped-session-leaves).
+3. It runs the [`post-session` lifecycle hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#post-session).
+
+The runner keeps polling Anthropic throughout the drain. That keeps its sessions assigned to it, so another runner doesn't pick one up while your `post-session` hook is still saving uncommitted work.
+
+The logged time is the sum of these values:
+
+* `--drain-wait-sec` for step 1, 0 seconds by default
+* [`--session-stop-grace-sec`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) for step 2, 5 seconds by default
+* [`--post-session-hook-timeout-sec`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) for step 3, 60 seconds by default
+* A fixed 15 seconds of headroom
+* 30 more seconds when [`--push-outcome-on-release`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) is set
+
+At default settings that comes to 0 + 5 + 60 + 15 = 80 seconds. A higher `--capacity` doesn't add to it, because the runner drains all of its sessions at the same time.
+
+Allow more time if you set either of these flags:
+
+* **With [`--retire-at`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags)**: leave enough time between the retire time and the time the host stops for typical turns to finish, plus the wait for background tasks that [Runner lifecycle](https://code.claude.com/docs/en/self-hosted-environments#runner-lifecycle) describes, plus the logged time. Compute the retire time at each launch, for example `date +%s` plus the runner's intended lifetime.
+* **With [`--defer-shutdown-max-min`](#defer-the-drain-past-the-first-signal)**: the stop timeout must also cover the minutes you configure and a further wait before the drain starts, 75 seconds at default settings. [Defer the drain past the first signal](#defer-the-drain-past-the-first-signal) explains both. The runner logs this longer time at startup too.
+
+### Let running turns finish before a restart
+
+To let running turns finish before a rolling restart, set `--drain-wait-sec`, and raise your stop timeout to at least that wait plus 80 seconds. With the default wait of `0`, a restart cuts off any turn that's still running, and the session resumes on another runner without its [unpushed work](#resumed-sessions-lose-unpushed-work).
+
+* **`--drain-wait-sec`**: about as long as the turns and background tasks you want to let finish. It's a maximum: the wait ends early if they finish first.
+* **Your stop timeout**: `terminationGracePeriodSeconds` in Kubernetes, `stop_grace_period` in Docker Compose. For example, with `--drain-wait-sec 120`, replace the `90` in the [Kubernetes](#kubernetes) or [Docker Compose](#docker-compose) recipe with `200`.
+* **If you changed other shutdown settings**: the 80 seconds are for default settings. Start one runner with your flags, and use at least the number in its startup line `This runner needs up to`, which includes the wait. With [`--defer-shutdown-max-min`](#defer-the-drain-past-the-first-signal) set, use the larger number in the next startup line, after `Size the stop timeout to at least`. [Shutdown timing](#shutdown-timing) lists what adds to these numbers.
+
+> [!WARNING]
+>
+> If the stop timeout runs out during the wait, your host kills the runner with work still running. Its sessions get no `post-session` hook. The runner also doesn't deregister, so the control plane can take a few minutes and sometimes longer to requeue them.
+
+### Post a status message before a restart
+
+Before a restart that will interrupt sessions, have an [Owner](https://code.claude.com/docs/en/cloud-environments.md#organization-shared-environments) post a status message on the environment from the [**Cloud environments** admin page](https://claude.ai/admin-settings/cloud-environments). At [claude.ai/code](https://claude.ai/code), members see the message in their sessions in that environment. Have the Owner set an expiry with the post, or remove the message once the runners are back.
+
+### Defer the drain past the first signal
+
+Set [`--defer-shutdown-max-min <n>`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) if you want a runner you're restarting to go on serving the sessions it holds for up to `n` minutes, instead of draining them on the first signal. On the first `SIGTERM` or `SIGINT`, the runner stops taking new work and goes on serving the sessions it holds. It keeps polling so that the control plane doesn't requeue those sessions. Requires Claude Code v2.1.238 or later.
+
+#### What happens to the sessions the runner holds after the first signal
+
+In the first two stages that follow the signal, the runner releases sessions, and a released session resumes on a fresh runner when its user sends their next message. Counting from the first signal, the runner moves through three stages:
+
+* **For the first `n` minutes**: the runner serves its sessions normally and keeps enforcing `--startup-timeout-min` and `--kill-session-after-min`. If you also set [`--release-idle-session-min`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), the runner releases any session whose user has been idle that long, unless you [hold that session](#keep-an-idle-session-while-its-processes-run). Without the flag, idle sessions stay on the runner.
+* **When the `n` minutes run out**: the runner releases every session it still holds, idle or not. The runner waits for a mid-turn session's turn to end, and up to 60 seconds more for a turn's background tasks, before releasing that session.
+* **When the post-release grace runs out**: the runner drains whatever sessions it still holds, and the control plane requeues each drained session to another runner right away. The post-release grace starts when the `n` minutes run out and is 75 seconds at defaults. If you set `--drain-wait-sec` above 60 seconds, the post-release grace is `--drain-wait-sec` plus 15 seconds instead.
+
+At any stage, the runner exits 0 as soon as it holds no sessions. A second signal cuts the stages short: the runner drains immediately, as it does on the first signal without `--defer-shutdown-max-min`. Once a drain is under way, the next signal force-exits the runner. That holds whether a second signal or the post-release grace running out started the drain.
+
+#### Size the stop timeout
+
+Give your host's stop timeout at least the sum of three parts: the `n` minutes you configure, the post-release grace, and the drain that [Shutdown timing](#shutdown-timing) describes. With default settings the post-release grace is 75 seconds and the drain takes up to 80 seconds, so allow `n` minutes plus 155 seconds. The runner prints this sum at startup whenever `--defer-shutdown-max-min` is set.
+
+If the stop timeout runs out before the runner finishes, the sessions it still holds get no `post-session` hook. The runner doesn't deregister, so the control plane can take a few minutes and sometimes longer to requeue those sessions. If you can't give the stop timeout that sum, leave `--defer-shutdown-max-min` unset so the runner drains on the first signal instead.
+
+### What reaches a running post-session hook
+
+The `post-session` hook and the Claude session child each run in their own POSIX process group, separate from the runner's, so stop mechanisms reach them differently:
+
+* **A `SIGTERM` while the runner is already draining**: force-exits the runner immediately, skipping whatever remains of the drain. Without [`--defer-shutdown-max-min`](#defer-the-drain-past-the-first-signal), that is the second `SIGTERM` the runner receives. Nothing signals a mid-run `post-session` hook, so on a bare host where an init process adopts orphans, it finishes on its own, but unsupervised: its timeout budget no longer applies, and a write to the closed log pipe can kill it with `SIGPIPE`, so a hook that needs to survive a forced exit there should redirect its own output to a file. In the container recipes on this page the runner is the container's PID 1 and its exit ends the container, and under systemd's default `KillMode=control-group` the cgroup-wide kill reaches the hook too, as the **Cgroup-wide kills** entry describes; in both, treat a forced exit as fatal to the hook and rely on the grace period instead.
+* **Process-group-wide signals**, such as `kill -- -<pid>` in a wrapper script, shell job control, or a group-wide watchdog: reach the runner and a mid-`checkout`-hook subprocess, which stays group-attached deliberately, but not a mid-run `post-session` hook or the session child.
+* **Cgroup-wide kills**, such as systemd's default `KillMode=control-group` or the `SIGKILL` Kubernetes delivers to the whole container when `terminationGracePeriodSeconds` expires: reach everything, including the hook. Process-group isolation doesn't protect against these, which is why the grace period must cover the whole drain.
+* **The hook's own timeout**: when a hook exceeds `--post-session-hook-timeout-sec`, the runner sends `SIGTERM` to the hook's whole process group, then `SIGKILL` two seconds later, so a worker the hook forked, such as tar, rsync, or git, terminates with the wrapper shell instead of surviving as an orphan. The runner's supervision ends once the hook's stdio closes: a worker that redirected its own output to a file and outlives the `SIGTERM` stage is past the runner's reach.
+
+When the drain starts, and again on a forced exit, the runner logs how many `post-session` hooks are still running, so you can tell a quiet drain from one that's mid-snapshot.
+
+## Keep the base directory and capacity identical across runners
+
+If a runner dies mid-session, the server requeues the session and another runner in the environment picks it up. That runner derives the checkout path from its own `--base-dir` and `--capacity`: `--capacity 1` checks out directly under `--base-dir`, and a `--capacity` above `1` uses per-session worktrees instead. When runners in the same environment use different values for either flag, the resumed session's working directory changes, and absolute paths the agent recorded earlier, in edits, tool calls, or its own notes, point at a location that no longer exists.
+
+Use the same `--base-dir` and `--capacity` on every runner in an environment, and don't use a per-host value such as an instance ID or hostname. Pass both flags explicitly, as the [Kubernetes](#kubernetes) and [Docker Compose](#docker-compose) recipes do, so that neither value depends on a default.
+
+The base directory defaults to `/workspace`, with the exception the [`--base-dir` reference row](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) records. The runner needs write access to it. At startup, before registering, the runner creates the directory and confirms it can write to it, and exits with `cannot create or write to base directory` when it can't. A runner started as root creates the default `/workspace` itself. For a non-root runner, create the directory and give the runner's user ownership before starting the runner, or point `--base-dir` at a directory that user already owns.
+
+## Reuse a pre-warmed checkout
+
+For large repositories, the clone can dominate session startup. To skip the cold clone, supply a clone yourself at the path where the runner keeps its own. With no [`checkout` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout), the runner keeps one canonical clone per repository at `<base-dir>/<repo-owner>/<repo>` and reuses it across sessions:
+
+* **At `--capacity 1`**: the runner fetches the requested ref, detaches `HEAD`, and resets hard to it, which is near-instant when little has changed.
+* **At a `--capacity` above one**: the runner fetches into that clone, then checks out a separate worktree from it for each session. A pre-warmed clone saves the download but not the checkout.
+
+Supply the clone in the image or on a persistent volume:
+
+* **Clone in the image**: build the clone into your runner image at that path. Every fresh container then starts with the warm clone without reusing a disk.
+* **Clone on a persistent volume**: on runners you pre-lock to one user's account with [`--lock-to-account`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), point `--base-dir` at a persistent volume, so the disk only ever serves that account. A pre-locked runner never picks up Claude Tag channel sessions, so this option doesn't apply to runners that serve them.
+
+What the reuse path does and doesn't guarantee:
+
+* **Clone depth**: build the clone without `--depth`, with or without `--single-branch`. The runner never passes `--depth` when it fetches into a clone with an `origin` remote, even if you set [`CLAUDE_RUNNER_FETCH_DEPTH`](https://code.claude.com/docs/en/self-hosted-environments-reference#environment-variable-only-settings). With a full clone, each session downloads only the commits the clone lacks. With a shallow clone, a session on a branch that forked before the clone's oldest commit downloads that branch's whole history.
+* **Tracked changes reset, untracked files persist**: at `--capacity 1`, each session starts from a hard reset that wipes the previous session's tracked modifications, but the runner never runs `git clean`, so untracked files from the locked owner's earlier sessions stay in the tree.
+* **Per-session directories persist too**: alongside the checkout, the runner creates per-session entries under `<base-dir>/_sessions/` for every session it runs. The session's Claude config directory holds a local copy of the conversation transcript. Next to it sit the session's uploaded files, when the session has any. The session directory sits there too: it holds any per-session worktrees and `checkout` hook checkouts while the session runs, and it keeps whatever else Claude wrote in it.
+
+  By default the runner leaves these in place when the session ends, so on a disk that outlives the runner process they accumulate. Every session runs as the runner's own user, so any later session that disk serves can read them. If you keep a persistent `--base-dir`, size the volume for that growth. The same applies to any setup that restarts the runner on the same filesystem, including the [Docker Compose recipe](#docker-compose).
+* **With `--remove-session-state`, per-session directories don't persist**: start the runner with [`--remove-session-state`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) to have it delete each session's per-session directories as the session ends. The deletion is best-effort: the directories stay when the runner is killed before its cleanup runs. The canonical clone and files a session wrote elsewhere on the host, such as the temporary directory, stay regardless.
+* **With the git proxy, the reset becomes a checkout**: with [`--use-anthropic-git-proxy`](#use-the-anthropic-git-proxy), the runner sanitizes the clone's `.git/` before each session. It keeps the object store and shallow state, and deletes the index. Without the index, each session starts with a full working-tree checkout instead of a near-instant reset. The runner still fetches into the existing clone rather than cloning the repository again. Submodule pre-warms aren't supported under the proxy.
+* **With the git proxy, a `reftable` pre-warm loses its refs**: when the runner sanitizes `.git/` before each session, it keeps `.git/refs/` and removes the `.git/reftable/` directory. A clone pre-warmed in git's `reftable` ref format loses its refs that way, so pre-warm the clone in git's `files` ref format instead.
+* **Long clones need no workaround**: the runner bounds each git operation with a 120-second no-progress watchdog and a 30-minute hard cap, not a flat timeout, so a slow cold clone that keeps reporting progress completes.
+
+### Confirm that the runner uses your clone
+
+To confirm that the runner uses your clone, start it with [`--log-level debug`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) and start a session on the repository. The runner logs `Prefetched repo found at` and the clone's path. If it logs `No prefetched repo, fresh init at` instead, it found no usable clone at the path in that line. Check that your clone is at that path, owned by the runner's user, with a remote named `origin`.
+
+If the runner finds your clone and sessions still start slowly, check whether the clone is shallow.
+
+## Pin the version
+
+Each session's child process runs the runner's own binary by default, and the runner turns off auto-update inside the sessions it spawns. With that default, every session runs the version you installed on the host or built into the image. A host-level update takes effect the next time the runner starts.
+
+Choose which version your sessions run and when it changes:
+
+* **Before you pin a version**: check [the Claude Code versions that models require](https://code.claude.com/docs/en/model-config.md#available-models) for every model your sessions use. If a model requires a newer version than the one your sessions run, the server rejects requests for that model with [Claude Code does not support this model](https://code.claude.com/docs/en/errors.md#claude-code-does-not-support-this-model).
+* **To hold a fleet on one version**: build the image with a pinned version, or on a bare host install a specific version and [disable auto-updates](https://code.claude.com/docs/en/setup.md#disable-auto-updates)
+* **To upgrade a fixed fleet**: read the [changelog](https://code.claude.com/docs/en/changelog.md) entries between your version and the one you're installing, then install the newer version or rebuild the image and restart the runners
+* **To upgrade on-demand runners**: read the [changelog](https://code.claude.com/docs/en/changelog.md) entries between your version and the one you're installing, then change the image your [`spawn-runner` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#the-spawn-runner-hook) starts. Each new runner gets the new version. A runner that's already up, including a standby runner that [`--min-idle`](https://code.claude.com/docs/en/self-hosted-environments-reference#orchestrator-cli-flags) started, keeps its version until it exits. Don't restart it, because its work order is single-use.
+* **If sessions start a different binary**: if you use [`--exec-path`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) or a [`command` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#command) to start a Claude Code binary other than the runner's own, sessions run that binary's version. Update that binary when you update the runner.
+* **Plugins**: plugin marketplaces don't auto-update either; set `FORCE_AUTOUPDATE_PLUGINS=1` in the runner's environment to let plugins auto-update while the binary stays pinned
+
+## Scale the fleet
+
+Your orchestrator decides when to add or remove runners. Because of the [one-owner-per-runner lock](https://code.claude.com/docs/en/self-hosted-environments#runner-lifecycle), the minimum replica count is the number of users and Claude Tag agents you expect to be active concurrently; `--capacity` controls parallelism within one owner's sessions, not across owners.
+
+Two scaling approaches are available:
+
+* **Fixed fleet**: run a static set of runner replicas and scale on the [Prometheus metrics](https://code.claude.com/docs/en/self-hosted-environments-reference.md#prometheus-metrics) each runner serves
+* **On-demand runners**: run the `claude self-hosted-runner orchestrator` subcommand, which polls Anthropic for sessions that are queued with no runner available and invokes your `spawn-runner` hook to boot one per session. See [On-demand runners](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners).
+
+### Release idle sessions on a fixed fleet
+
+If sessions stay queued on a fixed fleet while every runner is online, idle sessions may be the cause. By default, a session keeps its slot after its turn finishes, and its runner stays locked to that session's [owner](https://code.claude.com/docs/en/self-hosted-environments#key-concepts). Other owners' sessions can't use that runner's free slots. If your team's [cloud scheduled task](https://code.claude.com/docs/en/routines.md) starts a new session at each run, its idle sessions can fill every slot.
+
+To check, read `claude_code_self_hosted_runner_session_idle_seconds` in each runner's [Prometheus metrics](https://code.claude.com/docs/en/self-hosted-environments-reference.md#prometheus-metrics). Each session a runner holds has its own series: `0` while the session is busy, otherwise the seconds since it went idle. Choose the idle time you'd allow: longer than the pauses people take mid-task, and short enough that each run is released before the scheduled task's next one starts. Compare the series with it.
+
+* **Series above that time, such as `1800` for 30 minutes**: idle sessions hold those slots, so set `--release-idle-session-min`
+* **Every series below it**: no session has been idle that long. Add runners, or set [`--kill-session-after-min`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) for [sessions that never go idle](#some-sessions-don’t-count-as-idle).
+* **A runner with no series**: no session holds it. See **Sessions stay queued** under [Troubleshooting](#troubleshooting).
+* **A runner whose metrics don't answer**: its process may have exited. See **An environment that looks healthy** under [When the runner exits](#when-the-runner-exits).
+
+To release idle sessions, start every runner with [`--release-idle-session-min`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) and that time in minutes, such as `--release-idle-session-min 30`. The runner then releases any session that stays idle that long, whether a scheduled task or a person started it, unless you [hold it for processes it left running](#keep-an-idle-session-while-its-processes-run).
+
+* **Unpushed work**: a released session resumes at its next message, without the work it hadn't pushed. To keep its commits, see [Resumed sessions lose unpushed work](#resumed-sessions-lose-unpushed-work).
+* **Runner exits**: a runner that releases its last session starts a [normal exit](#when-the-runner-exits). Have your supervisor restart it on a fresh filesystem, as [Harden your deployment](#harden-your-deployment) describes.
+* **Sessions that never go idle**: also set [`--kill-session-after-min`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), because [some sessions don't count as idle](#some-sessions-don’t-count-as-idle)
+
+### Keep an idle session while its processes run
+
+To keep an idle session until processes it left on your host finish, such as `nohup` jobs, start the runner with [`--hold-idle-file`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) and keep touching that file from the host. Requires Claude Code v2.1.311 or later.
+
+These steps assume a non-root runner on a host. If your runner runs as `root`, its sessions can touch the file themselves, so run it as a dedicated user first.
+
+**1. Pick a path for the file**
+
+Choose a local regular file, such as `/var/lib/claude-hold/hold-idle`, in a directory sessions can't write to, parent directories included, so a session can't write to it. The runner and its sessions share one OS user, so create that directory first, owned by another user such as `root`, with mode `755`.
+
+**2. Start the runner**
+
+From your shell, start the runner with `--hold-idle-file`, `--release-idle-session-min`, and [`--max-hold-min`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), the cap on a hold, counted from when a session goes idle. Without it, the cap is one day. Set it above `--release-idle-session-min`, or nothing is held. Replace `<writable-dir>` as the [quickstart](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md#set-up-manually) describes. This example releases idle sessions after 30 minutes and releases a held session at most 4 hours after it went idle:
+
+```bash theme={null}
+claude self-hosted-runner \
+  --environment-secret-file /etc/claude/environment-secret \
+  --base-dir '<writable-dir>' \
+  --release-idle-session-min 30 \
+  --hold-idle-file /var/lib/claude-hold/hold-idle \
+  --max-hold-min 240
+```
+
+**3. Touch the file while the processes run**
+
+While the processes run, `touch` the file from the host as the directory's owner, more often than every three minutes. The first `touch` creates the file. For example, add this line to `root`'s crontab:
+
+```text theme={null}
+* * * * * pgrep -x nightly-build > /dev/null && touch /var/lib/claude-hold/hold-idle
+```
+
+The line runs once a minute and touches the file while any process named `nightly-build` runs, so a session that starts one stays held up to the cap. Replace the `pgrep` check with however your host finds what sessions left running.
+
+The check must stop matching when they finish, or every idle session on that runner stays held until the cap.
+
+**4. Confirm the hold**
+
+While the processes run, check that the file's modification time stays under three minutes old. When a session's idle time runs out, look for `idle release held` in the runner's log. If no such line appears, read `leftover-hold=` in the `watchdog config` line the runner logs at startup, which shows the file and cap, or why nothing is held.
+
+Three minutes after the last `touch`, the hold ends. Within about a minute more, the log shows `idle release no longer held` and the runner releases the session.
+
+Even while the file keeps changing, a hold can end, in cases such as these:
+
+* **Past the cap**: `--max-hold-min` runs out. To hold longer, raise it
+* **Forced releases**: you set [`--retire-at`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), [`--defer-shutdown-max-min`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), or [`--kill-session-after-min`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), and that limit arrives. To hold longer, set a later limit
+
+## Known issues and limitations
+
+The following are the limitations in this release, with workarounds where one exists.
+
+### Connector traffic leaves your network
+
+Anthropic calls connector tools from its own infrastructure rather than from your runner. Connector tools are the claude.ai connectors, such as GitHub, Slack, and Linear. When Claude uses a connector in a self-hosted session, that traffic goes through `api.anthropic.com` rather than originating inside your network boundary.
+
+To keep a connector out of self-hosted sessions, filter it with the [`allowedMcpServers` and `deniedMcpServers` policy settings](https://code.claude.com/docs/en/managed-mcp#policy-based-control-with-allowlists-and-denylists). Claude Code applies these settings to the connectors Anthropic delivers as well as to the servers you seed from the runner host and the servers users add, so if you deploy an allowlist for other servers, Claude Code blocks delivered connectors too. To keep connectors available alongside a URL-based allowlist, add entries that match the Anthropic proxy paths for delivered connectors:
+
+* `https://api.anthropic.com/v2/ccr-sessions/*`
+* `https://api.anthropic.com/v1/code/sessions/*`
+* `https://api.anthropic.com/v1/code/mcp/*`
+
+If tool traffic must stay inside your network, run the equivalent tools as local MCP servers on the runner image instead. See [MCP servers](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#mcp-servers).
+
+### Some sessions don't count as idle
+
+A session holding a background task that keeps running doesn't count as idle, so `--release-idle-session-min` won't release that session's slot. A session that's waiting on an approval requested from inside a running tool call also doesn't count as idle. Set `--kill-session-after-min` alongside it as a hard backstop.
+
+`--kill-session-after-min` is a backstop for runaway sessions. On a runner on v2.1.260 or later, a session that reaches the limit isn't terminated outright. The runner gives it a grace window, 15 minutes by default, which you can change with [`SELF_HOSTED_RUNNER_MAX_LIFETIME_GRACE_MS`](https://code.claude.com/docs/en/self-hosted-environments-reference#environment-variable-only-settings):
+
+* If the session is waiting on its user, the runner releases it. If its turn has ended and it holds only background tasks, the runner waits up to 60 seconds for those tasks to finish and then releases it. The session resumes when its user sends their next message.
+* If a turn is still running, the runner waits for the turn to finish, or for the session to next wait on its user, and then releases it.
+* If the session is still on the runner when the grace window ends, the runner terminates it, and any running turn's work is lost. A turn waiting on an approval requested from inside a running tool call is one way a session outlasts the window.
+
+A released session resumes from a fresh clone, so work it hadn't pushed is gone either way; see [Resumed sessions lose unpushed work](#resumed-sessions-lose-unpushed-work). Before v2.1.260, the runner terminated every session at the limit, after waiting at most the grace window for a running turn to finish.
+
+Set the flag above your longest expected session, such as `--kill-session-after-min 480` for 8 hours. To free slots from conversations that go idle, use `--release-idle-session-min` instead.
+
+### Resumed sessions lose unpushed work
+
+A session that resumes on a fresh runner loses the work it hadn't pushed, because that runner clones the repository again from its starting branch.
+
+To keep committed work, set [`--push-outcome-on-release`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) on every runner in the environment. A runner with the flag makes a best-effort push of the session's outcome branches before it releases, and the resumed session starts from those commits. A runner without it resumes the session from its starting branch. The push uses the runner host's own git credentials, including on a runner that uses [Anthropic-managed git](#use-the-anthropic-git-proxy).
+
+> [!WARNING]
+>
+> Before you set the flag, restrict who can push to `claude/*` refs on the source remote. On resume, the runner fetches the previously pushed branch without verifying who pushed it.
+
+Even with the flag set, save this work another way:
+
+* **Uncommitted changes**: these are still lost. See [Prompt sessions to push their work](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#prompt-sessions-to-push-their-work).
+* **Repositories checked out via a [`checkout` lifecycle hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout)**: these aren't pushed. Snapshot them from the [`post-session` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#post-session).
+* **Commits in a session that someone archives or deletes, or whose runner they release from the session's menu**: don't count on the flag's push. To save them, push `HEAD` to a rescue branch from a [`post-session` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#post-session). The example there pushes only after a snapshot commit, so make yours push even when nothing is uncommitted.
+
+### Additional limitations
+
+* **A command cut off by a lost runner can run again**: when the session resumes on another runner, Claude sees the interrupted tool call with a result saying its outcome is unknown.
+* **A repository added mid-session can fail to clone**: Claude clones it with `git clone` over HTTPS. On a runner without [`--use-anthropic-git-proxy`](#use-the-anthropic-git-proxy), the clone fails with a git authentication error if nothing on the host can read the repository. Where you can, select every repository the session needs when you create it.
+  * **When the session resumes**: a [`checkout` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout) runs for the added repository too, with [`CLAUDE_RUNNER_REPO_REF`](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout) empty, so make your hook handle that.
+* **Some connectors don't appear in self-hosted sessions**: a connector you haven't yet connected in claude.ai Settings isn't listed in a self-hosted session, and the session won't prompt you to connect it. Connect it in Settings first, then start a fresh session. Adding a connector to an already-running session also doesn't make its tools available to Claude; start a fresh session to pick up a newly added connector.
+
+### Report an issue
+
+For issues with self-hosted environments, contact your Anthropic account team.
+
+## Troubleshooting
+
+For guided diagnosis, run the doctor subcommand on the runner host. The doctor subcommand starts an interactive Claude Code session with the runner's logs and state attached. Sign in with `claude auth login` on that host first so the session can query your environment, its runners, and its queued sessions. Without that sign-in, for example when the host authenticates with an API key, it's limited to the local health endpoint, metrics, and the runner's log, and it reads the log only if you started the runner with `--log-file`.
+
+```bash theme={null}
+claude self-hosted-runner doctor
+```
+
+Common issues:
+
+* **Runner doesn't appear in the environment**: confirm the host can reach `api.anthropic.com` over HTTPS and the environment secret is current. The runner logs `[runner:fatal]` with the rejection reason on auth failure.
+* **Runner exits at startup with `cannot create or write to base directory`**: the runner can't create or write to `--base-dir`, which defaults to `/workspace`. Fix the directory's ownership or point `--base-dir` at a writable path, as described in [Keep the base directory and capacity identical across runners](#keep-the-base-directory-and-capacity-identical-across-runners). If the runner instead logs `[runner:fatal]` saying the base directory check timed out, the directory is on a hung NFS or CSI mount. Check mount health rather than permissions. The runner prints both of these startup failures to stderr before it opens `--log-file`, so look for them in the terminal or your platform's container logs rather than the log file. Before v2.1.225, the runner didn't check the base directory at startup, and this misconfiguration failed sessions after pickup instead.
+* **Runner exits at startup with `RegisterRunner failed:` and a TLS certificate error**: the error can be `self signed certificate in certificate chain`, for example. The runner doesn't trust the certificate authority (CA) behind the certificate it received, as happens behind a TLS-inspecting proxy. Set [`NODE_EXTRA_CA_CERTS`](https://code.claude.com/docs/en/network-config#custom-ca-certificates) in the runner's environment to a PEM file with the proxy's root CA.
+
+  You don't set it again for sessions, which inherit it. Git doesn't read it: for clones through that proxy, set [`GIT_SSL_CAINFO`](#trust-a-private-certificate-authority-with-anthropic-managed-git) too.
+* **Your start script prints a write error containing `Resource temporarily unavailable` and exits**: your script shares its stdout or stderr with the `claude self-hosted-runner` or [orchestrator](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners) process it starts, which has switched that shared pipe or socket to non-blocking mode. When the pipe is full, a write from your script fails with this operating-system error instead of waiting, and under `set -e` the script exits.
+
+  To stop the error, send the runner's or orchestrator's output to a file that your script's user can create. Append `>> "$HOME/claude-runner.log" 2>&1` to the command that starts it, ahead of any `&` that backgrounds it, and replace `<writable-dir>` as the [quickstart](https://code.claude.com/docs/en/self-hosted-environments-quickstart.md#set-up-manually) describes:
+
+  ```bash theme={null}
+  claude self-hosted-runner --environment-secret-file /etc/claude/environment-secret --base-dir '<writable-dir>' >> "$HOME/claude-runner.log" 2>&1
+  ```
+
+  Your script's own output still goes where it went before, while what the runner writes to stdout and stderr, its startup errors included, goes to that file. Use this shell redirect rather than [`--log-file`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) alone, which mirrors the log to a file while the runner keeps writing to stdout and stderr. If you already pass `--log-file`, keep it as well, because the redirect doesn't change what that file receives.
+* **Orchestrator logs `poll failed:` with a TLS certificate error and keeps retrying**: the orchestrator doesn't trust the CA behind the certificate it received, as happens behind a TLS-inspecting proxy. Set [`NODE_EXTRA_CA_CERTS`](https://code.claude.com/docs/en/network-config#custom-ca-certificates) in the orchestrator's environment to a PEM file with the proxy's root CA. Set it for the runners your `spawn-runner` hook starts too.
+
+  For example, a line can end `poll failed: self signed certificate in certificate chain — retrying in 1s`, with the TLS library's words between the colon and the dash. To confirm the fix, check that `connected` is `true` in the orchestrator's [`/healthz`](https://code.claude.com/docs/en/self-hosted-environments-reference#health-endpoint) body.
+* **Sessions stay queued**: every online runner may be locked to a different owner. Check each runner's `claude_code_self_hosted_runner_locked_account` [metric](https://code.claude.com/docs/en/self-hosted-environments-reference.md#prometheus-metrics) or the `locked_account` field of its `[runner:health]` log line to see who holds it. Both show the owner's email only after the runner has been issued a session token carrying an `act.email` claim, which a Claude Tag agent's sessions never do. Without the claim, the runner emits no `locked_account` series and logs `locked_account=yes`, which tells you the runner is locked but not to which owner. Add replicas, or wait for an existing runner to drain and restart. If the environment uses on-demand runners, check the orchestrator instead; see [On-demand runners](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners).
+* **Sessions fail immediately after pickup**: open the session in claude.ai/code to see the error. If the error shows that git couldn't authenticate, check the runner's [git credentials](#configure-git). On a runner started with `--use-anthropic-git-proxy`, see [When sessions fail to start on a runner with the git proxy](#when-anthropic-doesnt-serve-a-session).
+
+  An unwritable base directory stops the runner at startup instead of failing sessions. See the **Runner exits at startup with `cannot create or write to base directory`** entry in this list.
+* **A session is picked up, but Claude never answers its first message**: if your runners reach `api.anthropic.com` through a proxy, configure it to pass the session's `/worker/events/stream` response through as it arrives. Raising the runner's timeouts doesn't help. To confirm the cause in the runner's log, see [A session is picked up, but Claude never answers its first message](#when-a-sessions-first-message-is-never-answered).
+* **Sessions fail to start on a runner that set `--use-anthropic-git-proxy`**: look in the runner's log for `access denied by the git proxy`, or for a git error that names an `api.anthropic.com` address containing `/git_proxy/`. To tell whether Anthropic served the session and fix the cause, see [When sessions fail to start on a runner with the git proxy](#when-anthropic-doesnt-serve-a-session).
+* **Sessions can't reach the network through an authenticating egress proxy**: when the source you set with [`--proxy-authorization-command` or `--proxy-authorization-file`](#authenticate-to-an-egress-proxy) fails, times out after 30 seconds, or yields an empty value, the runner answers that connection `502 Bad Gateway` and logs why. The runner redacts the command's stderr in that log and never logs the header value. With `--proxy-authorization-command`, run the command yourself on the host to confirm it prints the whole header value on stdout. If the runner instead exits at startup with `could not start the proxy-authorization listener`, it couldn't open its loopback listener.
+* **Runner logs `Poll failed` lines containing `rejecting the malformed poll response`**: the runner received a work-poll response whose body isn't the queue's expected JSON. One cause is an intercepting proxy or a captive portal answering with its own page. If the runner connects through a proxy, configure the proxy to pass responses from `api.anthropic.com` through unaltered.
+
+  The runner rejects the malformed response, counts it under the `transport` kind of the `claude_code_self_hosted_runner_poll_errors_total` [metric](https://code.claude.com/docs/en/self-hosted-environments-reference.md#prometheus-metrics), and retries on the failed-poll schedule described in [Session lifecycle](https://code.claude.com/docs/en/self-hosted-environments#session-lifecycle). The runner keeps serving its live sessions. Before v2.1.246, the runner read such a response as an empty work queue, which could end its live sessions or make it exit.
+* **A session fails with `no longer exists on the remote` or `couldn't find remote ref`**: the runner reads git's `couldn't find remote ref` as a deleted branch. The branch can still exist. Look for it on your git host, under exactly the name in the message, then check each cause that fits:
+
+  * **The branch is gone**: restore it, as the message asks.
+  * **The branch exists and you don't administer the runner**: send the runner's administrator the full message and tell them the branch exists.
+  * **The branch exists and the runner has a `checkout` hook**: a git command in your hook can print `couldn't find remote ref` to stderr before the hook exits non-zero. Find that command, and correct the ref it asks for or the remote it fetches from. The runner passes your hook the revision the session asked for as [`CLAUDE_RUNNER_REPO_REF`](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout).
+  * **The branch exists and the runner has no `checkout` hook**: the runner fetches the branch itself. If a [`--git-host-rewrite`](#rewrite-git-urls-for-private-networks) applies to the repository, confirm that the host it rewrites to has the branch under the same name, and push the branch there if it doesn't.
+  * **The branch exists and the runner is older than v2.1.301**: upgrade the runner as described in [Pin the version](#pin-the-version), so that a different failure shows its own error. Before v2.1.301, other failures with `couldn't find remote ref` in their error output were also reported as a deleted branch.
+
+  Once the runner is upgraded or the cause is fixed, retry the session or start a new one. If none of these checks finds the cause, [report an issue](#report-an-issue).
+
+  For the source the session pushes results to, a deleted branch fails the session. For a git source the session only reads from, the runner skips that source and continues on the remaining ones. The runner fails the session when skipping would leave it with no repository at all. Before v2.1.228, such a session started in an empty directory.
+* **Claude Tag sometimes doesn't post its reply in Slack**: the reply reminder is a [hook the control plane supplies](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#how-each-session’s-config-is-assembled). Confirm the runner is Claude Code v2.1.229 or later with `claude --version`, since older runners ignore supplied hooks; confirm `python3 --version` succeeds inside the runner image, since the hooks run `python3`; and confirm no settings file turns hooks off, whether `disableAllHooks` in `managed-settings.json`, the runner user's `~/.claude/settings.json`, or the repository's `.claude/settings.json` or `.claude/settings.local.json`, or `allowManagedHooksOnly` or a [`strictPluginOnlyCustomization`](https://code.claude.com/docs/en/settings-reference#strictpluginonlycustomization) that covers hooks in managed settings.
+* **A session starts without one of its repositories**: on a runner with no [`checkout` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout), the git host can refuse the runner's access check for a repository the session only reads from. The runner then skips that repository, logs a `[runner:warn] could not access context source` line naming the refusal, and starts the session on the remaining ones.
+
+  With its own git credentials, the runner can skip a repository when the host answers that the repository wasn't found, git finds no credentials for the host, or authentication fails.
+
+  With [`--use-anthropic-git-proxy`](#use-the-anthropic-git-proxy), when the git proxy refuses a repository with `access denied by the git proxy`, the runner skips it. The log line then says `blocked by the git proxy`. For the causes to check, see the `remote: access denied by the git proxy` case in [When sessions fail to start on a runner with the git proxy](#when-anthropic-doesnt-serve-a-session).
+
+  A network failure, a timeout, or any other HTTP `403` still fails the session start, as does a refusal for a repository the session pushes results to. The runner still fails a session that skipping would leave with no repository at all.
+
+  The access check runs again each time the session starts on a runner, so once the runner's git identity has read access, the next start clones the repository. Before v2.1.274, each of these refusals failed the session start.
+* **The log shows `could not read context source`**: this line, unlike `could not access context source`, means the git host kept answering HTTP `429`, or a wrapper you installed as `git` kept exiting `75`. The runner skipped that repository. To retry, start a new session. The runner also tries the repository again each time this session starts on a runner.
+
+  With no `checkout` hook, the runner can skip a repository the session only reads from, unless it's first among the session's repositories. Before v2.1.311, the session start failed.
+* **A session fails to start with `This runner couldn't read`**: the runner asked the git host for a repository with its [git credentials](#configure-git) and got a not-found answer. The repository doesn't exist, or those credentials can't reach the repository.
+  * **If you administer the runner**: give its git credentials read access to the repository, then start a new session.
+  * **If you started the session**: if the repository doesn't exist, start a new session with the right repository. If the runner can't reach the repository, ask the runner's administrator to grant access, then start a new session.
+* **Sessions take minutes to start or resume**: one cause is a fresh clone. On a fleet that starts each runner on an empty disk, with no [`checkout` hook](https://code.claude.com/docs/en/self-hosted-environments-configuration#checkout), the runner clones the session's repositories afresh before it starts Claude Code. A session that resumes on an empty disk waits for the same clone again.
+
+  To skip the fresh clone, supply a [pre-warmed checkout](#reuse-a-pre-warmed-checkout). If you already supply one, [confirm that the runner uses it](#confirm-that-the-runner-uses-your-clone). Where the runner makes the clone itself and exits after one session, lower [`CLAUDE_RUNNER_FETCH_DEPTH`](https://code.claude.com/docs/en/self-hosted-environments-reference#environment-variable-only-settings) from its default of 50 commits to fetch less history.
+
+  If you use a hook, it runs in place of the runner's clone, so look at what your hook does instead. Watch the `claude_code_self_hosted_runner_session_init_duration_seconds` [metric](https://code.claude.com/docs/en/self-hosted-environments-reference.md#prometheus-metrics) to see how long starts take.
+* **Turns fail with a 401**: when a turn ends with a 401 or 403 from the Anthropic API, the runner fetches a fresh [`CLAUDE_CODE_OAUTH_TOKEN`](https://code.claude.com/docs/en/self-hosted-environments-configuration#wrapper-scripts) from Anthropic and passes it to the session. The failed turn isn't retried. This token is short-lived, and the runner rotates it over the session's stdin.
+
+  When a fetch fails, the runner logs an `inference_token refresh failed` line that says when it will retry, and it keeps retrying for as long as the session runs.
+
+  If every call starts failing about 30 minutes into a session, a wrapper script has likely severed the session's stdin, so token rotations can't reach it; see [Keep stdin and file descriptor 3 attached](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#keep-stdin-and-file-descriptor-3-attached).
+
+  Before v2.1.274, the runner stopped retrying a failed fetch after a few attempts and waited for the next scheduled one. A failed turn didn't trigger a fetch, so every turn failed with a 401 until the next scheduled fetch.
+* **A turn fails in claude.ai/code with `This model needs a newer version of Claude Code`**: the Claude Code version that your runners start sessions with is older than the session's model requires, so the API [rejects the request](https://code.claude.com/docs/en/errors.md#claude-code-does-not-support-this-model). Upgrade the runners to the version the message asks for, or a later one, as described in [Pin the version](#pin-the-version). Until then, people can pick a different model in the session.
+* **Pod is killed mid-drain**: raise `terminationGracePeriodSeconds` to at least the value the runner logs at startup. See [Shutdown timing](#shutdown-timing).
+* **Runner logs a `[runner:log]` line ending `was paused or too slow`**: the runner kept running and needs no restart. Until the stdout or stderr stream named in the line was read again, the runner discarded all but that stream's newest 256 KiB of lines. If you passed [`--log-file`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), look there for the discarded lines.
+* **Runner logs `Nobody can read this process's stdout anymore`**: whatever read the runner's stdout is gone, so the runner stops writing there for the rest of its run and keeps running. While stderr is still open, this line and the runner's later status lines, `[runner:fatal]` lines included, go to stderr, so read them there.
+
+Once logging is initialized, the runner writes its lifecycle log, including `[runner:fatal]` lines, to stdout, and debug output to stderr, all as plain-text lines rather than JSON. The base directory failures described in the troubleshooting entries above print to stderr before that point. Capture both streams with `--log-file`, which also lets `self-hosted-runner doctor` tail them, or with your platform's log collection.
+
+Each session's child process writes a separate debug log. On failure the runner surfaces the log's tail alongside the session in claude.ai/code. Unless you started the runner with [`--remove-session-state`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags), it also keeps a failed session's log on disk and prints its path in the runner log.
+
+### When the runner exits
+
+Don't restart an [on-demand runner](https://code.claude.com/docs/en/self-hosted-environments-configuration.md#on-demand-runners), because its work order is single-use. A runner that exits right after it starts needs different handling from one that exits for any other reason.
+
+* **A normal exit**: the runner finished its sessions and drained, reached its retire time, or was told to stop. Restart it so the environment has capacity again. [Runner lifecycle](https://code.claude.com/docs/en/self-hosted-environments#runner-lifecycle) describes these exits.
+* **A failed start**: the runner can't start with the configuration or host it was given, so it exits seconds after it starts, and it exits the same way every time you restart it. Restarting it faster doesn't help. Someone needs to read its output and fix the cause.
+* **Lost contact**: a runner that can't reach Anthropic for longer than its [lease](https://code.claude.com/docs/en/self-hosted-environments#session-lifecycle), for example while its host sleeps, can be removed from the environment. When a removed runner reconnects, it exits. Its log can show a `[runner:fatal]` line that contains `runner record gone server-side` or, after a longer outage, [`poll auth failed`](https://code.claude.com/docs/en/self-hosted-environments-quickstart#set-up-an-environment-and-runner). The runner doesn't register again by itself, so restart it.
+
+Configure your supervisor to restart the runner whenever it exits, to wait longer between restarts when the runner keeps exiting right after it starts, and to tell someone when that keeps happening.
+
+For production, have your supervisor restart the runner on a fresh disk, in a new container or VM, as [Harden your deployment](#harden-your-deployment) recommends.
+
+#### Recognize a failed start
+
+When the runner can't start, it prints a line that says why, and then it exits. For most causes the line contains `[runner:fatal]`. For some causes the line begins with `error:` instead, including when the runner can't parse its flags, can't read the environment secret, or can't create or write to the base directory. The next line then points to `--help`.
+
+Most log lines start with a timestamp and `[self-hosted-runner]`, which the sample below leaves out. For example, a runner started with the Anthropic git proxy and a capacity above one prints a line like this one:
+
+```text theme={null}
+[runner:fatal] --use-anthropic-git-proxy requires --capacity 1 (the proxy URL is per-session and linked worktrees share origin). Omit --use-anthropic-git-proxy or set --capacity 1.
+```
+
+Look for the line in the runner's standard output and standard error, in your platform's container logs, or in the file you set with [`--log-file`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags). The runner prints an `error:` line before it opens the log file, so look for it in the terminal or your container logs, as [Troubleshooting](#troubleshooting) notes.
+
+These also help when you read a failed start:
+
+* **No line at all**: a runner that the host kills prints neither. If the output ends with no `[runner:fatal]` line and no `error:` line, check whether the host or your orchestrator stopped the process, for example for exceeding a memory limit.
+* **The exit code**: the runner doesn't set aside an exit code for errors that repeat on every start. It exits with the same code for a configuration error, such as an unsupported combination of flags, and for a failure that can clear by itself, such as the API staying unreachable through the runner's own retries. Base the decision to wait longer on how soon the runner exited, and read the runner's output to learn why.
+* **An environment that looks healthy**: some startup steps run after the runner registers with your environment, such as [`--configure-git`](#let-the-runner-configure-git) and the Anthropic git proxy's credential setup. If one of those steps fails, the environment can go on listing that runner for a few minutes after the process has exited, and the **Cloud environments** page can read **Healthy** while no runner is picking up work. If sessions stay queued in an environment that looks healthy, check whether your supervisor is restarting the runner.
+
+#### Restart with a wait that grows
+
+How you get a growing wait depends on your supervisor.
+
+* **Kubernetes**: the [Deployment](#kubernetes) on this page needs no change. After a container exits, the kubelet by default waits before it restarts the container, and the wait grows on each restart up to a ceiling. The wait starts over once the container has run for a while without exiting.
+
+  The kubelet applies the same wait after a normal exit when the container ran only briefly. A runner that drains often can therefore show the `CrashLoopBackOff` status too, so read the output before you conclude that the runner can't start. The command below reads the last run's output from one pod of the Deployment:
+
+  ```bash theme={null}
+  kubectl logs --previous -n claude-runners deploy/claude-runner
+  ```
+
+  When the last run was a failed start, the `[runner:fatal]` or `error:` line is among the last lines of the output. To read another pod's last run, name that pod in place of `deploy/claude-runner`.
+* **Docker and Docker Compose**: the [Compose recipe](#docker-compose) on this page needs no change. With `restart: always`, Docker waits longer before each restart of a container that keeps exiting, up to a ceiling. Replace `<container>` with the container's name in the command below, which reads how many times Docker has restarted the container:
+
+  ```bash theme={null}
+  docker inspect --format '{{.RestartCount}}' <container>
+  ```
+
+  The command prints a number. A number that keeps climbing means Docker keeps restarting the runner.
+* **A systemd unit**: by default systemd waits the same `RestartSec` before every restart and doesn't lengthen it, so a unit with `Restart=always` restarts a runner that can't start at that same interval each time. When the starts come fast enough to reach the unit's start rate limit, five starts in 10 seconds by default, systemd stops restarting the unit. The unit stays stopped until someone starts it again, which systemd allows once the rate limit's interval has passed or after `systemctl reset-failed`. Because `RestartSec` applies to every restart, a longer value also delays the restart after a normal exit. Choose a value that balances the two, and alert on the unit's restart count.
+* **A shell loop or your own supervisor**: apply the same rule yourself. Start with a wait of five seconds. After each run that ended within a minute, double the wait for the next restart, up to five minutes. After a run that lasted a minute or more, go back to five seconds.
+
+#### Check why the runner keeps exiting
+
+When the runner has exited right after starting several times in a row, stop and check these before restarting it again.
+
+* **The last `[runner:fatal]` or `error:` line**: it says why the runner stopped. [Troubleshooting](#troubleshooting) lists the common causes.
+* **The combination of flags**: the [Anthropic git proxy](#use-the-anthropic-git-proxy) requires `--capacity 1`. The recipes on this page use a higher capacity, so lower it when you add the proxy to one of them.
+* **What the service's environment can reach**: if the runner starts by hand and fails under your supervisor, compare the user, the home directory, the `PATH`, and the memory limit. `--configure-git` and the Anthropic git proxy need git on the `PATH` and a writable `~/.gitconfig`.
+* **The environment secret**: if you revoked the secret or mistyped it, the runner prints a line that contains `RegisterRunner auth failed`.
+* **The environment's Activity tab**: open the environment and select **Activity**. If new runners keep appearing there and none picks up work, your supervisor is restarting the runner.
+
+For guided diagnosis on the runner host, run the [doctor subcommand](#troubleshooting).
+
+### A session is picked up, but Claude never answers its first message
+
+If a runner picks up a session but Claude never answers the first message, and your runners reach `api.anthropic.com` through a proxy, the proxy may be the cause. Anthropic sends a session its messages over one streaming response that stays open. If your proxy buffers it, or ends it before passing anything on, the first message never arrives. Other requests from the session still succeed.
+
+To fix it, change how the proxy handles this request:
+
+```text theme={null}
+GET https://api.anthropic.com/v1/code/sessions/<session-id>/worker/events/stream
+```
+
+* **Don't buffer the response**: pass it through as it arrives. Its content type is `text/event-stream`.
+* **Let the response stay open**: it can stay open for up to an hour. If the proxy has an idle timeout, keep it well above 15 seconds, because Anthropic sends a keep-alive at least that often by default.
+
+Then start a new session and check that Claude answers. Raising the runner's timeouts doesn't help: you only wait longer before the runner stops the session.
+
+#### Confirm the cause in the runner's log
+
+These steps are for runners on Claude Code v2.1.287 or later, at the default `--log-level info`. Older runners log these lines later, or not at all.
+
+1. Wait for [`--startup-timeout-min`](https://code.claude.com/docs/en/self-hosted-environments-reference#runner-cli-flags) to pass, 15 minutes by default. The runner then stops the session and logs a line that contains `no child output for` and ends `— releasing`.
+2. Search the runner's log for `SDKStartup: SSE`. These lines follow a `finished: interrupted` line, a few lines after the one in step 1. Most have no timestamp, so a log collector may show them elsewhere.
+3. Find the line in this table:
+
+| Log line contains | What to do |
+| :- | :- |
+| `SSE connect failed (no response in 30s)` or `SSE liveness timeout` | Check that the proxy forwards the request, passes the response's headers and data through as they arrive, and doesn't drop the connection |
+| `SSE connect failed (HTTP` and a status code | Check the proxy's own log. If the proxy answered the request itself, let the request through it. |
+| `SSE connect failed (` and any other text | The text in the parentheses is the error. Look for the same connection in the proxy's own log. |
+| `SSE stream ended by server`, again and again | Check the proxy's time limit for long-lived responses. A single such line is normal. |
+| `SSE reconnected after` | Look for one of the other lines after it. This one doesn't mean that anything reached the session. |
+
+If the log has none of these lines, or the proxy's log shows nothing wrong, [report an issue](#report-an-issue).
+
+#### Stop the session from trying again
+
+The session keeps the message pending, and a runner that can serve the session's owner picks the session up again. Until you change the proxy, the session waits the same way each time. To stop that, archive the session in claude.ai/code.
+
+## What's next
+
+* [Customize sessions](https://code.claude.com/docs/en/self-hosted-environments-configuration.md): wrapper scripts, lifecycle hooks, on-demand runners, MCP servers, and permissions
+* [Test end to end](https://code.claude.com/docs/en/self-hosted-environments-testing.md): verify a new runner image from CI before promoting it
+* [Reference](https://code.claude.com/docs/en/self-hosted-environments-reference.md): every CLI flag, environment variable, and metric

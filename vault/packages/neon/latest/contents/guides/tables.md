@@ -9,7 +9,7 @@ summary: >-
   SQL Editor when you want point-and-click record editing, column filtering,
   bulk deletion, or JSON/CSV export.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-17T16:33:54.884Z'
 ---
 
 The **Tables** page in the Neon Console offers a dynamic, visual interface for managing data and schemas. Fully interactive, this view lets you add, update, and delete records, filter data, modify columns, drop or truncate tables, export data in both .json and .csv formats, and manage schemas, tables, views, and enums.
@@ -63,9 +63,13 @@ You can also use the checkboxes to mark records for export. Select the records y
 
 Or just choose `Export all...` to download the entire contents of the table.
 
-You can export to either JSON or CSV.
+You can export to either JSON or CSV. You can also copy or export selected rows as SQL `INSERT` statements, and copy a table's `CREATE TABLE` statement to the clipboard.
 
 ![export data from table](/docs/manage/export_drizzle.png)
+
+<Admonition type="tip" title="Keyboard shortcuts">
+The **Tables** page supports keyboard shortcuts for common actions, including selecting all rows (`Cmd/Ctrl + A`), adding a row (`Option/Alt + N`), filtering (`Option/Alt + F`), and refreshing (`Cmd/Ctrl + R`).
+</Admonition>
 
 ## Manage schemas
 
@@ -134,4 +138,4 @@ If it's not a DNS resolution issue, other troubleshooting steps you can try incl
 If the issue persists, please follow these steps to report the error:
 
 1. [Open a support ticket](https://console.neon.tech/app/projects?modal=support) and provide a detailed description of what you were doing when the error occurred. Please include any screen captures or files that will help us reproduce the issue. We'll work with our partners at Drizzle to investigate and resolve the issue.
-2. If you're on the Free plan, you can report the issue on [Discord](https://discord.gg/92vNTzKDGp).
+2. If you're on the Free plan, you can report the issue on [Discord](https://neon.com/discord).

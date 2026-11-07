@@ -1,0 +1,95 @@
+---
+title: 'Migration Guides'
+description: 'Migrating between major versions of the Apple runtime'
+---
+
+<AccordionGroup>
+    <Accordion title={`Migrating from @rive-app/webgl to @rive-app/webgl2`}>
+        We highly recommend migrating to `@rive-app/webgl2` for the best rendering quality and performance in most cases. The `@rive-app/webgl` package is deprecated and no longer receives updates after `v2.37.0`.
+
+        The migration process involves updating your package installation and import statements to use `@rive-app/webgl2` instead of `@rive-app/webgl`. There are no breaking API changes, so your existing code should work with the new package without modification.
+
+        For example, if you were previously using:
+
+        ```bash
+        npm install @rive-app/webgl
+        ```
+
+        ```typescript
+        import { Rive } from '@rive-app/webgl';
+        ```
+
+        You can update this to:
+
+        ```bash
+        npm install @rive-app/webgl2
+        ```
+
+        ```typescript
+        import { Rive } from '@rive-app/webgl2';
+        ```
+
+        This change will allow you to take advantage of the improved rendering capabilities of the [Rive renderer](https://rive.app/renderer) while maintaining compatibility with your existing codebase.
+    </Accordion>
+    <Accordion title="Migrating from v1 to v2">
+        Starting in v2 of our Web (JS) runtimes, Rive will support Rive Text at runtime, which includes the following packages:
+
+        - Web (JS) / WASM
+        - `@rive-app/canvas`
+        - `@rive-app/canvas-advanced`
+        - `@rive-app/canvas-single`
+        - `@rive-app/webgl2`
+
+        ## Major Changes
+        <Note>
+        No breaking API changes!
+        </Note>
+
+        While a new major version has been released for the runtimes without breaking API changes, v2 was released due to a **bundle** **size increase** in the package. The reason for this is new internal dependencies added to the Web Assembly (WASM) build that powers Rive, specifically for supporting the powerful Rive Text feature. You may find that the request for the WASM file when loading Rive is *\~261kb* brotli-compressed as of `v2.0.0`.
+
+        If you're looking for a lite version without the Rive Text/Layouts/Audio/Scripting features, you can look to `@rive-app/canvas-lite`.
+    </Accordion>
+    <Accordion title="Migrating from rive.js">
+       Previously, the web runtime would deploy to the [rive-js](https://www.npmjs.com/package/rive-js) package on npm. We have since moved away from this one-package model and into a place where you can import from several different packages based on your API/rendering-level needs.
+
+        - @rive-app/webgl2
+        - @rive-app/canvas
+        - @rive-app/canvas-advanced
+
+        In addition to these new packages, there is a `@rive-app/canvas-single` package that has the WASM encoded in the JS. See [canvas vs webgl2](/runtimes/web/canvas-vs-webgl) for more details.
+
+        We changed the package model to choose which renderer to use (i.e., [CanvasRenderingContext2D](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) vs. [WebGL2](https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext)), impacting bundle size and performance. In addition, all of the new web runtime packages will support the latest Rive features, such as raster assets.
+
+        In any case, there should be no changes in high-level API usage required as far as using the `rive` instance. You only need to change the package you install in your project and the associated places you import it.
+
+        For instance, instead of the following integration:
+
+        ```bash
+        npm i rive-js
+        ```
+
+        ```typescript
+        import rive from 'rive-js';
+
+        const foo = new rive.Rive({
+        src: "https://cdn.rive.app/animations/vehicles.riv",
+        });
+        ```
+
+        You could replace this with:
+
+        ```bash
+        npm i @rive-app/webgl2
+        ```
+
+        ```typescript
+        import {Rive} from '@rive-app/webgl2';
+
+        const foo = new Rive({
+        src: "https://cdn.rive.app/animations/vehicles.riv",
+        });
+        ```
+
+        Or, you can replace `@rive-app/webgl2` with any of the new package outputs for web runtime that suit your need.
+    </Accordion>
+</AccordionGroup>

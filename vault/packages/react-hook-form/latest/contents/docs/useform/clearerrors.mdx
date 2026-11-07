@@ -1,11 +1,12 @@
 ---
 title: clearErrors
+seoTitle: "clearErrors: Clear React Form Errors"
 description: Manually clear validation errors on fields.
 metaDescription: Manually clear validation errors for one field, an array of fields, or the entire React Hook Form without triggering re-validation.
 sidebar: apiLinks
 ---
 
-## \</> `clearErrors:` <TypeText>(name?: string | string[]) => void</TypeText>
+## \</> `clearErrors:` <TypeText>[UseFormClearErrors](/ts#UseFormClearErrors)</TypeText>
 
 This function can manually clear errors in the form.
 
@@ -38,14 +39,13 @@ This function can manually clear errors in the form.
 
 </Admonition>
 
-**Examples**
+### Examples
 
 ---
 
 <TabGroup buttonLabels={["TS", "JS"]}>
 
 ```tsx sandbox="https://codesandbox.io/s/react-hook-form-v7-ts-clearerrors-w3ymx"
-import * as React from "react"
 import { useForm } from "react-hook-form"
 
 type FormInputs = {
@@ -90,7 +90,6 @@ const App = () => {
 ```
 
 ```javascript sandbox="https://codesandbox.io/s/react-hook-form-v7-clearerrors-w5tl6"
-import * as React from "react"
 import { useForm } from "react-hook-form"
 
 const App = () => {
@@ -126,3 +125,60 @@ const App = () => {
 ```
 
 </TabGroup>
+
+### Tips
+
+---
+
+- Clear a server error as soon as the user starts to fix it:
+
+  ```javascript
+  <input
+    {...register("email", {
+      onChange: () => clearErrors("root.server"),
+    })}
+  />
+  ```
+
+- `clearErrors("root")` clears every root error, for example `root.server` and `root.network`, because it removes everything under that path.
+- `clearErrors` does not re-validate. If a field is still invalid, its error comes back the next time validation runs. To check a field again right away, use [`trigger`](/docs/useform/trigger).
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### The error comes back after calling `clearErrors`
+
+<Why>
+
+`clearErrors` removes the stored error, but it does not change the field value or its validation rules. The next blur, change, or submit validates the same invalid value and creates the error again.
+
+</Why>
+
+<Fix>
+
+Correct the value before clearing the error, or change the validation rule. To immediately check the current value again, call [`trigger("fieldName")`](/docs/useform/trigger) instead of clearing the error.
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### `isValid` stays `false` after all errors are cleared
+
+<Why>
+
+`isValid` is derived from validation, not from whether the `errors` object was manually emptied. Calling `clearErrors` does not run validation or make an invalid form valid.
+
+</Why>
+
+<Fix>
+
+Fix the invalid values and call [`trigger()`](/docs/useform/trigger) if you need to recompute validity immediately.
+
+</Fix>
+
+</Troubleshoot>

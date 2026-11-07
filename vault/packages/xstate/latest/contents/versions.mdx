@@ -1,0 +1,92 @@
+---
+title: Version history
+---
+
+import { History, ArchiveRestore, X, Copy, Trash, Info } from 'lucide-react';
+
+
+Version history is helpful if you want to save checkpoints while modeling machines or mirror version changes in the rest of your codebase. New versions can be saved from the current machine using the **Version history** panel in the lower left of the canvas.
+
+All users can view versions of public machines. Users on our premium plans can view and create versions for machines in team projects and their own machines in **My Projects**. [Read more about team roles and versions](#team-roles-and-versions).
+
+<Callout>
+
+Version history is a premium feature of Stately Studio. [Check out the features on our Pro plan](studio-pro-plan), [Team plan](studio-team-plan), [Enterprise plan](studio-enterprise-plan) or [upgrade your existing plan](https://stately.ai/registry/billing).
+
+</Callout>
+
+## Save a version
+
+Save a new version of your machine from the <History size={18} /> **Version history** panel in the lower left corner of the canvas.
+
+<Callout>
+
+The **Save** button will be disabled unless you have changed your machine since you created the latest version.
+
+</Callout>
+
+Versions are named sequentially by default and have the version creator’s avatar. The version’s timestamp is always shown under the version name.
+
+### Rename a version
+
+You can rename any version after double-clicking or focusing on the version name.
+
+## Auto-saved versions
+
+There are some cases where versions will automatically be created for a machine Auto-saved versions are indicated in the list of versions with the Stately bot icon.
+
+### Initial versions
+
+An initial version is automatically saved for new machines when:
+
+- you fork a machine from an existing machine or project
+- you duplicate an existing machine in its project
+
+These versions are labeled “Initial version”.
+
+### Generated versions
+
+An version is also automatically saved for machines when you generate a flow from your existing machine. These versions are labeled with the text description used to generate the flow.
+
+### Periodic snapshot versions
+
+To reduce the likelihood of data loss, versions are automatically saved hourly as long as edits have been made to the project machine. These versions are labeled sequentially. They work just like other versions that you can view, restore, or delete.
+
+In the version list, these auto-saved versions are hidden by default but you can toggle their visibility to show them along with versions you explicitly save.
+
+## View a version
+
+You can view any version by selecting that version in the **Version history**. The version will be shown in the Editor and read-only unless you restore that version using the <ArchiveRestore size={18}/> **Restore** button.
+
+You can return to viewing the current version of your machine from the <X size={18}/> close icon button in the top bar or by selecting **Current Version** from the **Version history** panel.
+
+## Restore a version
+
+You can restore your current machine to any version from the <History size={18}/> **Version history** panel using the <ArchiveRestore size={18}/> restore icon button or using the <ArchiveRestore size={18}/> **Restore** button in the top bar when [viewing a version](#view-a-version).
+
+<Callout>
+
+You cannot restore a version when a machine is [locked](lock-machines). Unlock the machine from the machine <Info size={18} /> **Details** panel to re-enable restoring versions.
+
+</Callout>
+
+## Create a new machine from a version
+
+You can also create a new machine from a version in your version history using the <Copy size={18}/> copy button in the top bar when [viewing a version](#view-a-version).
+
+Your new machine will be created and opened in the same project with the same name appended with “(copy).”
+
+## Delete a version
+
+Delete a machine version using the <Trash size={18}/> trash button in the top bar when [viewing a version](#view-a-version).
+
+## Team roles and versions
+
+All team members can view past versions of machines in their team’s projects. Team owners, Admins, and Editors can also create and restore versions. Only Owners and Admins can delete versions.
+
+| Capability                           | Owner  | Admin  | Editor | Viewer |
+| ------------------------------------ | ------ | ------ | ------ | ------ |
+| View team machine versions           | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
+| Create new versions of team machines | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
+| Restore versions of team machines    | ✅ Yes | ✅ Yes | ✅ Yes | 🚫 No  |
+| Delete versions of team machines     | ✅ Yes | ✅ Yes | 🚫 No  | 🚫 No  |

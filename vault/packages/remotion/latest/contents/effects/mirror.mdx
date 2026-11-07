@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-effects-mirror.png
+image: https://remotion.media/docs/generated/articles-docs-effects-mirror.png
 slug: /effects/mirror
 title: mirror()
 sidebar_label: mirror()
@@ -19,13 +19,12 @@ A mirror effect that can be applied to canvas-based components such as [`<Video>
 ## Example
 
 ```tsx twoslash title="MyComp.tsx"
-import {AbsoluteFill} from 'remotion';
 import {Video} from '@remotion/media';
 import {mirror} from '@remotion/effects/mirror';
 
 export const MyComp: React.FC = () => {
   return (
-    <AbsoluteFill>
+    <>
       <Video
         src="https://remotion.media/video.mp4"
         effects={[
@@ -35,7 +34,7 @@ export const MyComp: React.FC = () => {
           }),
         ]}
       />
-    </AbsoluteFill>
+    </>
   );
 };
 ```
@@ -63,9 +62,12 @@ When `true`, mirrors the other side of the image. Defaults to `false`.
 
 When `true`, the effect is skipped. Defaults to `false`.
 
-## Requirements
+## Implementations
 
-`mirror()` uses a WebGL2 backend. During renders, enable WebGL via [`Config.setChromiumOpenGlRenderer('angle')`](/docs/config#setchromiumopenglrenderer). See [Using WebGL during renders](/docs/remotion/html-in-canvas#using-webgl-during-renders).
+- WebGL2
+- WebGPU <AvailableFrom v="4.0.540" />
+
+See: [Preferred effect backend](/docs/options/preferred-effect-backend).
 
 ## See also
 

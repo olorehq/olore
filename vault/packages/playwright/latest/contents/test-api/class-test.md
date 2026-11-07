@@ -85,6 +85,25 @@ You can also add annotations during runtime by manipulating [`property: TestInfo
 
 Learn more about [test annotations](../test-annotations.md).
 
+**Locks**
+
+You can declare named locks to prevent specific tests from running at the same time, while all other tests continue to run in parallel. Tests that share a lock name never run concurrently, even when they are declared in different files or belong to different [projects](../test-projects.md). This is useful when a few tests access a shared resource that does not support concurrent access.
+
+```js
+import { test, expect } from '@playwright/test';
+
+test('update user settings', {
+  lock: 'user-settings',
+}, async ({ page }) => {
+  // This test never runs concurrently with other tests
+  // that declare the 'user-settings' lock.
+});
+```
+
+The built-in `-exclusive-` lock runs the test only when no other tests are running.
+
+Learn more about [test locks](../test-parallel.md#test-locks).
+
 ### param: Test.(call).title
 * since: v1.10
 - `title` <[string]>
@@ -98,6 +117,7 @@ Test title.
   - `annotation` ?<[Object]|[Array]<[Object]>>
     - `type` <[string]> Annotation type, for example `'issue'`.
     - `description` ?<[string]> Optional annotation description, for example an issue url.
+  - `lock` ?<[string]|[Array]<[string]>>
 
 Additional test details.
 
@@ -427,6 +447,26 @@ test.describe('two annotated tests', {
 
 Learn more about [test annotations](../test-annotations.md).
 
+**Locks**
+
+You can declare named locks for all tests in a group by providing additional details. Tests that share a lock name never run concurrently. Learn more about [test locks](../test-parallel.md#test-locks).
+
+```js
+import { test, expect } from '@playwright/test';
+
+test.describe('two tests with a lock', {
+  lock: 'user-settings',
+}, () => {
+  test('one', async ({ page }) => {
+    // ...
+  });
+
+  test('two', async ({ page }) => {
+    // ...
+  });
+});
+```
+
 ### param: Test.describe.title
 * since: v1.10
 - `title` ?<[string]>
@@ -440,6 +480,7 @@ Group title.
   - `annotation` ?<[Object]|[Array]<[Object]>>
     - `type` <[string]>
     - `description` ?<[string]>
+  - `lock` ?<[string]|[Array]<[string]>>
 
 Additional details for all tests in the group.
 
@@ -502,6 +543,14 @@ Learn more about the execution modes [here](../test-parallel.md).
   test('runs second', async ({ page }) => {});
   ```
 
+* Declaring locks for all tests in a scope.
+
+  ```js
+  test.describe.configure({ lock: 'user-settings' });
+  test('update user settings', async ({ page }) => {});
+  test('reset user settings', async ({ page }) => {});
+  ```
+
 * Run multiple describes in parallel, but tests inside each describe in order.
 
   ```js
@@ -520,17 +569,25 @@ Learn more about the execution modes [here](../test-parallel.md).
   });
   ```
 
+### option: Test.describe.configure.lock
+* since: v1.64
+- `lock` <[string]|[Array]<[string]>>
+
+Additional named locks for all tests in the enclosing scope, including nested groups.  Locks are added to those declared in [`method: Test.describe`] details and previous calls to [`method: Test.describe.configure`].
+
 ### option: Test.describe.configure.mode
 * since: v1.10
-- `mode` <[TestMode]<"default"|"parallel"|"serial">>
+- `mode` "TestMode" <"default"|"parallel"|"serial">
 
 Execution mode. Learn more about the execution modes [here](../test-parallel.md).
 
 ### option: Test.describe.configure.retries
 * since: v1.28
-- `retries` <[int]>
+- `retries` <[int]|[Array]<[Object]>>
+  - `count` <[int]> The maximum number of retries given to a failed test when this entry applies.
+  - `condition` ?<[RegExp]> Regular expression matched against the error messages of the failed attempt. An entry without a condition always applies.
 
-The number of retries for each test.
+The number of retries for each test. Set to a list to make the number of retries depend on the error, see [`property: TestConfig.retries`].
 
 ### option: Test.describe.configure.timeout
 * since: v1.28
@@ -1084,6 +1141,7 @@ To annotate test as "failing" at runtime:
 * `test.fail(condition, description)`
 * `test.fail(callback, description)`
 * `test.fail()`
+* `test.fail(description)`
 
 **Usage**
 
@@ -1123,7 +1181,7 @@ test('fail in WebKit 2', async ({ page }) => {
 });
 ```
 
-You can also call `test.fail()` without arguments inside the test body to always mark the test as failed. We recommend declaring a failing test with `test.fail(title, body)` instead.
+You can also call `test.fail()` without a condition inside the test body to always mark the test as failed, optionally with a `description`. We recommend declaring a failing test with `test.fail(title, body)` instead.
 
 ```js
 import { test, expect } from '@playwright/test';
@@ -1240,6 +1298,7 @@ To annotate test as "fixme" at runtime:
 * `test.fixme(condition, description)`
 * `test.fixme(callback, description)`
 * `test.fixme()`
+* `test.fixme(description)`
 
 **Usage**
 
@@ -1279,7 +1338,7 @@ test('to be fixed in Safari 2', async ({ page }) => {
 });
 ```
 
-You can also call `test.fixme()` without arguments inside the test body to always mark the test as failed. We recommend using `test.fixme(title, body)` instead.
+You can also call `test.fixme()` without a condition inside the test body to always mark the test as "fixme", optionally with a `description`. We recommend using `test.fixme(title, body)` instead.
 
 ```js
 import { test, expect } from '@playwright/test';
@@ -1462,6 +1521,7 @@ To skip a test at runtime:
 * `test.skip(condition, description)`
 * `test.skip(callback, description)`
 * `test.skip()`
+* `test.skip(description)`
 
 **Usage**
 
@@ -1501,13 +1561,13 @@ test('Safari-only test 2', async ({ page }) => {
 });
 ```
 
-You can also call `test.skip()` without arguments inside the test body to always skip the test. However, we recommend using `test.skip(title, body)` instead.
+You can also call `test.skip()` without a condition inside the test body to always skip the test, optionally with a `description`. However, we recommend using `test.skip(title, body)` instead.
 
 ```js
 import { test, expect } from '@playwright/test';
 
 test('less readable', async ({ page }) => {
-  test.skip();
+  test.skip('Not implemented yet');
   // ...
 });
 ```
@@ -1564,6 +1624,7 @@ Marks a test as "slow". Slow test will be given triple the default timeout.
 Note that [`method: Test.slow`] cannot be used in a `beforeAll` or `afterAll` hook. Use [`method: Test.setTimeout`] instead.
 
 * `test.slow()`
+* `test.slow(description)`
 * `test.slow(condition, description)`
 * `test.slow(callback, description)`
 
@@ -1805,6 +1866,18 @@ Whether to box the step in the report. Defaults to `false`. When the step is box
 
 Specifies a custom location for the step to be shown in test reports and trace viewer. By default, location of the [`method: Test.step`] call is shown.
 
+### option: Test.step.params
+* since: v1.63
+- `params` <[Object]<[string], [any]>>
+
+Arbitrary serializable parameters describing the step. They are reported to the reporters as `testStep.params` and are shown in the trace viewer.
+
+### option: Test.step.subtitle
+* since: v1.63
+- `subtitle` <[string]>
+
+Step subtitle that complements the title, for example the target of the step. It is reported to the reporters as `testStep.subtitle` and is shown next to the title in test reports and the trace viewer.
+
 ## async method: Test.step.skip
 * since: v1.50
 - returns: <[void]>
@@ -1851,6 +1924,18 @@ Whether to box the step in the report. Defaults to `false`. When the step is box
 - `location` <[Location]>
 
 Specifies a custom location for the step to be shown in test reports and trace viewer. By default, location of the [`method: Test.step`] call is shown.
+
+### option: Test.step.skip.params
+* since: v1.63
+- `params` <[Object]<[string], [any]>>
+
+Arbitrary serializable parameters describing the step. They are reported to the reporters as `testStep.params` and are shown in the trace viewer.
+
+### option: Test.step.skip.subtitle
+* since: v1.63
+- `subtitle` <[string]>
+
+Step subtitle that complements the title, for example the target of the step. It is reported to the reporters as `testStep.subtitle` and is shown next to the title in test reports and the trace viewer.
 
 ### option: Test.step.skip.timeout
 * since: v1.50
@@ -1908,5 +1993,4 @@ test('test with locale', async ({ page }) => {
 - `options` <[TestOptions]>
 
 An object with local options.
-
 

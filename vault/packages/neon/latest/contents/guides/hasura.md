@@ -2,7 +2,7 @@
 title: Connect from Hasura Cloud to Neon
 subtitle: Learn how to connect a Hasura Cloud project to a new or existing Neon database
 summary: >-
-  Hasura Cloud connects to Neon Postgres either by OAuth (creating a new Neon
+  Hasura Cloud connects to Lakebase Postgres either by OAuth (creating a new Neon
   project automatically) or by pasting an existing connection string into the
   Hasura Console. Connection limits depend on compute size and pooling settings,
   so tuning both Neon and Hasura values is required when hitting limits. Hasura
@@ -12,10 +12,12 @@ enableTableOfContents: true
 redirectFrom:
   - /docs/quickstart/hasura
   - /docs/integrations/hasura
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-16T19:45:35.340Z'
 ---
 
 Hasura Cloud is an open source GraphQL engine that provides a scalable, highly available, globally distributed, secure GraphQL API for your data sources.
+
+This guide covers Hasura v2 on Hasura Cloud. Hasura DDN, Hasura's newer product, uses a different engine and setup, and moving to it is optional. For supported v2 versions and end-of-life dates, see the [Hasura v2 support policy](https://hasura.io/legal/support-policy-hasura-v2).
 
 ## Connecting to a new Neon database
 
@@ -33,11 +35,11 @@ Use the following instructions to connect to a new Neon database. This connectio
 7. You will be redirected to an Oauth page to authorize Hasura to access your Neon account. Click **Authorize** to allow Hasura to create a new Neon project and database.
    ![Hasura Authorize Neon](/docs/guides/hasura/authorize-hasura.png)
 
-After authenticating, a new Neon Postgres database is created and connected to your Hasura project, and the Neon project connection string is associated with the `PG_DATABASE_URL` environment variable.
+After authenticating, a new Lakebase Postgres database is created and connected to your Hasura project, and the Neon project connection string is associated with the `PG_DATABASE_URL` environment variable.
 
 ![Environment Variables](/docs/guides/hasura/environment-variables.png)
 
-To start exploring Hasura's GraphQL API with data stored in Neon, see [Load a template in Hasura](#load-a-template-in-hasura-optional).
+To start exploring Hasura's GraphQL API with data stored in the database, see [Load a template in Hasura](#load-a-template-in-hasura-optional).
 
 ## Connecting to an existing Neon database
 
@@ -53,7 +55,7 @@ Use the following instructions to connect to an existing Neon database from Hasu
   postgresql://[user]:[password]@[neon_hostname]/[dbname]
   ```
 
-  You can find your database connection string by clicking the **Connect** button on your **Project Dashboard**. For more information, see [Connect from any application](/docs/connect/connect-from-any-app).
+  You can find your database connection string by clicking the **Connect** button in the Console nav. For more information, see [Connect from any application](/docs/connect/connect-from-any-app).
 
 ### Add Neon as a data source
 
@@ -112,5 +114,9 @@ If you rely on Neon's scale to zero feature to minimize database usage, note tha
 - [Event triggers](https://hasura.io/docs/latest/event-triggers/overview/) may periodically poll your Neon database for new events.
 - [Cron triggers](https://hasura.io/docs/latest/scheduled-triggers/create-cron-trigger/) can invoke HTTP endpoints that execute custom business logic involving your Neon database.
 - [Source Health Checks](https://hasura.io/docs/latest/deployment/health-checks/source-health-check/) can keep your Neon compute active if the metadata database resides in Neon.
+
+## Use Neon branches with Hasura
+
+To serve development, testing, and preview environments from one Neon project and one Hasura instance, see [Dynamic routing with Hasura and Neon](/guides/hasura-dynamic-routing-with-neon).
 
 <NeedHelp/>

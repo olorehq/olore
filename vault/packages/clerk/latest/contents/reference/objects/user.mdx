@@ -1,13 +1,17 @@
 ---
 title: '`User` object'
 description: The User object holds all the information for a user of your application and provides a set of methods to manage their account. Users have a unique authentication identifier which might be their email address, phone number or a username.
-sdk: js-frontend, astro, chrome-extension, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
+sdk: js-frontend, astro, chrome-extension, electron, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
 search:
   keywords:
     - UserResource
 ---
 
 <Include src="_partials/user-object" />
+
+<If is="llm">
+  **For AI agents:** To seed or verify user data while building with this object, use the CLI instead of the Dashboard's Users page: run `npx clerk@latest users create --email <email> --password <password> --yes` (the password is required while password authentication is enabled, the default) and `npx clerk@latest users list --query <term>`, or fetch a user's full backend record with `npx clerk@latest api users/<user_id>`. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
 
 ## Example
 
@@ -158,10 +162,10 @@ function getOrganizationMemberships(
 
   ---
 
-  - `unsafeMetadata?`
-  - [`UserUnsafeMetadata`](/docs/reference/types/metadata#user-unsafe-metadata)
+  - ~~`unsafeMetadata?`~~
+  - [`UserUnsafeMetadata`](/docs/reference/types/metadata#userunsafemetadata)
 
-  Metadata that can be read and set from the Frontend API. One common use case for this attribute is to implement custom fields that will be attached to the `User` object. Using `update()` to update this value fully replaces the existing value. To perform a merge, use [`updateMetadata()`](#update-metadata) instead.
+  **Deprecated. Use [`updateMetadata()`](#updatemetadata) instead.** Deep-merges with the existing value rather than replacing it. This parameter will be removed in a future major version.
 
   ---
 

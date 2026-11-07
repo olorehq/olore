@@ -3,12 +3,14 @@ id: websockets
 title: WebSockets
 sidebar_label: WebSockets
 slug: /server/websockets
+section: "Backend Usage"
+order: 28
 ---
 
 You can use WebSockets for all or some of the communication with your server, see [wsLink](../client/links/wsLink.md) for how to set it up on the client.
 
 :::tip
-The document here outlines the specific details of using WebSockets. For general usage of subscriptions, see [our subscriptions guide](../server/subscriptions.md).
+The document here outlines the specific details of using WebSockets. For general usage of subscriptions, see [our subscriptions guide](./subscriptions.md).
 :::
 
 ### Creating a WebSocket-server
@@ -67,10 +69,73 @@ process.on('SIGTERM', () => {
 });
 ```
 
+### Sharing a port with your HTTP server
+
+To serve HTTP and WebSockets on the same port, pass your HTTP server to `WebSocketServer`. `ws` then handles the upgrade requests, and your adapter handles the rest.
+
+```ts twoslash title='server/index.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// @types: node
+// ---cut---
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { WebSocketServer } from 'ws';
+import { appRouter } from './router';
+
+const server = createHTTPServer({ router: appRouter });
+const wss = new WebSocketServer({ server });
+applyWSSHandler({ wss, router: appRouter });
+
+server.listen(3000);
+```
+
+### Limiting batch size
+
+`applyWSSHandler` accepts the same `maxBatchSize` option as the [HTTP adapters](./adapters.md#common-options). A WebSocket message that batches more requests than this is rejected as a whole: no procedure runs, and every request in it, except `subscription.stop` entries, gets a `BAD_REQUEST` error with the message `Batch call exceeds maximum size`.
+
+`wsLink` sends all requests made in the same tick as one message and has no `maxItems` option, so pick a limit above the number of calls your client makes at once.
+
+### Rejecting cross-origin connections
+
+Browsers don't apply CORS to WebSockets: a page on any origin can open a connection to your server, and the browser sends its cookies with it. If you authenticate with cookies, check the `Origin` header against the origins you trust. With `ws`, do this in `verifyClient`, and pass `403` to its callback so a rejected upgrade gets `403 Forbidden`:
+
+```ts twoslash title='server/wsServer.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// @types: node
+// ---cut---
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { WebSocketServer } from 'ws';
+import { appRouter } from './router';
+
+const allowedOrigins = new Set(['https://app.example.com']);
+
+const wss = new WebSocketServer({
+  port: 3001,
+  verifyClient: ({ origin }, callback) => {
+    // Browsers always send `Origin`, but other clients may not.
+    // Decide whether your app accepts connections without one.
+    callback(!origin || allowedOrigins.has(origin), 403);
+  },
+});
+applyWSSHandler({ wss, router: appRouter });
+```
+
+If you handle upgrades yourself with `noServer: true`, check `req.headers.origin` in your server's `upgrade` listener instead. For an origin you don't trust, end the socket with a `403` response, such as `socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n')`, rather than calling `wss.handleUpgrade()`.
+
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip
-You can use [Links](../client/links/overview.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+You can use [Links](../client/links.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 :::
 
 ```tsx twoslash title='client.ts'
@@ -151,14 +216,16 @@ export const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-### Automatic tracking of id using `tracked()` (recommended)
+`createContext` runs once per connection (after the connection params arrive, if you send them), and every call over that connection shares its result. If it throws, the server sends the error and closes the connection. A token is only checked when the connection opens, so it stays accepted on that connection after it expires.
+
+## Automatic tracking of id using `tracked()` (recommended)
 
 If you `yield` an event using our `tracked()`-helper and include an `id`, the client will automatically reconnect when it gets disconnected and send the last known ID when reconnecting as part of the `lastEventId`-input.
 
 You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
 
 :::info
-If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
 ```ts twoslash
@@ -307,7 +374,7 @@ interface ConnectionParamsMessage {
 
 ## Errors
 
-See [https://www.jsonrpc.org/specification#error_object](https://www.jsonrpc.org/specification#error_object) or [Error Formatting](../server/error-formatting.md).
+See [https://www.jsonrpc.org/specification#error_object](https://www.jsonrpc.org/specification#error_object) or [Error Formatting](./error-formatting.md).
 
 ## Notifications from Server to Client
 

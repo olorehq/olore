@@ -5,13 +5,13 @@ metadata:
   title: Set up Organization-level SAML and OIDC for B2B/B2C apps
 ---
 
-Clerk provides Enterprise Single Sign-On (SSO) through a feature called [**Enterprise Connections**](/docs/guides/configure/auth-strategies/enterprise-connections/overview). You can enable Enterprise Connections for specific Organizations, allowing members to authenticate through their company's identity provider using SAML or OIDC protocols.
+Clerk provides Enterprise Single Sign-On (SSO) through a feature called [**Enterprise Connections**](/docs/guides/configure/auth-strategies/enterprise-connections/overview). You can enable Enterprise Connections for specific Organizations, allowing members to authenticate through their company's identity provider ([IdP](!identity-provider)) using SAML or OIDC protocols.
 
-When users sign up or sign in using an Organization's Enterprise Connection, Clerk automatically adds them as members of that Organization and assigns them the [default Role](/docs/guides/organizations/control-access/roles-and-permissions#the-default-role-for-members). This process is known as [Just-in-Time (JIT) provisioning](/docs/guides/configure/auth-strategies/enterprise-connections/jit-provisioning).
+When users sign up or sign in using an Organization's Enterprise Connection, Clerk automatically adds them as members of that Organization and assigns them the [default Role](/docs/guides/organizations/control-access/roles-and-permissions#the-default-role-for-members). This process is known as [Just-in-Time (JIT) Provisioning](/docs/guides/configure/auth-strategies/enterprise-connections/jit-provisioning). If you want to require user accounts to be provisioned before their first sign-in, you can [disable JIT Provisioning](/docs/guides/configure/auth-strategies/enterprise-connections/jit-provisioning#disable-jit-provisioning) for the connection.
 
 ## When to use Enterprise SSO
 
-Enterprise SSO works well when customers require centralized authentication through their Identity Provider (IdP). This approach fits scenarios where:
+Enterprise SSO works well when customers require centralized authentication through their IdP. This approach fits scenarios where:
 
 - Enterprise customers have security requirements that mandate IdP-based authentication.
 - IT teams need to manage user provisioning from a central location.
@@ -50,6 +50,16 @@ To add an Enterprise SSO Connection for an Organization, go to the [Enterprise C
 > [!WARNING]
 > A domain used for Enterprise SSO can't be used as a [Verified Domain](/docs/guides/organizations/add-members/verified-domains) for the same Organization.
 
+## Multiple Enterprise Connections per Organization
+
+An Organization can have more than one Enterprise Connection. Each connection has its own domain, protocol (SAML or OIDC), and settings, allowing the Organization to accept sign-ins from several IdPs. Two connections in the same instance can't share an email domain. This is useful when:
+
+- A customer runs more than one IdP, for example after an acquisition.
+- A customer is migrating from one IdP to another and needs both to work during the transition.
+- Employees and contractors authenticate through different providers but belong to the same Organization.
+
+Users who sign in through any of the Organization's connections are added as members of that Organization. Each connection can also have its own [Directory Sync](/docs/guides/configure/auth-strategies/enterprise-connections/directory-sync) directory. To learn how Clerk handles users provisioned by more than one directory, see [Users managed by multiple directories](/docs/guides/configure/auth-strategies/enterprise-connections/directory-sync#users-managed-by-multiple-directories).
+
 ## Enforce Enterprise SSO by domain
 
 Clerk enforces Enterprise SSO connections on a per-domain basis in Organizations, enabling flexible access management:
@@ -83,7 +93,7 @@ You will encounter this error when the user's account is missing a required attr
 
 **How to fix it:**
 
-Access your identity provider's configuration dashboard, navigate to your application's SAML settings or attribute mapping configuration, and ensure that the 'mail' attribute is properly mapped to the user's email address field.
+Access your IdP's configuration dashboard, navigate to your application's SAML settings or attribute mapping configuration, and ensure that the 'mail' attribute is properly mapped to the user's email address field.
 
 ### `saml_response_relaystate_missing`
 
@@ -91,7 +101,7 @@ You will encounter this error when the `RelayState` parameter is missing from th
 
 **How to fix it:**
 
-Check that your identity provider is correctly returning the RelayState parameter that was sent in the original request.
+Check that your IdP is correctly returning the RelayState parameter that was sent in the original request.
 
 ### `saml_email_address_domain_mismatch`
 
@@ -102,6 +112,15 @@ You will encounter this error when the email address domain of the user's accoun
 1. Verify that the user is signing in with an email address that matches one of the allowed domains for this connection.
 1. If you need to add additional domains to this connection, go to your Clerk Dashboard → SSO Connections → \[Your Connection] → Settings, and update the allowed domains.
 1. Alternatively, ensure the user is accessing the correct SAML connection that matches their email domain.
+
+### `saml_jit_provisioning_disabled`
+
+You will encounter this error when [Just-in-Time (JIT) Provisioning](/docs/guides/configure/auth-strategies/enterprise-connections/jit-provisioning#disable-jit-provisioning) is disabled for the connection and no Clerk account exists for the user's email address. The error details include the email address used during the sign-in attempt.
+
+**How to fix it:**
+
+1. Provision an account for the user before they sign in, for example, through [Directory Sync](/docs/guides/configure/auth-strategies/enterprise-connections/directory-sync), an [invitation](/docs/guides/users/inviting), or the [Backend API](/docs/reference/backend-api/tag/users/POST/users){{ target: '_blank' }}.
+1. Alternatively, re-enable JIT Provisioning: in the Clerk Dashboard, navigate to the [**SSO connections**](https://dashboard.clerk.com/~/user-authentication/sso-connections) page, select the connection, select the **Settings** tab, and toggle on the **Create users during sign-in** option.
 
 ### `oauth_access_denied`
 

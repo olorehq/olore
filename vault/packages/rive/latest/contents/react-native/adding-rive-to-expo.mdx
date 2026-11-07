@@ -14,7 +14,7 @@ Because this package contains custom native code, it's not compatible with Expo 
 
 This guide will walk you through integrating Rive into your Expo project, including installing dependencies, configuring your build, and testing your graphics.
 
-## Initial Setup
+## Initial setup
 
 If you don’t already have a project, create a new Expo app:
 
@@ -81,7 +81,7 @@ npx expo install rive-react-native
   After updating, run `npx expo prebuild --clean` and rebuild your app.
 </Accordion>
 
-## iOS Minimum Version
+## iOS minimum version
 
 <Tabs>
   <Tab title="New Runtime (Recommended)">
@@ -91,7 +91,7 @@ If you’re using Expo SDK 52 or later, it already requires `15.1` or later.
 
 If you're using an older SDK, you’ll need to update your iOS deployment target manually or via configuration.
 
-### Option 1: Using `expo-build-properties` (Recommended)
+### Option 1: using `expo-build-properties` (recommended)
 
     [Continuous Native Generation (CNG)](https://docs.expo.dev/workflow/continuous-native-generation/) simplifies app maintenance and configuration by automatically generating your iOS and Android native projects using [Prebuild](https://docs.expo.dev/workflow/continuous-native-generation/#usage).
 
@@ -114,7 +114,7 @@ If you're using an older SDK, you’ll need to update your iOS deployment target
 }
 ```
 
-### Option 2: Manual Configuration
+### Option 2: manual configuration
 
 If you’re not using Prebuild, update the target directly in your `ios/Podfile`:
 
@@ -164,13 +164,13 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
   </Tab>
 </Tabs>
 
-## Creating a Development Build
+## Creating a development build
 
 To run your app with the Rive runtime, you’ll need to create a development build.
 
 Since there are several ways to do this, refer to the [Expo development builds guide](https://docs.expo.dev/develop/development-builds/create-a-build/) to choose the method that best suits your needs.
 
-## Running Your App
+## Running your app
 
 Once you've created a development build and installed it on your device or simulator, start your app with:
 
@@ -202,7 +202,7 @@ You can use the following component to test Rive:
       if (error || !riveFile) {
         return (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <Text>Error loading Rive file: {error || "Unknown error"}</Text>
+            <Text>Error loading Rive file: {error?.message ?? "Unknown error"}</Text>
           </View>
         );
       }
@@ -256,7 +256,7 @@ You can use the following component to test Rive:
   </Tab>
 </Tabs>
 
-## Adding Local Assets
+## Adding local assets
 
 The example above loads a `.riv` file from a remote URL.
 To use local `.riv` files, they must be bundled into your native build.

@@ -1,0 +1,97 @@
+---
+title: set_has_element
+description: 'This page explains how to use the set_has_element function in APL.'
+---
+
+`set_has_element` returns true when a dynamic array contains a specific element and false when it doesn’t. Use it to perform fast membership checks on values that you have already aggregated into a set with functions such as `make_set`.
+
+## Usage
+
+### Syntax
+
+```kusto
+set_has_element(set, value)
+```
+
+### Parameters
+
+| Name    | Type    | Description                                                                                                            |
+| ------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `set`   | dynamic | The array to search.                                                                                                   |
+| `value` | scalar  | The element to look for. Accepts `long`, `real`, `datetime`, `timespan`, `string`, `bool`. |
+
+### Returns
+
+A `bool` that’s true when `value` exists in `set` and false otherwise.
+
+## Example
+
+Use `set_has_element` to determine if a set contains a specific value.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend hasElement = set_has_element(dynamic([1, 2, 3]), 2)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20hasElement%20%3D%20set_has_element(dynamic(%5B1%2C%202%2C%203%5D)%2C%202)%22%7D)
+
+**Output**
+
+| _time            | hasElement |
+| ---------------- | --- |
+| May 22, 11:42:52 | true |
+
+## List of related functions
+
+- [set_difference](/apl/scalar-functions/mathematical-functions/set-difference): Returns elements in the first array that aren’t in the second. Use it to find exclusions.
+- [set_union](/apl/scalar-functions/mathematical-functions/set-union): Returns the union of two or more sets. Use it when you need any element that appears in at least one set instead of every set.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you usually call `in` for scalar membership or use multivalue functions such as `mvfind` for arrays. `set_has_element` plays the role of those helpers after you build a multivalue field with `stats values`.
+
+<CodeGroup>
+
+```sql Splunk example
+index=web
+| stats values(uri) AS uris BY id
+| where "/checkout" in uris
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize uris=make_set(uri) by id
+| where set_has_element(uris, '/checkout')
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL has no built-in array type, but dialects that implement arrays (for example PostgreSQL) use the `ANY` or `member of` operators. `set_has_element` is the APL counterpart and is applied after you build an array with `ARRAY_AGG` equivalents such as `make_set`.
+
+<CodeGroup>
+
+```sql SQL example
+SELECT   id
+FROM     sample_http_logs
+GROUP BY id
+HAVING   'US' = ANY(ARRAY_AGG(country));
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize countries=make_set(['geo.country']) by id
+| where set_has_element(countries, 'US')
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

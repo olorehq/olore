@@ -1,0 +1,131 @@
+---
+title: 'Dashboard JSON'
+description: 'This page explains the structure of the dashboard document that the dashboards API accepts and returns, and how to validate it with the published JSON Schema.'
+sidebarTitle: Dashboard JSON
+keywords: ['axiom documentation', 'documentation', 'axiom', 'axiom api', 'rest api', 'dashboards', 'dashboard json', 'json schema', 'charts', 'layout', 'sections']
+---
+
+The [Create dashboard](/restapi/endpoints/createDashboard) and [Update dashboard](/restapi/endpoints/updateDashboard) endpoints take a dashboard document in the `dashboard` field of the request body. The [Retrieve dashboard](/restapi/endpoints/getDashboard) endpoint returns the same document. This page explains the structure of the dashboard document.
+
+## JSON Schema
+
+Axiom publishes a JSON Schema for the dashboard document:
+
+```txt
+https://axiom.co/docs/schemas/dashboard.json
+```
+
+The schema describes every field and every chart type. Axiom generates it from the v2 OpenAPI spec, which is available at `https://axiom.co/docs/openapi/v2.json`.
+
+To check a dashboard document before you send it, validate it against the schema. For example, with [check-jsonschema](https://check-jsonschema.readthedocs.io/):
+
+```bash
+uvx check-jsonschema --schemafile https://axiom.co/docs/schemas/dashboard.json dashboard.json
+```
+
+Don't add a `$schema` field to the dashboard document. The API rejects unknown top-level fields.
+
+## Top-level fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `name` | Yes | Dashboard name, up to 100 characters. |
+| `owner` | Yes | User ID of the owner. Use `X-AXIOM-EVERYONE` to share the dashboard with everyone in the organization. |
+| `schemaVersion` | Yes | Version of the dashboard format. Use `2`. |
+| `refreshTime` | Yes | Seconds between automatic refreshes: `0` (off), `15`, `60`, or `300`. |
+| `timeWindowStart` | Yes | Start of the time range. For example, `qr-now-1h` for the last hour, or Unix epoch milliseconds as a string. |
+| `timeWindowEnd` | Yes | End of the time range. Use `qr-now` with a relative start, or Unix epoch milliseconds as a string. |
+| `charts` | Yes | Dashboard elements. For more information, see [Charts](#charts). |
+| `layout` | Yes | Position and size of each chart. For more information, see [Layout](#layout). |
+| `sections` | No | Collapsible sections in display order. For more information, see [Sections](#sections). |
+| `description` | No | Dashboard description, up to 1,000 characters. |
+| `against` | No | Relative offset for comparison against a previous period. For example, `-1d`. |
+| `againstTimestamp` | No | Absolute or relative timestamp for comparison. Use either `against` or `againstTimestamp`. |
+| `uid` | No | Stable dashboard identifier. Letters, digits, `_`, and `-`, up to 128 characters. |
+
+## Charts
+
+Each element of `charts` is an object with the following fields:
+
+- `id`: Identifier of the chart. Use any string of up to 200 characters that is unique in the dashboard.
+- `type`: Chart type. One of `TimeSeries`, `Heatmap`, `LogStream`, `Pie`, `Scatter`, `Table`, `TopK`, `Statistic`, `Gauge`, `Note`, `MonitorList`, `SmartFilter`, `Spacer`, or `Visualize`.
+- `sectionId`: Optional. ID of the section that contains the chart.
+
+Charts that run a query take it in the `query` field. Use `query.apl` for an APL query or `query.mpl` for an MPL query. The other fields depend on the chart type. In the JSON Schema, the definition for each chart type is in `$defs`, named after the type. For example, `$defs.TimeSeriesChart` and `$defs.NoteChart`.
+
+## Layout
+
+The dashboard is a grid with 12 columns. Each chart needs one element in `layout`:
+
+- `i`: ID of the chart.
+- `x`: Column where the chart starts, from `0` to `11`.
+- `y`: Row where the chart starts.
+- `w`: Width in columns, from `1` to `12`.
+- `h`: Height in rows.
+
+## Sections
+
+`sections` lists the sections of the dashboard from top to bottom. Each section has the following fields:
+
+- `id`: Identifier of the section. Must be a UUID.
+- `title`: Section name, up to 200 characters.
+- `defaultCollapsed`: Optional. If `true`, the section is collapsed when the dashboard opens.
+
+To place a chart in a section, set the chart's `sectionId` to the section's `id`. Charts without a `sectionId` appear above the first section. For more information, see [Dashboard sections](/dashboards/sections).
+
+## Rules outside the schema
+
+JSON Schema can't express some rules that a valid dashboard follows:
+
+- Chart IDs, layout `i` values, and section IDs are unique.
+- Every chart has a layout element whose `i` is the chart's `id`, and every layout element refers to a chart.
+- Every `sectionId` is the `id` of an element in `sections`.
+- `SmartFilter` charts have no `sectionId`. Filter bars apply to the entire dashboard.
+
+## Example
+
+The following dashboard document contains a note outside all sections and a time series chart in a section:
+
+```json
+{
+  "name": "HTTP service overview",
+  "owner": "X-AXIOM-EVERYONE",
+  "description": "Request volume for the HTTP service",
+  "schemaVersion": 2,
+  "refreshTime": 60,
+  "timeWindowStart": "qr-now-1h",
+  "timeWindowEnd": "qr-now",
+  "sections": [
+    { "id": "5b0e7d4a-3c1f-4e2a-9a6b-1f2d3c4b5a69", "title": "Traffic" }
+  ],
+  "charts": [
+    {
+      "id": "about",
+      "type": "Note",
+      "text": "Charts in **Traffic** show requests to the HTTP service."
+    },
+    {
+      "id": "requests",
+      "type": "TimeSeries",
+      "name": "Requests",
+      "sectionId": "5b0e7d4a-3c1f-4e2a-9a6b-1f2d3c4b5a69",
+      "query": { "apl": "['http-logs'] | summarize count() by bin_auto(_time)" }
+    }
+  ],
+  "layout": [
+    { "i": "about", "x": 0, "y": 0, "w": 12, "h": 2 },
+    { "i": "requests", "x": 0, "y": 2, "w": 12, "h": 6 }
+  ]
+}
+```
+
+To create the dashboard, send the document in the `dashboard` field:
+
+```bash
+curl -X 'POST' 'https://api.axiom.co/v2/dashboards' \
+  -H 'Authorization: Bearer API_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "dashboard": DASHBOARD_JSON }'
+```
+
+Replace `API_TOKEN` with your API token and `DASHBOARD_JSON` with the dashboard document.

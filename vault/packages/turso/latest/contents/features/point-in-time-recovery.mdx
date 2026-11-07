@@ -11,17 +11,19 @@ Backups are created automatically at `COMMIT`. Free plan users can restore to an
 
 </Info>
 
+<Note>
+
+PITR restores an **existing** database — it cannot bring back a database that was
+deleted. On paid plans, deleted databases can be restored for up to five days: see
+[Recover Deleted Databases](/features/recover-deleted-databases).
+
+</Note>
+
 ## How it works
 
 1. You create a new database from the existing database using the CLI or API.
 2. You update your application to use the new database connection string.
 3. You delete the old database when you no longer need it.
-
-<Info>
-
-The newly created database includes data only from periods prior to the specified timestamp. Additionally, there may be a gap of up to 15 seconds in the data immediately preceding the timestamp, as this depends on the timing of Turso's most recent periodic batch checkpoint.
-
-</Info>
 
 ## Usage
 

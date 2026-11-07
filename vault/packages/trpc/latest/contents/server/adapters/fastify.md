@@ -3,6 +3,24 @@ id: fastify
 title: Fastify Adapter
 sidebar_label: Fastify
 slug: /server/adapters/fastify
+section: "Backend Usage"
+parent: "server/adapters"
+order: 15
+skill:
+  name: adapter-fastify
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Mount tRPC as a Fastify plugin with fastifyTRPCPlugin from
+    @trpc/server/adapters/fastify. Configure prefix, trpcOptions (router,
+    createContext, onError). Enable WebSocket subscriptions with useWSS and
+    @fastify/websocket. Set routerOptions.maxParamLength for batch requests.
+    Requires Fastify v5+. FastifyTRPCPluginOptions for type-safe onError.
+    CreateFastifyContextOptions provides req, res. Register @fastify/websocket
+    before the tRPC plugin.
+  include:
+    - server/adapters#common-options
 ---
 
 ## Example app
@@ -48,15 +66,6 @@ yarn add @trpc/server fastify zod
 > Using Fastify v4 may cause requests to return empty responses without errors.
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
-
-:::tip AI Agents
-If you use an AI coding agent, install tRPC skills for better code generation:
-
-```bash
-npx @tanstack/intent@latest install
-```
-
-:::
 
 ### Create the router
 
@@ -297,3 +306,11 @@ You can now subscribe to the `randomNumber` topic and should receive a random nu
 | prefix      | `string`                                           | `true`   | `"/trpc"` | URL prefix for tRPC routes                                     |
 | useWSS      | `boolean`                                          | `true`   | `false`   | Enable WebSocket support via `@fastify/websocket`              |
 | trpcOptions | `FastifyHandlerOptions<AppRouter, Request, Reply>` | `false`  | `n/a`     | tRPC handler options including `router`, `createContext`, etc. |
+
+`trpcOptions` accepts the [options every adapter takes](../adapters.md#common-options), like `onError` and `maxBatchSize`. With `useWSS`, it also accepts the WebSocket options `keepAlive`, `dangerouslyDisablePong` and `experimental_encoder`.
+
+## Common mistakes
+
+- **Registering `@fastify/websocket` after the tRPC plugin.** It only adds WebSocket support to routes registered after it, so register it first.
+- **Leaving `maxParamLength` at Fastify's default of `100`.** A batch request puts every procedure in one path parameter, like `/trpc/getUserById,createUser`, and Fastify answers `414 URI Too Long` once that gets longer than `maxParamLength`.
+- **Using Fastify v4.** The tRPC v11 adapter requires Fastify v5 or later.

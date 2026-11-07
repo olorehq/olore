@@ -1,0 +1,27 @@
+---
+title: 'Export traces to Cribl Stream'
+description: 'Send Checkly traces to Cribl Stream with an OpenTelemetry Source.'
+sidebarTitle: 'Cribl Stream'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/traces/cribl/'
+---
+
+import OtlpVendorIntro from '/snippets/otlp-vendor-intro.mdx';
+import OtlpVendorOutro from '/snippets/otlp-vendor-outro.mdx';
+
+<OtlpVendorIntro vendor="Cribl Stream" />
+
+Export traces to Cribl Stream once, then use Routes to send them to one or more destinations.
+
+1. Get the endpoint. In Cribl Stream, create an **OpenTelemetry** Source with **Protocol** set to `HTTP` on a Cribl.Cloud port between `20000` and `20010`. Turn on TLS with the private key path `$CRIBL_CLOUD_KEY` and the certificate path `$CRIBL_CLOUD_CRT`, which Cribl.Cloud requires on those ports, and add a **Token** authentication method. The URL is `https://default.main.<Org-ID>.cribl.cloud:<port>/v1/traces`, built from your Organization ID and the Source's port.
+2. Get the key. Copy the token you added to the Source.
+3. Paste the values into Checkly. On the [Traces settings page](https://app.checklyhq.com/settings/account/traces), turn on **Enable exporting traces**, paste the URL, and add the header from the table below.
+4. Find the spans. Add a Route that sends the Source's data to your destination. There, the spans appear under service `checkly`.
+
+| Header name | Value |
+|---|---|
+| `authorization` | `Bearer <token>` |
+
+This page covers traces only. Checkly's [Prometheus endpoint](/integrations/observability/prometheus) accepts only a bearer token and answers `401` to Basic auth, which is what Cribl's Prometheus Scraper Source sends.
+
+Cribl documents the Source in [OpenTelemetry Source](https://docs.cribl.io/stream/sources-otel/) and the certificates in [TLS in Cribl.Cloud](https://docs.cribl.io/stream/securing-tls-cloud).
+<OtlpVendorOutro />

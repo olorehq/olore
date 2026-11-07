@@ -12,20 +12,18 @@ title: "macOS VMs"
 
 - **Small Linux VPS** for an always-on Gateway and low cost. See [VPS hosting](/vps).
 - **Dedicated hardware** (Mac mini or Linux box) if you want full control and a **residential IP** for browser automation. Many sites block data center IPs, so local browsing often works better.
-- **Hybrid:** keep the Gateway on a cheap VPS, and connect your Mac as a **node** when you need browser/UI automation. See [Nodes](/nodes) and [Gateway remote](/gateway/remote).
+- **Hybrid**: keep the Gateway on a cheap VPS, and connect your Mac as a **node** when you need browser/UI automation. See [Nodes](/nodes) and [Gateway remote](/gateway/remote).
 
-Use a macOS VM when you specifically need macOS-only capabilities such as iMessage or want strict isolation from your daily Mac.
+Use a macOS VM only when you specifically need macOS-only capabilities such as iMessage, or want strict isolation from your daily Mac.
 
 ## macOS VM options
 
 ### Local VM on your Apple Silicon Mac (Lume)
 
-Run OpenClaw in a sandboxed macOS VM on your existing Apple Silicon Mac using [Lume](https://cua.ai/docs/lume).
-
-This gives you:
+Run OpenClaw in a sandboxed macOS VM on your existing Apple Silicon Mac using [Lume](https://cua.ai/docs/lume). This gives you:
 
 - Full macOS environment in isolation (your host stays clean)
-- iMessage support via `imsg` (the default local path is impossible on Linux/Windows)
+- iMessage support via `imsg`; the default local path is impossible on Linux/Windows
 - Instant reset by cloning VMs
 - No extra hardware or cloud costs
 
@@ -36,20 +34,16 @@ If you want macOS in the cloud, hosted Mac providers work too:
 - [MacStadium](https://www.macstadium.com/) (hosted Macs)
 - Other hosted Mac vendors also work; follow their VM + SSH docs
 
-Once you have SSH access to a macOS VM, continue at step 6 below.
-
----
+Once you have SSH access to a macOS VM, continue at [Install OpenClaw](#6-install-openclaw) below.
 
 ## Quick path (Lume, experienced users)
 
-1. Install Lume
+1. Install Lume.
 2. `lume create openclaw --os macos --ipsw latest`
-3. Complete Setup Assistant, enable Remote Login (SSH)
+3. Complete Setup Assistant, enable Remote Login (SSH).
 4. `lume run openclaw --no-display`
-5. SSH in, install OpenClaw, configure channels
-6. Done
-
----
+5. SSH in, install OpenClaw, configure channels.
+6. Done.
 
 ## What you need (Lume)
 
@@ -58,18 +52,16 @@ Once you have SSH access to a macOS VM, continue at step 6 below.
 - ~60 GB free disk space per VM
 - ~20 minutes
 
----
-
 ## 1) Install Lume
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/trycua/cua/main/libs/lume/scripts/install.sh)"
 ```
 
-If `~/.local/bin` isn't in your PATH:
+If `~/.local/bin` is not in your PATH:
 
 ```bash
-echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.zshrc && source ~/.zshrc
+echo 'export PATH="$PATH:$HOME/.local/bin"' >> "${ZDOTDIR:-$HOME}/.zshrc" && source "${ZDOTDIR:-$HOME}/.zshrc"
 ```
 
 Verify:
@@ -79,8 +71,6 @@ lume --version
 ```
 
 Docs: [Lume Installation](https://cua.ai/docs/lume/guide/getting-started/installation)
-
----
 
 ## 2) Create the macOS VM
 
@@ -94,23 +84,19 @@ This downloads macOS and creates the VM. A VNC window opens automatically.
 The download can take a while depending on your connection.
 </Note>
 
----
-
 ## 3) Complete Setup Assistant
 
 In the VNC window:
 
-1. Select language and region
-2. Skip Apple ID (or sign in if you want iMessage later)
-3. Create a user account (remember the username and password)
-4. Skip all optional features
+1. Select language and region.
+2. Skip Apple ID (or sign in if you want iMessage later).
+3. Create a user account (remember the username and password).
+4. Skip all optional features.
 
 After setup completes:
 
-1. Enable SSH: Open System Settings -> General -> Sharing and enable "Remote Login".
-2. For headless VM use, enable auto-login: Open System Settings -> Users & Groups, select "Automatically log in as:", and choose the VM user.
-
----
+1. Enable SSH: System Settings -> General -> Sharing, enable "Remote Login".
+2. For headless VM use, enable auto-login: System Settings -> Users & Groups, select "Automatically log in as:", and choose the VM user.
 
 ## 4) Get the VM IP address
 
@@ -120,8 +106,6 @@ lume get openclaw
 
 Look for the IP address (usually `192.168.64.x`).
 
----
-
 ## 5) SSH into the VM
 
 ```bash
@@ -130,52 +114,56 @@ ssh youruser@192.168.64.X
 
 Replace `youruser` with the account you created, and the IP with your VM's IP.
 
----
-
 ## 6) Install OpenClaw
 
-Inside the VM:
+A fresh macOS VM has no Node.js or npm. Inside the VM, run the
+[installer script](/install/installer). It installs a supported Node runtime
+when needed, installs OpenClaw, and starts onboarding:
 
 ```bash
-npm install -g openclaw@latest
-openclaw onboard --install-daemon
+curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
 Follow the onboarding prompts to set up your model provider (Anthropic, OpenAI, etc.).
 
----
+The VM will later run headless, so the Gateway needs to run as a background
+service. If you answered no to Quick start's background question, press
+**Ctrl+C** to stop the foreground Gateway. Then install the service and verify
+that it is running:
+
+```bash
+openclaw gateway install
+openclaw gateway status
+```
+
+If the VM already has [Node 24.22.1+ or 26.12.1+](/install/node), you can install the
+package directly instead. Use the following command on npm 12 or npm 11.16+. On
+npm 11.15 and earlier, omit `--allow-scripts=openclaw`.
+
+```bash
+npm install -g openclaw@latest --allow-scripts=openclaw
+openclaw onboard --install-daemon
+```
 
 ## 7) Configure channels
 
-Edit the config file:
+Keep the Telegram token in the Gateway environment rather than copying it into
+`openclaw.json`. Add `TELEGRAM_BOT_TOKEN=<bot-token>` to
+`~/.openclaw/.env`, then load it in the current shell and add the channel:
 
 ```bash
-nano ~/.openclaw/openclaw.json
+export TELEGRAM_BOT_TOKEN="<bot-token>"
+openclaw channels add --channel telegram --use-env
 ```
 
-Add your channels:
-
-```json5
-{
-  channels: {
-    whatsapp: {
-      dmPolicy: "allowlist",
-      allowFrom: ["+15551234567"],
-    },
-    telegram: {
-      botToken: "YOUR_BOT_TOKEN",
-    },
-  },
-}
-```
-
-Then login to WhatsApp (scan QR):
+The managed Gateway reads the same state-directory `.env` after restart. For
+WhatsApp, configure your allowlist and then scan the login QR code:
 
 ```bash
-openclaw channels login
+openclaw config set channels.whatsapp.dmPolicy allowlist
+openclaw config set channels.whatsapp.allowFrom '["+15551234567"]' --strict-json
+openclaw channels login --channel whatsapp
 ```
-
----
 
 ## 8) Run the VM headlessly
 
@@ -186,15 +174,26 @@ lume stop openclaw
 lume run openclaw --no-display
 ```
 
-The VM runs in the background. OpenClaw's daemon keeps the gateway running.
-
-To check status:
+The VM runs in the background; OpenClaw's daemon keeps the gateway running. To check status:
 
 ```bash
 ssh youruser@192.168.64.X "openclaw status"
 ```
 
----
+## 9) Open the dashboard from your Mac
+
+Keep the Gateway bound to the VM's loopback address. On your Mac, start an
+[SSH tunnel](/gateway/remote) and leave it running:
+
+```bash
+ssh -N -L 127.0.0.1:18789:127.0.0.1:18789 youruser@192.168.64.X
+```
+
+In another terminal, SSH into the VM and run `openclaw dashboard --json`. Open
+its short-lived, single-use `browserUrl` in your Mac's browser to pair it. Keep
+the command output private because it can contain Gateway credentials. See
+[Dashboard](/web/dashboard) for authentication details and [Remote access](/gateway/remote)
+for alternatives such as Tailscale Serve.
 
 ## Bonus: iMessage integration
 
@@ -221,11 +220,7 @@ Add to your OpenClaw config:
 }
 ```
 
-Restart the gateway. Now your agent can send and receive iMessages.
-
-Full setup details: [iMessage channel](/channels/imessage)
-
----
+Restart the gateway. Your agent can now send and receive iMessages. Full setup details: [iMessage channel](/channels/imessage).
 
 ## Save a golden image
 
@@ -244,30 +239,28 @@ lume clone openclaw-golden openclaw
 lume run openclaw --no-display
 ```
 
----
-
 ## Running 24/7
 
 Keep the VM running by:
 
 - Keeping your Mac plugged in
-- Disabling sleep in System Settings → Energy Saver
+- Disabling sleep in System Settings -> Energy Saver
 - Using `caffeinate` if needed
+
+Those controls are on the host Mac, and they limit idle sleep. Closing a Mac laptop lid forces the host to sleep, so the VM and the Gateway inside it stop until the host wakes. Sleep settings inside the VM affect the guest.
+
+The host can keep running with the lid closed in Apple's closed-display setup: a connected external display, power, an external keyboard, and a mouse ([If your external display is dark or low resolution](https://support.apple.com/en-us/102501)). On a Mac laptop with Apple silicon, allow that display, keyboard, and mouse to connect before closing the lid ([Allow USB and other accessories to connect to your Mac](https://support.apple.com/en-us/102282)). [QA1340](https://developer.apple.com/library/archive/qa/qa1340/_index.html) describes closing the lid as forced sleep, separate from the idle sleep these settings can prevent.
 
 For true always-on, consider a dedicated Mac mini or a small VPS. See [VPS hosting](/vps).
 
----
-
 ## Troubleshooting
 
-| Problem                  | Solution                                                                           |
-| ------------------------ | ---------------------------------------------------------------------------------- |
-| Can't SSH into VM        | Check "Remote Login" is enabled in VM's System Settings                            |
-| VM IP not showing        | Wait for VM to fully boot, run `lume get openclaw` again                           |
-| Lume command not found   | Add `~/.local/bin` to your PATH                                                    |
-| WhatsApp QR not scanning | Ensure you're logged into the VM (not host) when running `openclaw channels login` |
-
----
+| Problem                  | Solution                                                                                |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| Cannot SSH into VM       | Check "Remote Login" is enabled in the VM's System Settings                             |
+| VM IP not showing        | Wait for VM to fully boot, run `lume get openclaw` again                                |
+| Lume command not found   | Add `~/.local/bin` to your PATH                                                         |
+| WhatsApp QR not scanning | Check that you are logged into the VM (not host) when running `openclaw channels login` |
 
 ## Related docs
 

@@ -2,10 +2,11 @@
 title: 'What are Checks?'
 description: 'Checks are automated tests that monitor your application on a schedule.'
 sidebarTitle: 'Checks'
+canonical: 'https://www.checklyhq.com/docs/concepts/checks/'
 ---
 Checks are automated monitors that run against your application to verify availability, performance, and reliability. Each Check represents a specific test that runs on a schedule you define, whether that's a simple health check on an API endpoint or a complex, multi-step workflow through your entire application.
 
-Checks experience your application the same way real users would—clicking buttons, making API calls, filling forms, or connecting to services. You can run them as frequently as needed—every minute, hourly, or daily. When something breaks, you get notified immediately, often before users are affected.
+Checks experience your application the same way real users would—clicking buttons, making API calls, filling forms, or connecting to services. You can run them as frequently as needed—every 10 seconds, every minute, hourly, or daily. When something breaks, you get notified immediately, often before users are affected.
 
 This lets you catch issues early, maintain confidence in your deployments, and ensure your critical systems are working as expected.
 
@@ -14,8 +15,8 @@ This lets you catch issues early, maintain confidence in your deployments, and e
 Checkly's flexible offering includes several types of Checks, each designed for different levels of complexity and testing scenarios:
 
 <AccordionGroup>
-<Accordion title="URL Monitors">
-Monitor HTTP/HTTPS endpoints for availability and performance. URL Monitors check if your websites and APIs are responding correctly by making HTTP requests and validating the response.
+<Accordion title="URL monitors">
+Monitor HTTP/HTTPS endpoints for availability and performance. URL monitors check if your websites and APIs are responding correctly by making HTTP requests and validating the response.
 
 **Perfect for:**
 - Website uptime monitoring
@@ -23,8 +24,8 @@ Monitor HTTP/HTTPS endpoints for availability and performance. URL Monitors chec
 - Basic performance tracking
 - SSL certificate monitoring
 </Accordion>
-<Accordion title="TCP Monitors">
-Verify connectivity to any TCP service by establishing connections to specific hosts and ports. TCP Monitors test the availability of non-HTTP services and infrastructure components.
+<Accordion title="TCP monitors">
+Verify connectivity to any TCP service by establishing connections to specific hosts and ports. TCP monitors test the availability of non-HTTP services and infrastructure components.
 
 **Perfect for:**
 - Database connectivity
@@ -32,8 +33,8 @@ Verify connectivity to any TCP service by establishing connections to specific h
 - Network service availability
 - Port accessibility testing
 </Accordion>
-<Accordion title="Heartbeat Monitors">
-Monitor scheduled processes, cron jobs, and batch operations that should "check in" at regular intervals. Instead of actively testing your service, Heartbeat Monitors wait to receive a signal from your system.
+<Accordion title="Heartbeat monitors">
+Monitor scheduled processes, cron jobs, and batch operations that should "check in" at regular intervals. Instead of actively testing your service, Heartbeat monitors wait to receive a signal from your system.
 
 **Perfect for:**
 - Backup job verification
@@ -41,8 +42,8 @@ Monitor scheduled processes, cron jobs, and batch operations that should "check 
 - Batch process oversight
 - Data pipeline health
 </Accordion>
-<Accordion title="DNS Monitor">
-Verify DNS resolution by querying domain records and validating responses. DNS Monitors help ensure your domains resolve correctly and detect issues such as misconfigurations, propagation delays, or resolver failures.
+<Accordion title="DNS monitor">
+Verify DNS resolution by querying domain records and validating responses. DNS monitors help ensure your domains resolve correctly and detect issues such as misconfigurations, propagation delays, or resolver failures.
 
 **Perfect for:**
 - Domain resolution monitoring
@@ -50,7 +51,7 @@ Verify DNS resolution by querying domain records and validating responses. DNS M
 - Detecting propagation issues
 - Troubleshooting resolver performance
 </Accordion>
-<Accordion title="ICMP Monitor">
+<Accordion title="ICMP monitor">
 Ping hosts to measure network reachability and latency. ICMP monitors help you verify that a server or device is online and understand network-level performance.
 
 **Perfect for:**
@@ -60,7 +61,7 @@ Ping hosts to measure network reachability and latency. ICMP monitors help you v
 
 </Accordion>
 
-<Accordion title="API Checks">
+<Accordion title="API checks">
 Advanced API testing that goes beyond uptime monitoring. Use setup and teardown scripts, complex assertions, and custom request handling. Validate that your backend services respond correctly, perform within acceptable timeframes, and return the right data structures.
 
 **Perfect for:**
@@ -72,18 +73,7 @@ Advanced API testing that goes beyond uptime monitoring. Use setup and teardown 
 - Integration testing between services
 </Accordion>
 
-<Accordion title="Agentic Checks">
-Prompt-driven synthetic monitoring where an agent discovers a user journey, creates a reusable check script, and can self-heal when that saved script starts failing. Use Agentic Checks when the expected intent is stable, but the exact implementation or response can vary.
-
-**Perfect for:**
-- Critical user journeys that change often
-- AI-powered support, search, or assistant flows where the exact response is nondeterministic
-- Early monitoring coverage before writing deterministic scripts
-- Flows that benefit from AI-assisted discovery and maintenance
-- Checks that need selected skills or account variables referenced in the prompt
-</Accordion>
-
-<Accordion title="Multistep Checks">
+<Accordion title="Multistep checks">
 Write Node.js scripts that run multiple API requests in sequence with arbitrary code between requests. Perfect for testing complex workflows involving authentication, data manipulation, and multi-step processes that span multiple endpoints.
 
 **Perfect for:**
@@ -94,8 +84,8 @@ Write Node.js scripts that run multiple API requests in sequence with arbitrary 
 - Workflow orchestration testing
 - Cross-service data validation
 </Accordion>
-<Accordion title="Browser Checks">
-Simulate real user interactions in a headless browser using TypeScript/JavaScript with @playwright/test. Navigate, screenshot, and assert your key webapp flows. Browser Checks can handle complex scenarios that simple uptime monitoring cannot.
+<Accordion title="Browser checks">
+Simulate real user interactions in a headless browser using TypeScript/JavaScript with @playwright/test. Navigate, screenshot, and assert your key webapp flows. Browser checks can handle complex scenarios that simple uptime monitoring cannot.
 
 **Perfect for:**
 - Complete user journey testing
@@ -117,19 +107,21 @@ Run entire Playwright test suites and projects as production monitors without co
 </Accordion>
 </AccordionGroup>
 
+Checkly also offers [SSL monitors](/detect/uptime-monitoring/ssl-monitors/overview) for certificate validity and expiry, [gRPC monitors](/detect/uptime-monitoring/grpc-monitors/overview), and [Traceroute monitors](/detect/uptime-monitoring/traceroute-monitors/overview).
+
 
 ## How Checks Execute
 
 ![monitoring and alerting pipeline](/images/docs/images/monitoring/monitoring-alerting-pipeline.svg)
 
-1. A cron process picks up a check based on its schedule, say every 5 minutes. It validates that the check is not in progress at the moment to avoid race conditions. The check is put into a queue to be run from the next configured data center location
+1. A cron process picks up a check based on its schedule, say every 5 minutes. It validates that the check is not in progress at the moment to avoid race conditions. The check is put into a queue to be run from the next configured data center location, or from every selected location if the check uses [parallel scheduling](/concepts/scheduling#parallel)
 2. If the check is an API check and has a [setup script](/detect/synthetic-monitoring/api-checks/setup-and-teardown), the setup script is executed
 3. The check is executed
 4. If the check is an API check and has a [teardown script](/detect/synthetic-monitoring/api-checks/setup-and-teardown), the teardown script is executed
 Teardown scripts are run *before* any assertions are validated
 5. The result is stored in our central database
 6. If the check fails, its retry strategy is executed. Based on the retry strategy, a check is retried one or multiple times. Any setup & teardown scripts are run again as part of the process
-7. Alerts are sent out in requested channels when the sequence is complete. It's considered complete when the check run was successful or the final attempt was executed. We will send alerts only if the final attempt has failed (no alerts sent for the initial attempts)
+7. Alerts are sent out in requested channels when the sequence is complete. It's considered complete when the check run was successful or the final attempt was executed. We will send alerts only if the final attempt has failed and your [alert escalation settings](/communicate/alerts/configuration#escalation-configuration) are met (no alerts sent for the initial attempts)
 
 
 ## Code-First Philosophy

@@ -38,7 +38,9 @@ The ID of the module in Vite's module graph. Usually, it's an absolute file path
 
 ## testModule
 
-Instance of [`TestModule`](/api/advanced/test-module) associated with the specification. If test wasn't queued yet, this will be `undefined`.
+Instance of [`TestModule`](/api/advanced/test-module) associated with the specification. This is `undefined` until Vitest queues the module or parses it, for example, with [`experimental.preParse`](/config/experimental#experimental-preparse) or [`parseSpecifications`](/api/advanced/vitest#parsespecifications).
+
+Vitest keeps the module after the test run finishes. If the specification runs again, this returns the module of the previous run until the module is queued again.
 
 ## pool {#pool}
 
@@ -55,12 +57,14 @@ This is an array of lines in the source code where the test files are defined. T
 Note that if there is no test on at least one of the lines, the whole suite will fail. An example of a correct `testLines` configuration:
 
 ::: code-group
+
 ```ts [script.js]
 const specification = project.createSpecification(
   resolve('./example.test.ts'),
   [3, 8, 9],
 )
 ```
+
 ```ts:line-numbers{3,8,9} [example.test.js]
 import { test, describe } from 'vitest'
 
@@ -73,6 +77,7 @@ describe('a group of tests', () => { // [!code error]
   test.skip('skipped test')
 })
 ```
+
 :::
 
 ## testNamePattern <Version>4.1.0</Version> {#testnamepattern}
@@ -82,6 +87,10 @@ A regexp that matches the name of the test in this module. This value will overr
 ## testIds <Version>4.1.0</Version> {#testids}
 
 The ids of tasks inside of this specification to run.
+
+## testNames <Version>5.1.0</Version> {#testnames}
+
+The full names of the tests inside of this specification to run, including the parent suites separated with `>`.
 
 ## testTagsFilter <Version>4.1.0</Version> {#testtagsfilter}
 

@@ -1,7 +1,8 @@
 ---
 title: Performance & Web Vitals
-description: 'Web Vitals for browser checks'
+description: 'Web Vitals for Browser checks'
 sidebarTitle: 'Performance Metrics'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/performance-metrics/'
 ---
 
 Checkly automatically collect Network Waterfalls & Performance signals (**Web Vitals**) for each of the pages you visit in the browser session.
@@ -21,9 +22,13 @@ Checkly automatically collect Network Waterfalls & Performance signals (**Web Vi
 
 
 <Callout type="warning" emoji="⚠️">
-Checkly only collects tracing and web vitals data if your browser check meets the following criteria:
+Checkly only collects tracing and web vitals data if your Browser check meets the following criteria:
 - It is based on **Playwright**.
 - It runs on any **runtime above [2021.06](/cli/checkly-runtimes)**
+</Callout>
+
+<Callout type="info" emoji="💡">
+Running a Playwright Check Suite instead? See [Web Vitals for Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/performance-metrics), which reports Web Vitals per page visit and adds LCP and INP attribution.
 </Callout>
 
 
@@ -44,21 +49,21 @@ You can use this data to quickly find issues with the pages you visit. Use cases
 For each page your script visits, we automatically collect a set of five [Web Vitals](https://web.dev/learn-web-vitals/).
 Web Vitals are user focused quality signals for web pages that indicate a good, ok or poor user experience.
 
-<Accordion title="First Contentful Paint (FCP)" icon="paintbrush">
+<Accordion title="First Contentful Paint (FCP)" icon="brush">
 **Initial Content Display**
 Measures the time from when the page starts loading to when any content is rendered. A large FCP means users see a white screen for too long, doubting whether the page works at all.
 
 [Read more about FCP over at web.dev](https://web.dev/fcp/)
 </Accordion>
 
-<Accordion title="Largest Contentful Paint (LCP)" icon="image">
+<Accordion title="Largest Contentful Paint (LCP)" icon="photo">
 **Main Content Loading**
 Measures the time to render the largest visual item within the browser viewport. High LCP means users wait too long before the most useful part of your page loads.
 
 [Read more about LCP over at web.dev](https://web.dev/lcp/)
 </Accordion>
 
-<Accordion title="Cumulative Layout Shift (CLS)" icon="arrows-to-circle">
+<Accordion title="Cumulative Layout Shift (CLS)" icon="arrows-minimize">
 **Visual Stability**
 An aggregate metric that signals screen elements "jumping around" as the page loads. Low CLS means you have a stable page layout.
 

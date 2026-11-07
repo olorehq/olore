@@ -1,0 +1,15 @@
+---
+id: filterFn_greaterThan
+title: filterFn_greaterThan
+---
+
+```ts
+const filterFn_greaterThan: CreatedFilterFn<any, any>;
+```
+
+Defined in: [features/column-filtering/filterFns.ts:215](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/column-filtering/filterFns.ts#L215)
+
+Keeps rows whose value is greater than the filter value.
+
+Numeric values are compared numerically when both sides can be coerced to
+numbers; otherwise normalized strings are compared.

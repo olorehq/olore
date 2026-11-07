@@ -1,6 +1,6 @@
 ---
-title: Migrate from Render to Neon Postgres
-subtitle: Learn how to migrate your database from Render to Neon Postgres using pg_dump
+title: Migrate from Render to Lakebase Postgres
+subtitle: Learn how to migrate your database from Render to Lakebase Postgres using pg_dump
   and pg_restore
 summary: >-
   Migration guide for moving a PostgreSQL database from Render to Neon using
@@ -14,10 +14,10 @@ summary: >-
 redirectFrom:
   - /docs/import/import-from-render
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
 
-This guide describes how to migrate a database from Render to Neon Postgres.
+This guide describes how to migrate a database from Render to Lakebase Postgres.
 
 We use the `pg_dump` and `pg_restore` utilities, which are part of the Postgres client toolset. `pg_dump` works by dumping both the schema and data in a custom format that is compressed and suitable for input into `pg_restore` to rebuild the database.
 
@@ -95,7 +95,7 @@ Avoid using `pg_dump` over a [pooled connection string](/docs/reference/glossary
 
 ## Prepare your Neon destination database
 
-This section describes how to prepare your destination Neon Postgres database to receive the imported data.
+This section describes how to prepare your destination Lakebase Postgres database to receive the imported data.
 
 ### Create the Neon database
 
@@ -113,8 +113,8 @@ For more information, see [Create a database](/docs/manage/databases#create-a-da
 
 ### Retrieve Neon connection details
 
-1. In the Neon Console, go to your **Project Dashboard**.
-2. Select **Connect** to open the **Connect to your database** modal.
+1. Open your project in the Neon Console.
+2. Select **Connect** to open the **Connect to your branch** modal.
 3. Select the user and database as needed for your connection. Make sure the **Connection pooling** toggle is disabled to get an unpooled connection string.
 4. Copy the connection string. It will look similar to this:
 

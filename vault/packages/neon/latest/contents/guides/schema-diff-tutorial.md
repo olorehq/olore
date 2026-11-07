@@ -11,7 +11,7 @@ summary: >-
   Schema Diff to see exactly which tables, sequences, and constraints differ
   before merging or restoring.
 enableTableOfContents: true
-updatedOn: '2026-06-11T23:50:21.258Z'
+updatedOn: '2026-10-09T15:17:33.920Z'
 ---
 
 In this guide we will create an initial schema on a new database called `people` on our `production` branch. We'll then create a development branch called `feature/address`, following one possible convention for naming feature branches. After making schema changes on `feature/address`, we'll use the **Schema Diff** tool on the **Branches** page to get a side-by-side, GitHub-style visual comparison between the `feature/address` development branch and `production`.
@@ -37,11 +37,11 @@ First, create a new database called `people` on the `production` branch and add 
 
 1. Create the database.
 
-   In the **Neon Console**, go to **Databases** &#8594; **New Database**. Make sure your `production` branch is selected, then create the new database called `people`.
+   In the **Neon Console**, go to **Postgres database** > **Databases** &#8594; **Add database**. Make sure your `production` branch is selected, then create the new database called `people`.
 
 2. Add the schema.
 
-   Go to the **SQL Editor**, enter the following SQL statement and click **Run** to apply.
+   Go to **Postgres database** > **SQL Editor**, enter the following SQL statement and click **Run** to apply.
 
    ```sql
    CREATE TABLE person (
@@ -100,7 +100,7 @@ First, create a new database called `people` on the `production` branch and add 
 
 <TabItem>
 
-1. Use the [Create database](https://api-docs.neon.tech/reference/createprojectbranchdatabase) API to create the `people` database, specifying the `project_id`, `branch_id`, database `name`, and database `owner_name` in the API call.
+1. Use the [Create database](/docs/reference/api/branches/create-project-branch-database) API to create the `people` database, specifying the `project_id`, `branch_id`, database `name`, and database `owner_name` in the API call.
 
    ```bash
    curl --request POST \
@@ -116,7 +116,7 @@ First, create a new database called `people` on the `production` branch and add 
    }'
    ```
 
-2. Retrieve your database connection string using [Get connection URI](https://api-docs.neon.tech/reference/getconnectionuri) endpoint, specifying the required `project_id`, `branch_id`, `database_name`, and `role_name` parameters.
+2. Retrieve your database connection string using [Get connection URI](/docs/reference/api/projects/get-connection-uri) endpoint, specifying the required `project_id`, `branch_id`, `database_name`, and `role_name` parameters.
 
    ```bash
    curl --request GET \
@@ -236,7 +236,7 @@ For the purposes of this tutorial, name the branch `feature/address`, which coul
 
 <TabItem>
 
-Using the [Create branch](https://api-docs.neon.tech/reference/createprojectbranch) API, create a development branch named `feature/address`. You'll need to specify the `project_id`, `parent_id`, branch `name`, and add a `read_write` compute (you need a compute to connect to the branch).
+Using the [Create branch](/docs/reference/api/branches/create-project-branch) API, create a development branch named `feature/address`. You'll need to specify the `project_id`, `parent_id`, branch `name`, and add a `read_write` compute (you need a compute to connect to the branch).
 
 ```bash
 curl --request POST \
@@ -299,7 +299,7 @@ CREATE TABLE address (
    Response:
 
    ```bash
-   INFO: Connecting to the database using psql...
+   Connecting to the database; launching psql...
    psql (16.1, server 16.2)
    SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: off)
    Type "help" for help.
@@ -325,7 +325,7 @@ CREATE TABLE address (
 
 <TabItem>
 
-1. Retrieve the database connection string for the `feature/address` branch using [Get connection URI](https://api-docs.neon.tech/reference/getconnectionuri) endpoint:
+1. Retrieve the database connection string for the `feature/address` branch using [Get connection URI](/docs/reference/api/projects/get-connection-uri) endpoint:
 
    ```bash
    curl --request GET \

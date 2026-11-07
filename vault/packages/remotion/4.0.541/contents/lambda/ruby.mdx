@@ -1,0 +1,192 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-lambda-ruby.png
+title: Triggering renders from Ruby
+slug: /lambda/ruby
+sidebar_label: Rendering from Ruby
+crumb: '@remotion/lambda'
+---
+
+# Triggering renders from Ruby<AvailableFrom v="4.0.232" />
+
+To trigger a Lambda render using Ruby, install the [`remotion_lambda`](https://rubygems.org/gems/remotion_lambda) gem.  
+The version should be the same version of the `@remotion/lambda` NPM package version that you used to deploy your function.
+
+## Notes
+
+- This module is experimental and might have breaking changes in minor versions. Check on this page for up-to-date examples.
+- The implemented methods are [`renderMediaOnLambda()`](/docs/lambda/rendermediaonlambda), [`renderFramesOnLambda()`](/docs/lambda/renderframesonlambda), [`renderStillOnLambda()`](/docs/lambda/renderstillonlambda), [`getRenderProgressOnLambda()`](/docs/lambda/getrenderprogress), [`getCompositionsOnLambda()`](/docs/lambda/getcompositionsonlambda), and [`cancelRenderOnLambda()`](/docs/lambda/cancelrenderonlambda).
+- We will maintain the Ruby SDK to ensure the fields stay in sync with the Node.js functions.
+- The fields in the input payload are `snake_case` versions of the Node.js field names.
+- Nested field names, e.g. `s3_output_provder.accessKeyId` have the original `camelCase` capitalization.
+- All fields of the response payloads are in `camelCase` like the original Node.js functions.
+- The maximum input payload size is around 60KB. The workaround for bigger payloads where they get uploaded to S3 is not implemented in the Ruby SDK.
+
+## Rendering a video and getting the progress
+
+```rb title="Rendering a video from Ruby"
+require 'remotion_lambda'
+
+client = RemotionLambda::Client.new(
+  region: 'eu-central-1',
+)
+
+function_name = ENV.fetch('REMOTION_APP_FUNCTION_NAME')
+
+payload = get_render_media_on_lambda_payload(
+  composition: "still-helloworld",
+  download_behavior: {
+    type: "play-in-browser",
+  },
+  codec: "h264",
+  input_props: {
+    message: "Hello from props!",
+  }
+)
+
+res = client.render_media_on_lambda(function_name, payload)
+puts res
+while true
+  render_progress_payload = get_render_progress_payload(
+    render_id: res["renderId"],
+    bucket_name: res["bucketName"],
+  )
+  progress = client.get_render_progress(function_name, render_progress_payload)
+  puts progress["overallProgress"]
+  break if progress["done"]
+  break if progress["fatalErrorEncountered"]
+  sleep 1
+end
+```
+
+## Getting compositions<AvailableFrom v="4.0.540" />
+
+Use `get_compositions_payload()` and `get_compositions_on_lambda()` to list the compositions in a deployed project:
+
+```ruby title="get_compositions.rb"
+require 'remotion_lambda'
+
+client = RemotionLambda::Client.new(region: 'eu-central-1')
+payload = get_compositions_payload(
+  serve_url: ENV.fetch('REMOTION_APP_SERVE_URL'),
+  input_props: {title: 'Hello'},
+)
+
+response = client.get_compositions_on_lambda(
+  ENV.fetch('REMOTION_APP_FUNCTION_NAME'),
+  payload,
+)
+
+response['compositions'].each do |composition|
+  puts "#{composition['id']}: #{composition['width']}x#{composition['height']}"
+end
+```
+
+The method returns the response hash. Its `compositions` array contains hashes with `id`, `width`, `height`, `fps`, `durationInFrames`, `props`, `defaultProps`, and default output settings. It raises if the Lambda handler reports an error.
+
+### serve_url
+
+The URL of the deployed [Remotion project](/docs/terminology). Required by `get_compositions_payload()`.
+
+### input_props?
+
+Props passed to each composition's [`calculateMetadata()`](/docs/calculate-metadata) function. Defaults to an empty hash; no composition ID is required. Input props are included in the invocation payload and are subject to the size limit described above.
+
+### Other arguments
+
+The payload builder also accepts `env_variables`, `chromium_options`, `log_level`, `bucket_name`, `force_path_style`, `timeout_in_milliseconds`, `offthread_video_cache_size_in_bytes`, `media_cache_size_in_bytes`, and `preferred_effect_backend`, corresponding to the options of [`getCompositionsOnLambda()`](/docs/lambda/getcompositionsonlambda). The timeout defaults to `30000` milliseconds, the log level to `info`, and the effect backend to `auto`.
+
+## Rendering an image sequence<AvailableFrom v="4.0.535" />
+
+Use `get_render_frames_on_lambda_payload()` and `render_frames_on_lambda()`. Images default to PNG; the options follow [`renderFramesOnLambda()`](/docs/lambda/renderframesonlambda).
+
+```ruby title="Rendering an image sequence from Ruby"
+payload = get_render_frames_on_lambda_payload(
+  composition: "main",
+  serve_url: ENV.fetch('REMOTION_APP_SERVE_URL'),
+  frame_range: [0, 99],
+  frames_per_lambda: 20,
+  output_prefix: "exports/my-sequence/",
+  image_sequence_pattern: "element-[frame].[ext]",
+)
+
+res = client.render_frames_on_lambda(function_name, payload)
+puts res
+```
+
+Poll `get_render_progress()` until `done` or `fatalErrorEncountered`. `framesUploaded` reports uploaded frames, and `outputSequence['manifestUrl']` points to the completed manifest. `output_prefix` also accepts a hash with `bucketName`, `keyPrefix`, and optional `s3OutputProvider`.
+
+## Cancelling a render<AvailableFrom v="4.0.515" />
+
+Enable cancellation in the render payload, then call `cancel_render_on_lambda()`:
+
+```ruby title="Cancelling a render from Ruby"
+payload = get_render_media_on_lambda_payload(
+  composition: "still-helloworld",
+  codec: "h264",
+  enable_cancellation: true,
+)
+
+res = client.render_media_on_lambda(function_name, payload)
+client.cancel_render_on_lambda(res["bucketName"], res["renderId"])
+```
+
+## Verifying webhooks<AvailableFrom v="4.0.537" />
+
+If you [set up a webhook](/docs/lambda/webhooks) with a secret, Remotion signs every request so you can confirm it was sent by Remotion and that the body was not modified. The Ruby client ships `validate_webhook_signature()`, the equivalent of [`validateWebhookSignature()`](/docs/lambda/validatewebhooksignature) in the JavaScript client.
+
+Pass the webhook secret, the raw request body exactly as it was received, and the `X-Remotion-Signature` header. It raises if the request cannot be verified and returns `nil` if it is authentic.
+
+```ruby title="webhook.rb"
+require 'sinatra'
+require 'json'
+require 'remotion_lambda'
+
+post '/webhook' do
+  body = request.body.read
+
+  RemotionLambda.validate_webhook_signature(
+    ENV.fetch('REMOTION_WEBHOOK_SECRET'),
+    body,
+    request.env['HTTP_X_REMOTION_SIGNATURE']
+  )
+
+  # The request is authentic. Parse the body only now.
+  payload = JSON.parse(body)
+  status 200
+end
+```
+
+Read the body first and verify before parsing it. The signature covers the exact bytes that were sent, so parsing the JSON and regenerating it can change whitespace or number formatting, which would make a genuine request fail the check. Pass the body as it arrived (`request.body.read` in Sinatra, `request.raw_post` in Rails) rather than a parsed hash.
+
+## Rendering a still
+
+```ruby title="Rendering a still from Ruby"
+require 'remotion_lambda'
+
+client = RemotionLambda::Client.new(
+  region: 'eu-central-1',
+)
+
+function_name = ENV.fetch('REMOTION_APP_FUNCTION_NAME')
+
+payload = get_render_still_on_lambda_payload(
+  composition: "still-helloworld",
+  input_props: {
+    message: "Hello from props!",
+  }
+)
+
+res = client.render_still_on_lambda(function_name, payload)
+puts res
+```
+
+## Preferred effect backend<AvailableFrom v="4.0.540" />
+
+Pass `preferred_effect_backend` to `get_render_media_on_lambda_payload()` or `get_render_still_on_lambda_payload()`.
+
+<Options id="preferred-effect-backend" />
+
+## See also
+
+- [Ruby gem `remotion_lambda`](https://rubygems.org/gems/remotion_lambda)
+- [Source code for this SDK](https://github.com/remotion-dev/remotion/tree/main/packages/lambda-ruby)

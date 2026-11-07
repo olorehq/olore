@@ -1,0 +1,281 @@
+---
+title: Checkly Agent Changelog
+sidebarTitle: Agent Changelog
+description: Release history for the Checkly Agent
+rss: true
+canonical: 'https://www.checklyhq.com/docs/platform/private-locations/change-log/'
+---
+
+For major release announcements and summaries, see Checkly's [product changelog](https://feedback.checklyhq.com/changelog?c=Checkly+Agent), filtered by `Checkly Agent`.
+
+Learn more about:
+
+- updating to the latest version in
+  [updating the agent container](/platform/private-locations/agent-configuration#updating-the-agent-container)
+- supported runtimes for each agent version in
+  [agent version and runtimes](/platform/private-locations/agent-configuration#agent-version-and-runtimes)
+
+## Full release history
+
+<Update label="v8.13.0" tags={["November 2026"]}>
+- Added opt-in [check-level Prometheus metrics](/platform/private-locations/agent-metrics#check-level-metrics). Set `AGENT_METRICS_PER_CHECK=true` to get result counts, status and timing metrics per check, modelled on the Prometheus V2 integration.
+- `LOG_LEVEL` now applies to the Go process that runs API checks and uptime monitors. Before, it only applied to the synthetics worker.
+- Security: the bundled Chromium and Chrome now reject TLS chains through the eight compromised eMudhra intermediate CAs and their Sectigo cross-signs.
+</Update>
+
+<Update label="v8.12.0" tags={["October 2026"]}>
+- Security: updated every bundled Node.js to releases that fix CVE-2026-111497 (Brotli remote code execution) and carry the current CA store. Runtime 2026-04 now runs Node.js 24.22.1 (was 24.13.1), and Playwright Check Suites run on Node.js 22.23.4, 24.22.1 or 26.12.1. Upgrade to this version or newer.
+- Added Bun 1.4 as a Playwright Check Suite engine version.
+- Improved secret scrubbing for Browser and Multistep checks. Secrets are now removed from traces, reports and logs before upload, including request and response bodies, attachments and encoded values.
+- Secrets are now also removed from API check setup and teardown script logs.
+- A trace that cannot be fully scrubbed is left out of the result, and the check log says why.
+- Playwright Check Suites scrub secrets several times faster.
+- The agent now exposes a single port, 8080, for health probes and Prometheus metrics. If your Kubernetes probes or scrape configuration use port 8081 or 8082, point them to 8080.
+- A single `/metrics` endpoint now covers every check type the agent runs. Use the `component` label to separate uptime metrics from synthetics metrics. Metric names and labels are consistent across both, so one dashboard covers the whole agent.
+- Added the `CHECKLY_RUN_FILE_MAX_BYTES` environment variable to cap the size of files the agent reads from a Browser or Multistep check run, such as the Playwright report. A file above the cap is left out of the check result. The default is just under 2 GiB. See [agent configuration](/platform/private-locations/agent-configuration).
+</Update>
+
+<Update label="v8.11.0" tags={["October 2026"]}>
+- Expanded native Fetch API support in runtimes 2025-04 and 2026-04. Scripts can now use FormData, Blob, File, Headers, Request, and Response, including multipart/form-data requests and file uploads with native fetch().
+- Added compression for logs and reports from scheduled checks, enabled per account, to reduce artifact upload sizes.
+- Updated agent and bundled 2026-04 runtime dependencies to fix vulnerabilities.
+</Update>
+
+<Update label="v8.10.1" tags={["September 2026"]}>
+- Fixed SSL checks that could report success when a server rejected the supplied client certificate.
+- Removed unnecessary live updates for scheduled checks.
+</Update>
+
+<Update label="v8.10.0" tags={["September 2026"]}>
+- Expanded the APIs available to check scripts with support for AbortController, AbortSignal, and Node.js stream/promises, enabling cancellable operations and promise-based stream handling.
+- Reduced memory use when processing large error messages.
+</Update>
+
+<Update label="v8.9.0" tags={["September 2026"]}>
+- Added support for the Coralogix US3 region.
+- Updated bundled runtime dependencies to fix vulnerabilities.
+</Update>
+
+<Update label="v8.8.1" tags={["September 2026"]}>
+- Improved private location agent image builds to avoid inclusion of unneeded runtimes in intermediate layers.
+- Updated the bundled 2026-04 runtime dependencies to remove vulnerabilities, including updates to @faker-js/faker, @xmldom/xmldom, csv-parse, imapflow, mysql2, prisma, and nodemailer.
+- Improved client certificate selection across supported check types. URL-based requests can now match certificates by optional path scope, while host-only checks continue to match by host.
+</Update>
+
+<Update label="v8.8.0" tags={["September 2026"]}>
+- Update various dependencies to fix vulnerabilities
+- Improvements in uploading larger assets for <a href="/detect/synthetic-monitoring/playwright-checks/overview/">Playwright Check Suites</a>
+</Update>
+
+<Update label="v8.7.0" tags={["August 2026"]}>
+- Internal errors of the agent's Node.js component (which runs browser, multistep and Playwright checks) are now reported to the private location's Errors tab, like the Go component's already were
+</Update>
+
+<Update label="v8.6.0" tags={["August 2026"]}>
+- Fixed a bug that prevented pcap files from being cleaned up
+- Expose `CHECKLY_TRACE_ID` to API check setup & teardown scripts
+- Playwright Check Suites: add support for <a href="/resolve/traces/overview/">Checkly Traces</a>
+- Update various dependencies to fix vulnerabilities
+</Update>
+
+<Update label="v8.5.0" tags={["July 2026"]}>
+- Uptime checks can run with response time limits up to 45s (TCP, API and URL), enabled per account
+- gRPC checks support server-streaming methods, plus improved encoding for advanced schema types
+- Browser checks can simulate constrained bandwidth
+- API check responses render image previews
+- Playwright Check Suites: network and console entries are extracted from traces, and trace retention now follows your account setting
+- Fixes: pnpm workspace caching on repeated runs, empty Playwright video assets, artifact upload reliability, multi-step method timeouts, and SSL hostname handling
+- Update various dependencies to fix vulnerabilities
+</Update>
+
+<Update label="v8.4.2" tags={["July 2026"]}>
+- Added automatic Web Vitals collection for Playwright Check Suites on Chromium.
+- Playwright Check Suites now respect your trace settings, with tracing enabled on the first retry by default.
+- Improved reporting of internal errors so affected Playwright Check Suites return a result instead of leaving the run incomplete.
+- Added SSL assertions for individual certificate properties.
+- gRPC checks now always store response bodies.
+- Corrected the default UDP traceroute probe port to 33434.
+</Update>
+
+<Update label="v8.4.1" tags={["July 2026"]}>
+- Improved SSL certificate diagnostics, including detection of incomplete certificate chains and stapled certificate revocation status.
+- Fixed SSL hostname validation when an SNI override is configured.
+- Fixed API checks with text-body assertions on binary responses.
+- Improved Playwright Check Suite configuration handling.
+- Pinned npm to a version compatible with the bundled Node.js runtimes.
+</Update>
+
+<Update label="v8.4.0" tags={["July 2026"]}>
+- Support for running gRPC, traceroute, and SSL checks
+- Always scrub potentially sensitive headers (Authorization, x-api-key, cookie, etc) even if they don’t contain secrets
+- Downgrade one of the dependencies that prevented the agent from running on older CPU hardware
+</Update>
+
+<Update label="v8.3.4" tags={["June 2026"]}>
+- Update various dependencies to fix vulnerabilities
+- Add `--refresh-cache` functionality
+</Update>
+
+<Update label="v8.3.3" tags={["June 2026"]}>
+- Fixed a bug that caused agent health and readiness probes to fail during graceful shutdown.
+</Update>
+
+<Update label="v8.3.2" tags={["June 2026"]}>
+- Update vm2 dependency: 3.11.3 → 3.11.5.
+</Update>
+
+<Update label="v8.3.1" tags={["May 2026"]}>
+- Fixed a bug that prevented users of pnpm workspaces to run their PWCS on private locations in certain scenarios.
+- Test failures and setup errors are now surfaced in the user-visible log alongside the existing report.
+</Update>
+
+<Update label="v8.3.0" tags={["May 2026"]}>
+- Added support for cancelling running Playwright Check Suites
+- Playwright Check Suites can run in different Node.js or Bun versions (22, 24, 26 or Bun 1.3)
+</Update>
+
+<Update label="v8.2.0" tags={["May 2026"]}>
+- Improved Playwright browsers installation
+- Playwright Check Suites now cache Playwright browsers across runs in the same Private Location Agent
+- Upgraded dependencies such as `vm2` 3.10.5 → 3.11.3 and `axios` 1.15.0 → 1.16.1
+- Patched Checkly's `markCheckAsDegraded` helper when used with soft assertions
+</Update>
+
+<Update label="v8.1.0" tags={["May 2026"]}>
+- [Global timeouts](https://playwright.dev/docs/test-timeouts#global-timeout) now apply and surface correctly in Playwright Check Suites
+- Improved scheduling for long-running Playwright Check Suites
+</Update>
+
+<Update label="v8.0.1" tags={["May 2026"]}>
+- Resolved several dependency vulnerabilities in the private location image
+</Update>
+
+<Update label="v8.0.0" tags={["April 2026"]}>
+Latest agent image with [runtime 2026.04](/platform/runtimes/runtime-specification/#2026-04) only.
+
+- Previous versions bundled two runtimes to support gradual upgrades
+- This could surface vulnerabilities from the older runtime in security scans
+- From v8 onward, only the latest runtime is included
+
+**Upgrade path**
+
+- Already on `2026-04`: upgrade directly
+- On older runtimes: use the [migration image](#v7-0-2) (`7.0.2-migrate-202409-202604`) to move to `2026-04`, then upgrade to v8
+</Update>
+
+<Update label="v7.1.0" tags={["May 2026"]}>
+- Improved scheduling for long-running Playwright Check Suites to prevent duplicate execution.
+- Fixed reporting of Playwright runs that reach the global timeout or are interrupted.
+- Added test errors to check logs for easier diagnosis.
+</Update>
+
+<Update label="v7.0.3" tags={["April 2026"]}>
+Patches vulnerabilities in dependencies bundled with the [2026.04 runtime](/platform/runtimes/runtime-specification/#2026-04). Fix-forward updates only.
+
+Updated packages:
+
+  - `@azure/identity` 4.13.0 → 4.13.1
+  - `@clerk/testing` 1.14.2 → 1.14.3
+  - `@opentelemetry/exporter-metrics-otlp-grpc` 0.212.0 → 0.215.0
+  - `@xmldom/xmldom` 0.9.8 → 0.9.10
+  - `axios` 1.13.5 → 1.15.0
+  - `imapflow` 1.2.10 → 1.3.1
+  - `lodash` 4.17.23 → 4.18.1
+  - `prisma` 7.4.1 → 7.8.0
+  - `protobufjs` 8.0.0 → 8.0.1
+</Update>
+
+<Update label="v7.0.2" tags={["April 2026"]}>
+  - Includes security patches for runtime `2026-04`
+  - Migration image (`7.0.2-migrate-202409-202604`) available: Bundles runtimes `2024-09`, `2025-04`, and `2026-04`, allowing you to upgrade from older runtimes to `2026-04`
+</Update>
+
+<Update label="v7.0.1" tags={["April 2026"]}>
+  - [ICMP monitors](/detect/uptime-monitoring/icmp-monitors/overview) no longer require full root privileges to run
+  - Fixed broken runtime dependencies in agent containers. Incorrect symlinks for the `2025-04` and `2026-04` runtimes caused dependency resolution failures (affecting agent v6.3.2 and v7.0.0)
+  - Fixed connectivity issues when IPv6 is disabled. The agent now falls back to IPv4 automatically
+  - API checks and URL monitors now capture [packets and traceroutes](/platform/network-diagnostic-tools/) on network failures
+  - Bun is now supported as a package manager in [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview/)
+  - Degraded status now correctly appears in the [test reporter](/detect/testing/playwright-reporter/) header
+</Update>
+
+<Update label="v7.0.0" tags={["March 2026"]}>
+  - Added support for running [ICMP](/detect/uptime-monitoring/icmp-monitors/overview) and [DNS monitors](/detect/uptime-monitoring/dns-monitors/overview) on private locations
+  - Introduced the [uptime agent image](/platform/private-locations/agent-images#uptime-image), a lightweight version of the agent for running uptime monitors (URL, DNS, TCP, ICMP) only
+  - Added [external observability](/platform/private-locations/agent-configuration#external-observability) for private location agents to capture runtime errors
+    - Error-level events can be reported to Checkly to help detect crashes, bugs, and environment-related issues
+    - Only limited technical metadata is collected (error message, stack trace, agent version, platform, Go runtime)
+    - Sensitive data such as API keys, environment variables, check configuration, URLs, headers, and response bodies is never sent
+    - Enabled by default, can be disabled with `EXTERNAL_OBSERVABILITY=off`
+  - Support for runtimes `2026.04` and `2025.04`
+
+  **Breaking changes**
+
+  - API checks and URL monitors migrated to the Go runner now percent-encode reserved characters in query parameter data, following [RFC 3986, Section 2.2](https://datatracker.ietf.org/doc/html/rfc3986#section-2.2). For example, `(` and `)` are sent as `%28` and `%29`. Target servers that treat the encoded and unencoded forms differently may require changes.
+  - TLS certificate validation for an IP-address target now requires the certificate to contain that IP address in its Subject Alternative Name as an `iPAddress`, following [RFC 5280, Section 4.2.1.6](https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.6). Checks targeting an IP address fail TLS validation when the certificate does not contain a matching IP address SAN.
+</Update>
+
+<Update label="v6.3.2" tags={["March 2026"]}>
+  - Improved error logging for failed Playwright test report uploads, including the report file size
+  - Increased the maximum artifact upload size from 75 MB to 150 MB
+</Update>
+
+<Update label="v6.3.1" tags={["February 2026"]}>
+  The agent now exposes HTTP health probe endpoints:
+  - **GET /-/readiness**: Returns `200 OK` when the agent is ready, `503 Service Unavailable` during shutdown
+  - **GET /-/liveness**: Returns `200 OK`
+  - **GET /health**: Returns `200 OK`
+  Health endpoints run on port 8081 by default, configurable via the `AGENT_HEALTH_PORT` environment variable
+</Update>
+
+<Update label="v6.3.0" tags={["December 2025"]}>
+  - Added [agent-dev image](https://www.checklyhq.com/docs/platform/private-locations/agent-images/) including build tools to support building native npm packages. Going forward, the dev variant is published as a separate image rather than a tag on the main agent image
+  - Improved secret scrubbing speed
+  - Improved error logging for hanging or long running Playwright Check Suite jobs
+</Update>
+
+<Update label="v6.2.0" tags={["December 2025"]}>
+  Ensured `devDependencies` are not installed in the agent image
+</Update>
+
+<Update label="v6.1.7" tags={["December 2025"]}>
+  - Added support for a [dev image](https://www.checklyhq.com/docs/platform/private-locations/agent-images/) including build tools to support building native npm packages
+  - Improved internal logging and metrics for [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview)
+  - Browser and Multistep checks using runtime 2025.04 now automatically scrub the `Authorization` header from requests
+</Update>
+
+<Update label="v6.1.6" tags={["November 2025"]}>
+  Added Checkly environment variables and configuration to [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview). See the docs on [Playwright Check Suites environment variables](/detect/synthetic-monitoring/playwright-checks/environment-variables):
+  - Adds support for `CHECKLY` to all Checkly triggered runs: scheduled checks and test sessions triggered through either `npx checkly test`, `npx checkly trigger` or `npx checkly pw-test`
+  - Includes the environment variable `CI` as true only for test session triggered runs
+</Update>
+
+<Update label="v6.1.5" tags={["November 2025"]}>
+  Added Playwright test metrics to the check overview page, including **Test performance** and **Test statuses** graphs
+</Update>
+
+<Update label="v6.1.4" tags={["October 2025"]}>
+  Minor patches on reporting
+</Update>
+
+<Update label="v6.1.3" tags={["August 2025"]}>
+  Improved and centralized secret scrubbing for more reliable removal of sensitive data
+</Update>
+
+<Update label="v6.1.2" tags={["August 2025"]}>
+  Added support for `CHECKLY_SECRET_*` environment variables. Secrets containing special characters (e.g. `@`, `%`, `!`, `+`) are now reliably scrubbed from traces, including when they appear in encoded form in URLs or request payloads. Learn more in our documentation on [Dynamic Secret Scrubbing](/platform/dynamic-secret-scrubbing/)
+</Update>
+
+<Update label="v6.1.1" tags={["July 2025"]}>
+  Fixed an issue where checks could fail behind proxies during dependency installation because proxy-related environment variables were not consistently available
+</Update>
+
+<Update label="v6.1.0" tags={["July 2025"]}>
+  - Added runtime secret detection for Browser and Multistep checks (enabled for selected accounts)
+
+  - See the [product changelog](https://feedback.checklyhq.com/changelog/checkly-agent-610-playwright-check-suites-and-more) for details on changes from version 6.0.1 to 6.1.0
+</Update>
+
+<Update label="v6.0.7" tags={["June 2025"]}>
+  Internal improvements and fixes related to networking and request handling
+</Update>

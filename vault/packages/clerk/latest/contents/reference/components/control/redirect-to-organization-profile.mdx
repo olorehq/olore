@@ -1,11 +1,12 @@
 ---
-title: '`<RedirectToOrganizationProfile />` (deprecated)'
+title: '`<RedirectToOrganizationProfile />` component'
 description: The <RedirectToOrganizationProfile /> component will navigate to the Organization profile URL which has been configured in your application instance. The behavior will be just like a server-side (3xx) redirect, and will override the current location in the history stack.
-sdk: nextjs, nuxt, react, react-router, tanstack-react-start, vue
+sdk: nextjs, nuxt, react, electron, react-router, tanstack-react-start, vue
+tag: deprecated
 ---
 
-> [!WARNING]
-> This feature is deprecated. Please use the [`redirectToOrganizationProfile()` method](/docs/reference/objects/clerk#redirect-to-organization-profile) instead.
+> [!DEPRECATED]
+> This feature is deprecated. Please use the [`redirectToOrganizationProfile()` method](/docs/reference/objects/clerk#redirecttoorganizationprofile) instead.
 
 The `<RedirectToOrganizationProfile />` component will navigate to the Organization profile URL which has been configured in your application instance. The behavior will be just like a server-side (3xx) redirect, and will override the current location in the history stack.
 
@@ -14,6 +15,24 @@ The `<RedirectToOrganizationProfile />` component will navigate to the Organizat
 <If sdk="nextjs">
   ```tsx {{ filename: 'app/page.tsx' }}
   import { Show, RedirectToOrganizationProfile } from '@clerk/nextjs'
+  import { Suspense } from 'react'
+
+  export default function Page() {
+    return (
+      <Suspense>
+        <Show when="signed-in">
+          <RedirectToOrganizationProfile />
+        </Show>
+        <Show when="signed-out">You need to sign in to view your Organization profile.</Show>
+      </Suspense>
+    )
+  }
+  ```
+</If>
+
+<If sdk="react">
+  ```tsx {{ filename: 'pages/index.tsx' }}
+  import { Show, RedirectToOrganizationProfile } from '@clerk/react'
 
   export default function Page() {
     return (
@@ -28,9 +47,9 @@ The `<RedirectToOrganizationProfile />` component will navigate to the Organizat
   ```
 </If>
 
-<If sdk="react">
-  ```tsx {{ filename: 'pages/index.tsx' }}
-  import { Show, RedirectToOrganizationProfile } from '@clerk/react'
+<If sdk="electron">
+  ```tsx {{ filename: 'src/App.tsx' }}
+  import { Show, RedirectToOrganizationProfile } from '@clerk/electron/react'
 
   export default function Page() {
     return (
@@ -63,7 +82,7 @@ The `<RedirectToOrganizationProfile />` component will navigate to the Organizat
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/index.tsx' }}
+  ```tsx {{ filename: 'src/routes/index.tsx' }}
   import { Show, RedirectToOrganizationProfile } from '@clerk/tanstack-react-start'
   import { createFileRoute } from '@tanstack/react-router'
 

@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-cli-studio.png
+image: https://remotion.media/docs/generated/articles-docs-cli-studio.png
 title: npx remotion studio
 sidebar_label: studio
 crumb: CLI Reference
@@ -14,6 +14,10 @@ npx remotion studio <entry-point>?
 ```
 
 You may pass an [entry point](/docs/terminology/entry-point) as an argument, otherwise it will be [determined](/docs/terminology/entry-point#which-entry-point-is-being-used).
+
+## Reopen the Studio<AvailableFrom v="4.0.487" />
+
+While `npx remotion studio` is running, press <kbd>s</kbd> in the terminal to reopen the Studio in your browser.
 
 ## Flags
 
@@ -49,17 +53,49 @@ Inline JSON string isn't supported on Windows shells because it removes the `"` 
 
 <Options id="disable-keyboard-shortcuts" />
 
-### `--enable-experimental-client-side-rendering`<AvailableFrom v="4.0.387" />
+### `--disable-canvas-tabs`<AvailableFrom v="4.0.530" />
 
-<Options id="enable-experimental-client-side-rendering" />
+<Options id="disable-canvas-tabs" />
+
+### `--high-contrast`<AvailableFrom v="4.0.542" />
+
+<Options id="high-contrast" />
+
+```sh title="Terminal"
+npx remotion studio --high-contrast
+```
+
+### `--disable-interactivity`<AvailableFrom v="4.0.487" />
+
+<Options id="disable-interactivity" />
+
+### `--sequence-activity-limit`<AvailableFrom v="4.0.536" />
+
+<Options id="sequence-activity-limit" />
 
 ### `--allow-html-in-canvas`<AvailableFrom v="4.0.447" />
 
 <Options id="allow-html-in-canvas" />
 
-### `--experimental-rspack`<AvailableFrom v="4.0.426" />
+### `--editor`<AvailableFrom v="4.0.503" />
 
-<Options id="experimental-rspack" />
+<Options id="editor" cli />
+
+```sh title="Terminal"
+npx remotion studio --editor=cursor
+```
+
+### `--coding-agent`<AvailableFrom v="4.0.506" />
+
+<Options id="coding-agent" cli />
+
+```sh title="Terminal"
+npx remotion studio --coding-agent=codex
+```
+
+### `--rspack`<AvailableFrom v="4.0.502" />
+
+<Options id="rspack" />
 
 ### `--webpack-poll`<AvailableFrom v="3.3.11" />
 
@@ -103,12 +139,48 @@ npx remotion studio --beep-on-finish
 npx remotion studio --ipv4
 ```
 
+### `--default-premount-in-seconds`<AvailableFrom v="4.0.535" />
+
+<Options id="default-premount-in-seconds" />
+
+```bash title="Terminal"
+npx remotion studio --default-premount-in-seconds=2
+```
+
+### `--show-layer-frame-numbers`<AvailableFrom v="4.0.535" />
+
+<Options id="show-layer-frame-numbers" />
+
+```sh title="Terminal"
+npx remotion studio --show-layer-frame-numbers
+```
+
+### `--show-premounting`<AvailableFrom v="4.0.535" />
+
+<Options id="show-premounting" />
+
+```sh title="Terminal"
+npx remotion studio --show-premounting=false
+```
+
 ### `--number-of-shared-audio-tags`<AvailableFrom v="3.3.2" />
 
 <Options id="number-of-shared-audio-tags" />
 
 ```sh
 npx remotion studio --number-of-shared-audio-tags=5
+```
+
+### `--experimental-keep-audio-context-alive`<AvailableFrom v="4.0.508" />
+
+<ExperimentalBadge>
+  <p>We are currently testing this prop. We might either remove the functionality or rename the prop to a stable name.</p>
+</ExperimentalBadge>
+
+<Options id="experimental-keep-audio-context-alive" />
+
+```sh
+npx remotion studio --experimental-keep-audio-context-alive
 ```
 
 ### `--preview-sample-rate`
@@ -150,3 +222,15 @@ npx remotion studio --force-new
 ```sh
 npx remotion studio --public-license-key="your-license-key"
 ```
+
+### `--preserve-pitch-on-playback`<AvailableFrom v="4.0.538" />
+
+<Options id="preserve-pitch-on-playback" />
+
+```sh title="Disable pitch preservation while previewing"
+npx remotion studio --preserve-pitch-on-playback=false
+```
+
+### `--preferred-effect-backend`<AvailableFrom v="4.0.540" />
+
+<Options id="preferred-effect-backend" />

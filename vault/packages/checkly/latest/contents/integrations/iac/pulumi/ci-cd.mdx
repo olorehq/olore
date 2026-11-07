@@ -2,6 +2,7 @@
 title: 'CI/CD Integration'
 description: 'Integrate Pulumi with CI/CD pipelines for automated monitoring infrastructure deployments'
 sidebarTitle: 'CI/CD Integration'
+canonical: 'https://www.checklyhq.com/docs/integrations/iac/pulumi/ci-cd/'
 ---
 
 
@@ -22,7 +23,7 @@ CI/CD integration enables you to automatically deploy monitoring changes when co
 - Enable rapid iteration
 </Card>
 
-<Card title="Environment Management" icon="layers">
+<Card title="Environment Management" icon="stack-2">
 **Multi-Environment Support**
 - Separate stacks for each environment
 - Environment-specific configurations
@@ -70,11 +71,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Pulumi
-        uses: pulumi/setup-pulumi@v2
+        uses: pulumi/actions@v7
 
       - name: Install dependencies
         run: npm ci
@@ -105,11 +106,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Pulumi
-        uses: pulumi/setup-pulumi@v2
+        uses: pulumi/actions@v7
 
       - name: Install dependencies
         run: npm ci
@@ -136,18 +137,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: [staging, prod]
-        include:
-          - environment: staging
-            branch: staging
-            stack: staging
-          - environment: prod
-            branch: main
-            stack: prod
-
-    if: github.ref == "refs/heads/${{ matrix.branch }}"
+    env:
+      # main deploys the prod stack, staging deploys the staging stack
+      STACK: ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
 
     steps:
       - name: Checkout code
@@ -156,17 +148,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Pulumi
-        uses: pulumi/setup-pulumi@v2
+        uses: pulumi/actions@v7
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Deploy to ${{ matrix.environment }}
-        run: pulumi up --yes --stack ${{ matrix.stack }}
+      - name: Deploy to ${{ env.STACK }}
+        run: pulumi up --yes --stack ${{ env.STACK }}
         env:
           CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
           CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
@@ -194,7 +186,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -217,11 +209,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Pulumi
-        uses: pulumi/setup-pulumi@v2
+        uses: pulumi/actions@v7
 
       - name: Install dependencies
         run: npm ci
@@ -245,11 +237,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Pulumi
-        uses: pulumi/setup-pulumi@v2
+        uses: pulumi/actions@v7
 
       - name: Install dependencies
         run: npm ci
@@ -273,11 +265,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Pulumi
-        uses: pulumi/setup-pulumi@v2
+        uses: pulumi/actions@v7
 
       - name: Install dependencies
         run: npm ci
@@ -301,7 +293,7 @@ stages:
   - deploy
 
 variables:
-  NODE_VERSION: "18"
+  NODE_VERSION: "22"
 
 test:
   stage: test
@@ -378,7 +370,7 @@ pipeline {
     agent any
 
     environment {
-        NODE_VERSION = '18'
+        NODE_VERSION = '22'
         PULUMI_VERSION = '3.100.0'
     }
 
@@ -480,7 +472,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  nodeVersion: '18.x'
+  nodeVersion: '22.x'
   pulumiVersion: '3.100.0'
 
 stages:
@@ -613,7 +605,7 @@ orbs:
 jobs:
   test:
     docker:
-      - image: cimg/node:18.17
+      - image: cimg/node:22.22
     steps:
       - checkout
       - node/install-packages:
@@ -627,7 +619,7 @@ jobs:
 
   preview:
     docker:
-      - image: cimg/node:18.17
+      - image: cimg/node:22.22
     steps:
       - checkout
       - node/install-packages:
@@ -649,7 +641,7 @@ jobs:
 
   deploy-staging:
     docker:
-      - image: cimg/node:18.17
+      - image: cimg/node:22.22
     steps:
       - checkout
       - node/install-packages:
@@ -671,7 +663,7 @@ jobs:
 
   deploy-production:
     docker:
-      - image: cimg/node:18.17
+      - image: cimg/node:22.22
     steps:
       - checkout
       - node/install-packages:
@@ -723,7 +715,7 @@ workflows:
 ### Secret Management
 
 <Columns cols={2}>
-<Card title="Environment Variables" icon="key">
+<Card title="Environment variables" icon="key">
 **Secure Storage**
 - Use CI/CD platform secret management
 - Never hardcode secrets in pipeline files

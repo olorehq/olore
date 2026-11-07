@@ -2,6 +2,7 @@
 title: Visual Monitoring with Checkly
 description: 'Visual monitoring for more consistent UIs and complex assertions'
 sidebarTitle: 'Visual Monitoring'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/visual-regressions/'
 ---
 
 import { YoutubeEmbed } from "/snippets/youtube-embed.jsx"
@@ -30,7 +31,7 @@ The TL;DR is that you can:
 Starting with visual regression testing takes just three easy steps:
 
 1. Add a single `expect(page).toHaveScreenshot()` line of code to
-   your browser check script, like the example below.
+   your Browser check script, like the example below.
 
    <CodeGroup dropdown>
 
@@ -54,14 +55,14 @@ Starting with visual regression testing takes just three easy steps:
 
    </CodeGroup>
 
-2. Run your browser check. The first time you run it, you will get an error indicating that no golden image / reference
+2. Run your Browser check. The first time you run it, you will get an error indicating that no golden image / reference
    snapshot exists yet.
 
    ```
    A snapshot doesn't exist at /tmp/19g67loplhq0j/script.spec.js-snapshots/Playwright-homepage-1-chromium-linux.png.
    ```
    
-3. Generate a golden image / reference snapshot by clicking the "Run script and update golden image" option in the "run script" button.
+3. Generate a golden image / reference snapshot by choosing "Run check and update golden files" from the dropdown next to the "Run check" button.
 
 <video
   controls
@@ -241,13 +242,13 @@ and deploy any changes either directly from your local machine or from your CI/C
 
 In a typical scenario, you would follow the steps below:
 
-1. Create or update a browser check with visual regression or snapshot testing on your local machine.
+1. Create or update a Browser check with visual regression or snapshot testing on your local machine.
 2. Generate the golden image / reference snapshot(s).
    ```bash
    npx checkly test --update-snapshots
    ```
-   The resulting files are stored in a `some-file-prepend.ts-snapshots` folder next to your browser check script.
-3. Commit the browser check script and the golden image / reference snapshot(s) to your version control system.
+   The resulting files are stored in a `some-file-prepend.ts-snapshots` folder next to your Browser check script.
+3. Commit the Browser check script and the golden image / reference snapshot(s) to your version control system.
 4. Push your code to your CI/CD pipeline.
 5. In your CI/CD pipeline, test your checks before deploying. Test results will be uploaded to Checkly's test sessions for review.
    ```bash
@@ -262,10 +263,10 @@ Checkly cloud automatically.
 Learn more about setting up the Checkly CLI for your CI/CD pipeline 👇
 
 <Cards>
-<Card title="GitHub Actions" href="/integrations/ci-cd/github/actions" icon="github" />
-<Card title="GitLab CI/CD" href="/integrations/ci-cd/gitlab" icon="gitlab" />
-<Card title="Jenkins" href="/integrations/ci-cd/jenkins" icon="jenkins" />
-<Card title="Vercel" href="/integrations/ci-cd/vercel" icon="vercel" />
+<Card title="GitHub Actions" href="/integrations/ci-cd/github/actions" icon="brand-github" />
+<Card title="GitLab CI/CD" href="/integrations/ci-cd/gitlab" icon="brand-gitlab" />
+<Card title="Jenkins" href="/integrations/ci-cd/jenkins" icon="/images/jenkins-logo.svg" />
+<Card title="Vercel" href="/integrations/ci-cd/vercel" icon="brand-vercel" />
 </Cards>
 
 ## Known limitations

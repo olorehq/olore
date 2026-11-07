@@ -1,0 +1,74 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: false
+
+title: noVueImportCompilerMacros (JavaScript)
+description: JavaScript (and super languages) documentation for noVueImportCompilerMacros
+localized: false
+---
+import RuleLanguageLinks from "@/components/RuleLanguageLinks.astro";
+import RulePlaygroundLink from "@/components/RulePlaygroundLink.astro";
+
+<RuleLanguageLinks current="javascript" languages={[{"id":"javascript","label":"JavaScript (and super languages)","href":"/linter/rules/no-vue-import-compiler-macros/javascript/"}]} />
+
+## Summary
+- Rule available since: `v2.4.15`
+- Diagnostic Category: [`lint/correctness/noVueImportCompilerMacros`](/reference/diagnostics#diagnostic-category)
+- This rule is **recommended**, meaning it is enabled by default.
+- This rule doesn't have a fix.
+- The default severity of this rule is [**error**](/reference/diagnostics#error).
+- This rule belongs to the following domains:
+  - [`vue`](/linter/domains#vue)
+- Sources: 
+  - Same as [`vue/no-import-compiler-macros`](https://eslint.vuejs.org/rules/no-import-compiler-macros)
+
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"correctness": {
+				"noVueImportCompilerMacros": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Disallow importing Vue compiler macros.
+
+Vue compiler macros are globally available inside `<script setup>` blocks and must not be imported.
+Outside of `<script setup>`, compiler macros are not valid Vue runtime imports.
+
+## Examples
+
+### Invalid
+
+```vue
+<script setup>
+import { defineProps } from "vue";
+defineProps({});
+</script>
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.vue:2:10 <a href=\"https://biomejs.dev/linter/rules/no-vue-import-compiler-macros\">lint/correctness/noVueImportCompilerMacros</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">The Vue compiler macro </span><span style=\"color: Tomato;\"><strong>defineProps</strong></span><span style=\"color: Tomato;\"> should not be imported.</span><br />  <br />    <strong>1 │ </strong>&lt;script setup&gt;<br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>2 │ </strong>import &#123; defineProps &#125; from &quot;vue&quot;;<br />   <strong>   │ </strong>         <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>3 │ </strong>defineProps(&#123;&#125;);<br />    <strong>4 │ </strong>&lt;/script&gt;<br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Compiler macros are automatically available inside </span><span style=\"color: lightgreen;\"><strong>&lt;script setup&gt;</strong></span><span style=\"color: lightgreen;\"> blocks.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Remove this import and use the macro directly.</span><br />  <br /></code></pre>"} />
+
+### Valid
+
+```vue
+<script setup>
+defineProps({});
+</script>
+```
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code (Edit this Page)](https://github.com/biomejs/biome/blob/main/crates/biome_js_analyze/src/lint/correctness/no_vue_import_compiler_macros.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_js_analyze/tests/specs/correctness/noVueImportCompilerMacros)
+- <RulePlaygroundLink rule="noVueImportCompilerMacros" category="lint" language="vue" code={"<script setup>\nimport { defineProps } from \"vue\";\ndefineProps({});\n</script>\n"} />
+

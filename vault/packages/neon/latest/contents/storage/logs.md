@@ -1,0 +1,77 @@
+---
+title: Object storage logs
+subtitle: View, search, and download logs for a bucket
+summary: >-
+  View Object Storage bucket logs in the Neon Console: S3 request logs (GET,
+  PUT, DELETE, and more) and Console/API bucket and object changes, with
+  levels derived from HTTP status. Covers scope_name values and common
+  patterns that look like a problem but aren't.
+enableTableOfContents: true
+updatedOn: '2026-11-06T22:09:40.723Z'
+---
+
+Every S3 request against a bucket streams a log line to the Neon Console. So does any bucket or object change made through the Console or Neon API (creating a bucket, deleting a bucket, deleting an object or prefix):
+
+```text
+service_name:  neon-storage/my-bucket
+scope_name:    neon.storage.s3.put
+severity_text: INFO
+body: {
+  "operation": "PUT",
+  "object_key": "path/to/object.parquet",
+  "http_status": 200,
+  "bytes": 4096,
+  "duration_ms": 9.5,
+  "request_id": "req-777",
+  "remote_ip": "203.0.113.9"
+}
+```
+
+Two kinds of requests don't appear. S3 requests rejected before they reach your branch aren't logged: an invalid signature, or a credential without access to this branch or without the storage scope the operation needs. Reads through the Console or Neon API, such as downloading an object, aren't logged either; only changes are.
+
+## View logs
+
+Bucket logs live on the branch's [Monitoring page, in the **Storage** tab](/docs/introduction/monitor-logs). To jump straight to one bucket's logs, open the bucket list, open that bucket's menu, and select **View logs**. Or go to **Monitoring** and open the **Storage** tab to see every bucket's logs together.
+
+Expand a row to see its full context: `timestamp`, `severity`, `entity_type` (`storage`), `scope_name`, and `service_name` (`neon-storage/<bucket>`). The message body carries per-request detail: `operation` (the HTTP method), `object_key`, `http_status`, `bytes`, `duration_ms`, `request_id`, and `remote_ip`. The access key ID that made the request isn't shown in the Console or returned by `neon logs`.
+
+`scope_name` identifies what generated the line:
+
+- `neon.storage.s3.<method>` (`get`, `put`, `delete`, `head`, `post`): an S3 API request, named for its HTTP method rather than the semantic S3 operation. Multipart upload calls (`UploadPart`, `CompleteMultipartUpload`, `AbortMultipartUpload`) also surface under their HTTP method, not a dedicated multipart scope.
+- `neon.storage.api.<operation>` (`create_bucket`, `delete_bucket`, `delete_object`, `delete_prefix`): a bucket or object change made through the Console or Neon API, not an S3 client. These appear in the same stream as S3 traffic, distinguished only by this `api` vs `s3` segment.
+
+## Log levels
+
+A bucket's log level comes from the HTTP status code of the request, not from anything the client sets:
+
+| Level   | HTTP status                                                     |
+| ------- | --------------------------------------------------------------- |
+| `INFO`  | Everything else (successful requests)                           |
+| `WARN`  | 4xx                                                             |
+| `ERROR` | 5xx, including `501 Not Implemented` for unsupported operations |
+
+`DEBUG`, `NOTICE`, and `FATAL` also appear as filters in the log viewer but aren't currently emitted by Object Storage; they're part of the Neon Console's shared log-level set.
+
+## Common log entries
+
+Most of what shows up here is routine S3 traffic. A few entries look worse than they are, and one common request type doesn't show up at all.
+
+`403` and `404` lines are expected client-side errors, not incidents. Wrong or revoked credentials, a missing scope, or a bucket-scoped credential used from the wrong branch all return a `403` and log at `WARN`, same as any other 4xx. See [Authentication errors](/docs/storage/troubleshooting#authentication-errors) for the specific error codes and fixes.
+
+**Seeing `503 SlowDown` logged as `ERROR`? It's a healthy rate limit, not a server failure.** `SlowDown` is a rate-limit signal returned when a request exceeds the per-IP or per-tenant limit; the storage service is otherwise healthy. It logs at `ERROR` only because the level is derived purely from the 5xx status code. Treat it as a signal to back off and retry. See [Connection and performance errors](/docs/storage/troubleshooting#connection-and-performance-errors).
+
+Calls to `ListBuckets` or the bucket list root don't appear here. Bucketless requests are deliberately excluded from the log stream, since there's no single bucket to attribute them to. If you're looking for that traffic, it isn't missing: it was never exported.
+
+**Seeing a `501` for an operation you expected to work? It's an unsupported operation, not a server failure, even though it logs at `ERROR`.** Calls like `PutBucketAcl`, `PutBucketPolicy`, or `PutBucketNotificationConfiguration` return `501 Not Implemented` because Neon Object Storage doesn't support them. See [Not supported](/docs/storage/s3-compatibility#not-supported) for the full list.
+
+## Filter and search
+
+For details on filtering by level or service name, searching log bodies, live tail, and downloading logs, see [Monitor logs](/docs/introduction/monitor-logs).
+
+You can also read storage logs from the terminal with [`neon logs query`](/docs/cli/logs), scoped with `--source storage`:
+
+```bash
+neon logs query --source storage --since 1h
+```
+
+<NeedHelp/>

@@ -3,9 +3,7 @@ title: "TanStack Start React"
 description: Learn how to set up and configure Sentry in your TanStack Start React application using the installation wizard, capture your first errors, logs and traces and view them in Sentry.
 sdk: sentry.javascript.tanstackstart-react
 categories:
-  - javascript
   - server
-  - server-node
   - browser
 ---
 
@@ -24,32 +22,17 @@ Please reach out on [GitHub](https://github.com/getsentry/sentry-javascript/issu
 
 ## Install
 
-<Alert level="warning">
+<PlatformContent includePath="sentry-init/experimental-warning" />
 
-The wizard is currently experimental. If you run into any issues, check out the [Manual Setup](/platforms/javascript/guides/tanstackstart-react/manual-setup/) guide.
+<PlatformContent includePath="sentry-init/install-command" />
 
-</Alert>
+<PlatformContent includePath="sentry-init/how-it-works" />
 
-Run the Sentry init command to automatically configure Sentry in your TanStack Start React application:
+<PlatformContent includePath="sentry-init/framework-wizard" />
 
-```bash
-npx sentry@latest init
-```
+## Control the Data You Send to Sentry (Optional)
 
-<Expandable title="How does the wizard work?">
-
-The Sentry init wizard is AI-powered — it analyzes your project and generates a tailored integration, rather than applying a fixed template. Here's what it does:
-
-- **Analyzes your project** — reads your project's files and manifests to understand its structure, including monorepos. It also respects any AI instruction files you have (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, etc.).
-- **Detects your framework** — identifies TanStack Start and selects the right SDK (`@sentry/tanstackstart-react`)
-- **Fetches official Sentry docs** — uses the current Sentry documentation as the source of truth when generating your integration code, so you always get up-to-date setup
-- **Installs dependencies** — adds `@sentry/tanstackstart-react` using your project's package manager
-- **Creates and modifies files** — sets up client-side and server-side initialization, the Vite plugin for source maps, the server entry point, and middleware — all adapted to your project's structure
-- **Verifies the integration** — re-reads the modified files after writing to confirm Sentry was correctly integrated
-
-For full details on what each file does, see the [Manual Setup](/platforms/javascript/guides/tanstackstart-react/manual-setup/) guide.
-
-</Expandable>
+<PlatformContent includePath="getting-started-data-collection" />
 
 ## Verify Your Setup
 
@@ -61,7 +44,6 @@ The wizard will have prompted you to select which features to enable. Select the
     "performance",
     "session-replay",
     "user-feedback",
-    { id: "logs", checked: true },
   ]}
 />
 
@@ -92,21 +74,20 @@ You should see "Sentry Test Error" with a full stack trace pointing to your sour
 
 **Tracing** — [Open Traces](https://sentry.io/orgredirect/organizations/:orgslug/explore/traces/)
 
-You should see page load and navigation traces. Learn more about [custom spans](/platforms/javascript/guides/tanstackstart-react/tracing/instrumentation/custom-instrumentation/).
-
+You should see page load and navigation traces. Learn more about <PlatformLink to="/tracing/instrumentation/custom-instrumentation/">custom spans</PlatformLink>.
 </OnboardingOption>
 
 <OnboardingOption optionId="session-replay">
 
 **Session Replay** — [Open Replays](https://sentry.io/orgredirect/organizations/:orgslug/replays/)
 
-Watch a video-like recording of your session, including the moment the error occurred. Learn more about [Session Replay configuration](/platforms/javascript/guides/tanstackstart-react/session-replay/).
+Watch a video-like recording of your session, including the moment the error occurred. Learn more about <PlatformLink to="/session-replay/">Session Replay configuration</PlatformLink>.
 
 </OnboardingOption>
 
 <OnboardingOption optionId="logs">
 
-**Logs** — [Open Logs](https://sentry.io/orgredirect/organizations/:orgslug/explore/logs/) <FeatureBadge type="new" />
+**Logs** — [Open Logs](https://sentry.io/orgredirect/organizations/:orgslug/explore/logs/)
 
 See structured log entries from your application. You can send logs from anywhere:
 
@@ -116,9 +97,23 @@ Sentry.logger.warn("Slow response", { duration: 5000 });
 Sentry.logger.error("Operation failed", { reason: "timeout" });
 ```
 
-Learn more about [Logs configuration](/platforms/javascript/guides/tanstackstart-react/logs/).
+Learn more about <PlatformLink to="/logs/">Logs configuration</PlatformLink>.
 
 </OnboardingOption>
+
+**Application Metrics** — [Open Metrics](https://sentry.io/orgredirect/organizations/:orgslug/explore/metrics/) <FeatureBadge type="new" size="small" />
+
+Track and analyze custom application metrics to understand trends and patterns in your app's performance and behavior over time:
+
+```typescript
+Sentry.metrics.count("checkout.failed", 1);
+Sentry.metrics.gauge("queue.depth", 42);
+Sentry.metrics.distribution("api_latency", 187, {
+  unit: "millisecond",
+});
+```
+
+Learn more about <PlatformLink to="/metrics/">Application Metrics</PlatformLink>.
 
 <Expandable title="Are you having problems setting up the SDK?">
 
@@ -132,7 +127,7 @@ Learn more about [Logs configuration](/platforms/javascript/guides/tanstackstart
 
 You've successfully integrated Sentry into your TanStack Start React application! Here's what to explore next:
 
-- Explore [practical guides](/guides/) on what to monitor, log, track, and investigate after setup
+- Explore [practical guides](/get-started/guides/) on what to monitor, log, track, and investigate after setup
 - Learn how to [manually capture errors](/platforms/javascript/guides/tanstackstart-react/usage/)
 - Continue to [customize your configuration](/platforms/javascript/guides/tanstackstart-react/configuration/)
 - Get familiar with [Sentry's product features](/product/) like tracing, insights, and alerts

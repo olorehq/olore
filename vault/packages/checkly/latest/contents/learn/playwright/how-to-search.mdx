@@ -1,5 +1,6 @@
 ---
 title: How to search with Playwright
+description: "Test a site's search function end to end with Playwright by entering a term and asserting the expected number and content of results are shown."
 subTitle: Verifying core platform functionality
 date: 2020-07-15
 author: Giovanni Rago
@@ -12,6 +13,7 @@ sidebarTitle: Search
 weight: 5
 learn_playwright:
   parent: "E2E examples"
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/how-to-search/'
 ---
 
 import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
@@ -29,27 +31,45 @@ The example below, which is running against our [test webshop](https://danube-we
 3. If the previous point is true, assert that all expected search results are shown
 
 ```ts title="search.spec.ts"
-// Example code for testing search functionality
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test'
 
-test('search functionality', async ({ page }) => {
-  await page.goto('https://danube-web.shop/');
+test('search', async ({ page }) => {
+  const bookList = [
+    'The Foreigner',
+    'The Transformation',
+    'For Whom the Ball Tells',
+    'Baiting for Robot'
+  ]
 
-  // Enter search term
-  await page.fill('#search-input', 'book');
-  await page.click('#search-button');
+  await page.goto('https://danube-web.shop/')
 
-  // Assert expected number of results
-  await expect(page.locator('.search-result')).toHaveCount(4);
+  await page.getByRole('textbox').click()
+  await page.getByRole('textbox').fill('for')
+  await page.getByRole('button', { name: 'Search' }).click()
 
-  // Assert all expected search results are shown
-  await expect(page.locator('.search-result')).toContainText([
-    'Haben oder haben',
-    'Parry Hotter',
-    'Laughterhouse-Five',
-    'To Mock a Killingbird'
-  ]);
-});
+  await page.waitForSelector(
+    '.shop-content > ul > .preview:nth-child(1) > .preview-title'
+  )
+
+  // Halt immediately if results do not equal expected number
+  const resultsNumber = (await page.$$('.preview-title')).length
+  expect(resultsNumber).toEqual(bookList.length)
+
+  // Remove every element found from the original array...
+  for (let i = 0; i < resultsNumber; i++) {
+    const resultTitle = await page.$eval(
+      `.preview:nth-child(${i + 1}) > .preview-title`,
+      (e) => e.innerText
+    )
+
+    expect(bookList).toContain(resultTitle)
+    const index = bookList.indexOf(resultTitle)
+    bookList.splice(index, 1)
+  }
+
+  // ...then assert that the original array is now empty
+  expect(bookList.length).toEqual(0)
+})
 ```
 
 Run this example as follows:

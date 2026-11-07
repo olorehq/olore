@@ -20,7 +20,7 @@ Read more on [what CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 
 Yes! You may notice that starting in `v2.0.0` of the web runtimes, the size of the `rive.wasm` file requested on the browser increased. This was due to including a new dependency in the WASM build for a text engine that supports the powerful and flexible [Rive Text](/editor/text/) feature.
 
-However, if you don't have a need to use the native Rive Text feature (or prefer to use imported SVG text), you can use the [@rive-app/canvas-lite](/runtimes/web/web-js#canvas-vs-webgl) which provides the same API and similar rendering capabilities as `@rive-app/canvas`, with a smaller package.
+However, if you don't have a need to use the native Rive Text feature (or prefer to use imported SVG text), audio, layouts, or scripting, you can use the [@rive-app/canvas-lite](/runtimes/web/canvas-vs-webgl#rive-app-canvas-lite) which provides the same API and similar rendering capabilities as `@rive-app/canvas`, with a smaller package.
 
 ### Why did the canvas width/height attribute values change?
 
@@ -45,6 +45,7 @@ const canvasElement = document.getElementById('some-canvas-element-id');
 const r = new Rive({
   src: 'some-file.riv',
   canvas: canvasElement,
+  stateMachine: 'State Machine 1',
   autoplay: true,
   onLoad: () => {
     r.resizeDrawingSurfaceToCanvas();
@@ -78,9 +79,9 @@ Then there are the width/height attributes on a `<canvas>` element that determin
 
 Ideally, you want to ensure that the width/height attributes on the canvas are at least the size of or greater than the width/height CSS properties on the canvas, otherwise, you may have blurry output (see above for how to address blurry animations).
 
-### How come my state machine isn't playing?
+### How come my State Machine isn't playing?
 
-Make sure you've specified the `stateMachines` property when instantiating Rive with the name of your state machine. To autoplay the state machine, don't forget to set `autoplay: true` when instantiating the Rive object.
+Make sure you've specified the `stateMachine` property when instantiating Rive with the name of your state machine. To autoplay the state machine, don't forget to set `autoplay: true` when instantiating the Rive object.
 
 ### How do I get other web-frameworks to support Rive?
 

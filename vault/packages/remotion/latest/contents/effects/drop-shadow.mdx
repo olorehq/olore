@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-effects-drop-shadow.png
+image: https://remotion.media/docs/generated/articles-docs-effects-drop-shadow.png
 slug: /effects/drop-shadow
 title: dropShadow()
 sidebar_label: dropShadow()
@@ -19,12 +19,12 @@ Adds a blurred shadow behind canvas-based components such as [`<Video>`](/docs/m
 ## Example
 
 ```tsx twoslash title="MyComp.tsx"
-import {AbsoluteFill, HtmlInCanvas} from 'remotion';
+import {HtmlInCanvas} from 'remotion';
 import {dropShadow} from '@remotion/effects/drop-shadow';
 
 export const MyComp: React.FC = () => {
   return (
-    <AbsoluteFill>
+    <>
       <HtmlInCanvas
         width={1280}
         height={720}
@@ -49,7 +49,7 @@ export const MyComp: React.FC = () => {
           Hello
         </div>
       </HtmlInCanvas>
-    </AbsoluteFill>
+    </>
   );
 };
 ```
@@ -86,9 +86,12 @@ Color of the shadow. Defaults to black.
 
 When `true`, the effect is skipped. Defaults to `false`.
 
-## Requirements
+## Implementations
 
-`dropShadow()` uses a WebGL2 backend. During renders, enable WebGL via [`Config.setChromiumOpenGlRenderer('angle')`](/docs/config#setchromiumopenglrenderer). See [Using WebGL during renders](/docs/remotion/html-in-canvas#using-webgl-during-renders).
+- WebGL2
+- WebGPU<AvailableFrom v="4.0.540" inline />
+
+See: [Preferred effect backend](/docs/options/preferred-effect-backend).
 
 ## See also
 

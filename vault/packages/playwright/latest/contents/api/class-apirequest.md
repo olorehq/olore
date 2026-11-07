@@ -13,7 +13,7 @@ see [APIRequestContext].
 Creates new instances of [APIRequestContext].
 
 ### option: APIRequest.newContext.clientCertificates = %%-context-option-clientCertificates-%%
-* since: 1.46
+* since: v1.46
 
 ### option: APIRequest.newContext.useragent = %%-context-option-useragent-%%
 * since: v1.16
@@ -63,8 +63,8 @@ Methods like [`method: APIRequestContext.get`] take the base URL into considerat
 ### option: APIRequest.newContext.storageState
 * since: v1.16
 * langs: js, python
-- `storageState` <[path]|[Object]>
-  - `cookies` <[Array]<[Object]>>
+- `storageState` "StorageState" <[path]|[Object]>
+  - `cookies` "StorageStateCookie" <[Array]<[Object]>>
     - `name` <[string]>
     - `value` <[string]>
     - `domain` <[string]>
@@ -72,10 +72,10 @@ Methods like [`method: APIRequestContext.get`] take the base URL into considerat
     - `expires` <[float]> Unix time in seconds.
     - `httpOnly` <[boolean]>
     - `secure` <[boolean]>
-    - `sameSite` <[SameSiteAttribute]<"Strict"|"Lax"|"None">>
-  - `origins` <[Array]<[Object]>>
+    - `sameSite` "SameSiteAttribute" <"Strict"|"Lax"|"None">
+  - `origins` "OriginState" <[Array]<[Object]>>
     - `origin` <[string]>
-    - `localStorage` <[Array]<[Object]>>
+    - `localStorage` "LocalStorageEntry" <[Array]<[Object]>>
       - `name` <[string]>
       - `value` <[string]>
 

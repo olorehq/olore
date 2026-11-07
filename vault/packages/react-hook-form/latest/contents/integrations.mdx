@@ -1,0 +1,34 @@
+---
+title: React Hook Form Integrations
+seoTitle: React Hook Form Resolvers and Integrations
+description: Dedicated guides for schema validation, frameworks, and UI component libraries.
+metaDescription: Integrate React Hook Form with Zod, Yup, every official schema resolver, Next.js, shadcn/ui, and React 19 using practical TypeScript examples.
+sidebar: integrationLinks
+---
+
+React Hook Form works with schema validators, controlled UI components, and modern React frameworks without changing how your form data is managed. Choose an integration for installation steps, a complete example, TypeScript guidance, and integration-specific caveats.
+
+## Schema validation
+
+- [Zod](/integrations/zod) — TypeScript-first schemas, input/output types, and transformed values.
+- [Yup](/integrations/yup) — object schemas, inferred types, casting, and form context.
+- [All schema resolvers](/integrations/resolvers) — AJV, ArkType, Class Validator, computed-types, Effect, fluentvalidation-ts, io-ts, Joi, Nope, Standard Schema, Superstruct, typanion, TypeBox, TypeSchema, Valibot, Vest, VineJS, ata-validator, Yup, and Zod.
+
+## Frameworks and UI
+
+- [Next.js](/integrations/nextjs) — App Router Client Components, Server Actions, and server-side validation.
+- [shadcn/ui](/integrations/shadcn-ui) — `FormField`, controlled components, Zod, and accessible errors.
+- [React 19](/integrations/react-19) — form actions, progressive enhancement, and `useActionState`.
+
+## Choose the right API
+
+| Goal                                   | Recommended API                                                                          |
+| -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Validate with an external schema       | A [resolver](/integrations/resolvers) passed to [`useForm`](/docs/useform#resolver)      |
+| Use a controlled UI component          | [`Controller`](/docs/usecontroller/controller) or [`useController`](/docs/usecontroller) |
+| Share methods through a component tree | [`FormProvider`](/docs/formprovider) and [`useFormContext`](/docs/useformcontext)        |
+| Submit to an endpoint or Server Action | [`Form`](/docs/useform/form)                                                             |
+| Own the complete request lifecycle     | [`handleSubmit`](/docs/useform/handlesubmit)                                             |
+| Build repeatable dynamic rows          | [`useFieldArray`](/docs/usefieldarray)                                                   |
+
+For the fundamentals, begin with [Get Started](/get-started). Continue to [Advanced Usage](/advanced-usage) for accessibility, testing, reusable components, and Server Action patterns.

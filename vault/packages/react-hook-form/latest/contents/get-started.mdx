@@ -1,92 +1,114 @@
 ---
 title: Get Started
+seoTitle: Get Started with React Hook Form
 description: Simple form validation with React Hook Form.
+metaDescription: "Get started with React Hook Form: install the library, register inputs, validate forms, and handle submission in React with minimal code and re-renders."
 sidebar: getStartedLinks
 ---
 
-## Installation {#Quickstart}
+## Quick start {#Quickstart}
 
-Installing React Hook Form only takes a single command and you're ready to roll.
+React Hook Form manages form values, validation, errors, and submission while working with standard React inputs.
+
+### Install
 
 ```bash copy
 npm install react-hook-form
 ```
 
-## Example
+### Build your first form
 
-The following code excerpt demonstrates a basic usage example:
+This example registers an email field, validates it when the form is submitted, and passes valid data to `onSubmit`.
 
 <TabGroup buttonLabels={["TS", "JS"]}>
 
-```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-get-started-ts-5ksmm"
-import { useForm, SubmitHandler } from "react-hook-form"
+```tsx copy
+import { useForm, type SubmitHandler } from "react-hook-form"
 
-type Inputs = {
-  example: string
-  exampleRequired: string
+type FormValues = {
+  email: string
 }
 
 export default function App() {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
-  } = useForm<Inputs>()
-  const onSubmit: SubmitHandler<Inputs> = (data) => console.log(data)
+  } = useForm<FormValues>({
+    defaultValues: { email: "" },
+  })
 
-  console.log(watch("example")) // watch input value by passing the name of it
+  const onSubmit: SubmitHandler<FormValues> = (data) => console.log(data)
 
   return (
-    /* "handleSubmit" will validate your inputs before invoking "onSubmit" */
     <form onSubmit={handleSubmit(onSubmit)}>
-      {/* register your input into the hook by invoking the "register" function */}
-      <input defaultValue="test" {...register("example")} />
+      <label htmlFor="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        aria-invalid={errors.email ? "true" : "false"}
+        {...register("email", { required: "Email is required" })}
+      />
+      {errors.email && <p role="alert">{errors.email.message}</p>}
 
-      {/* include validation with required or other standard HTML validation rules */}
-      <input {...register("exampleRequired", { required: true })} />
-      {/* errors will return when field validation fails  */}
-      {errors.exampleRequired && <span>This field is required</span>}
-
-      <input type="submit" />
+      <button type="submit">Submit</button>
     </form>
   )
 }
 ```
 
-```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-get-started-j5wxo"
+```javascript copy
 import { useForm } from "react-hook-form"
 
 export default function App() {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
-  } = useForm()
+  } = useForm({
+    defaultValues: { email: "" },
+  })
 
   const onSubmit = (data) => console.log(data)
 
-  console.log(watch("example")) // watch input value by passing the name of it
-
   return (
-    /* "handleSubmit" will validate your inputs before invoking "onSubmit" */
     <form onSubmit={handleSubmit(onSubmit)}>
-      {/* register your input into the hook by invoking the "register" function */}
-      <input defaultValue="test" {...register("example")} />
+      <label htmlFor="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        aria-invalid={errors.email ? "true" : "false"}
+        {...register("email", { required: "Email is required" })}
+      />
+      {errors.email && <p role="alert">{errors.email.message}</p>}
 
-      {/* include validation with required or other standard HTML validation rules */}
-      <input {...register("exampleRequired", { required: true })} />
-      {/* errors will return when field validation fails  */}
-      {errors.exampleRequired && <span>This field is required</span>}
-
-      <input type="submit" />
+      <button type="submit">Submit</button>
     </form>
   )
 }
 ```
 
 </TabGroup>
+
+The example uses four fundamental pieces:
+
+- [`useForm`](/docs/useform) creates the form and its methods.
+- [`register`](/docs/useform/register) connects a native input to the form and attaches validation rules.
+- [`handleSubmit`](/docs/useform/handlesubmit) validates the form before it calls your submit handler.
+- [`formState.errors`](/docs/useform/formstate) contains the current validation errors.
+
+Use `defaultValues` for the initial value of every field. This gives React Hook Form one consistent baseline for dirty state, resetting, and controlled components.
+
+### Choose your next step
+
+| If you want to…                               | Continue with…                                                                                      |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Validate native inputs                        | [Register fields](/get-started#Registerfields) and [Apply validation](/get-started#Applyvalidation) |
+| Use Zod, Yup, or another schema library       | [Schema validation](/get-started#SchemaValidation) or [integration guides](/integrations)           |
+| Connect shadcn/ui, MUI, React-Select, or AntD | [Controlled inputs](/get-started#IntegratingControlledInputs)                                       |
+| Submit to an API or Server Action             | [Form component](/docs/useform/form)                                                                |
+| Build with React Native                       | [React Native](/get-started#ReactNative)                                                            |
+| Add end-to-end TypeScript types               | [TypeScript](/get-started#TypeScript)                                                               |
 
 ## React Web Video Tutorial {#ReactWebVideoTutorial}
 
@@ -100,12 +122,9 @@ One of the key concepts in React Hook Form is to **`register`** your component i
 
 **Note:** Each field is **required** to have a `name` as a key for the registration process.
 
-{/* JSTSCopy [CodeSandbox JS](https://codesandbox.io/s/react-hook-form-get-started-smspp) */}
-
 <TabGroup buttonLabels={["TS", "JS"]} >
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-get-started-ts-5ksmm"
-import ReactDOM from "react-dom"
 import { useForm, SubmitHandler } from "react-hook-form"
 
 enum GenderEnum {
@@ -160,7 +179,7 @@ export default function App() {
 }
 ```
 
-</ TabGroup>
+</TabGroup>
 
 ## Apply validation {#Applyvalidation}
 
@@ -176,7 +195,7 @@ List of validation rules supported:
 - pattern
 - validate
 
-You can read more detail on each rule in the [register section](/docs#register).
+You can read more details on each rule in the [register section](/docs/useform/register).
 
 <TabGroup buttonLabels={["TS", "JS"]} >
 
@@ -226,12 +245,18 @@ export default function App() {
 
 ## Integrating an existing form {#Integratinganexistingform}
 
-Integrating an existing form should be simple. The important step is to `register` the component's `ref` and assign relevant props to your input.
+Integrating an existing form is simple. The important step is to register the component's ref and assign the relevant props to your input.
 
 <TabGroup buttonLabels={["TS", "JS"]} >
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-adapting-existing-form-ts-uzfxm"
-import { Path, useForm, UseFormRegister, SubmitHandler } from "react-hook-form"
+import { forwardRef } from "react"
+import {
+  FieldPath,
+  useForm,
+  UseFormRegister,
+  SubmitHandler,
+} from "react-hook-form"
 
 interface IFormValues {
   "First Name": string
@@ -239,7 +264,7 @@ interface IFormValues {
 }
 
 type InputProps = {
-  label: Path<IFormValues>
+  label: FieldPath<IFormValues>
   register: UseFormRegister<IFormValues>
   required: boolean
 }
@@ -252,8 +277,8 @@ const Input = ({ label, register, required }: InputProps) => (
   </>
 )
 
-// you can use React.forwardRef to pass the ref too
-const Select = React.forwardRef<
+// you can use forwardRef to pass the ref too
+const Select = forwardRef<
   HTMLSelectElement,
   { label: string } & ReturnType<UseFormRegister<IFormValues>>
 >(({ onChange, onBlur, name, label }, ref) => (
@@ -284,6 +309,7 @@ const App = () => {
 ```
 
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-adapting-existing-form-llbnn"
+import { forwardRef } from "react"
 import { useForm } from "react-hook-form"
 
 // The following component is an example of your existing Input Component
@@ -294,8 +320,8 @@ const Input = ({ label, register, required }) => (
   </>
 )
 
-// you can use React.forwardRef to pass the ref too
-const Select = React.forwardRef(({ onChange, onBlur, name, label }, ref) => (
+// you can use forwardRef to pass the ref too
+const Select = forwardRef(({ onChange, onBlur, name, label }, ref) => (
   <>
     <label>{label}</label>
     <select name={name} ref={ref} onChange={onChange} onBlur={onBlur}>
@@ -326,14 +352,14 @@ const App = () => {
 
 ## Integrating with UI libraries {#IntegratingwithUIlibraries}
 
-React Hook Form has made it easy to integrate with external UI component libraries. If the component doesn't expose input's `ref`, then you should use the [Controller](/docs#Controller) component, which will take care of the registration process.
+React Hook Form has made it easy to integrate with external UI component libraries. If the component doesn't expose the input's `ref`, then you should use the [Controller](/docs/usecontroller/controller) component, which will take care of the registration process.
 
 <TabGroup buttonLabels={["TS", "JS"]} >
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-with-ui-library-ts-forked-qjgkx"
 import Select from "react-select"
 import { useForm, Controller, SubmitHandler } from "react-hook-form"
-import { Input } from "@material-ui/core"
+import { Input } from "@mui/material"
 
 interface IFormInput {
   firstName: string
@@ -342,11 +368,11 @@ interface IFormInput {
 }
 
 const App = () => {
-  const { control, handleSubmit } = useForm({
+  const { control, handleSubmit } = useForm<IFormInput>({
     defaultValues: {
       firstName: "",
       lastName: "",
-      iceCreamType: {},
+      iceCreamType: { label: "", value: "" },
     },
   })
 
@@ -384,7 +410,7 @@ const App = () => {
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-with-ui-library-forked-fp5r3"
 import Select from "react-select"
 import { useForm, Controller } from "react-hook-form"
-import { Input } from "@material-ui/core"
+import { Input } from "@mui/material"
 
 const App = () => {
   const { control, handleSubmit } = useForm({
@@ -426,7 +452,7 @@ const App = () => {
 
 ## Integrating Controlled Inputs {#IntegratingControlledInputs}
 
-This library embraces uncontrolled components and native HTML inputs. However, it's hard to avoid working with external controlled components such as [shadcn/ui](https://ui.shadcn.com/docs/components/form), [React-Select](https://github.com/JedWatson/react-select), [AntD](https://github.com/ant-design/ant-design) and [MUI](https://mui.com/). To make this simple, we provide a wrapper component, [Controller](/docs#Controller), to streamline the integration process while still giving you the freedom to use a custom register.
+This library embraces uncontrolled components and native HTML inputs. However, it's hard to avoid working with external controlled components such as [shadcn/ui](https://ui.shadcn.com/docs/components/form), [React-Select](https://github.com/JedWatson/react-select), [AntD](https://github.com/ant-design/ant-design) and [MUI](https://mui.com/). To make this simple, we provide a wrapper component, [Controller](/docs/usecontroller/controller), to streamline the integration process while still giving you the freedom to use a custom register.
 
 #### Using Component API
 
@@ -434,10 +460,9 @@ This library embraces uncontrolled components and native HTML inputs. However, i
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-v6-controller-ts-jwyzw"
 import { useForm, Controller, SubmitHandler } from "react-hook-form"
-import { TextField, Checkbox } from "@material-ui/core"
+import { Checkbox } from "@mui/material"
 
 interface IFormInputs {
-  TextField: string
   MyCheckbox: boolean
 }
 
@@ -464,33 +489,32 @@ function App() {
 ```
 
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-v7-controller-5h1q5"
-import { TextField } from "@material-ui/core"
-import { useController, useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
+import { Checkbox } from "@mui/material"
 
-function Input({ control, name }) {
-  const {
-    field,
-    fieldState: { invalid, isTouched, isDirty },
-    formState: { touchedFields, dirtyFields },
-  } = useController({
-    name,
-    control,
-    rules: { required: true },
+function App() {
+  const { handleSubmit, control, reset } = useForm({
+    defaultValues: {
+      MyCheckbox: false,
+    },
   })
+  const onSubmit = (data) => console.log(data)
 
   return (
-    <TextField
-      onChange={field.onChange} // send value to hook form
-      onBlur={field.onBlur} // notify when input is touched/blur
-      value={field.value} // input value
-      name={field.name} // send down the input name
-      inputRef={field.ref} // send input ref, so we can focus on input when error appear
-    />
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Controller
+        name="MyCheckbox"
+        control={control}
+        rules={{ required: true }}
+        render={({ field }) => <Checkbox {...field} />}
+      />
+      <input type="submit" />
+    </form>
   )
 }
 ```
 
-```javascript copy
+```tsx copy
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -512,7 +536,7 @@ export function InputForm() {
   })
 
   function onSubmit(data: z.output<typeof FormSchema>) {
-    console.log(data);
+    console.log(data)
   }
 
   return (
@@ -522,7 +546,9 @@ export function InputForm() {
           control={form.control}
           name="username"
           render={({ field }) => (
-            <FormControl><Input {...field} /></FormControl>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
           )}
         />
         <button type="submit">Submit</button>
@@ -534,12 +560,19 @@ export function InputForm() {
 
 </TabGroup>
 
+**Note:** The `shadcn/ui` example above requires installing `@hookform/resolvers` and `zod`:
+
+```bash copy
+npm install @hookform/resolvers zod
+```
+
+If you hit `Cannot find module '@hookform/resolvers/zod'` (or `zod/v4/core`), it's almost always a version mismatch: Zod v4 support requires `@hookform/resolvers` ^3.10 or newer paired with `zod` ^3.25 or `zod` v4, and your `tsconfig.json` needs `"moduleResolution": "bundler"` (or `"node16"`/`"nodenext"`) so the package's subpath exports resolve correctly. See [react-hook-form/resolvers#839](https://github.com/react-hook-form/resolvers/issues/839) for details.
+
 #### Using Hooks API
 
 <TabGroup buttonLabels={["TS", "JS"]} >
 
 ```tsx copy sandbox="https://codesandbox.io/s/usecontroller-forked-4t8cx"
-import * as React from "react"
 import { useForm, useController, UseControllerProps } from "react-hook-form"
 
 type FormValues = {
@@ -578,7 +611,7 @@ export default function App() {
 ```
 
 ```javascript copy sandbox="https://codesandbox.io/s/usecontroller-tefsc"
-import { TextField } from "@material-ui/core"
+import { TextField } from "@mui/material"
 import { useController, useForm } from "react-hook-form"
 
 function Input({ control, name }) {
@@ -594,11 +627,11 @@ function Input({ control, name }) {
 
   return (
     <TextField
-      onChange={field.onChange} // send value to hook form
-      onBlur={field.onBlur} // notify when input is touched/blur
+      onChange={field.onChange} // send the value to hook form
+      onBlur={field.onBlur} // notify when the input is touched or blurred
       value={field.value} // input value
-      name={field.name} // send down the input name
-      inputRef={field.ref} // send input ref, so we can focus on input when error appear
+      name={field.name} // send the input name
+      inputRef={field.ref} // send input ref, so we can focus on the input when an error appears
     />
   )
 }
@@ -615,7 +648,7 @@ import { useForm } from "react-hook-form"
 import { connect } from "react-redux"
 import updateAction from "./actions"
 
-export default function App(props) {
+function App(props) {
   const { register, handleSubmit, setValue } = useForm({
     defaultValues: {
       firstName: "",
@@ -635,10 +668,9 @@ export default function App(props) {
 }
 
 // Connect your component with redux
-connect(
-  ({ firstName, lastName }) => ({ firstName, lastName }),
-  updateAction
-)(YourForm)
+export default connect(({ firstName, lastName }) => ({ firstName, lastName }), {
+  updateAction,
+})(App)
 ```
 
 ## Handle errors {#Handleerrors}
@@ -680,10 +712,10 @@ export default function App() {
 
 ## Integrating with services {#Integratingwithservices}
 
-To integrate React Hook Form with a service, you can use the library's built-in submission handling. `<Form />` component allow you to easily send form data to an API endpoint or other service. [Find out more about Form component](/docs/useform/form).
+To integrate React Hook Form with a service, you can use the library's built-in submission handling. The `<Form />` component allows you to easily send form data to an API endpoint or other service. [Find out more about the Form component](/docs/useform/form).
 
 ```javascript
-import { Form } from "react-hook-form"
+import { Form, useForm } from "react-hook-form"
 
 function App() {
   const { register, control } = useForm()
@@ -710,7 +742,77 @@ function App() {
 
 ## Schema Validation {#SchemaValidation}
 
-We also support schema-based form validation with [Yup](https://github.com/jquense/yup), [Zod](https://github.com/colinhacks/zod) , [Superstruct](https://github.com/ianstormtaylor/superstruct) & [Joi](https://github.com/hapijs/joi), where you can pass your `schema` to [useForm](/docs#useForm) as an optional config. It will validate your input data against the schema and return with either [errors](/docs#errors) or a valid result.
+React Hook Form supports schema validation through the [`resolver`](/docs/useform#resolver) option. A resolver runs your schema against the complete form data and returns typed values or validation errors. Supported libraries include:
+
+For complete TypeScript examples with Zod and Yup, see the [React Hook Form integration guides](/integrations).
+
+<ul style={{ columns: "200px 2", columnGap: "2rem" }}>
+  <li>
+    <a href="https://github.com/jquense/yup">Yup</a>
+  </li>
+  <li>
+    <a href="https://github.com/colinhacks/zod">Zod</a>
+  </li>
+  <li>
+    <a href="https://github.com/ianstormtaylor/superstruct">Superstruct</a>
+  </li>
+  <li>
+    <a href="https://github.com/sideway/joi">Joi</a>
+  </li>
+  <li>
+    <a href="https://github.com/ealush/vest">Vest</a>
+  </li>
+  <li>
+    <a href="https://github.com/typestack/class-validator">Class Validator</a>
+  </li>
+  <li>
+    <a href="https://github.com/gcanti/io-ts">io-ts</a>
+  </li>
+  <li>
+    <a href="https://github.com/bvego/nope-validator">Nope</a>
+  </li>
+  <li>
+    <a href="https://github.com/neuledge/computed-types">computed-types</a>
+  </li>
+  <li>
+    <a href="https://github.com/arcanis/typanion">typanion</a>
+  </li>
+  <li>
+    <a href="https://github.com/ajv-validator/ajv">Ajv</a>
+  </li>
+  <li>
+    <a href="https://github.com/sinclairzx81/typebox">TypeBox</a>
+  </li>
+  <li>
+    <a href="https://github.com/arktypeio/arktype">ArkType</a>
+  </li>
+  <li>
+    <a href="https://valibot.dev/">Valibot</a>
+  </li>
+  <li>
+    <a href="https://typeschema.com">TypeSchema</a>
+  </li>
+  <li>
+    <a href="https://github.com/Effect-TS/effect">effect-ts</a>
+  </li>
+  <li>
+    <a href="https://github.com/vinejs/vine">VineJS</a>
+  </li>
+  <li>
+    <a href="https://github.com/AlexJPotter/fluentvalidation-ts">
+      fluentvalidation-ts
+    </a>
+  </li>
+  <li>
+    <a href="https://github.com/nicholasgasior/ata-validator">ata-validator</a>
+  </li>
+  <li>
+    any library that implements{" "}
+    <a href="https://standardschema.dev/">Standard Schema</a>
+  </li>
+</ul>
+
+See the full, up-to-date list in the [`@hookform/resolvers`](https://github.com/react-hook-form/resolvers) repo.
 
 **Step 1:** Install `Yup` into your project.
 
@@ -761,7 +863,7 @@ export default function App() {
 You will get the same performance boost and enhancement in React Native. To integrate with input component, you can wrap it with `Controller`.
 
 ```javascript copy sandbox="https://snack.expo.io/@bluebill1049/react-hook-form-v7---controller" expo
-import { Text, View, TextInput, Button, Alert } from "react-native"
+import { Text, View, TextInput, Button } from "react-native"
 import { useForm, Controller } from "react-hook-form"
 
 export default function App() {
@@ -823,7 +925,6 @@ export default function App() {
 React Hook Form is built with `TypeScript`, and you can define a `FormData` type to support form values.
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-typescript-qwk7b"
-import * as React from "react"
 import { useForm } from "react-hook-form"
 
 type FormData = {
@@ -850,9 +951,9 @@ export default function App() {
       <button
         type="button"
         onClick={() => {
-          setValue("lastName", "luo") // ✅
-          setValue("firstName", true) // ❌: true is not string
-          errors.bill // ❌: property bill does not exist
+          setValue("lastName", "luo") // ✅ accepts a string
+          // setValue("firstName", true) // TypeScript error: expected string
+          // errors.bill // TypeScript error: field does not exist
         }}
       >
         SetValue
@@ -870,8 +971,27 @@ React Hook Form's design and philosophy focus on user and developer experience. 
 - Avoiding unnecessary computation
 - Isolating component re-rendering when required
 
-Overall, it improves the user experience while users interact with the application. As for the developers, we introduce built-in validation and are closely aligned with HTML standards allowing further extension with powerful validation methods and integration with schema validation natively. In addition, having a strongly type-checked form with the help of typescript provides early build-time feedback to help and guide the developer to build a robust form solution.
+Overall, it improves the user experience as users interact with the application. For developers, we introduced built-in validation and are closely aligned with HTML standards, allowing further extension with powerful validation methods and native integration with schema validation. In addition, having a strongly type-checked form with the help of TypeScript provides early build-time feedback to help and guide developers in building a robust form solution.
 
 The following talk given by [Bill](https://twitter.com/bluebill1049) showcased some of the ideas and design patterns:
 
 <YouTube youTubeId="ZFxHdpzaEmM" />
+
+## Next steps {#Nextsteps}
+
+Choose the path that matches what you are building next.
+
+<NextSteps>
+  <NextStep href="/docs/useform" title="Explore the API">
+    Understand every useForm option, method, and form-state property.
+  </NextStep>
+  <NextStep href="/integrations" title="Add schema validation">
+    Connect Zod, Yup, Valibot, or another supported resolver.
+  </NextStep>
+  <NextStep href="/advanced-usage" title="Build advanced forms">
+    Create accessible, reusable, tested, and multi-step form experiences.
+  </NextStep>
+  <NextStep href="/faqs" title="Solve common problems">
+    Find answers about performance, controlled inputs, validation, and testing.
+  </NextStep>
+</NextSteps>

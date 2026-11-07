@@ -1,0 +1,289 @@
+---
+title: 'Axiom for Splunk app commands'
+description: 'Reference for the ax commands the Axiom app adds to SPL, including time range behavior, query syntax, and field conventions.'
+sidebarTitle: Commands
+keywords: ['splunk', 'axsearch', 'axstats', 'axtimechart', 'axlookup', 'axquery', 'axdatasets', 'axfields', 'axsample', 'spl commands']
+---
+
+The Axiom for Splunk app adds the following commands to SPL. Filtering, projection, and aggregation run inside Axiom. Splunk receives tabular rows and continues with normal SPL.
+
+| Command | Use it for | Pipeline type |
+| --- | --- | --- |
+| [`axdatasets`](#axdatasets) | List datasets visible to the configured Axiom token. | Generating |
+| [`axfields`](#axfields) | List fields in one Axiom dataset. | Generating |
+| [`axsample`](#axsample) | Fetch recent sample events without writing a query. | Generating |
+| [`axsearch`](#axsearch) | Search one Axiom dataset with Splunk-like syntax. | Generating |
+| [`axstats`](#axstats) | Push `stats`-style aggregations into Axiom. | Generating |
+| [`axtimechart`](#axtimechart) | Push time-bucketed aggregations into Axiom. | Generating (reporting) |
+| [`axlookup`](#axlookup) | Look up Axiom context and add fields to existing Splunk events. | Streaming |
+| [`axquery`](#axquery) | Run raw APL for full control. | Generating |
+
+Generating commands must be the first command in a Splunk search, so they start with a leading pipe. `axlookup` is a streaming command and appears later in an SPL pipeline, after a base Splunk search. `axtimechart` generates reporting output, so its results are a chartable table rather than events.
+
+## Time ranges
+
+Commands that query Axiom data use the Splunk dispatch time range by default. The Splunk time picker, saved search schedule, or dispatch `earliest` and `latest` values become the Axiom query window. A user who runs a search for **Last 15 minutes** gets the same 15-minute Axiom window without adding command-specific time arguments.
+
+This applies to `axsample`, `axsearch`, `axstats`, `axtimechart`, `axlookup`, and `axquery`. `axdatasets` and `axfields` don’t query event time ranges.
+
+Each boundary resolves independently:
+
+| Boundary | First choice | Second choice | Default |
+| --- | --- | --- | --- |
+| Start | `startTime` | `earliest` | Splunk dispatch earliest time |
+| End | `endTime` | `latest` | Splunk dispatch latest time |
+
+If a boundary can’t be resolved, that side is omitted from the Axiom request. Splunk **All time** is treated as unbounded.
+
+Use explicit options when the Axiom query window should differ from the current Splunk search range:
+
+```spl
+| axsearch dataset="http-logs" q="error" startTime="-24h" endTime="now" limit=100
+```
+
+Supported time inputs:
+
+- RFC3339 UTC, such as `2026-07-02T12:00:00Z`
+- Splunk-style relative time, such as `-15m`, `-24h`, `-7d@d`, `@d`, or `+1h`
+- `now`
+
+Relative inputs resolve on the Splunk search head at command runtime and are normalized to UTC before being sent to Axiom. If an exact boundary matters, use explicit RFC3339 UTC.
+
+To inspect the resolved range without querying Axiom, use `explain=true` on `axsearch`, `axstats`, or `axtimechart`:
+
+```spl
+| axsearch dataset="http-logs" q="status>=500" explain=true
+| table compiled_apl, startTime, endTime
+```
+
+## Splunk-like `q` syntax
+
+`axsearch`, `axstats`, and `axtimechart` support a constrained Splunk-like `q` option that compiles to APL. Supported patterns include:
+
+```spl
+q="error timeout"
+q="error OR timeout"
+q="error NOT debug"
+q="(error OR timeout) service=api"
+q="status>=500"
+q="service=checkout"
+q="service!=checkout"
+q="trace_id=*"
+q="service IN (api, worker)"
+q="service NOT IN (api, worker)"
+q="message:timeout*"
+```
+
+Use the `where` option on `axsearch`, or use `axquery`, when you need an APL predicate outside this subset. To see the APL a `q` expression compiles to, add `explain=true`.
+
+## Field conventions
+
+Every command returns Axiom fields as real Splunk fields. You don’t need to append `| spath` to reach them:
+
+```spl
+| axsearch dataset="http-logs" limit=10
+| table _time service.name severity_text body
+```
+
+- Nested Axiom objects are flattened to dotted field names, so `attributes.http.method` is addressable directly.
+- Arrays arrive as Splunk multivalue fields.
+- Commands other than `axtimechart` keep the original row in `_raw` as JSON, so the Events tab shows the underlying Axiom record.
+- `axsample`, `axsearch`, `axstats`, and `axtimechart` add `axiom_dataset` to each returned event. `axlookup` adds `axiom_lookup_dataset` to enriched events.
+
+`axlookup` output fields are prefixed and normalized to Splunk-friendly names. The default prefix is `axiom_`, and punctuation in Axiom field names becomes `_`:
+
+| Axiom field | Default Splunk field |
+| --- | --- |
+| `service.version` | `axiom_service_version` |
+| `resource.k8s.deployment.name` | `axiom_resource_k8s_deployment_name` |
+| `trace-id` | `axiom_trace_id` |
+
+The app also ships Splunk workflow actions. When an event has `axiom_dataset` plus a supported field such as `trace_id`, `span_id`, `service`, or `service.name`, the event menu can launch a focused Axiom search for traces, spans, services, or Kubernetes deployments. The action preserves the current Splunk time range and opens the search in Axiom.
+
+## Command reference
+
+### axdatasets
+
+List datasets visible to the configured Axiom token.
+
+```spl
+| axdatasets
+| table id, name, kind, retentionDays
+| sort name
+```
+
+| Option | Required | Description |
+| --- | --- | --- |
+| `tokenName` | No | Stored Axiom token name. Defaults to `axiom_token`. |
+
+### axfields
+
+List fields for one Axiom dataset.
+
+```spl
+| axfields dataset="http-logs"
+| table name, type, unit
+| sort name
+```
+
+| Option | Required | Description |
+| --- | --- | --- |
+| `dataset` | Yes | Axiom dataset ID. |
+| `tokenName` | No | Stored Axiom token name. Defaults to `axiom_token`. |
+
+### axsample
+
+Fetch recent events from one dataset without writing a query.
+
+```spl
+| axsample dataset="http-logs" fields="service,status,message" limit=20
+```
+
+| Option | Required | Description |
+| --- | --- | --- |
+| `dataset` | Yes | Axiom dataset ID. |
+| `limit` | No | Maximum sample events. Defaults to `20`. |
+| `fields` | No | Comma-separated fields to keep. `_time` is preserved automatically. |
+| `startTime`, `endTime`, `earliest`, `latest` | No | Time controls. See [Time ranges](#time-ranges). |
+| `tokenName` | No | Stored Axiom token name. |
+
+### axsearch
+
+Search one Axiom dataset and return event-shaped rows.
+
+```spl
+| axsearch dataset="http-logs" q="status>=500 service=checkout" fields="service,status,message" limit=100
+```
+
+| Option | Required | Description |
+| --- | --- | --- |
+| `dataset` | Yes | Axiom dataset ID. |
+| `q` | No | Splunk-like query expression compiled to APL. See [Splunk-like `q` syntax](#splunk-like-q-syntax). |
+| `search` | No | Text search string compiled to APL `search`. |
+| `where` | No | Raw APL predicate for structured filtering. |
+| `fields` | No | Comma-separated fields to keep. `_time` is preserved automatically. |
+| `sort` | No | APL sort expression. Defaults to `_time desc`. |
+| `limit` | No | Maximum events returned. Defaults to `100`. |
+| `explain` | No | Return compiled APL without querying Axiom. |
+| `startTime`, `endTime`, `earliest`, `latest` | No | Time controls. See [Time ranges](#time-ranges). |
+| `tokenName` | No | Stored Axiom token name. |
+
+### axstats
+
+Push grouped aggregations into Axiom.
+
+```spl
+| axstats dataset="http-logs" q="status>=500" stats="count as errors, avg(duration_ms) as avg_duration" by="service" limit=100
+```
+
+Supported aggregation functions:
+
+- `count` or `count()`
+- `sum(field)`
+- `avg(field)`
+- `min(field)` and `max(field)`
+- `dcount(field)` or `dc(field)`
+- `stdev(field)`
+- `variance(field)`
+- `percentile(field, pct)`, `perc(field, pct)`, or `p95(field)` style shorthand
+
+Use `axquery` for APL aggregations outside this subset, such as conditional aggregations.
+
+| Option | Required | Description |
+| --- | --- | --- |
+| `dataset` | Yes | Axiom dataset ID. |
+| `q` | No | Splunk-like query expression compiled to APL. |
+| `stats` | No | Aggregation list. Defaults to `count`. |
+| `by` | No | Comma-separated group-by fields. |
+| `limit` | No | Maximum grouped rows when grouping with `by`. Defaults to `1000`. |
+| `explain` | No | Return compiled APL without querying Axiom. |
+| `startTime`, `endTime`, `earliest`, `latest` | No | Time controls. See [Time ranges](#time-ranges). |
+| `tokenName` | No | Stored Axiom token name. |
+
+### axtimechart
+
+Push time-bucketed aggregations into Axiom and return a time series table.
+
+This is a reporting command. The result is a stats table with `_time` plus the aggregation columns, so the Visualization tab works without further piping.
+
+```spl
+| axtimechart dataset="http-logs" q="status>=500" span=5m agg="count as errors" by="service" limit=1000
+```
+
+| Option | Required | Description |
+| --- | --- | --- |
+| `dataset` | Yes | Axiom dataset ID. |
+| `q` | No | Splunk-like query expression compiled to APL. |
+| `agg` | No | Aggregation expression. Defaults to `count`. |
+| `span` | No | Bucket width such as `30s`, `5m`, `1h`, or `1d`. Defaults to `1m`. |
+| `by` | No | Optional split-by field. |
+| `limit` | No | Maximum returned rows. Defaults to `10000`. |
+| `explain` | No | Return compiled APL without querying Axiom. |
+| `startTime`, `endTime`, `earliest`, `latest` | No | Time controls. See [Time ranges](#time-ranges). |
+| `tokenName` | No | Stored Axiom token name. |
+
+### axlookup
+
+Look up the latest matching context from Axiom and add selected fields to incoming Splunk events. It follows Splunk’s lookup mental model, but the backing source is an Axiom dataset rather than a Splunk lookup table.
+
+```spl
+index=main service=api
+| axlookup dataset="deployments" on="service=service.name" fields="version,owner,team"
+| table _time, service, axiom_version, axiom_owner, axiom_team
+```
+
+| Option | Required | Description |
+| --- | --- | --- |
+| `dataset` | Yes | Axiom dataset used as the lookup source. |
+| `on` | Yes | Join key as `field` or `splunkField=axiomField`. |
+| `fields` | Yes | Comma-separated Axiom fields to add, or `*`. |
+| `prefix` | No | Prefix for added fields. Defaults to `axiom_`. Added field names are normalized for SPL. |
+| `overwrite` | No | Whether added fields may replace existing fields. Defaults to `false`. |
+| `batchSize` | No | Distinct join values per Axiom query. Defaults to `250`, capped at `1000`. |
+| `maxFields` | No | Maximum added fields with `fields=*`. Defaults to `50`. |
+| `strict` | No | Whether Axiom failures fail the Splunk search. Defaults to `true`. |
+| `startTime`, `endTime`, `earliest`, `latest` | No | Time controls for the Axiom lookup. See [Time ranges](#time-ranges). |
+| `tokenName` | No | Stored Axiom token name. |
+
+The time range controls the Axiom lookup dataset, not the already-returned Splunk events. By default, the same Splunk dispatch window applies to both. Override the lookup window when your context data lives outside the base search window.
+
+### axquery
+
+Run raw APL when you need full control of the Axiom query language.
+
+```spl
+| axquery apl="['http-logs'] | where status >= 500 | summarize errors=count() by service, bin(_time, 1h) | sort by _time asc"
+| table _time, service, errors
+```
+
+| Option | Required | Description |
+| --- | --- | --- |
+| `apl` | Yes | Raw APL query. |
+| `paginate` | No | `cursor` or `time`. Requires `\| sort by _time [asc\|desc]` in the APL. |
+| `debug` | No | Enable detailed logs in Splunk’s `_internal` index. |
+| `maxTime` | No | Maximum runtime in seconds. Defaults to `600`. |
+| `startTime`, `endTime`, `earliest`, `latest` | No | Time controls. See [Time ranges](#time-ranges). |
+| `tokenName` | No | Stored Axiom token name. |
+
+Pagination notes:
+
+- Without pagination, Axiom’s per-page limit applies.
+- With pagination, put `| limit n` in the APL to cap total returned events.
+- `paginate=cursor` uses Axiom cursors. `paginate=time` advances by `_time` and deduplicates rows.
+
+For the APL language itself, see the [APL introduction](/apl/introduction) and the [Splunk SPL to APL cheat sheet](/apl/guides/splunk-cheat-sheet).
+
+## Debug searches
+
+For `axsearch`, `axstats`, and `axtimechart`, start with `explain=true`. It shows the generated APL and resolved time range without querying Axiom, which separates app syntax issues from Axiom query issues:
+
+```spl
+| axstats dataset="http-logs" q="status>=500" stats="count as errors" by="service" explain=true
+| table compiled_apl, startTime, endTime
+```
+
+Use `debug=true` with `axquery` when you need detailed runtime logs, then inspect the latest run with the `axquery_latest` search macro:
+
+```spl
+`axquery_latest`
+```

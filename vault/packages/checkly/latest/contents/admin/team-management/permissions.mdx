@@ -1,0 +1,353 @@
+---
+title: "Permissions reference"
+sidebarTitle: "Permissions"
+description: "Find every Checkly account permission by ID, role-editor name, resource group, and description."
+canonical: 'https://www.checklyhq.com/docs/admin/team-management/permissions/'
+---
+
+Your [account role](/admin/team-management/overview#team-member-roles) grants permissions for actions on resources. Each permission has an ID in the form `resource:action`: for example, `checks:run` is **Run checks**.
+
+The tables below list all account permissions, using the names, descriptions, groups, and resource rows from the role editor. Use your browser's search to find an ID or name. A permission does not enable a feature your account or plan does not include.
+
+## Find or request access
+
+Ask your account owner or an admin to [assign a role](/admin/team-management/managing-team-members#change-members’-roles) with the permissions you need. See the [built-in role comparison](/admin/team-management/overview#team-member-roles) to choose a suitable role.
+
+If [custom roles](/admin/team-management/custom-roles) (beta) are enabled for your account, you can find permission names under **Account settings > Roles**. The editor shows names rather than IDs; the headings below match its groups and resource rows. Someone who can edit roles can adjust permissions within the [limits on granting access](/admin/team-management/custom-roles#the-permission-matrix).
+
+<Note>
+Custom roles are in beta and are not generally available. The Roles page appears only on accounts where they are enabled.
+</Note>
+
+Every role includes `account:read`, `members:read`, and `maintenance-windows:read`; these have no checkbox. Only the Owner can hold `account:delete` and `account:transfer-ownership`. Other permissions may require additional permissions, which the [custom-role editor](/admin/team-management/custom-roles#the-permission-matrix) selects together.
+
+The role editor hides the legacy API-key permission `api-keys:read-locked` and shows **Snippets** permissions only when your account already has snippets. They remain listed here for reference.
+
+Account permissions are separate from [MCP session permissions](/ai/mcp-server/security-and-permissions#role-checks). An MCP session must allow a tool, and your account role must allow its action.
+
+## Monitoring
+
+### Checks and monitors
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `checks:read` | View checks | View checks and monitors (incl. heartbeats) with their results, status, stats, events, alert history, traces, metrics and analytics. |
+| `checks:export` | Export checks as code | Export checks as code. |
+| `checks:create` | Create checks | Create checks and monitors, including cloning one and setting up checks in a connected GitHub repository. |
+| `checks:update` | Edit checks | Edit checks and monitors (configuration, activation, muting, group membership, restoring a script after a repair), the account's default alert settings, and sync check code through a connected GitHub repository. |
+| `checks:delete` | Delete checks | Delete checks and monitors. |
+| `checks:run` | Run checks | Run checks on demand: ad-hoc runs from the editor, Schedule now and triggered check sessions. |
+| `checks:cancel` | Cancel check runs | Cancel a running check session. |
+
+### Check groups
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `check-groups:read` | View check groups | View check groups, their settings and group overviews. |
+| `check-groups:export` | Export check groups as code | Export check groups as code. |
+| `check-groups:create` | Create check groups | Create check groups, including cloning a group. |
+| `check-groups:update` | Edit check groups | Edit check group settings. |
+| `check-groups:delete` | Delete check groups | Delete check groups and the checks they contain. |
+
+### Errors
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `error-groups:read` | View errors | View error groups detected in check results, and error-tracking issues with their events, stack traces, breadcrumbs, consumption and the people they can be assigned to. |
+| `error-groups:update` | Triage errors | Archive error groups, until their next occurrence or permanently. Resolve, ignore, reopen and assign error-tracking issues, and merge, unmerge and split them. |
+
+### Alert channels
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `alert-channels:read` | View alert channels | View alert channels and their subscriptions. |
+| `alert-channels:export` | Export alert channels as code | Export alert channels as code. |
+| `alert-channels:create` | Create alert channels | Create alert channels. |
+| `alert-channels:update` | Edit alert channels | Edit alert channels and their check/group subscriptions, and send test notifications. |
+| `alert-channels:delete` | Delete alert channels | Delete alert channels. |
+
+### Maintenance windows
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `maintenance-windows:read` | View maintenance windows | View maintenance windows. |
+| `maintenance-windows:export` | Export maintenance windows as code | Export maintenance windows as code. |
+| `maintenance-windows:create` | Create maintenance windows | Create maintenance windows. |
+| `maintenance-windows:update` | Edit maintenance windows | Edit maintenance windows, move/close/remove individual maintenances and post maintenance updates (can notify status-page subscribers). |
+| `maintenance-windows:delete` | Delete maintenance windows | Delete maintenance windows. |
+
+### Dashboards
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `dashboards:read` | View dashboards | View dashboards. |
+| `dashboards:export` | Export dashboards as code | Export dashboards as code. |
+| `dashboards:create` | Create dashboards | Create dashboards. |
+| `dashboards:update` | Edit dashboards | Edit dashboards, including custom domains and private-dashboard viewer keys. |
+| `dashboards:delete` | Delete dashboards | Delete dashboards. |
+
+### Reports
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `reports:read` | View reports | View availability and performance reports for checks and groups. |
+
+### Result assets
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `assets:read` | View result assets | View check and test-session result assets: screenshots, videos, traces and logs. |
+
+## Check resources
+
+### Environment variables
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `environment-variables:read` | View environment variables | View environment variables (locked values hidden). |
+| `environment-variables:read-locked` | Reveal locked values | See the values of locked environment variables. |
+| `environment-variables:export` | Export environment variables as code | Export environment variables as code. |
+| `environment-variables:create` | Create environment variables | Create account environment variables. |
+| `environment-variables:update` | Edit environment variables | Edit account environment variables. |
+| `environment-variables:delete` | Delete environment variables | Delete account environment variables. |
+
+### Snippets
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `snippets:read` | View snippets | View code snippets. |
+| `snippets:create` | Create snippets | Create code snippets. |
+| `snippets:update` | Edit snippets | Edit code snippets. |
+| `snippets:delete` | Delete snippets | Delete code snippets. |
+
+### Tags
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `tags:read` | View tags | View tags, tag namespaces and their descriptions. |
+| `tags:create` | Define tags | Define tags and tag namespaces (with descriptions) before they are applied. |
+| `tags:update` | Rename tags | Rename tags or namespaces across all resources and edit their descriptions. |
+| `tags:delete` | Remove tags | Remove tags or namespaces from all resources. |
+
+### Client certificates
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `client-certificates:read` | View client certificates | View client certificates (private keys are never returned). |
+| `client-certificates:create` | Upload client certificates | Upload client certificates. |
+| `client-certificates:delete` | Delete client certificates | Delete client certificates. |
+
+### Private locations
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `private-locations:read` | View private locations | View private locations and their check/group assignments. |
+| `private-locations:export` | Export private locations as code | Export private locations as code. |
+| `private-locations:create` | Create private locations | Create private locations. |
+| `private-locations:update` | Edit private locations | Edit private locations and issue or revoke their agent API keys. |
+| `private-locations:delete` | Delete private locations | Delete private locations. |
+
+## Monitoring as Code
+
+### Projects
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `projects:read` | View projects | View Monitoring as Code projects and their deployments. |
+| `projects:create` | Create projects | Create a Monitoring as Code project. |
+| `projects:update` | Edit projects | Sync a resource's code to its CLI project's repository, and mint or revoke a project's error-tracking ingest keys. Listing them is part of `projects:read`. |
+| `projects:delete` | Delete projects | Delete a project, with or without its resources. |
+| `projects:deploy` | Deploy projects | Deploy a project from code, creating, updating and deleting its resources. |
+| `projects:import` | Import resources into projects | Import existing resources into a CLI project: create, list, apply, commit or cancel import plans. |
+| `projects:cancel` | Cancel deployments | Cancel an in-progress project deployment or deletion. |
+
+### Test sessions
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `test-sessions:read` | View test sessions | View test sessions and their results. |
+| `test-sessions:run` | Run test sessions | Run test sessions from the CLI or the Playwright reporter, including uploading code bundles and snapshots. |
+| `test-sessions:cancel` | Cancel test sessions | Cancel a running test session. |
+
+### Deployment triggers
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `deployment-triggers:read` | View deployment triggers | View deployment triggers. |
+| `deployment-triggers:create` | Create deployment triggers | Create deployment triggers. |
+| `deployment-triggers:update` | Edit deployment triggers | Edit deployment triggers. |
+| `deployment-triggers:delete` | Delete deployment triggers | Delete deployment triggers. |
+
+## Communicate
+
+### Status pages
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `status-pages:read` | View status pages | View status pages and their services, components and automation rules. |
+| `status-pages:export` | Export status pages as code | Export status pages as code. |
+| `status-pages:create` | Create status pages | Create status pages. |
+| `status-pages:update` | Edit status pages | Edit status pages and their services. |
+| `status-pages:delete` | Delete status pages | Delete status pages. |
+
+### Incidents
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `incidents:read` | View incidents | View status page incidents and their updates. |
+| `incidents:create` | Open incidents | Open incidents on status pages and dashboards. |
+| `incidents:update` | Update incidents | Edit incidents: post, edit and delete incident updates, set component impact. |
+| `incidents:delete` | Delete incidents | Delete incidents. |
+
+## On-call
+
+### On-call schedules
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `on-call-schedules:read` | View on-call schedules | View on-call schedules. |
+| `on-call-schedules:create` | Create on-call schedules | Create on-call schedules. |
+| `on-call-schedules:update` | Edit on-call schedules | Edit on-call schedules: settings, rotations, scheduled rotation changes and Slack announcements (incl. test messages). |
+| `on-call-schedules:delete` | Archive on-call schedules | Archive and restore on-call schedules. |
+| `on-call-schedules:override` | Manage overrides | Add, change and remove overrides; accept teammates' coverage requests; clear requests left by departed members. |
+| `on-call-schedules:request-coverage` | Request coverage | Ask for and withdraw cover for your own on-call shifts. |
+
+### Escalation policies
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `escalation-policies:read` | View escalation policies | View escalation policies. |
+| `escalation-policies:create` | Create escalation policies | Create escalation policies. |
+| `escalation-policies:update` | Edit escalation policies | Edit escalation policies. |
+| `escalation-policies:delete` | Delete escalation policies | Delete escalation policies. |
+
+### Teams
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `teams:read` | View teams | View teams. |
+| `teams:create` | Create teams | Create teams. |
+| `teams:update` | Edit teams | Rename teams and add or remove team members. |
+| `teams:delete` | Delete teams | Delete teams. |
+
+## Incident response
+
+### Alert sources
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `alert-sources:read` | View alert sources | View alert sources and their settings, but not their webhook URLs. |
+| `alert-sources:read-url` | Reveal webhook URLs | Reveal and copy alert source webhook URLs. |
+| `alert-sources:create` | Create alert sources | Create alert sources. |
+| `alert-sources:update` | Edit alert sources | Edit and enable or disable alert sources, and rotate their webhook URLs. |
+| `alert-sources:delete` | Delete alert sources | Delete alert sources. |
+
+### Alerts
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `alerts:read` | View alerts | View alerts and their timelines. |
+| `alerts:respond` | Respond to alerts | Acknowledge, snooze and resolve alerts. |
+
+## Rocky AI
+
+### Conversations
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `ai-conversations:read` | View Rocky conversations | View Rocky AI conversations, their files and task logs. |
+| `ai-conversations:create` | Start Rocky conversations | Start a Rocky AI conversation. |
+| `ai-conversations:update` | Chat with Rocky | Chat with Rocky and edit a conversation's title and allowed commands. |
+| `ai-conversations:delete` | Delete Rocky conversations | Delete a Rocky AI conversation. |
+| `ai-conversations:cancel` | Stop Rocky | Stop Rocky's current run. |
+
+### Root cause analyses
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `root-cause-analyses:read` | View root cause analyses | View root cause analyses. |
+| `root-cause-analyses:run` | Start root cause analyses | Start a root-cause analysis in the app, through the public API or through MCP. |
+
+### Check repairs
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `check-repairs:create` | Repair checks with Rocky | Have Rocky repair a check or finish a failed sync to code (uses the shared AI invocation budget). |
+
+## Account
+
+### Account
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `account:read` | View the account | View account details, plan entitlements, available runtimes and account links. |
+| `account:update` | Change account settings | Change account settings and feature toggles (except the owner-only ones), and Labs experiments. |
+| `account:update-preferences` | Change account preferences | Change the default runtime, public badges and whether browser templates show on load. |
+| `account:update-sso-default-role` | Change the SSO default role | Change the role given to new SSO users. |
+| `account:update-sso-auto-join` | Turn SSO auto-join on or off | Choose whether users who sign in through SSO join the account automatically. |
+| `account:update-ai-opt-in` | Opt in or out of Rocky AI | Opt the account in or out of Rocky AI. |
+| `account:rename` | Rename the account | Rename the account. |
+| `account:delete` | Delete the account | Delete the account. |
+| `account:transfer-ownership` | Transfer ownership | Transfer account ownership to another member. |
+
+### Members
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `members:read` | View members | View account members and pending invitations. |
+| `members:create` | Invite members | Invite people and resend or remove invitations. |
+| `members:update` | Change members' roles | Change members' roles. |
+| `members:delete` | Remove members | Remove members. |
+| `members:lower-own-role` | Lower your own role | Move yourself to a role whose permissions you already hold. Changing other members' roles also follows the member-management rules. |
+
+### Roles
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `roles:read` | View roles | View the account's custom roles and the permissions they grant. |
+| `roles:create` | Create roles | Create custom roles. |
+| `roles:update` | Edit roles | Edit custom roles: their name, description and permissions. |
+| `roles:delete` | Delete roles | Delete custom roles, choosing a replacement for their holders. |
+
+### Shared views
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `views:read` | View shared views | View the views shared with the account, on the pages they belong to and in the account's settings. |
+| `views:share` | Share views | Share one of your own views with the whole account. |
+| `views:update` | Edit shared views | Rename shared views and change their filters and counter. |
+| `views:delete` | Delete shared views | Delete shared views, or make one private again for the member who shared it. |
+
+### API keys
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `api-keys:read` | View service API keys | View the account's service API keys. |
+| `api-keys:read-locked` | View legacy API keys | View the account's legacy API keys, including their secret value. |
+| `api-keys:create` | Create API keys | Create account API keys (service keys and legacy account keys). |
+| `api-keys:delete` | Delete API keys | Delete account API keys. |
+
+### Integrations
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `integrations:read` | View integrations | View connected integrations, list their repositories and Vercel projects, and see OpenTelemetry keys. |
+| `integrations:use` | Use integrations while authoring | Use connected integrations while authoring checks: repository branches, pull-request state, pending GitHub permissions and Vercel project details. |
+| `integrations:create` | Connect integrations | Connect integrations (GitHub, Vercel, Slack, Prometheus, OpenTelemetry/Coralogix). |
+| `integrations:update` | Change integration settings | Change integration settings, including issuing and revoking integration tokens (Prometheus, OpenTelemetry). |
+| `integrations:delete` | Disconnect integrations | Disconnect integrations. |
+
+## Billing
+
+### Billing
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `billing:read` | View billing | View the current plan, the plans available to switch to, invoices, billing details and plan consumption. |
+| `billing:update` | Change plan and billing | Change plan, subscription, payment method and billing details. |
+
+### Usage
+
+| Permission ID | Name in the role editor | Description |
+| --- | --- | --- |
+| `usage:read` | View usage | View organization usage, usage terms and usage reports. |

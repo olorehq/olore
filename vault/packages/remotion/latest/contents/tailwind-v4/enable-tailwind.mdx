@@ -1,24 +1,24 @@
 ---
-image: /generated/articles-docs-tailwind-v4-enable-tailwind.png
+image: https://remotion.media/docs/generated/articles-docs-tailwind-v4-enable-tailwind.png
 title: enableTailwind()
 crumb: '@remotion/tailwind-v4'
 ---
 
-_available from v4.0.256_
+# enableTailwind()<AvailableFrom v="4.0.256" />
 
-A function that modifies the default Webpack configuration to make the necessary changes to support TailwindCSS.
+A function that modifies the default bundler configuration to make the necessary changes to support TailwindCSS.
 See the [setup](/docs/tailwind) to see full instructions on how to setup TailwindCSS in Remotion.
 
 ```ts twoslash title="remotion.config.ts"
 import {Config} from '@remotion/cli/config';
 import {enableTailwind} from '@remotion/tailwind-v4';
 
-Config.overrideWebpackConfig((currentConfiguration) => {
+Config.overrideBundlerConfig((currentConfiguration) => {
   return enableTailwind(currentConfiguration);
 });
 ```
 
-## Multiple Webpack changes
+## Multiple bundler changes
 
 If you want to make other configuration changes, you can do so by doing them reducer-style:
 
@@ -26,7 +26,7 @@ If you want to make other configuration changes, you can do so by doing them red
 import {Config} from '@remotion/cli/config';
 import {enableTailwind} from '@remotion/tailwind-v4';
 
-Config.overrideWebpackConfig((currentConfiguration) => {
+Config.overrideBundlerConfig((currentConfiguration) => {
   return enableTailwind({
     ...currentConfiguration,
 
@@ -34,3 +34,7 @@ Config.overrideWebpackConfig((currentConfiguration) => {
   });
 });
 ```
+
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions={false} clientSideRendering="" serverSideRendering="Build step" player="" studio="Build step" hideBrowsers />

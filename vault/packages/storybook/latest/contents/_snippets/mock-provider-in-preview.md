@@ -1,0 +1,108 @@
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 4"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { ThemeProvider } from 'styled-components';
+
+// themes = { light, dark }
+import * as themes from '../src/themes';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading the theme value from parameters
+      const { theme = 'light' } = parameters;
+      return (
+        <ThemeProvider theme={themes[theme]}>
+          <Story />
+        </ThemeProvider>
+      );
+    },
+  ],
+});
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { ThemeProvider } from 'styled-components';
+
+// themes = { light, dark }
+import * as themes from '../src/themes';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading the theme value from parameters
+      const { theme = 'light' } = parameters;
+      return (
+        <ThemeProvider theme={themes[theme]}>
+          <Story />
+        </ThemeProvider>
+      );
+    },
+  ],
+});
+```
+
+```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import React from 'react';
+
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Preview } from '@storybook/your-framework';
+
+import { ThemeProvider } from 'styled-components';
+
+// themes = { light, dark }
+import * as themes from '../src/themes';
+
+const preview: Preview = {
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading the theme value from parameters
+      const { theme = 'light' } = parameters;
+      return (
+        <ThemeProvider theme={themes[theme]}>
+          <Story />
+        </ThemeProvider>
+      );
+    },
+  ],
+};
+
+export default preview;
+```
+
+```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import React from 'react';
+
+import { ThemeProvider } from 'styled-components';
+
+// themes = { light, dark }
+import * as themes from '../src/themes';
+
+export default {
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading the theme value from parameters
+      const { theme = 'light' } = parameters;
+      return (
+        <ThemeProvider theme={themes[theme]}>
+          <Story />
+        </ThemeProvider>
+      );
+    },
+  ],
+};
+```

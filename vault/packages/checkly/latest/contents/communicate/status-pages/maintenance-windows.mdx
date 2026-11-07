@@ -1,18 +1,19 @@
 ---
-title: 'Status Page Maintenance'
+title: 'Status page maintenance'
 description: 'Show planned maintenance windows on your status page so visitors and subscribers know what to expect, with automatic updates and subscriber notifications.'
 sidebarTitle: 'Maintenance'
+canonical: 'https://www.checklyhq.com/docs/communicate/status-pages/maintenance-windows/'
 ---
 
 <Note>
-Showing maintenance windows on a status page is part of the Communicate add-on. [View pricing](https://checklyhq.com/pricing).
+Showing maintenance windows on a status page is available on Communicate Team and Enterprise plans. [View pricing](https://checklyhq.com/pricing).
 </Note>
 
-[Maintenance windows](/communicate/maintenance-windows/overview) let you schedule planned downtime so checks don't create false alerts. When you also publish a status page, you can show that maintenance to your users: the window appears on the page before, during, and after it runs, affected services are flagged as under maintenance, and subscribers can be notified automatically.
+[Maintenance windows](/communicate/maintenance-windows/overview) let you schedule planned downtime so checks don't create false alerts. When you also publish a status page, you can show that maintenance to your users: the window appears on the page before, during, and after it runs, affected components are flagged as under maintenance, and subscribers can be notified automatically.
 
 <Accordion title="Before you begin">
-- A [status page](/communicate/status-pages/creating-a-status-page) with at least one service.
-- The Communicate add-on, which unlocks status page maintenance. Without it, the **Status page visibility** section of the maintenance window stays locked.
+- A [status page](/communicate/status-pages/creating-a-status-page) with at least one component.
+- A Communicate Team or Enterprise plan, which unlocks status page maintenance. Without it, the **Status page visibility** section of the maintenance window stays locked.
 - Access to the maintenance window feature.
 </Accordion>
 
@@ -25,14 +26,15 @@ You configure status page visibility from the maintenance window itself.
 Go to the **Maintenance Windows** page (the wrench icon in the sidebar) and create a window, or open an existing one. Set its schedule and [check behavior](/communicate/maintenance-windows/overview#check-behavior) as usual.
 </Step>
 
-<Step title="Enable Status page visibility">
+<Step title="Enable status page visibility">
 In the **Status page visibility** section, turn on the toggle. This is the master switch for everything below it.
 
 </Step>
 
-<Step title="Choose status pages and services">
+<Step title="Choose status pages and components">
 - **Show on**: select one or more status pages the maintenance should appear on.
-- **Services affected**: choose **All services on this page**, or pick **Specific services**. With "All services", services you add to the page later are automatically covered.
+- **Components affected**: choose **All components on this page**, or pick **Specific components**. With "All components", components you add to the page later are automatically covered. (On deprecated v2 pages, this selection uses services instead.)
+- **Show affected components**: on by default. Turn it off to publish the window without naming the components it covers. See [Hiding affected components](#hiding-affected-components).
 </Step>
 
 <Step title="Set a severity">
@@ -44,7 +46,7 @@ Save the maintenance window. It now appears on the selected status pages.
 </Step>
 </Steps>
 
-![Status page visibility settings on a maintenance window](/images/docs/images/status-pages/status-pages-maintenance-visibility-1.png)
+![Status page visibility settings on a maintenance window](/images/docs/images/status-pages-v3/status_page_v3_maintenance.png)
 
 <Note>
 All maintenance times on a status page are displayed in **UTC**, the same as incidents.
@@ -55,13 +57,18 @@ All maintenance times on a status page are displayed in **UTC**, the same as inc
 Once a window is visible, it appears on your status page in several places depending on its state:
 
 - **Upcoming**: a collapsible "scheduled maintenances" section on the status page lists maintenance that hasn't started yet.
-- **Active**: while maintenance is running, a banner at the top shows the affected services as under maintenance, and each affected service is marked with a maintenance icon.
+- **Active**: while maintenance is running, a banner at the top shows the affected components as under maintenance, and each affected component is marked with a maintenance icon.
 - **History**: completed maintenance appears in the **Activity** timeline alongside incidents, and on the 90-day availability chart. Scheduled (upcoming) maintenance is shown only in the upcoming section, not in the activity history.
 - **Detail page**: every maintenance has its own page with the full timeline of updates.
 
-![Maintenance on a public status page, showing the active banner and the upcoming maintenance section](/images/docs/images/status-pages/status-pages-maintenance-public-1.png)
+## Hiding affected components
 
-![Public maintenance detail page showing the status, severity, affected services, and update timeline](/images/docs/images/status-pages/status-pages-maintenance-detail-1.png)
+To announce planned work without revealing which parts of your system it touches, turn **Show affected components** off in the **Status page visibility** section. The window still appears on your status page as a general event, with its name, schedule, severity, and updates.
+
+With the setting off:
+
+- The maintenance card and its detail page list no components, and no component on the page is marked as under maintenance.
+- Subscriber notifications leave out the affected components.
 
 ## Posting updates to your status page
 
@@ -74,8 +81,6 @@ On a status-page window you can turn **off** automatic start or completion, so t
 <Warning>
 If you turn off automatic completion and never close the maintenance yourself, it stays active past its scheduled end and keeps pausing checks or silencing alerts until you mark it **Completed** or **Cancelled**.
 </Warning>
-
-![Posting a maintenance update in the webapp, with the update form and the overview sidebar](/images/docs/images/status-pages/status-pages-maintenance-updates-1.png)
 
 ## Notifying subscribers
 
@@ -99,10 +104,10 @@ If your maintenance window [repeats](/communicate/maintenance-windows/overview#s
 
 If you use [incident automation](/communicate/status-pages/incidents#incident-automation) to open incidents when a check fails, you can prevent those automatic incidents during planned maintenance.
 
-Turn on **Don't open incidents** in the status page visibility settings. While the maintenance is active, a failing check on a covered service will not automatically open an incident on that status page. Incidents you open manually are unaffected.
+Turn on **Don't open incidents** in the status page visibility settings. While the maintenance is active, a failing check covered by an automation rule will not automatically open an incident on that status page. Incidents you open manually are unaffected.
 
 <Note>
-This option applies only to the services covered by the maintenance on the pages it is shown on. A service that also appears on another page, where it is not under maintenance, can still get an automatic incident there.
+This option applies only to the components covered by the maintenance on the pages it is shown on.
 </Note>
 
-Maintenance periods are also excluded from your status page **uptime**, so planned maintenance does not count as downtime against your services.
+Maintenance doesn't change your status page **uptime**: incident downtime that overlaps a maintenance counts the same as any other downtime.

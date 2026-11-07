@@ -1,7 +1,7 @@
 ---
 title: '`OrganizationDomainResource`'
 description: The OrganizationDomainResource object is the model around an Organization domain.
-sdk: js-frontend, astro, chrome-extension, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
+sdk: js-frontend, astro, chrome-extension, electron, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
 ---
 
 The `OrganizationDomainResource` object is the model around an Organization domain.
@@ -9,24 +9,17 @@ The `OrganizationDomainResource` object is the model around an Organization doma
 ## Properties
 
 <Properties>
-  - `id`
-  - `string`
+  - `affiliationEmailAddress`
+  - `string | null`
 
-  The unique identifier for this Organization domain.
-
-  ---
-
-  - `name`
-  - `string`
-
-  The name for this Organization domain (e.g. example.com).
+  The email address that was used to verify this Organization domain.
 
   ---
 
-  - `organizationId`
-  - `string`
+  - `createdAt`
+  - `Date`
 
-  The Organization ID of the Organization this domain is for.
+  The date when the Organization domain was created.
 
   ---
 
@@ -37,17 +30,24 @@ The `OrganizationDomainResource` object is the model around an Organization doma
 
   ---
 
-  - `verification`
-  - [`OrganizationDomainVerification`](#organization-domain-verification)
+  - `id`
+  - `string`
 
-  The object that describes the status of the verification process of the domain.
+  The unique identifier for this Organization domain.
 
   ---
 
-  - `affiliationEmailAddress`
-  - `string | null`
+  - `name`
+  - `string`
 
-  The email address that was used to verify this Organization domain.
+  The name for this Organization domain (e.g., example.com).
+
+  ---
+
+  - `organizationId`
+  - `string`
+
+  The Organization ID of the Organization this domain is for.
 
   ---
 
@@ -65,36 +65,22 @@ The `OrganizationDomainResource` object is the model around an Organization doma
 
   ---
 
-  - `createdAt`
-  - `Date`
-
-  The date when the Organization domain was created.
-
-  ---
-
   - `updatedAt`
   - `Date`
 
   The date when the Organization domain was last updated.
+
+  ---
+
+  - `verification`
+  - [`OrganizationDomainVerification`](#organizationdomainverification)
+
+  The object that describes the status of the verification process of the domain.
 </Properties>
 
 ### `OrganizationDomainVerification`
 
 <Properties>
-  - `status`
-  - `'unverified' | 'verified'`
-
-  The status of the verification process.
-
-  ---
-
-  - `strategy`
-  - `'email_code'`
-
-  A string that indicates strategy of the verification.
-
-  ---
-
   - `attempts`
   - `number`
 
@@ -106,6 +92,20 @@ The `OrganizationDomainResource` object is the model around an Organization doma
   - `Date`
 
   The expiration date and time of the verification.
+
+  ---
+
+  - `status`
+  - `'unverified' | 'verified'`
+
+  The status of the verification process.
+
+  ---
+
+  - `strategy`
+  - `'email_code'`
+
+  A string that indicates strategy of the verification.
 </Properties>
 
 ## Methods
@@ -134,14 +134,14 @@ function prepareAffiliationVerification(
   - `affiliationEmailAddress`
   - `string`
 
-  An email address that is affiliated with the domain name (e.g. [user@example.com](mailto:user@example.com)).
+  An email address that is affiliated with the domain name (e.g., [user@example.com](mailto:user@example.com)).
 </Properties>
 
 ## `attemptAffiliationVerification()`
 
 Attempts to complete the domain verification process. This is a required step in order to complete the registration of a domain under an Organization, as the administrator should be verified as a person who is affiliated with that domain.
 
-Make sure that an `OrganizationDomain` object already exists before you call this method, by first calling [`OrganizationDomain.prepareAffiliationVerification`](#prepare-affiliation-verification).
+Make sure that an `OrganizationDomain` object already exists before you call this method, by first calling [`OrganizationDomain.prepareAffiliationVerification`](#prepareaffiliationverification).
 
 ```typescript
 function attemptAffiliationVerification(

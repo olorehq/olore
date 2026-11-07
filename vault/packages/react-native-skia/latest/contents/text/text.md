@@ -18,7 +18,7 @@ Please note that the y origin of the Text is the bottom of the text, not the top
 ### Simple Text
 
 ```tsx twoslash
-import {Canvas, Text, useFont, Fill} from "@shopify/react-native-skia";
+import {Canvas, Text, useFont, Fill} from "react-native-skia";
 
 export const HelloWorld = () => {
   const fontSize = 32;
@@ -51,7 +51,7 @@ The APIs belows were made available before the Paragraph API was released.
 :::
 
 ```tsx twoslash
-import {useFonts, Text, matchFont} from "@shopify/react-native-skia";
+import {useFonts, Text, matchFont} from "react-native-skia";
 
 const Demo = () => {
   const fontMgr = useFonts({
@@ -83,7 +83,7 @@ You can list system fonts via  `listFontFamilies` function returns the list of a
 By default the function will list system fonts but you can pass an optional `fontMgr` object as parameter.
 
 ```jsx twoslash
-import {listFontFamilies} from "@shopify/react-native-skia";
+import {listFontFamilies} from "react-native-skia";
 
 console.log(listFontFamilies());
 ```
@@ -102,7 +102,7 @@ By default matchFont, will match fonts from the system font manager:
 
 ```jsx twoslash
 import {Platform} from "react-native";
-import {Canvas, Text, matchFont, Fill, Skia} from "@shopify/react-native-skia";
+import {Canvas, Text, matchFont, Fill, Skia} from "react-native-skia";
  
 const fontFamily = Platform.select({ ios: "Helvetica", default: "serif" });
 const fontStyle = {
@@ -132,13 +132,31 @@ The `fontStyle` object can have the following list of optional attributes:
 
 - `fontFamily`: The name of the font family.
 - `fontSize`: The size of the font.
-- `fontStyle`: The slant of the font. Can be `normal`, `italic`, or `oblique`.
-- `fontWeight`: The weight of the font. Can be `normal`, `bold`, or any of `100`, `200`, `300`, `400`, `500`, `600`, `700`, `800`, `900`.
+- `fontStyle`: The slant of the font. Can be `normal`, `italic`, or `oblique`, or a `FontSlant` enum value.
+- `fontWeight`: The weight of the font. Can be `normal`, `bold`, or any of `100`, `200`, `300`, `400`, `500`, `600`, `700`, `800`, `900`, or a `FontWeight` enum value.
+
+The font style type is exported as `RNFontStyle` (with its `fontStyle` and `fontWeight` attributes typed as `RNFontSlant` and `RNFontWeight`), so you can type your own helpers.
+`fontWeight` and `fontStyle` also accept the `FontWeight` and `FontSlant` enums used by the [Paragraph API](/docs/text/paragraph/), meaning the same style values can be shared between `matchFont` and a Paragraph `TextStyle` without any conversion:
+
+```tsx twoslash
+import {matchFont, FontWeight, FontSlant} from "react-native-skia";
+import type {RNFontStyle} from "react-native-skia";
+
+const labelStyle: Partial<RNFontStyle> = {
+  fontFamily: "Roboto",
+  fontSize: 16,
+  // FontWeight.Medium (500) and FontSlant.Italic are the same values
+  // you would use in a Paragraph TextStyle
+  fontWeight: FontWeight.Medium,
+  fontStyle: FontSlant.Italic,
+};
+const font = matchFont(labelStyle);
+```
 
 By default, `matchFont` uses the system font manager to match the font style. However, if you want to use your custom font manager, you can pass it as the second parameter to the `matchFont` function:
 
 ```jsx twoslash
-import {matchFont, useFonts} from "@shopify/react-native-skia";
+import {matchFont, useFonts} from "react-native-skia";
 
 const fontMgr = useFonts({
   Roboto: [
@@ -157,7 +175,7 @@ These are the APIs used behind the scene by the `matchFont` function.
 
 ```tsx twoslash
 import {Platform} from "react-native";
-import {Skia, FontStyle} from "@shopify/react-native-skia";
+import {Skia, FontStyle} from "react-native-skia";
  
 const familyName = Platform.select({ ios: "Helvetica", default: "serif" });
 const fontSize = 32;
@@ -166,7 +184,7 @@ const fontMgr = Skia.FontMgr.System();
 // The custom font manager is available via Skia.TypefaceFontProvider.Make()
 const customFontMgr = Skia.TypefaceFontProvider.Make();
 // typeface needs to be loaded via Skia.Data and instanciated via
-// Skia.Typeface.MakeFreeTypeFaceFromData()
+// Skia.Typeface.MakeFromData()
 // customFontMgr.registerTypeface(customTypeFace, "Roboto");
 
 // Matching a font

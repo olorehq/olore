@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-effects-vignette.png
+image: https://remotion.media/docs/generated/articles-docs-effects-vignette.png
 slug: /effects/vignette
 title: vignette()
 sidebar_label: vignette()
@@ -21,13 +21,12 @@ It respects the source alpha mask. Transparent regions stay transparent.
 ## Example
 
 ```tsx twoslash title="MyComp.tsx"
-import {AbsoluteFill} from 'remotion';
 import {Video} from '@remotion/media';
 import {vignette} from '@remotion/effects/vignette';
 
 export const MyComp: React.FC = () => {
   return (
-    <AbsoluteFill>
+    <>
       <Video
         src="https://remotion.media/video.mp4"
         effects={[
@@ -40,7 +39,7 @@ export const MyComp: React.FC = () => {
           }),
         ]}
       />
-    </AbsoluteFill>
+    </>
   );
 };
 ```
@@ -91,16 +90,19 @@ Accepts any CSS color string (for example `'#000000'`, `'black'`, or `'rgba(0, 0
 
 How the vignette is applied. Defaults to `'color'`.
 
-- `'color'` blends `color` into the edges while preserving the layer alpha.
+- `'color'` composites `color` into the edges, including transparent areas.
 - `'alpha'` fades the edges transparent instead of adding color.
 
 ### `disabled?`
 
 When `true`, the effect is skipped. Defaults to `false`.
 
-## Requirements
+## Implementations
 
-`vignette()` uses a WebGL2 backend. During renders, enable WebGL via [`Config.setChromiumOpenGlRenderer('angle')`](/docs/config#setchromiumopenglrenderer). See [Using WebGL during renders](/docs/remotion/html-in-canvas#using-webgl-during-renders).
+- WebGL2
+- WebGPU <AvailableFrom v="4.0.540" />
+
+See: [Preferred effect backend](/docs/options/preferred-effect-backend).
 
 ## See also
 

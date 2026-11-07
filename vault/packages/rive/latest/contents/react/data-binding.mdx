@@ -14,6 +14,7 @@ import ReadingAndWritingProperties from "/snippets/runtimes/data-binding/reading
 import NestedPropertyPaths from "/snippets/runtimes/data-binding/nested-property-paths.mdx"
 import Observability from "/snippets/runtimes/data-binding/observability.mdx"
 import Images from "/snippets/runtimes/data-binding/images.mdx"
+import Fonts from "/snippets/runtimes/data-binding/fonts.mdx"
 import Lists from "/snippets/runtimes/data-binding/lists.mdx"
 import Artboards from "/snippets/runtimes/data-binding/artboards.mdx"
 import Enums from "/snippets/runtimes/data-binding/enums.mdx"
@@ -116,7 +117,41 @@ const boundInstance = rive?.viewModelInstance;
 
 <Binding />
 
-For React, no additional steps are needed to bind the view model instance to the Rive component. Passing the `rive` object to `useViewModelInstance` handles this automatically.
+For React, no additional steps are needed to bind the view model instance to the Rive component. Passing the `rive` object to `useViewModelInstance` handles this automatically — the hook sets the instance and schedules a single `bind()`.
+
+<Tip>
+  **Set every instance first, then call `bind()` once.** Setting an instance is cheap; `bind()` carries a much higher cost, and calling it per instance pays that cost again each time. Batching matters most at initialization, and on graphics with many bindings or deeply nested artboards.
+
+  The view model hooks already do this for you: hooks that resolve in the same render commit share one coalesced `bind()`. When you bind by hand — in `onRiveReady`, for instance — stage each instance with `setViewModelInstance()` / `setGlobalViewModelInstance()` and flush them with a single `bind()`.
+</Tip>
+
+### Binding before the first frame
+
+The view model hooks run after Rive has loaded, which means the first frame has already advanced and rendered before they bind, even with `autoplay: false`. If you want to set data before the first render, do the data binding setup in the `onRiveReady` callback of `useRive` instead. It receives the `Rive` instance synchronously as soon as the file loads, and before the state machine advances, so you can stage instances and set property values that the very first frame renders with.
+
+```tsx
+import { useRive, ViewModel, ViewModelInstance } from '@rive-app/react-webgl2';
+
+const { RiveComponent } = useRive({
+    src: 'your_file.riv',
+    stateMachine: 'MyStateMachine',
+    autoplay: true,
+    autoBind: false, // Set up the instances yourself before the first frame
+    onRiveReady: (rive) => {
+        const mainVM = rive.viewModelByName('MyViewModel') as ViewModel;
+        const instance = mainVM.defaultInstance() as ViewModelInstance;
+
+        instance.string('username').value = 'Rive';
+
+        rive.setViewModelInstance(instance);
+        rive.bind(); // Flush the staged instances
+    },
+});
+```
+
+<Tip>
+  Use `onRiveReady` rather than `onLoad` for any pre-render data binding work. Anything you can reach from the `Rive` instance, including [global view models](#global-view-models), can be prepared there.
+</Tip>
 
 <AutoBinding />
 
@@ -129,9 +164,63 @@ const { rive, RiveComponent } = useRive({
     // ... other options
 });
 
-// Once loaded, the instance is available:
+// Once loaded, the main view model instance is available:
 const boundInstance = rive?.viewModelInstance;
 ```
+
+### Global View Models
+
+A view model marked **global** in the editor is shared across the whole file rather than owned by a single artboard. The file holds one slot per global view model, addressed by name, so every artboard and state machine reads from the same instance — useful for app-wide state such as a theme, session, or settings.
+
+Use the `useGlobalViewModelInstance` hook to resolve an instance and register it under a global's name. It takes the view model (from `useViewModel`), the name of the global slot, and the same kind of selector parameters as `useViewModelInstance`:
+
+```tsx
+import {
+    useRive,
+    useViewModel,
+    useGlobalViewModelInstance,
+    useViewModelInstanceColor,
+} from '@rive-app/react-webgl2';
+
+const { rive, RiveComponent } = useRive({
+    src: 'your_file.riv',
+    stateMachine: 'State Machine 1',
+    autoBind: false,
+});
+
+const themeViewModel = useViewModel(rive, { name: 'Theme' });
+
+// Resolve the default instance and register it as the "Theme" global
+const themeInstance = useGlobalViewModelInstance(themeViewModel, 'Theme', { rive });
+
+// Property hooks work exactly as they do for the main instance
+const { value: bgColor, setValue: setBgColor } = useViewModelInstanceColor(
+    'backgroundColor',
+    themeInstance
+);
+```
+
+The third argument selects which instance to resolve:
+
+- `{ rive }` — the view model's default instance (the implicit default)
+- `{ instanceName: 'Dark', rive }` — the instance with that name
+- `{ useNew: true, rive }` — a new blank instance
+- `{ instance: myInstance, rive }` — an instance you created yourself
+
+Passing `rive` is what registers the instance as the global and schedules the bind. Omit it to resolve an instance without binding it.
+
+<Note>
+  You only need a hook for the globals whose properties you want to read or write. Binding fills every slot you did not set — including the main view model instance — with that view model's default instance from the file.
+</Note>
+
+To list a file's globals or read back whichever instance currently occupies a slot, go through the `rive` instance directly:
+
+```tsx
+const names = rive?.globalViewModelNames();          // e.g. ["Theme", "Session"]
+const themeInstance = rive?.globalViewModelInstance('Theme'); // ViewModelInstance | null
+```
+
+`globalViewModelInstance()` never creates an instance — it returns `null` until one has been set by a hook, set in `onRiveReady`, or by `autoBind: true`.
 
 <Properties />
 
@@ -140,8 +229,10 @@ const boundInstance = rive?.viewModelInstance;
 ```typescript
 // Access properties from the view model returned by useViewModel
 const viewModel = useViewModel(rive);
-console.log(viewModel?.properties);
+console.log(viewModel?.properties); // [{ name: "status", type: "enum", enumName: "Status" }, ...]
 ```
+
+Each entry has a `name` and a `type`. Properties of type `"enum"` also carry an `enumName`, which you can match against the results of [`rive.enums()`](#enums) to look up that enum's available values.
 
 <ReadingAndWritingProperties />
 
@@ -329,6 +420,37 @@ Use the `useViewModelInstanceImage` hook to set image properties on view model i
     };
     ```
 
+<Fonts />
+
+```typescript {1-4, 14-20}
+  const { setValue: setHeadingFont } = useViewModelInstanceFont(
+    "headingFont",
+    rive?.viewModelInstance
+  );
+
+  useEffect(() => {
+    if (setHeadingFont) {
+      loadFont("Orbitron.ttf");
+    }
+  }, [setHeadingFont]);
+
+  const loadFont = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const fontBuffer = await response.arrayBuffer();
+      const decodedFont = await decodeFont(new Uint8Array(fontBuffer));
+
+      setHeadingFont(decodedFont);
+
+      decodedFont.unref();
+    } catch (error) {
+      console.error("Failed to load font:", error);
+    }
+  };
+```
+
+<Demos examples={["dataBindingFonts"]} runtime="react" />
+
 <Lists />
 
 <Demos examples={['dataBindingLists']} runtime="react" />
@@ -475,6 +597,6 @@ const enums = rive?.enums();
 console.log(enums);
 ```
 
-# Examples
+## Examples
 
 See the `DataBinding` story in the [Rive React repo](https://github.com/rive-app/rive-react) for a demo.

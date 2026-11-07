@@ -1,19 +1,23 @@
 ---
 title: 'UrlMonitor Construct'
 description: 'Learn how to configure URL monitors with the Checkly CLI.'
-sidebarTitle: 'URL Monitor'
+sidebarTitle: 'URL monitor'
+canonical: 'https://www.checklyhq.com/docs/constructs/url-monitor/'
+mode: "wide"
 ---
+
+import CheckIntent from '/snippets/check-intent.mdx';
 
 import GeneralMonitorOptionsTable from '/snippets/general-monitor-options-table.mdx';
 
 <Tip>
-Learn more about URL Monitors in [the URL monitor overview](/detect/uptime-monitoring/url-monitors/overview).
+Learn more about URL monitors in [the URL monitor overview](/detect/uptime-monitoring/url-monitors/overview).
 </Tip>
 
-Use URL Monitors to track basic availability and HTTP status codes of your services and websites. The examples below show how to configure monitoring for different types of HTTP endpoints.
+Use URL monitors to track basic availability and HTTP status codes of your services and websites. The examples below show how to configure monitoring for different types of HTTP endpoints.
 
 <Accordion title="Prerequisites">
-Before creating URL Monitors, ensure you have:
+Before creating URL monitors, ensure you have:
 
 - An initialized Checkly CLI project
 - URLs or HTTP endpoints you want to monitor
@@ -70,13 +74,14 @@ new UrlMonitor("advanced-url-monitor", {
 The URL Monitoring configuration consists of specific URL monitoring options and inherited general monitoring options.
 
 <Tabs>
-<Tab title="URL Monitor">
+<Tab title="URL monitor">
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `request` | `object` | ✅ | - | HTTP request configuration object |
-| `degradedResponseTime` | `number` | ❌ | `3000` | Response time threshold in milliseconds for degraded status |
-| `maxResponseTime` | `number` | ❌ | `5000` | Maximum response time in milliseconds before marking as failed |
+| `intent` | `CheckIntent` | ❌ | - | Structured guidance for root cause analysis and check repair. See [General Monitor Options](#general-monitor-options). |
+| `degradedResponseTime` | `number` | ❌ | `3000` | Response time threshold in milliseconds for degraded status. Can't exceed `maxResponseTime` (max 30000 by default) |
+| `maxResponseTime` | `number` | ❌ | `5000` | Maximum response time in milliseconds before marking as failed (max 30000 by default) |
 | `shouldFail` | `boolean` | ❌ | false | Treat HTTP error codes (4xx and 5xx) as passed. Please note that successful responses still pass. Only failed assertions will cause the check to fail. |
 
 </Tab>
@@ -95,6 +100,7 @@ HTTP request configuration that defines the URL to monitor and how to handle the
 
 **Usage:**
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 new UrlMonitor("url-monitor", {
   request: {
@@ -103,7 +109,8 @@ new UrlMonitor("url-monitor", {
     assertions: [
       UrlAssertionBuilder.statusCode().equals(200)
     ]
-  }
+  },
+  /* More options... */
 })
 ```
 
@@ -122,6 +129,7 @@ new UrlMonitor("url-monitor", {
 <Tabs>
 <Tab title="Simple Website">
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 new UrlMonitor('website-check', {
   name: 'Website Availability',
@@ -138,6 +146,7 @@ new UrlMonitor('website-check', {
 </Tab>
 <Tab title="API Endpoint">
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 new UrlMonitor("api-health", {
   name: "API Health Check",
@@ -153,6 +162,7 @@ new UrlMonitor("api-health", {
 </Tab>
 <Tab title="Development Environment">
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 new UrlMonitor("dev-endpoint", {
   name: "Development Environment",
@@ -176,6 +186,7 @@ Response time threshold in milliseconds for marking the monitor as degraded (war
 
 **Usage:**
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts highlight={4}
 // Progressive performance monitoring
 new UrlMonitor("performance-tiers", {
@@ -197,6 +208,7 @@ Maximum response time in milliseconds before the monitor is marked as failed.
 
 **Usage:**
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts highlight={3}
 new UrlMonitor("fast-site", {
   name: "Fast site",
@@ -209,6 +221,7 @@ new UrlMonitor("fast-site", {
 
 **Examples:**
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 // Fast website requirement
 new UrlMonitor("performance-critical", {
@@ -252,7 +265,7 @@ UrlAssertionBuilder.statusCode().equals(200)
 ```ts
 UrlAssertionBuilder.statusCode().lessThan(300)
 // Equivalent to:
-{ source: 'STATUS_CODE', comparison: 'lessThan', target: '300' }
+{ source: 'STATUS_CODE', comparison: 'LESS_THAN', target: '300' }
 ```
 
 Learn more in our docs on [Assertions](/detect/assertions).
@@ -264,6 +277,7 @@ Friendly name for your URL monitor that will be displayed in the Checkly dashboa
 
 **Usage:**
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts highlight={2}
 new UrlMonitor("my-monitor", {
   name: "Website Uptime Monitor",
@@ -278,6 +292,7 @@ How often the URL monitor should run. Use the `Frequency` enum to set the check 
 
 **Usage:**
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts highlight={2}
 new UrlMonitor("my-monitor", {
   frequency: Frequency.EVERY_1M,
@@ -290,36 +305,42 @@ new UrlMonitor("my-monitor", {
 <Tabs>
 <Tab title="High Frequency">
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 // Critical service monitoring
 new UrlMonitor("critical-service", {
   name: "Critical Service Uptime",
   frequency: Frequency.EVERY_30S, // Every 30 seconds
-  maxResponseTime: 2000
+  maxResponseTime: 2000,
+  /* More options... */
 })
 ```
 
 </Tab>
 <Tab title="Standard Monitoring">
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 // Regular website monitoring
 new UrlMonitor("website-monitor", {
   name: "Website Availability",
   frequency: Frequency.EVERY_5M, // Every 5 minutes
-  maxResponseTime: 5000
+  maxResponseTime: 5000,
+  /* More options... */
 })
 ```
 
 </Tab>
 <Tab title="Low Frequency">
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 // Background service monitoring
 new UrlMonitor("background-service", {
   name: "Background Service Health",
   frequency: Frequency.EVERY_30M, // Every 30 minutes
-  maxResponseTime: 10000
+  maxResponseTime: 10000,
+  /* More options... */
 })
 ```
 
@@ -334,9 +355,11 @@ Array of public location codes where the URL monitor should run from. Multiple l
 
 **Usage:**
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts highlight={2}
 new UrlMonitor("global-monitor", {
-  locations: ["us-east-1", "eu-west-1", "ap-southeast-1"]
+  locations: ["us-east-1", "eu-west-1", "ap-southeast-1"],
+  /* More options... */
 })
 ```
 
@@ -345,6 +368,7 @@ new UrlMonitor("global-monitor", {
 <Tabs>
 <Tab title="Global Coverage">
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 // Worldwide monitoring
 new UrlMonitor("global-website", {
@@ -357,19 +381,22 @@ new UrlMonitor("global-website", {
     "ap-southeast-1", // Singapore
     "ap-northeast-1"  // Tokyo
   ],
-  maxResponseTime: 5000
+  maxResponseTime: 5000,
+  /* More options... */
 })
 ```
 
 </Tab>
 <Tab title="Regional Focus">
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 // European users focus
 new UrlMonitor("eu-service", {
   name: "European Service Monitor",
   frequency: Frequency.EVERY_1M,
-  locations: ["eu-west-1", "eu-central-1"]
+  locations: ["eu-west-1", "eu-central-1"],
+  /* More options... */
 })
 ```
 
@@ -384,14 +411,17 @@ Whether the URL monitor is enabled and will run according to its schedule.
 
 **Usage:**
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts highlight={2}
 new UrlMonitor("my-monitor", {
-  activated: false // Disabled monitor
+  activated: false, // Disabled monitor
+  /* More options... */
 })
 ```
 
 **Examples:**
 
+{/* typecheck-wrap: UrlMonitor */}
 ```ts
 // Temporarily disable a monitor
 new UrlMonitor("maintenance-site", {
@@ -404,10 +434,13 @@ new UrlMonitor("maintenance-site", {
 ```
 </ResponseField>
 
+<CheckIntent />
+
 ## Examples
 
 <Tabs>
   <Tab title="Website Availability">
+    {/* typecheck-wrap: UrlMonitor */}
     ```ts
     new UrlMonitor("website-availability", {
       name: "Main Website Availability",
@@ -427,6 +460,7 @@ new UrlMonitor("maintenance-site", {
   </Tab>
 
   <Tab title="API Health Check">
+    {/* typecheck-wrap: UrlMonitor */}
     ```ts
     new UrlMonitor("api-health-check", {
       name: "API Health Endpoint",
@@ -447,6 +481,7 @@ new UrlMonitor("maintenance-site", {
   </Tab>
 
   <Tab title="CDN Performance">
+    {/* typecheck-wrap: UrlMonitor */}
     ```ts
     new UrlMonitor("cdn-performance", {
       name: "CDN Asset Performance",
@@ -465,6 +500,7 @@ new UrlMonitor("maintenance-site", {
   </Tab>
 
   <Tab title="Redirect Chain">
+    {/* typecheck-wrap: UrlMonitor */}
     ```ts
     new UrlMonitor("redirect-chain", {
       name: "Redirect Chain Monitor",
@@ -484,6 +520,7 @@ new UrlMonitor("maintenance-site", {
   </Tab>
 
   <Tab title="SSL Certificate Check">
+    {/* typecheck-wrap: UrlMonitor */}
     ```ts
     new UrlMonitor("ssl-certificate-check", {
       name: "SSL Certificate Validity",
@@ -501,8 +538,8 @@ new UrlMonitor("maintenance-site", {
     })
     ```
   </Tab>
-
   <Tab title="Multiple Status Codes">
+    {/* typecheck-wrap: UrlMonitor */}
     ```ts
     new UrlMonitor("maintenance-page", {
       name: "Maintenance Page Check",
@@ -514,12 +551,11 @@ new UrlMonitor("maintenance-site", {
         url: "https://status.example.com",
         followRedirects: true,
         assertions: [
-          // Accept both 200 (normal) and 503 (maintenance)
-          UrlAssertionBuilder.statusCode().between(200, 200),
-          UrlAssertionBuilder.statusCode().between(503, 503)
-        ]
-      }
-    })
+          UrlAssertionBuilder.statusCode().greaterThan(200),
+          UrlAssertionBuilder.statusCode().lessThan(300),
+        ],
+      },
+    });
     ```
   </Tab>
 </Tabs>

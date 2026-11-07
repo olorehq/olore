@@ -1,7 +1,8 @@
 ---
 title: 'TelegramAlertChannel Construct'
-description: 'Learn how to configure Telegram alert channels with the Checkly CLI.'
+description: 'Learn how to configure Telegram alert channels and forum topics with the Checkly CLI.'
 sidebarTitle: 'Telegram'
+canonical: 'https://www.checklyhq.com/docs/constructs/telegram-alert-channel/'
 ---
 
 import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
@@ -32,6 +33,7 @@ const telegramChannel = new TelegramAlertChannel('my-telegramchannel-1', {
   name: 'My Telegram channel',
   apiKey: 'xxxxxx',
   chatId: 'xxxxxx',
+  messageThreadId: '42',
   sendRecovery: true,
   sendFailure: true,
   sendDegraded: true,
@@ -43,12 +45,16 @@ const telegramChannel = new TelegramAlertChannel('my-telegramchannel-1', {
 </CodeGroup>
 
 <Note>
+  `messageThreadId` requires Checkly CLI 8.18.0 or later.
+</Note>
+
+<Note>
   If you need to reference existing alert channels that were created outside of your CLI project, use [`fromId()`](/constructs/alert-channel#using-fromid-to-reference-an-existing-channel).
 </Note>
 
 ## Configuration
 
-### Telegram Alert Channel Options
+### Telegram alert channel options
 
 <ResponseField name="name" type="string" required>
 Friendly name to recognise the integration.
@@ -62,11 +68,16 @@ The API key associated with your Telegram bot.
 The chat ID of the Telegram channel you want to send alerts to.
 </ResponseField>
 
+<ResponseField name="messageThreadId" type="string">
+The positive integer Message Thread ID of a Telegram forum topic. Use it together with `chatId` to send alerts to a specific topic.
+</ResponseField>
+
 <ResponseField name="payload" type="string">
 The message sent to the chat when an alert is triggered. If this is not specified, we'll send a default payload with some basic information about the alert.
 
 We have [handlebar helpers and variables](/integrations/alerts/webhooks/#using-variables) available for building custom payloads.
 
+{/* typecheck-wrap: TelegramAlertChannel */}
 ```ts highlight={5-16}
 new TelegramAlertChannel('my-telegramchannel-1', {
   name: 'My Telegram channel',
@@ -88,6 +99,6 @@ new TelegramAlertChannel('my-telegramchannel-1', {
 ```
 </ResponseField>
 
-### General Alert Channel Options
+### General alert channel options
 
 <AlertChannelOptionsText />

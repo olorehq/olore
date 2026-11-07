@@ -83,16 +83,16 @@ All reads and writes happen against the local database file — fast, offline-ca
   </Step>
 </Steps>
 
-## Recommended: @tursodatabase/serverless (Remote / Over-the-Wire)
+## Remote Turso database: @tursodatabase/serverless
 
-`@tursodatabase/serverless` is the recommended package for **any application that connects to a remote Turso Cloud database over the network** — including Node.js servers, Docker containers, serverless functions, and edge runtimes (Cloudflare Workers, Vercel Edge, Deno Deploy). It uses only `fetch` — zero native dependencies, works everywhere.
+`@tursodatabase/serverless` is the package for applications that connect to a remote [Turso database](/tursodb/quickstart) on Turso Cloud over the network — including Node.js servers, Docker containers, serverless functions, and edge runtimes (Cloudflare Workers, Vercel Edge, Deno Deploy). It uses only `fetch` — zero native dependencies, works everywhere.
 
 <Steps>
   <Step title="Retrieve database credentials">
 
-You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+You will need an existing Turso database to continue. If you don't have one, create one with `turso db create --tursodb` (see the [quickstart](/quickstart)).
 
-<Snippet file="retrieve-database-credentials.mdx" />
+<Snippet file="retrieve-database-credentials-tursodb.mdx" />
 
 <Info>You will want to store these as environment variables.</Info>
 
@@ -144,9 +144,9 @@ const row = await stmt.get([1]);
   </Step>
 </Steps>
 
-## @libsql/client
+## Remote libSQL database: @libsql/client
 
-Use `@libsql/client` for ORM integration (Drizzle, Prisma) or if you have an existing codebase built on it. See the [reference](/sdk/ts/reference#libsqlclient) for full documentation.
+`@libsql/client` is the package for applications that connect to a remote [libSQL](/libsql) database on Turso Cloud. It is also the package to use for ORM integration (Drizzle, Prisma). See the [reference](/sdk/ts/reference#libsqlclient) for full documentation.
 
 <Steps>
   <Step title="Install">

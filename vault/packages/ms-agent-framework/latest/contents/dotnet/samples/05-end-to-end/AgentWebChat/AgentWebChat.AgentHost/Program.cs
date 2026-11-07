@@ -3,6 +3,7 @@
 using AgentWebChat.AgentHost;
 using AgentWebChat.AgentHost.Custom;
 using AgentWebChat.AgentHost.Utilities;
+using Azure.Storage.Blobs;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.DevUI;
 using Microsoft.Agents.AI.Hosting;
@@ -28,9 +29,29 @@ builder.AddDevUI();
 builder.AddOpenAIChatCompletions();
 builder.AddOpenAIResponses();
 
-// When running in production, make sure to use an SessionIsolationKeyProvider, e.g. ClaimsIdentity-based
-// if using Claims-based Identity for Authentication/Authorization
-// builder.Services.UseClaimsBasedSessionIsolation(new() { ClaimType = ClaimTypes.NameIdentifier });
+// IMPORTANT: In production, register an AgentIsolationKeyProvider to isolate sessions, tasks, conversations,
+// and responses by authenticated caller. Without this, contextId/taskId/conversation_id/response_id alone are
+// the lookup keys — any caller who knows them can access another caller's data.
+// Example using claims-based identity:
+// builder.Services.UseClaimsBasedAgentIsolation(new() { ClaimType = ClaimTypes.NameIdentifier });
+//
+// Multi-user hosts must also configure authentication and enforce authorization on every exposed protocol,
+// for example with RequireAuthorization() on its mapping. For claims-based isolation, register
+// AddHttpContextAccessor() and use a unique caller claim. Responses, conversations, and A2A tasks retain
+// their own state even without an agent session store. DevUI access controls do not replace these controls.
+// See the shared hosting guide in dotnet/samples/04-hosting/README.md for configuration and client requirements.
+
+// The session stores below enable isolation, which is strict by default and rejects every request when no
+// AgentIsolationKeyProvider is registered. Require an isolation key only when a provider is registered, so this
+// local sample runs as a single shared caller and becomes strict once a provider (see above) is added.
+builder.Services.AddSingleton(sp => new IsolationKeyScopedAgentSessionStoreOptions
+{
+    Strict = sp.GetService<AgentIsolationKeyProvider>() is not null,
+});
+
+// By default, NoopAgentSessionStore is used — sessions are not persisted across requests.
+// To enable multi-turn conversations, register a session store explicitly, e.g.:
+// agentBuilder.WithInMemorySessionStore();
 
 var pirateAgentBuilder = builder.AddAIAgent(
     "pirate",
@@ -38,8 +59,26 @@ var pirateAgentBuilder = builder.AddAIAgent(
     description: "An agent that speaks like a pirate.",
     chatClientServiceKey: "chat-model")
     .WithAITool(new CustomAITool())
-    .WithAITool(new CustomFunctionTool())
-    .WithInMemorySessionStore();
+    .WithAITool(new CustomFunctionTool());
+
+// Set both environment variables to replace development-only in-memory storage with Azure Blob Storage.
+string? blobConnectionString = Environment.GetEnvironmentVariable("AZURE_STORAGE_BLOB_CONNECTION_STRING");
+if (string.IsNullOrWhiteSpace(blobConnectionString))
+{
+    pirateAgentBuilder.WithInMemorySessionStore();
+}
+else
+{
+    string? blobContainerName = Environment.GetEnvironmentVariable("AZURE_STORAGE_BLOB_CONTAINER_NAME");
+    if (string.IsNullOrWhiteSpace(blobContainerName))
+    {
+        throw new InvalidOperationException(
+            "AZURE_STORAGE_BLOB_CONTAINER_NAME must be set when AZURE_STORAGE_BLOB_CONNECTION_STRING is configured.");
+    }
+
+    BlobContainerClient containerClient = new(blobConnectionString, blobContainerName);
+    pirateAgentBuilder.WithAzureBlobSessionStore(containerClient);
+}
 
 var knightsKnavesAgentBuilder = builder.AddAIAgent("knights-and-knaves", (sp, key) =>
 {
@@ -152,14 +191,16 @@ builder.Services.AddKeyedSingleton<AIAgent>("my-di-matchingname-agent", (sp, nam
 pirateAgentBuilder.AddA2AServer();
 knightsKnavesAgentBuilder.AddA2AServer();
 
-// When running in production, make sure to use an SessionIsolationKeyProvider, e.g. ClaimsIdentity-based
-// if using Claims-based Identity for Authentication/Authorization
-// builder.Services.UseClaimsBasedSessionIsolation(new() { ClaimType = ClaimTypes.NameIdentifier });
+// IMPORTANT: In production, register an AgentIsolationKeyProvider to isolate sessions, tasks, conversations,
+// and responses by authenticated caller. Without this, contextId/taskId/conversation_id/response_id alone are
+// the lookup keys — any caller who knows them can access another caller's data.
+// Example using claims-based identity:
+// builder.Services.UseClaimsBasedAgentIsolation(new() { ClaimType = ClaimTypes.NameIdentifier });
 
 var app = builder.Build();
 
 app.MapOpenApi();
-app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Agents API"));
+app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Agents API")); // CodeQL [SM04686] Swagger UI is intentionally enabled because this is a sample application, not a production deployment.
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();

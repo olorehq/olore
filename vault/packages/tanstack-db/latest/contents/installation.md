@@ -1,0 +1,163 @@
+---
+title: Installation
+id: installation
+---
+
+Each supported framework comes with its own package. Each framework package re-exports everything from the core `@tanstack/db` package.
+
+## React
+
+```sh
+npm install @tanstack/react-db
+```
+
+TanStack DB is compatible with React v18+
+
+## Preact
+
+```sh
+npm install @tanstack/preact-db
+```
+
+TanStack DB is compatible with Preact v10+
+
+## Solid
+
+```sh
+npm install @tanstack/solid-db
+```
+
+## Svelte
+
+```sh
+npm install @tanstack/svelte-db
+```
+
+## Vue
+
+```sh
+npm install @tanstack/vue-db
+```
+
+TanStack DB is compatible with Vue v3.3.0+
+
+## Angular
+
+```sh
+npm install @tanstack/angular-db
+```
+
+TanStack DB is compatible with Angular v16.0.0+
+
+## Vanilla JS
+
+```sh
+npm install @tanstack/db
+```
+
+Install the the core `@tanstack/db` package to use DB without a framework.
+
+## Collection Packages
+
+TanStack DB also provides specialized collection packages for different data sources and storage needs:
+
+### Query Collection
+
+For loading data using TanStack Query:
+
+```sh
+npm install @tanstack/query-db-collection
+```
+
+Use `queryCollectionOptions` to fetch data into collections using TanStack Query. This is perfect for REST APIs and existing TanStack Query setups.
+
+### Local Collections
+
+LocalStorage, LocalOnly, and IndexedDB Collections are included in `@tanstack/db` and the framework packages:
+
+- **LocalStorage Collection** - For persistent local data that syncs across browser tabs
+- **LocalOnly Collection** - For temporary in-memory data and UI state
+- **IndexedDB Collection** - For asynchronous browser persistence and structured values
+
+Use `localStorageCollectionOptions`, `localOnlyCollectionOptions`, or `indexedDBCollectionOptions` from `@tanstack/db` or your framework package (e.g., `@tanstack/react-db`).
+
+### IndexedDB Collection
+
+For local browser data stored in IndexedDB, install `@tanstack/db` or a framework package that re-exports it.
+
+Use `createIndexedDB` to open a database, then `indexedDBCollectionOptions` to create Collections for its stores. The [IndexedDB Collection guide](./collections/indexed-db-collection.md) covers setup, mutations, cross-tab synchronization, and connection ownership.
+
+### SQLite Persistence
+
+Use a runtime package to save Collection rows in SQLite and load them after an app restart. For a browser app, install the OPFS wrapper and its SQLite engine:
+
+```sh
+npm install @tanstack/browser-db-sqlite-persistence @journeyapps/wa-sqlite
+```
+
+The [SQLite Persistence guide](./guides/sqlite-persistence.md) shows the browser setup and lists the mobile, desktop, server, and Durable Object packages. It also explains how to wrap an existing sync adapter.
+
+### Offline Transactions
+
+Use `@tanstack/offline-transactions` to retain pending mutations and retry them when the server is available:
+
+```sh
+npm install @tanstack/offline-transactions
+```
+
+The [Offline Transactions guide](./guides/offline-transactions.md) covers web and React Native setup. It also shows how to use the outbox with a SQLite-persisted Collection.
+
+### Sync Engines
+
+#### Electric Collection
+
+For real-time sync with [ElectricSQL](https://electric-sql.com):
+
+```sh
+npm install @tanstack/electric-db-collection
+```
+
+Use `electricCollectionOptions` to sync data from Postgres databases through ElectricSQL shapes. Ideal for real-time, local-first applications.
+
+#### TrailBase Collection
+
+For syncing with [TrailBase](https://trailbase.io) backends:
+
+```sh
+npm install @tanstack/trailbase-db-collection
+```
+
+Use `trailBaseCollectionOptions` to sync records from TrailBase's Record APIs with built-in subscription support.
+
+#### PowerSync Collection
+
+For offline-first sync with [PowerSync](https://powersync.com):
+
+Use `powerSyncCollectionOptions` to sync data via PowerSync's SQLite-based database with real-time synchronization to PostgreSQL, MongoDB, and MySQL backends. Install the collection package plus the platform-specific PowerSync SDK and SQLite adapter:
+
+**Web**
+
+```sh
+npm install @tanstack/powersync-db-collection @powersync/web @journeyapps/wa-sqlite
+```
+
+**React Native**
+
+```sh
+npm install @tanstack/powersync-db-collection @powersync/react-native @powersync/op-sqlite @op-engineering/op-sqlite
+```
+
+Or use `@journeyapps/react-native-quick-sqlite` as an alternative SQLite adapter.
+
+See the [PowerSync Collection documentation](./collections/powersync-collection.md) for setup details.
+
+### RxDB Collection
+
+For offline-first apps and local persistence with [RxDB](https://rxdb.info):
+
+```sh
+npm install @tanstack/rxdb-db-collection
+```
+
+Use `rxdbCollectionOptions` to bridge an [RxDB collection](https://rxdb.info/rx-collection.html) into TanStack DB.
+This gives you reactive TanStack DB collections backed by RxDB's powerful local-first database, replication, and conflict handling features.
