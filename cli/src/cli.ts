@@ -46,14 +46,18 @@ program
 
 // Remote install from registry
 program
-  .command('install <package>')
+  .command('install <packages...>')
   .alias('i')
-  .description('Install a documentation package from the registry')
+  .description('Install one or more documentation packages from the registry')
   .option('-v, --version <version>', 'Install specific version')
+  .option('-a, --agent <agents...>', 'Install only for specific agents (claude, codex, opencode)')
   .option('--force', 'Force installation')
-  .action(async (pkg, options) => {
+  .action(async (packages, options) => {
     try {
-      await install(pkg, options);
+      console.log("DEBUG: options.agent =", options.agent); const installOptions = { ...options, agents: options.agent };
+      for (const pkg of packages) {
+        await install(pkg, installOptions);
+      }
     } catch (error) {
       console.error(pc.red(`Error: ${(error as Error).message}`));
       process.exit(1);
@@ -104,12 +108,14 @@ program
 
 // Remove package
 program
-  .command('remove <package>')
+  .command('remove <packages...>')
   .alias('rm')
-  .description('Remove an installed documentation package')
-  .action(async (pkg) => {
+  .description('Remove one or more installed documentation packages')
+  .action(async (packages) => {
     try {
-      await remove(pkg);
+      for (const pkg of packages) {
+        await remove(pkg);
+      }
     } catch (error) {
       console.error(pc.red(`Error: ${(error as Error).message}`));
       process.exit(1);

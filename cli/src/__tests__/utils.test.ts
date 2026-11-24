@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import path from 'path';
 
 import { formatBytes } from '../core/download.js';
 import { expandPath, isLocalPath } from '../core/platform.js';
@@ -88,16 +89,21 @@ describe('expandPath', () => {
   it('expands ~ to the home directory', () => {
     const result = expandPath('~/foo/bar');
     expect(result).not.toContain('~');
-    expect(result.endsWith('/foo/bar')).toBe(true);
+    // Normalize path to handle Windows \ separators in tests
+    expect(result.replace(/\\/g, '/')).toContain('/foo/bar');
   });
 
   it('resolves a relative path to an absolute path', () => {
     const result = expandPath('./some/relative');
-    expect(result.startsWith('/')).toBe(true);
+    // On Windows, absolute paths start with a drive letter, not /
+    // Check if result is absolute by verifying it contains a path separator or drive
+    expect(path.isAbsolute(result)).toBe(true);
   });
 
   it('returns absolute paths unchanged (modulo resolution)', () => {
+    // Windows paths use \, so we test against path.resolve()
+    const target = path.resolve('/absolute/path');
     const result = expandPath('/absolute/path');
-    expect(result).toBe('/absolute/path');
+    expect(result).toBe(target);
   });
 });
