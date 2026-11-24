@@ -19,6 +19,7 @@ import { checkForUpdates } from '../core/version-check.js';
 interface InstallOptions {
   version?: string;
   force?: boolean;
+  agents?: string[];
 }
 
 interface OloreLock {
@@ -34,7 +35,7 @@ interface OloreLock {
   files?: number;
 }
 
-async function installFromLocal(localPath: string): Promise<void> {
+async function installFromLocal(localPath: string, options: InstallOptions): Promise<void> {
   const fullPath = expandPath(localPath);
 
   // Verify path exists
@@ -103,6 +104,27 @@ async function installFromLocal(localPath: string): Promise<void> {
 
   const agentPaths = getAgentPaths();
 
+  // Filter agent paths if an agent filter is provided
+  const activeAgentPaths = options.agents
+    ? Object.fromEntries(
+        Object.entries(agentPaths).filter(([agent]) => options.agents?.includes(agent))
+      )
+    : agentPaths;
+
+  // Verify requested agents exist/supported
+  if (options.agents) {
+    const unsupportedAgents = options.agents.filter((a) => !agentPaths.hasOwnProperty(a));
+    if (unsupportedAgents.length > 0) {
+      throw new Error(`Unsupported agents: ${unsupportedAgents.join(', ')}`);
+    }
+
+    // Ensure the skills directory for requested agents exists
+    for (const agent of options.agents) {
+      const skillsDir = agentPaths[agent];
+      await fs.ensureDir(skillsDir);
+    }
+  }
+
   // Copy to ~/.olore central storage, then link to agent directories
   const olorePath = getOlorePackagePath(packageName, packageVersion);
   const spinner = ora('Copying to ~/.olore...').start();
@@ -116,7 +138,7 @@ async function installFromLocal(localPath: string): Promise<void> {
   const linkSpinner = ora('Linking to agent directories...').start();
 
   const linked: string[] = [];
-  for (const [agent, skillsDir] of Object.entries(agentPaths)) {
+  for (const [agent, skillsDir] of Object.entries(activeAgentPaths)) {
     const targetDir = path.join(skillsDir, skillName);
 
     await fs.ensureDir(skillsDir);
@@ -150,12 +172,12 @@ export async function install(pkg: string, options: InstallOptions): Promise<voi
 
   // Check if it's a local path
   if (isLocalPath(pkg)) {
-    await installFromLocal(pkg);
+    await installFromLocal(pkg, options);
     return;
   }
 
   // Remote install from registry
-  await installFromRemote(pkg, options.version);
+  await installFromRemote(pkg, options);
 }
 
 /**
@@ -222,10 +244,10 @@ function findSimilarPackages(
   return results.slice(0, maxResults).map(({ name, description }) => ({ name, description }));
 }
 
-async function installFromRemote(pkg: string, optionsVersion?: string): Promise<void> {
+async function installFromRemote(pkg: string, options: InstallOptions): Promise<void> {
   // Parse package specifier (e.g., "zod@3" or "zod")
   const { name, version: specVersion } = parsePackageSpec(pkg);
-  const requestedVersion = optionsVersion || specVersion || 'latest';
+  const requestedVersion = options.version || specVersion || 'latest';
 
   console.log(pc.bold(`\nInstalling ${name}@${requestedVersion} from registry...\n`));
 
@@ -281,6 +303,26 @@ async function installFromRemote(pkg: string, optionsVersion?: string): Promise<
 
   const agentPaths = getAgentPaths();
 
+  // Filter agent paths if an agent filter is provided
+  const activeAgentPaths = options.agents
+    ? Object.fromEntries(
+        Object.entries(agentPaths).filter(([agent]) => options.agents?.includes(agent))
+      )
+    : agentPaths;
+
+  // Ensure the skills directory for requested agents exists
+  if (options.agents) {
+    const unsupportedAgents = options.agents.filter((a) => !agentPaths.hasOwnProperty(a));
+    if (unsupportedAgents.length > 0) {
+      throw new Error(`Unsupported agents: ${unsupportedAgents.join(', ')}`);
+    }
+
+    for (const agent of options.agents) {
+      const skillsDir = agentPaths[agent];
+      await fs.ensureDir(skillsDir);
+    }
+  }
+
   // Download to ~/.olore central storage, then link to agent directories
   const olorePath = getOlorePackagePath(name, versionInfo.version);
   const downloadSpinner = ora('Downloading package...').start();
@@ -321,7 +363,7 @@ async function installFromRemote(pkg: string, optionsVersion?: string): Promise<
   const linkSpinner = ora('Linking to agent directories...').start();
 
   const linked: string[] = [];
-  for (const [agent, skillsDir] of Object.entries(agentPaths)) {
+  for (const [agent, skillsDir] of Object.entries(activeAgentPaths)) {
     const targetDir = path.join(skillsDir, skillName);
 
     await fs.ensureDir(skillsDir);
